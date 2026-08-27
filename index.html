@@ -75,7 +75,7 @@
   }
   .brand-text .name{font-family:'Fraunces',serif; font-weight:700; font-size:19px; letter-spacing:.5px;}
   .brand-text .tag{font-size:10.5px; opacity:.75; letter-spacing:1.5px; text-transform:uppercase;}
-  nav.mainnav{display:flex; gap:6px; flex-wrap:wrap;}
+  nav.mainnav{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
   nav.mainnav button{
     background:transparent; border:1px solid rgba(255,255,255,.18); color:#f4ecd0;
     padding:9px 15px; border-radius:999px; font-size:13.5px; font-weight:500;
@@ -117,7 +117,7 @@
   }
 
   /* Menu cepat di Beranda — supaya semua bagian utama terlihat tanpa banyak scroll */
-  .quick-menu{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:22px;}
+  .quick-menu{display:grid; grid-template-columns:repeat(auto-fit,minmax(88px,1fr)); gap:10px; margin-top:22px;}
   .quick-menu-item{
     display:flex; flex-direction:column; align-items:center; gap:6px;
     background:var(--card); border:1px solid var(--line); border-radius:14px;
@@ -162,7 +162,7 @@
     background:var(--gold-pale); color:#7a6400; white-space:nowrap;
   }
 
-  /* FORM nya*/
+  /* FORM */
   .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px 20px;}
   .form-grid .full{grid-column:1/-1;}
   @media(max-width:720px){.form-grid{grid-template-columns:1fr;}}
@@ -492,6 +492,73 @@
   .job-poster.jp-compact2 .jp-row .jp-label{font-size:13px;}
   .job-poster.jp-compact2 .jp-row .jp-value{font-size:16px; line-height:1.3;}
 
+  /* ---------- SARAN & PENILAIAN (daftar ulasan klien) ---------- */
+  .ulasan-list{display:flex; flex-direction:column; gap:14px; margin-top:22px;}
+  .ulasan-card{background:#fffef9; border:1px solid var(--line); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow);}
+  .ulasan-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;}
+  .ulasan-name{font-family:'Fraunces',serif; font-weight:700; font-size:16px; color:#241f0f;}
+  .ulasan-stars{margin-top:4px; color:#e5dcb0; letter-spacing:2px; font-size:15px;}
+  .ulasan-stars .on{color:var(--gold);}
+  .ulasan-date{font-size:11.5px; color:var(--ink-soft); white-space:nowrap; padding-top:2px;}
+  .ulasan-comment{margin-top:10px; font-size:13.5px; line-height:1.65; color:#3a3423; white-space:pre-wrap;}
+  .ulasan-actions{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
+
+  /* ---------- POSTER TESTIMONI / ULASAN KLIEN (1080x1920, untuk unggahan Story IG) ----------
+     Desain elegan bertema gelap-emas, senada dengan identitas Kaone Motret, dibuat KHUSUS
+     untuk file gambar yang diunduh — bukan tampilan kartu ulasan di layar. */
+  .ulasan-poster{
+    width:1080px; height:1920px; position:relative; overflow:hidden;
+    background:linear-gradient(165deg,#14120a 0%,#211d10 45%,#2c2712 100%);
+    font-family:'Poppins',sans-serif; color:#f4ecd0; box-sizing:border-box;
+  }
+  .ulasan-poster .up-glow{
+    position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(circle at 14% 6%, rgba(244,217,62,.18) 0%, transparent 45%),
+      radial-gradient(circle at 88% 96%, rgba(244,217,62,.14) 0%, transparent 46%);
+  }
+  .ulasan-poster .up-frame{position:absolute; inset:54px; border:1px solid rgba(244,217,62,.38); pointer-events:none;}
+  .ulasan-poster .up-frame-inner{position:absolute; inset:64px; border:1px solid rgba(244,217,62,.16); pointer-events:none;}
+  .ulasan-poster .up-corner{position:absolute; width:52px; height:52px; border-color:#f4d93e; pointer-events:none;}
+  .ulasan-poster .up-corner.tl{top:54px; left:54px; border-top:2px solid; border-left:2px solid;}
+  .ulasan-poster .up-corner.tr{top:54px; right:54px; border-top:2px solid; border-right:2px solid;}
+  .ulasan-poster .up-corner.bl{bottom:54px; left:54px; border-bottom:2px solid; border-left:2px solid;}
+  .ulasan-poster .up-corner.br{bottom:54px; right:54px; border-bottom:2px solid; border-right:2px solid;}
+
+  .ulasan-poster .up-top{position:relative; text-align:center; padding-top:158px;}
+  .ulasan-poster .up-badge{
+    width:106px; height:106px; border-radius:50%; margin:0 auto;
+    background:linear-gradient(135deg,#f4d93e,#d4af00);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; color:#231f0f; font-size:40px;
+    box-shadow:0 14px 32px rgba(212,175,0,.35), inset 0 0 0 3px rgba(255,255,255,.4);
+  }
+  .ulasan-poster .up-brand{margin-top:26px; font-family:'Fraunces',serif; font-weight:700; font-size:34px; letter-spacing:2px; color:#fffdf6;}
+  .ulasan-poster .up-tag{margin-top:8px; font-size:15px; letter-spacing:4px; text-transform:uppercase; color:#d8c98a;}
+
+  .ulasan-poster .up-stars{margin-top:66px; text-align:center; font-size:54px; letter-spacing:12px; color:#3c3419;}
+  .ulasan-poster .up-stars .on{color:#f4d93e; text-shadow:0 0 26px rgba(244,217,62,.5);}
+
+  .ulasan-poster .up-quotemark{
+    text-align:center; font-family:'Fraunces',serif; font-size:140px; line-height:.4; height:80px;
+    color:#f4d93e; opacity:.55; margin-top:48px;
+  }
+  .ulasan-poster .up-quote-wrap{padding:0 100px; box-sizing:border-box; margin-top:14px;}
+  .ulasan-poster .up-quote{
+    font-family:'Fraunces',serif; font-style:italic; font-weight:500; line-height:1.55;
+    text-align:center; color:#fffdf6; word-break:break-word;
+  }
+  .ulasan-poster .up-name-wrap{text-align:center; margin-top:58px;}
+  .ulasan-poster .up-namerule{width:60px; height:2px; background:#f4d93e; margin:0 auto 22px; opacity:.8;}
+  .ulasan-poster .up-name{font-family:'Fraunces',serif; font-weight:700; font-size:32px; color:#f4d93e;}
+  .ulasan-poster .up-sub{margin-top:8px; font-size:15px; letter-spacing:3px; text-transform:uppercase; color:#a89968;}
+
+  .ulasan-poster .up-footer{position:absolute; left:0; right:0; bottom:92px; text-align:center; padding:0 96px; box-sizing:border-box;}
+  .ulasan-poster .up-footer-line{height:1px; margin-bottom:24px; background:linear-gradient(90deg,transparent,#f4d93e,transparent); opacity:.7;}
+  .ulasan-poster .up-cta{font-family:'Fraunces',serif; font-style:italic; font-size:22px; color:#f4ecd0; line-height:1.5;}
+  .ulasan-poster .up-contact{margin-top:14px; font-size:15px; letter-spacing:1px; color:#d8c98a;}
+  .ulasan-poster .up-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:16px; background:linear-gradient(90deg,#8a6a10,#f4d93e,#8a6a10);}
+
   /* REKAP */
   .rekap-tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
   .rekap-tabs button{
@@ -695,6 +762,10 @@
     .toolbar{flex-direction:column; align-items:stretch;}
     .search-box{flex-direction:column;}
     .search-box input,.search-box select{width:100%;}
+
+    .ulasan-card{padding:13px 14px;}
+    .ulasan-actions{flex-direction:column;}
+    .ulasan-actions .btn, .ulasan-actions .icon-btn{width:100%; text-align:center;}
   }
   @media(max-width:380px){
     .quick-menu{grid-template-columns:repeat(2,1fr);}
@@ -713,19 +784,20 @@
         <div class="tag">Buku Job Fotografer</div>
       </div>
     </div>
-    <nav class="mainnav" id="mainNav">
-      <button data-view="beranda">Beranda</button>
-      <button data-view="daftar">Daftar Job</button>
-      <button data-view="kalender">Kalender Job</button>
-      <button data-view="rekap">Rekap</button>
-      <button data-view="pengaturan">Pengaturan</button>
-    </nav>
     <div class="notif-wrap" id="notifWrap">
       <button type="button" class="notif-btn" id="notifBtn" aria-label="Notifikasi">
         🔔<span class="notif-badge" id="notifBadge" style="display:none;">0</span>
       </button>
     </div>
   </div>
+  <nav class="mainnav" id="mainNav">
+    <button data-view="beranda">Beranda</button>
+    <button data-view="daftar">Daftar Job</button>
+    <button data-view="kalender">Kalender Job</button>
+    <button data-view="rekap">Rekap</button>
+    <button data-view="ulasan">⭐ Saran &amp; Penilaian</button>
+    <button data-view="pengaturan">Pengaturan</button>
+  </nav>
   <div class="datetime-strip" id="headerClock">Memuat waktu...</div>
   <div class="datetime-strip" id="syncStatus" style="margin-top:4px; padding-top:0; border-top:none;">⏳ Memuat data...</div>
 </header>
@@ -763,6 +835,24 @@ const SUPABASE_URL = 'https://gyleppavsgbtrlgbyztv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5bGVwcGF2c2didHJsZ2J5enR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NjU0MDQsImV4cCI6MjEwMzM0MTQwNH0.0t7bMoTjgd-c48O37wo1QyGFsFnjrRiAkDzH8VMgw-Q';
 const SYNC_TABLE = 'kaone_motret_data';
 const SYNC_ROW_ID = 'main';
+
+/* Tabel terpisah untuk Saran & Penilaian (testimoni) klien. Setiap baris = satu ulasan,
+   dikirim oleh klien lewat formulir "Saran & Penilaian" di halaman pricelist wedding.
+   Buat tabel ini di Supabase (SQL Editor) apabila belum ada:
+
+   create table kaone_motret_ulasan (
+     id uuid primary key default gen_random_uuid(),
+     nama_klien text not null,
+     rating smallint not null,
+     komentar text,
+     created_at timestamptz not null default now()
+   );
+   alter table kaone_motret_ulasan enable row level security;
+   create policy "Publik boleh kirim ulasan" on kaone_motret_ulasan for insert to anon with check (true);
+   create policy "Publik boleh baca ulasan" on kaone_motret_ulasan for select to anon using (true);
+   create policy "Publik boleh hapus ulasan" on kaone_motret_ulasan for delete to anon using (true);
+*/
+const ULASAN_TABLE = 'kaone_motret_ulasan';
 
 let supabaseClient = null;
 let cloudSyncEnabled = false;
@@ -845,6 +935,48 @@ async function pullFromCloud(){
     console.error('Gagal memuat dari cloud', e);
     setSyncStatus('offline');
     return false;
+  }
+}
+
+/* ---------- SARAN & PENILAIAN — ambil ulasan klien dari tabel Supabase terpisah ---------- */
+async function pullUlasanFromCloud(){
+  if(!cloudSyncEnabled) return false;
+  ulasanLoading = true;
+  if(currentView==='ulasan') render();
+  try{
+    const { data, error } = await supabaseClient
+      .from(ULASAN_TABLE)
+      .select('*')
+      .order('created_at', { ascending:false });
+    if(error) throw error;
+    ulasanList = data || [];
+    saveUlasanLocalCache();
+    ulasanLoading = false;
+    if(currentView==='ulasan') render();
+    renderNotifBadge();
+    return true;
+  }catch(e){
+    console.error('Gagal memuat ulasan dari cloud (pastikan tabel kaone_motret_ulasan sudah dibuat)', e);
+    ulasanLoading = false;
+    if(currentView==='ulasan') render();
+    return false;
+  }
+}
+async function deleteUlasanItem(id){
+  const u = ulasanList.find(x=>String(x.id)===String(id));
+  const nama = u ? (u.nama_klien || 'ulasan ini') : 'ulasan ini';
+  if(!confirm(`Yakin ingin menghapus ulasan dari "${nama}"? Tindakan ini tidak bisa dibatalkan.`)) return;
+  ulasanList = ulasanList.filter(x=>String(x.id)!==String(id));
+  saveUlasanLocalCache();
+  render();
+  if(!cloudSyncEnabled){ toast('Ulasan dihapus'); return; }
+  try{
+    const { error } = await supabaseClient.from(ULASAN_TABLE).delete().eq('id', id);
+    if(error) throw error;
+    toast('Ulasan dihapus');
+  }catch(e){
+    console.error('Gagal menghapus ulasan di cloud', e);
+    toast('Terhapus di layar ini, tapi gagal sinkron hapus ke cloud');
   }
 }
 
@@ -1160,6 +1292,9 @@ let thanksOverrides = loadThanksOverrides();
 let thanksFontSize = loadThanksFontSize();
 let posterThemeOverrides = loadPosterThemeOverrides();
 let layoutOverrides = loadLayoutOverrides();
+const ULASAN_STORAGE_KEY = 'kaoneMotret_ulasan_v1';
+let ulasanList = loadUlasanLocal();
+let ulasanLoading = false;
 
 /* ---------- STORAGE ---------- */
 function loadJobs(){
@@ -1167,6 +1302,17 @@ function loadJobs(){
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
   }catch(e){ console.error('Gagal memuat data', e); return []; }
+}
+function loadUlasanLocal(){
+  try{
+    const raw = localStorage.getItem(ULASAN_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ console.error('Gagal memuat ulasan tersimpan', e); return []; }
+}
+function saveUlasanLocalCache(){
+  try{
+    localStorage.setItem(ULASAN_STORAGE_KEY, JSON.stringify(ulasanList));
+  }catch(e){ console.error('Gagal menyimpan cache ulasan', e); }
 }
 function saveJobsLocal(){
   invalidateJobNoCache(); // data berubah -> cache nomor urut jadi basi, hitung ulang saat dibutuhkan lagi
@@ -1252,6 +1398,7 @@ function navigate(view){
   document.querySelectorAll('#mainNav button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
   render();
   window.scrollTo({top:0,behavior:'smooth'});
+  if(view==='ulasan') pullUlasanFromCloud();
 }
 
 /* ---------- RENDER ROOT ---------- */
@@ -1262,6 +1409,7 @@ function render(){
   else if(currentView==='daftar') app.innerHTML = viewDaftar();
   else if(currentView==='kalender') app.innerHTML = viewKalender();
   else if(currentView==='rekap') app.innerHTML = viewRekap();
+  else if(currentView==='ulasan') app.innerHTML = viewUlasan();
   else if(currentView==='pengaturan') app.innerHTML = viewPengaturan();
   attachHandlers();
 }
@@ -1307,6 +1455,9 @@ function viewBeranda(){
     </div>
     <div class="quick-menu-item" data-goto="rekap">
       <span class="qm-icon">📊</span><span class="qm-label">Rekap</span>
+    </div>
+    <div class="quick-menu-item" data-goto="ulasan">
+      <span class="qm-icon">⭐</span><span class="qm-label">Saran &amp; Penilaian</span>
     </div>
     <div class="quick-menu-item" data-goto="pengaturan">
       <span class="qm-icon">⚙️</span><span class="qm-label">Pengaturan</span>
@@ -2683,6 +2834,159 @@ function renderRekapTable(){
 }
 
 /* =========================================================
+   SARAN & PENILAIAN (testimoni klien)
+========================================================= */
+function starsHtml(rating){
+  const r = Math.max(0, Math.min(5, Math.round(Number(rating)||0)));
+  let out = '';
+  for(let i=1;i<=5;i++){ out += `<span class="${i<=r?'on':''}">★</span>`; }
+  return out;
+}
+function fmtUlasanDate(iso){
+  if(!iso) return '-';
+  try{
+    return new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date(iso));
+  }catch(e){ return '-'; }
+}
+function viewUlasan(){
+  const total = ulasanList.length;
+  const avg = total ? (ulasanList.reduce((s,u)=>s+(Number(u.rating)||0),0) / total) : 0;
+  return `
+  <div class="card">
+    <div class="cal-controls">
+      <h2 style="margin:0;">⭐ Saran &amp; Penilaian Klien</h2>
+      <button type="button" class="btn btn-outline" id="btnRefreshUlasan">${ulasanLoading?'⏳ Memuat...':'🔄 Muat Ulang'}</button>
+    </div>
+    <p style="color:var(--ink-soft); font-size:12.5px; margin:-6px 0 18px;">
+      Saran, komentar, dan penilaian bintang yang dikirim klien lewat formulir di halaman pricelist wedding — otomatis
+      tersinkron dari cloud. Tekan <b>Buat Gambar</b> untuk mengunduh desain testimoni siap posting ke Instagram Story,
+      supaya calon klien lain makin percaya.
+    </p>
+    ${!cloudSyncEnabled ? `
+      <div class="info-box">⚠️ Sinkronisasi cloud belum aktif, jadi daftar ulasan mungkin belum lengkap. Cek konfigurasi Supabase.</div>
+    ` : ''}
+    <div class="stat-grid" style="margin-top:0;">
+      <div class="stat gold">
+        <div class="label">Total Ulasan</div>
+        <div class="value">${total}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Rata-rata Bintang</div>
+        <div class="value">${total ? avg.toFixed(1)+' ⭐' : '-'}</div>
+      </div>
+    </div>
+
+    ${(!ulasanLoading && total===0) ? `
+      <div class="empty-state">
+        <div class="em">💬</div>
+        Belum ada saran &amp; penilaian dari klien.<br>
+        Ulasan yang dikirim klien lewat halaman pricelist wedding akan tampil di sini secara otomatis.
+      </div>
+    ` : `
+    <div class="ulasan-list">
+      ${ulasanList.map(u=>`
+        <div class="ulasan-card">
+          <div class="ulasan-card-top">
+            <div>
+              <div class="ulasan-name">${escapeHtml(u.nama_klien||'Klien')}</div>
+              <div class="ulasan-stars">${starsHtml(u.rating)}</div>
+            </div>
+            <div class="ulasan-date">${fmtUlasanDate(u.created_at)}</div>
+          </div>
+          <div class="ulasan-comment">${escapeHtml(u.komentar || '(Tidak ada komentar tertulis)')}</div>
+          <div class="ulasan-actions">
+            <button type="button" class="btn btn-outline" data-ulasan-image="${u.id}">🖼️ Buat Gambar</button>
+            <button type="button" class="icon-btn icon-btn-danger" data-ulasan-delete="${u.id}">🗑️ Hapus</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    `}
+  </div>
+  `;
+}
+
+/* ---------- Desain POSTER TESTIMONI untuk file unduhan (1080x1920, Story IG) ----------
+   Dibuat terpisah dari kartu ulasan di layar supaya hasil unduhan terasa seperti materi
+   promosi resmi yang elegan — cocok langsung diposting ke Instagram Story. */
+function buildUlasanPosterHtml(u){
+  const rating = Math.max(0, Math.min(5, Math.round(Number(u.rating)||0)));
+  const komentar = truncateText(u.komentar, 220) || 'Terima kasih atas kepercayaannya kepada Kaone Motret.';
+  let quoteSize = 44;
+  if(komentar.length>170) quoteSize = 32;
+  else if(komentar.length>110) quoteSize = 37;
+  const starsMarkup = Array.from({length:5}).map((_,i)=>`<span class="${i<rating?'on':''}">★</span>`).join('');
+
+  return `
+    <div id="ulasanPosterExport" class="ulasan-poster">
+      <div class="up-glow"></div>
+      <div class="up-frame"></div>
+      <div class="up-frame-inner"></div>
+      <div class="up-corner tl"></div><div class="up-corner tr"></div>
+      <div class="up-corner bl"></div><div class="up-corner br"></div>
+      <div class="up-top">
+        <div class="up-badge">KM</div>
+        <div class="up-brand">KAONE MOTRET</div>
+        <div class="up-tag">Wedding &amp; Event Photography</div>
+      </div>
+      <div class="up-stars">${starsMarkup}</div>
+      <div class="up-quotemark">&ldquo;</div>
+      <div class="up-quote-wrap">
+        <div class="up-quote" style="font-size:${quoteSize}px;">${escapeHtml(komentar)}</div>
+      </div>
+      <div class="up-name-wrap">
+        <div class="up-namerule"></div>
+        <div class="up-name">${escapeHtml(u.nama_klien||'Klien Kaone Motret')}</div>
+        <div class="up-sub">Klien Kaone Motret</div>
+      </div>
+      <div class="up-footer">
+        <div class="up-footer-line"></div>
+        <div class="up-cta">Dipercaya menemani &amp; mengabadikan momen berharga</div>
+        <div class="up-contact">wa.me/6285117071704 &middot; @kaonemotret</div>
+      </div>
+      <div class="up-bottom-bar"></div>
+    </div>
+  `;
+}
+function downloadUlasanImage(id){
+  if(typeof html2canvas === 'undefined'){
+    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const u = ulasanList.find(x=>String(x.id)===String(id));
+  if(!u) return;
+  toast('Menyiapkan gambar testimoni...');
+
+  // Poster dirender di luar tampilan (opacity:0) khusus untuk pengambilan gambar, supaya
+  // hasil unduhannya selalu presisi 1080x1920 apa pun ukuran layar penggunanya.
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;z-index:-1;';
+  holder.innerHTML = buildUlasanPosterHtml(u);
+  document.body.appendChild(holder);
+  const posterEl = holder.querySelector('#ulasanPosterExport');
+
+  const capture = ()=>{
+    html2canvas(posterEl, {width:1080, height:1920, scale:1, backgroundColor:'#14120a'}).then(canvas=>{
+      holder.remove();
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `testimoni-${(u.nama_klien||'kaonemotret').replace(/\s+/g,'_')}.png`;
+      a.click();
+    }).catch(()=>{
+      holder.remove();
+      alert('Gagal membuat gambar. Coba lagi.');
+    });
+  };
+  // Tunggu font kustom (Fraunces/Poppins) selesai dimuat dulu, supaya teks di gambar
+  // tidak sempat ter-capture memakai font fallback sistem.
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(capture).catch(capture);
+  } else {
+    setTimeout(capture, 60);
+  }
+}
+
+/* =========================================================
    PENGATURAN
 ========================================================= */
 function viewPengaturan(){
@@ -2975,6 +3279,9 @@ function attachHandlers(){
   });
   document.getElementById('btnDownloadRekap')?.addEventListener('click', downloadRekapImage);
 
+  // SARAN & PENILAIAN
+  document.getElementById('btnRefreshUlasan')?.addEventListener('click', pullUlasanFromCloud);
+
   // PENGATURAN
   document.getElementById('btnExportBackup')?.addEventListener('click', exportBackup);
   document.getElementById('importFile')?.addEventListener('change', (e)=>{
@@ -3221,6 +3528,17 @@ function buildNotifications(){
     });
   }
 
+  // 1c) Ulasan baru dari klien (Saran & Penilaian)
+  ulasanList.forEach(u=>{
+    list.push({
+      id: 'ulasan_' + u.id,
+      icon: '⭐',
+      title: `Ulasan baru dari ${u.nama_klien || 'klien'}`,
+      desc: truncateText(u.komentar, 70) || `Memberi ${u.rating||0} bintang`,
+      onClick: ()=>{ closeNotifPanel(); navigate('ulasan'); }
+    });
+  });
+
   jobs.forEach(j=>{
     if(!j.tanggalAcara) return;
     const diff = daysBetween(j.tanggalAcara);
@@ -3386,6 +3704,12 @@ document.addEventListener('click', (e)=>{
   const editBtn = e.target.closest('[data-edit]');
   if(editBtn){ openEditJobModal(editBtn.dataset.edit); return; }
 
+  const ulasanImageBtn = e.target.closest('[data-ulasan-image]');
+  if(ulasanImageBtn){ downloadUlasanImage(ulasanImageBtn.dataset.ulasanImage); return; }
+
+  const ulasanDeleteBtn = e.target.closest('[data-ulasan-delete]');
+  if(ulasanDeleteBtn){ deleteUlasanItem(ulasanDeleteBtn.dataset.ulasanDelete); return; }
+
   const deleteBtn = e.target.closest('[data-delete]');
   if(deleteBtn){
     e.stopPropagation();
@@ -3436,6 +3760,10 @@ setTimeout(checkAppUpdatePopup, 900);
 pullFromCloud().then((changed)=>{
   if(changed){ navigate(currentView); renderNotifBadge(); }
 });
+
+// Tarik juga daftar Saran & Penilaian dari klien (tabel Supabase terpisah) supaya
+// badge notifikasi & menu "Saran & Penilaian" langsung menampilkan data terbaru.
+pullUlasanFromCloud();
 </script>
 </body>
 </html>

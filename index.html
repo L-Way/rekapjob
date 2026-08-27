@@ -1375,6 +1375,14 @@ function fmtTgl(iso){
   const d = new Date(iso+'T00:00:00');
   return d.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
 }
+/* Nama hari dalam Bahasa Indonesia, dengan penamaan "Ahad" & "Jum'at"
+   (bukan "Minggu" / "Jumat") — dipakai di semua tempat yang menampilkan nama hari. */
+function namaHariID(date, opts){
+  let hari = new Intl.DateTimeFormat('id-ID', {...(opts||{}), weekday:'long'}).format(date);
+  if(hari === 'Minggu') hari = 'Ahad';
+  if(hari === 'Jumat') hari = "Jum'at";
+  return hari;
+}
 function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -1429,8 +1437,18 @@ function hitungBersih(j){
   const biayaCetak = Number(j.biayaCetak)||0;
   const honorTim = Number(j.honorTim)||0;
   const diskon = Number(j.diskon)||0;
-  const sedekah = Number(j.sedekahNominal)||0;
-  return penghasilan - biayaCetak - honorTim - diskon - sedekah;
+  // Sedekah baru dikurangkan dari Penghasilan Bersih setelah statusnya "Sudah" (belum
+  // dianggap pengeluaran selama masih "Belum" disedekahkan).
+  const sedekah = j.sedekahStatus==='Sudah' ? (Number(j.sedekahNominal)||0) : 0;
+  // Setoran ke Shia Makeup hanya relevan (dan dikurangkan) kalau job ini memang dari vendor Shia Makeup.
+  const setoranShia = j.vendor==='Shia Makeup' ? (Number(j.setoranShia)||0) : 0;
+  return penghasilan - biayaCetak - honorTim - diskon - sedekah - setoranShia;
+}
+// Sisa pembayaran = total Penghasilan Dari Klien/Mitra dikurangi DP yang sudah diterima.
+function hitungSisaPembayaran(j){
+  const penghasilan = Number(j.penghasilan)||0;
+  const dp = Number(j.dp)||0;
+  return penghasilan - dp;
 }
 
 /* ---------- NAV ---------- */
@@ -1699,16 +1717,16 @@ function buildJobFormHtml(j){
           <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
             <input type="text" inputmode="numeric" class="money-input" name="sedekahNominal" id="sedekahNominalInput" value="${fmtRibuan(d.sedekahNominal||hitungSedekah(d))}" readonly>
           </div>
-          <div class="field-hint">Rp20.000 jika vendor Shia Makeup, atau kelipatan Rp10.000 per Rp100.000 dari (Penghasilan − Honor Tim − Biaya Cetak − Diskon).</div>
+          <div class="field-hint">Rp20.000 jika vendor Shia Makeup, atau kelipatan Rp10.000 per Rp100.000 dari (Penghasilan − Honor Tim − Biaya Cetak − Diskon). Baru dikurangkan dari Penghasilan Bersih setelah Status Sedekah "Sudah".</div>
         </div>
         <div>
           <label>Status Sedekah</label>
-          <select name="sedekahStatus">${opt(['Belum','Sudah'], d.sedekahStatus)}</select>
+          <select name="sedekahStatus" onchange="updateCalc()">${opt(['Belum','Sudah'], d.sedekahStatus)}</select>
         </div>
         <div id="shiaSetoranWrap" class="full" style="display:${d.vendor==='Shia Makeup'?'block':'none'}">
           <label>Setoran ke Shia Makeup</label>
           <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
-            <input type="text" inputmode="numeric" class="money-input" name="setoranShia" value="${fmtRibuan(d.setoranShia)}" oninput="handleMoneyInput(this);">
+            <input type="text" inputmode="numeric" class="money-input" name="setoranShia" value="${fmtRibuan(d.setoranShia)}" oninput="handleMoneyInput(this); updateCalc();">
           </div>
         </div>
       </div>
@@ -1796,6 +1814,8 @@ function updateCalc(){
     biayaCetak: parseRibuan(fd.get('biayaCetak')),
     honorTim: parseRibuan(fd.get('honorTim')),
     diskon: parseRibuan(fd.get('diskon')),
+    sedekahStatus: fd.get('sedekahStatus'),
+    setoranShia: parseRibuan(fd.get('setoranShia')),
   };
   const sedekah = hitungSedekah(tmp);
   const sedekahInput = document.getElementById('sedekahNominalInput');
@@ -1818,6 +1838,10 @@ function viewDaftar(){
           <option value="">Semua Jenis Acara</option>
           ${JENIS_ACARA_LIST.map(j=>`<option value="${j}">${j}</option>`).join('')}
         </select>
+        <select id="filterBulan">
+          <option value="">Semua Bulan</option>
+          ${getAvailableMonthKeys().slice().reverse().map(k=>`<option value="${k}">${monthKeyLabel(k)}</option>`).join('')}
+        </select>
         <button class="btn btn-outline" id="btnCopyPerBulan">📋 Salin per Bulan</button>
         <button class="btn btn-primary" id="btnInputJob2">+ Job Baru</button>
       </div>
@@ -1831,12 +1855,14 @@ function renderDaftarTable(){
   if(!wrap) return;
   const q = (document.getElementById('searchBox')?.value||'').toLowerCase();
   const fj = document.getElementById('filterJenis')?.value||'';
+  const fb = document.getElementById('filterBulan')?.value||'';
   let list = sortedJobsWithNo();
   if(q){
     list = list.filter(j=>[j.namaKlien,j.desa,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket]
       .join(' ').toLowerCase().includes(q));
   }
   if(fj) list = list.filter(j=>j.jenisAcara===fj);
+  if(fb) list = list.filter(j=>j.tanggalAcara && j.tanggalAcara.slice(0,7)===fb);
 
   if(list.length===0){
     wrap.innerHTML = `<div class="empty-state"><div class="em">📭</div>Belum ada job yang cocok / tercatat.</div>`;
@@ -1913,7 +1939,7 @@ function buildMonthlyCopyText(selectedKeys){
 
     const items = monthJobs.map((j,i)=>{
       const tglNum = Number(j.tanggalAcara.slice(8,10));
-      const namaHari = new Intl.DateTimeFormat('id-ID',{weekday:'long'}).format(new Date(j.tanggalAcara+'T00:00:00'));
+      const namaHari = namaHariID(new Date(j.tanggalAcara+'T00:00:00'));
       const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : (j.jenisAcara||'-');
       const desa = j.desa || '-';
       const tim = (j.timFreelancer||'').trim();
@@ -2415,6 +2441,7 @@ function openJobDetailModal(jobId){
     {title:'Keuangan', rows:[
       ['DP', fmtRp(j.dp)],
       ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
+      ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
       ['Biaya Cetak', fmtRp(j.biayaCetak)],
       ['Honor Tim', fmtRp(j.honorTim)],
       ['Diskon', fmtRp(j.diskon)],
@@ -2651,6 +2678,7 @@ function copyJobDetails(jobId){
     {title:'💰 Keuangan', rows:[
       ['DP', fmtRp(j.dp)],
       ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
+      ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
       ['Biaya Cetak', fmtRp(j.biayaCetak)],
       ['Honor Tim', fmtRp(j.honorTim)],
       ['Diskon', fmtRp(j.diskon)],
@@ -3344,6 +3372,7 @@ function attachHandlers(){
     renderDaftarTable();
     document.getElementById('searchBox')?.addEventListener('input', renderDaftarTable);
     document.getElementById('filterJenis')?.addEventListener('change', renderDaftarTable);
+    document.getElementById('filterBulan')?.addEventListener('change', renderDaftarTable);
   }
 
   // KALENDER
@@ -3492,8 +3521,25 @@ function downloadRekapImage(){
    sama sekali) TIDAK diberi pop-up ini, karena bukan "pembaruan"
    bagi mereka — versi langsung dicatat diam-diam.
 ========================================================= */
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.1';
 const CHANGELOG = [
+  {
+    version: '1.5.1',
+    tanggal: '28 Agustus 2026',
+    items: [
+      'Penghasilan Bersih kini juga dikurangi Setoran ke Shia Makeup (kalau vendornya Shia Makeup).',
+      'Sedekah tidak lagi otomatis mengurangi Penghasilan Bersih selama Status Sedekah masih "Belum" — baru dikurangkan setelah statusnya diubah jadi "Sudah".'
+    ]
+  },
+  {
+    version: '1.5.0',
+    tanggal: '28 Agustus 2026',
+    items: [
+      'Penulisan nama hari kini konsisten "Ahad" (bukan "Minggu") dan "Jum\'at" (bukan "Jumat") di seluruh aplikasi.',
+      'Menu Daftar Job kini punya filter per bulan, jadi bisa langsung menyaring daftar job untuk satu bulan tertentu.',
+      'Detail Job kini menampilkan kolom Sisa Pembayaran (Penghasilan Dari Klien/Mitra dikurangi DP).'
+    ]
+  },
   {
     version: '1.4.0',
     tanggal: '28 Agustus 2026',
@@ -3865,9 +3911,7 @@ function updateHeaderClock(){
   const el = document.getElementById('headerClock');
   if(!el) return;
   const now = new Date();
-  let hari = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', weekday:'long'}).format(now);
-  if(hari === 'Minggu') hari = 'Ahad'; // sesuai preferensi penamaan hari
-  if(hari === 'Jumat') hari = "Jum'at"; // sesuai preferensi penulisan hari
+  const hari = namaHariID(now, {timeZone:'Asia/Jakarta'});
   const tgl = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(now); // 23 Agustus 2026
   const jamColon = new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Jakarta', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false}).format(now);
   const jam = jamColon.replaceAll(':', '.'); // format 00.00.00

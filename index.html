@@ -1730,6 +1730,10 @@ function buildJobFormHtml(j){
           </div>
         </div>
       </div>
+      <div class="calc-box" style="background:#eef3fb;">
+        <span>Sisa Pembayaran (otomatis)</span>
+        <span id="calcSisa">${fmtRp(hitungSisaPembayaran(d))}</span>
+      </div>
       <div class="calc-box">
         <span>Penghasilan Bersih (otomatis)</span>
         <span id="calcBersih">${fmtRp(hitungBersih({...d, sedekahNominal: d.sedekahNominal||hitungSedekah(d)}))}</span>
@@ -1810,6 +1814,7 @@ function updateCalc(){
   const fd = new FormData(f);
   const tmp = {
     vendor: fd.get('vendor'),
+    dp: parseRibuan(fd.get('dp')),
     penghasilan: parseRibuan(fd.get('penghasilan')),
     biayaCetak: parseRibuan(fd.get('biayaCetak')),
     honorTim: parseRibuan(fd.get('honorTim')),
@@ -1820,6 +1825,7 @@ function updateCalc(){
   const sedekah = hitungSedekah(tmp);
   const sedekahInput = document.getElementById('sedekahNominalInput');
   if(sedekahInput) sedekahInput.value = fmtRibuan(sedekah);
+  document.getElementById('calcSisa').textContent = fmtRp(hitungSisaPembayaran(tmp));
   document.getElementById('calcBersih').textContent = fmtRp(hitungBersih({...tmp, sedekahNominal:sedekah}));
 }
 
@@ -3521,8 +3527,15 @@ function downloadRekapImage(){
    sama sekali) TIDAK diberi pop-up ini, karena bukan "pembaruan"
    bagi mereka — versi langsung dicatat diam-diam.
 ========================================================= */
-const APP_VERSION = '1.5.1';
+const APP_VERSION = '1.5.2';
 const CHANGELOG = [
+  {
+    version: '1.5.2',
+    tanggal: '28 Agustus 2026',
+    items: [
+      'Kotak Sisa Pembayaran (otomatis) kini juga tampil langsung di form Input Job Baru & Edit Job, bukan hanya di halaman Detail Job — terhitung otomatis (Penghasilan Dari Klien/Mitra − DP) begitu kedua kolom itu diisi.'
+    ]
+  },
   {
     version: '1.5.1',
     tanggal: '28 Agustus 2026',

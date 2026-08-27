@@ -191,6 +191,15 @@
     background:var(--gold-pale); border-radius:10px; padding:14px 16px; margin-top:6px;
     display:flex; justify-content:space-between; align-items:center; font-weight:700;
   }
+  /* Kolom uang berformat "Rp" + otomatis titik ribuan */
+  .rp-input-wrap{position:relative;}
+  .rp-input-wrap .rp-prefix{
+    position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    font-size:13.5px; color:var(--ink-soft); font-weight:700; pointer-events:none;
+  }
+  .rp-input-wrap input.money-input{padding-left:32px;}
+  input.money-input:read-only{background:#faf6e6; color:#6b6448;}
+  .field-hint{font-size:11px; color:var(--ink-soft); margin-top:4px;}
   .section-title{font-size:15px; font-weight:700; margin:26px 0 10px; color:#241f0f; display:flex; align-items:center; gap:8px;}
   .section-title:first-child{margin-top:0;}
 
@@ -996,6 +1005,7 @@ function jenisAcaraColor(jenisAcara){
 }
 const PENGIRIMAN_LIST = ['Sudah Dijemput','Sudah Diantar','Belum Diantar','Belum Dijemput'];
 const STATUS_BAYAR_LIST = ['Lunas','DP','Belum Bayar'];
+const VENDOR_LIST = ['Shia Makeup','Kaone Motret','Lainnya'];
 
 // Pemetaan kolom Excel (import/template) <-> field data job
 const EXCEL_FIELD_MAP = [
@@ -1014,13 +1024,17 @@ const EXCEL_FIELD_MAP = [
   {header:'Proses Cetak (Selesai/Belum Selesai)', field:'prosesCetak'},
   {header:'Pengiriman', field:'pengiriman'},
   {header:'Status Pembayaran', field:'statusPembayaran'},
-  {header:'Vendor', field:'vendor'},
+  {header:'Vendor (Shia Makeup/Kaone Motret/Lainnya)', field:'vendor'},
+  {header:'Vendor Lainnya (jika Vendor = Lainnya)', field:'vendorLain'},
   {header:'Tim/Freelancer', field:'timFreelancer'},
-  {header:'Penghasilan', field:'penghasilan'},
+  {header:'DP', field:'dp'},
+  {header:'Penghasilan Dari Klien/Mitra', field:'penghasilan'},
   {header:'Biaya Cetak', field:'biayaCetak'},
   {header:'Honor Tim', field:'honorTim'},
-  {header:'Sedekah Nominal', field:'sedekahNominal'},
+  {header:'Diskon', field:'diskon'},
+  {header:'Sedekah Nominal (otomatis)', field:'sedekahNominal'},
   {header:'Status Sedekah (Sudah/Belum)', field:'sedekahStatus'},
+  {header:'Setoran ke Shia Makeup', field:'setoranShia'},
   {header:'Catatan', field:'catatan'},
 ];
 
@@ -1338,6 +1352,24 @@ function fmtRp(n){
   n = Number(n)||0;
   return 'Rp ' + n.toLocaleString('id-ID');
 }
+/* ---------- Util kolom uang (input "Rp", hanya angka, titik otomatis tiap 3 digit) ---------- */
+function fmtRibuan(n){
+  const digits = String(n===undefined||n===null?'':n).replace(/[^\d]/g,'');
+  if(!digits) return '';
+  return Number(digits).toLocaleString('id-ID');
+}
+function parseRibuan(str){
+  if(str===undefined||str===null) return 0;
+  const digits = String(str).replace(/[^\d]/g,'');
+  return digits ? Number(digits) : 0;
+}
+function handleMoneyInput(el){
+  el.value = fmtRibuan(el.value);
+}
+function vendorDisplay(j){
+  if(!j) return '-';
+  return j.vendor==='Lainnya' ? (j.vendorLain||'Lainnya') : (j.vendor||'-');
+}
 function fmtTgl(iso){
   if(!iso) return '-';
   const d = new Date(iso+'T00:00:00');
@@ -1378,12 +1410,27 @@ function getJobNo(id){
   return _jobNoMap.has(id) ? _jobNoMap.get(id) : '-';
 }
 
+/* Sedekah otomatis:
+   - Vendor "Shia Makeup": tetap Rp20.000.
+   - Vendor lain: dihitung dari (Penghasilan - Honor Tim - Biaya Cetak - Diskon),
+     lalu tiap kelipatan Rp100.000 disedekahkan Rp10.000 (dibulatkan ke bawah). */
+function hitungSedekah(j){
+  if(j.vendor==='Shia Makeup') return 20000;
+  const penghasilan = Number(j.penghasilan)||0;
+  const biayaCetak = Number(j.biayaCetak)||0;
+  const honorTim = Number(j.honorTim)||0;
+  const diskon = Number(j.diskon)||0;
+  const dasar = penghasilan - honorTim - biayaCetak - diskon;
+  if(dasar<=0) return 0;
+  return Math.floor(dasar/100000)*10000;
+}
 function hitungBersih(j){
   const penghasilan = Number(j.penghasilan)||0;
   const biayaCetak = Number(j.biayaCetak)||0;
   const honorTim = Number(j.honorTim)||0;
+  const diskon = Number(j.diskon)||0;
   const sedekah = Number(j.sedekahNominal)||0;
-  return penghasilan - biayaCetak - honorTim - sedekah;
+  return penghasilan - biayaCetak - honorTim - diskon - sedekah;
 }
 
 /* ---------- NAV ---------- */
@@ -1526,7 +1573,8 @@ function buildJobFormHtml(j){
     tanggalAcara:'', desa:'', kecamatan:'', kabupaten:'', provinsi:'',
     jenisAcara:'', jenisAcaraLain:'', namaKlien:'', noWhatsapp:'', paket:'', deskripsiPaket:'',
     prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Diantar',
-    vendor:'', timFreelancer:'', biayaCetak:'', honorTim:'', penghasilan:'', sedekahNominal:'', sedekahStatus:'Belum',
+    vendor:'', vendorLain:'', timFreelancer:'', dp:'', biayaCetak:'', honorTim:'', diskon:'',
+    penghasilan:'', sedekahNominal:'', sedekahStatus:'Belum', setoranShia:'',
     statusPembayaran:'Belum Bayar', catatan:''
   };
   const opt = (list,val)=>list.map(o=>`<option value="${o}" ${o===val?'selected':''}>${o}</option>`).join('');
@@ -1599,7 +1647,14 @@ function buildJobFormHtml(j){
         </div>
         <div>
           <label>Vendor Asal Job</label>
-          <input type="text" name="vendor" value="${escapeHtml(d.vendor)}" placeholder="Nama vendor / relasi">
+          <select name="vendor" onchange="onVendorChange(this)">
+            <option value="">Pilih vendor</option>
+            ${opt(VENDOR_LIST, d.vendor)}
+          </select>
+        </div>
+        <div id="vendorLainWrap" style="display:${d.vendor==='Lainnya'?'block':'none'}">
+          <label>Sebutkan Vendor Lainnya</label>
+          <input type="text" name="vendorLain" value="${escapeHtml(d.vendorLain||'')}" placeholder="Nama vendor / relasi">
         </div>
         <div>
           <label>Tim / Freelancer</label>
@@ -1609,18 +1664,57 @@ function buildJobFormHtml(j){
 
       <div class="section-title">💰 Keuangan</div>
       <div class="form-grid">
-        <div><label>Penghasilan (dari klien)</label><input type="number" min="0" name="penghasilan" value="${d.penghasilan}" oninput="updateCalc()"></div>
-        <div><label>Biaya Cetak</label><input type="number" min="0" name="biayaCetak" value="${d.biayaCetak}" oninput="updateCalc()"></div>
-        <div><label>Honor Tim</label><input type="number" min="0" name="honorTim" value="${d.honorTim}" oninput="updateCalc()"></div>
-        <div><label>Sedekah (nominal)</label><input type="number" min="0" name="sedekahNominal" value="${d.sedekahNominal}" oninput="updateCalc()"></div>
+        <div>
+          <label>DP</label>
+          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
+            <input type="text" inputmode="numeric" class="money-input" name="dp" value="${fmtRibuan(d.dp)}" oninput="handleMoneyInput(this); updateCalc();">
+          </div>
+        </div>
+        <div>
+          <label>Penghasilan Dari Klien/Mitra</label>
+          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
+            <input type="text" inputmode="numeric" class="money-input" name="penghasilan" value="${fmtRibuan(d.penghasilan)}" oninput="handleMoneyInput(this); updateCalc();">
+          </div>
+        </div>
+        <div>
+          <label>Biaya Cetak</label>
+          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
+            <input type="text" inputmode="numeric" class="money-input" name="biayaCetak" value="${fmtRibuan(d.biayaCetak)}" oninput="handleMoneyInput(this); updateCalc();">
+          </div>
+        </div>
+        <div>
+          <label>Honor Tim</label>
+          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
+            <input type="text" inputmode="numeric" class="money-input" name="honorTim" value="${fmtRibuan(d.honorTim)}" oninput="handleMoneyInput(this); updateCalc();">
+          </div>
+        </div>
+        <div>
+          <label>Diskon</label>
+          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
+            <input type="text" inputmode="numeric" class="money-input" name="diskon" value="${fmtRibuan(d.diskon)}" oninput="handleMoneyInput(this); updateCalc();">
+          </div>
+        </div>
+        <div>
+          <label>Sedekah (otomatis)</label>
+          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
+            <input type="text" inputmode="numeric" class="money-input" name="sedekahNominal" id="sedekahNominalInput" value="${fmtRibuan(d.sedekahNominal||hitungSedekah(d))}" readonly>
+          </div>
+          <div class="field-hint">Rp20.000 jika vendor Shia Makeup, atau kelipatan Rp10.000 per Rp100.000 dari (Penghasilan − Honor Tim − Biaya Cetak − Diskon).</div>
+        </div>
         <div>
           <label>Status Sedekah</label>
           <select name="sedekahStatus">${opt(['Belum','Sudah'], d.sedekahStatus)}</select>
         </div>
+        <div id="shiaSetoranWrap" class="full" style="display:${d.vendor==='Shia Makeup'?'block':'none'}">
+          <label>Setoran ke Shia Makeup</label>
+          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
+            <input type="text" inputmode="numeric" class="money-input" name="setoranShia" value="${fmtRibuan(d.setoranShia)}" oninput="handleMoneyInput(this);">
+          </div>
+        </div>
       </div>
       <div class="calc-box">
         <span>Penghasilan Bersih (otomatis)</span>
-        <span id="calcBersih">${fmtRp(hitungBersih(d))}</span>
+        <span id="calcBersih">${fmtRp(hitungBersih({...d, sedekahNominal: d.sedekahNominal||hitungSedekah(d)}))}</span>
       </div>
 
       <div class="section-title">📝 Catatan Tambahan</div>
@@ -1655,6 +1749,13 @@ function bindJobFormEvents(scopeEl, onDone){
     Object.keys(data).forEach(k=>{
       if(typeof data[k] === 'string') data[k] = data[k].trim();
     });
+    // Kolom uang: ubah dari teks berformat "3.000.000" menjadi angka murni sebelum disimpan.
+    ['dp','penghasilan','biayaCetak','honorTim','diskon','sedekahNominal','setoranShia'].forEach(k=>{
+      data[k] = parseRibuan(data[k]);
+    });
+    // Sedekah selalu dihitung ulang otomatis di titik penyimpanan, supaya konsisten
+    // walau kolom lain sempat diubah tanpa memicu event input.
+    data.sedekahNominal = hitungSedekah(data);
     if(editingId){
       const idx = jobs.findIndex(x=>x.id===editingId);
       jobs[idx] = {...jobs[idx], ...data};
@@ -1680,15 +1781,26 @@ function bindJobFormEvents(scopeEl, onDone){
     }
   });
 }
+function onVendorChange(sel){
+  document.getElementById('vendorLainWrap').style.display = sel.value==='Lainnya' ? 'block' : 'none';
+  document.getElementById('shiaSetoranWrap').style.display = sel.value==='Shia Makeup' ? 'block' : 'none';
+  updateCalc();
+}
 function updateCalc(){
   const f = document.getElementById('jobForm');
   if(!f) return;
   const fd = new FormData(f);
   const tmp = {
-    penghasilan:fd.get('penghasilan'), biayaCetak:fd.get('biayaCetak'),
-    honorTim:fd.get('honorTim'), sedekahNominal:fd.get('sedekahNominal')
+    vendor: fd.get('vendor'),
+    penghasilan: parseRibuan(fd.get('penghasilan')),
+    biayaCetak: parseRibuan(fd.get('biayaCetak')),
+    honorTim: parseRibuan(fd.get('honorTim')),
+    diskon: parseRibuan(fd.get('diskon')),
   };
-  document.getElementById('calcBersih').textContent = fmtRp(hitungBersih(tmp));
+  const sedekah = hitungSedekah(tmp);
+  const sedekahInput = document.getElementById('sedekahNominalInput');
+  if(sedekahInput) sedekahInput.value = fmtRibuan(sedekah);
+  document.getElementById('calcBersih').textContent = fmtRp(hitungBersih({...tmp, sedekahNominal:sedekah}));
 }
 
 /* =========================================================
@@ -1721,7 +1833,7 @@ function renderDaftarTable(){
   const fj = document.getElementById('filterJenis')?.value||'';
   let list = sortedJobsWithNo();
   if(q){
-    list = list.filter(j=>[j.namaKlien,j.desa,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.paket,j.deskripsiPaket]
+    list = list.filter(j=>[j.namaKlien,j.desa,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket]
       .join(' ').toLowerCase().includes(q));
   }
   if(fj) list = list.filter(j=>j.jenisAcara===fj);
@@ -2199,7 +2311,7 @@ function openDateModal(dateIso){
         <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(j.desa||'-')}, ${escapeHtml(j.kecamatan||'-')}, ${escapeHtml(j.kabupaten||'-')}</span></div>
         <div class="mj-row"><span>Paket</span><span>${escapeHtml(j.paket||'-')}</span></div>
         <div class="mj-row"><span>WhatsApp</span><span>${escapeHtml(j.noWhatsapp||'-')}</span></div>
-        <div class="mj-row"><span>Vendor</span><span>${escapeHtml(j.vendor||'-')}</span></div>
+        <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
         <div class="mj-row"><span>Tim/Freelancer</span><span>${escapeHtml(j.timFreelancer||'-')}</span></div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" data-gcal="${j.id}">🗓️ Tambah ke Google Calendar</button>
@@ -2297,14 +2409,17 @@ function openJobDetailModal(jobId){
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
       ['Status Pembayaran', j.statusPembayaran||'-'],
-      ['Vendor', j.vendor||'-'],
+      ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
     ]},
     {title:'Keuangan', rows:[
-      ['Penghasilan', fmtRp(j.penghasilan)],
+      ['DP', fmtRp(j.dp)],
+      ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
       ['Biaya Cetak', fmtRp(j.biayaCetak)],
       ['Honor Tim', fmtRp(j.honorTim)],
+      ['Diskon', fmtRp(j.diskon)],
       ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
+      ...(j.vendor==='Shia Makeup' ? [['Setoran ke Shia Makeup', fmtRp(j.setoranShia)]] : []),
       ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
     ]},
     {title:'Catatan', rows:[
@@ -2382,7 +2497,7 @@ function buildJobPosterHtml(j){
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
       ['Status Pembayaran', j.statusPembayaran||'-'],
-      ['Vendor', j.vendor||'-'],
+      ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
     ]},
     {title:'Keuangan', rows:[
@@ -2530,14 +2645,17 @@ function copyJobDetails(jobId){
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
       ['Status Pembayaran', j.statusPembayaran||'-'],
-      ['Vendor', j.vendor||'-'],
+      ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
     ]},
     {title:'💰 Keuangan', rows:[
-      ['Penghasilan', fmtRp(j.penghasilan)],
+      ['DP', fmtRp(j.dp)],
+      ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
       ['Biaya Cetak', fmtRp(j.biayaCetak)],
       ['Honor Tim', fmtRp(j.honorTim)],
+      ['Diskon', fmtRp(j.diskon)],
       ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
+      ...(j.vendor==='Shia Makeup' ? [['Setoran ke Shia Makeup', fmtRp(j.setoranShia)]] : []),
       ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
     ]},
   ];
@@ -3094,12 +3212,16 @@ function downloadExcelTemplate(){
     'Proses Cetak (Selesai/Belum Selesai)':'Belum Selesai',
     'Pengiriman':'Belum Diantar',
     'Status Pembayaran':'DP',
-    'Vendor':'Nama Vendor',
-    'Penghasilan':3000000,
+    'Vendor (Shia Makeup/Kaone Motret/Lainnya)':'Kaone Motret',
+    'Vendor Lainnya (jika Vendor = Lainnya)':'',
+    'DP':1000000,
+    'Penghasilan Dari Klien/Mitra':3000000,
     'Biaya Cetak':300000,
     'Honor Tim':500000,
-    'Sedekah Nominal':50000,
+    'Diskon':0,
+    'Sedekah Nominal (otomatis)':220000,
     'Status Sedekah (Sudah/Belum)':'Belum',
+    'Setoran ke Shia Makeup':'',
     'Catatan':''
   };
   const ws = XLSX.utils.json_to_sheet([exampleRow], {header:headers});
@@ -3115,8 +3237,10 @@ function downloadExcelTemplate(){
     ['6. Pilihan Pengiriman: '+PENGIRIMAN_LIST.join(', ')],
     ['7. Pilihan Status Pembayaran: '+STATUS_BAYAR_LIST.join(', ')],
     ['8. Pilihan Status Sedekah: Sudah, Belum'],
-    ['9. Kolom angka (Penghasilan, Biaya Cetak, Honor Tim, Sedekah Nominal) diisi angka saja, tanpa titik/koma/Rp.'],
-    ['10. Baris tanpa isian Tanggal Acara akan otomatis dilewati saat import.'],
+    ['9. Pilihan Vendor: '+VENDOR_LIST.join(', ')+'. Jika Lainnya, isi juga kolom "Vendor Lainnya".'],
+    ['10. Kolom angka (DP, Penghasilan, Biaya Cetak, Honor Tim, Diskon, Sedekah Nominal, Setoran ke Shia Makeup) diisi angka saja, tanpa titik/koma/Rp.'],
+    ['11. Sedekah Nominal otomatis dihitung ulang oleh aplikasi setiap job dibuka/disimpan lewat form (Rp20.000 jika vendor Shia Makeup, atau kelipatan Rp10.000 per Rp100.000 dari Penghasilan-Honor Tim-Biaya Cetak-Diskon). Nilai di Excel hanya dipakai sebagai cadangan awal.'],
+    ['12. Baris tanpa isian Tanggal Acara akan otomatis dilewati saat import.'],
   ]);
   wsInfo['!cols'] = [{wch:70}];
   const wb = XLSX.utils.book_new();
@@ -3368,8 +3492,18 @@ function downloadRekapImage(){
    sama sekali) TIDAK diberi pop-up ini, karena bukan "pembaruan"
    bagi mereka — versi langsung dicatat diam-diam.
 ========================================================= */
-const APP_VERSION = '1.3.2';
+const APP_VERSION = '1.4.0';
 const CHANGELOG = [
+  {
+    version: '1.4.0',
+    tanggal: '28 Agustus 2026',
+    items: [
+      'Vendor Asal Job kini dipilih lewat dropdown (Shia Makeup / Kaone Motret / Lainnya), lengkap dengan kolom isian manual kalau pilih "Lainnya".',
+      'Pencatatan Keuangan lebih detail: kini ada kolom DP, Diskon, dan Setoran ke Shia Makeup (muncul otomatis kalau vendornya Shia Makeup).',
+      'Semua kolom uang kini berformat "Rp" dan otomatis diberi titik ribuan saat mengetik — hanya bisa diisi angka.',
+      'Sedekah kini dihitung otomatis: Rp20.000 kalau job dari Shia Makeup, atau kelipatan Rp10.000 per Rp100.000 dari (Penghasilan − Honor Tim − Biaya Cetak − Diskon) untuk vendor lainnya. Penghasilan Bersih ikut terhitung otomatis mengikuti sedekah ini.'
+    ]
+  },
   {
     version: '1.3.2',
     tanggal: '27 Agustus 2026',

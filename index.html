@@ -506,6 +506,7 @@
   .ulasan-card{background:#fffef9; border:1px solid var(--line); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow);}
   .ulasan-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;}
   .ulasan-name{font-family:'Fraunces',serif; font-weight:700; font-size:16px; color:#241f0f;}
+  .ulasan-sub{font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-deep,#8a6a10); margin-top:2px;}
   .ulasan-stars{margin-top:4px; color:#e5dcb0; letter-spacing:2px; font-size:15px;}
   .ulasan-stars .on{color:var(--gold);}
   .ulasan-date{font-size:11.5px; color:var(--ink-soft); white-space:nowrap; padding-top:2px;}
@@ -3073,6 +3074,7 @@ function viewUlasan(){
           <div class="ulasan-card-top">
             <div>
               <div class="ulasan-name">${escapeHtml(u.nama_klien||'Klien')} ${u.dipublikasikan ? '<span class="badge badge-ok">Terpublikasi</span>' : '<span class="badge badge-warn">Belum Dipublikasi</span>'}</div>
+              <div class="ulasan-sub">Wedding</div>
               <div class="ulasan-stars">${starsHtml(u.rating)}</div>
             </div>
             <div class="ulasan-date">${fmtUlasanDate(u.created_at)}</div>
@@ -3562,8 +3564,16 @@ function downloadRekapImage(){
    sama sekali) TIDAK diberi pop-up ini, karena bukan "pembaruan"
    bagi mereka — versi langsung dicatat diam-diam.
 ========================================================= */
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.6.1';
 const CHANGELOG = [
+  {
+    version: '1.6.1',
+    tanggal: '28 Agustus 2026',
+    items: [
+      'Kartu ulasan di menu Saran & Penilaian kini menampilkan label "Wedding" di bawah nama klien, sama seperti tampilan testimoni di pricelist wedding.',
+      'Pricelist wedding kini punya tombol "Testimoni" di navigasi atas (sejajar dengan Daftar Harga, Add-On, dan Syarat & Ketentuan) untuk langsung menuju ke bagian testimoni.'
+    ]
+  },
   {
     version: '1.6.0',
     tanggal: '28 Agustus 2026',

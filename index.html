@@ -854,12 +854,20 @@ const SYNC_ROW_ID = 'main';
      nama_klien text not null,
      rating smallint not null,
      komentar text,
+     dipublikasikan boolean not null default false,
      created_at timestamptz not null default now()
    );
    alter table kaone_motret_ulasan enable row level security;
    create policy "Publik boleh kirim ulasan" on kaone_motret_ulasan for insert to anon with check (true);
    create policy "Publik boleh baca ulasan" on kaone_motret_ulasan for select to anon using (true);
    create policy "Publik boleh hapus ulasan" on kaone_motret_ulasan for delete to anon using (true);
+   create policy "Publik boleh update status publikasi ulasan" on kaone_motret_ulasan for update to anon using (true) with check (true);
+
+   Kalau tabelnya SUDAH ada dari sebelumnya (dibuat sebelum kolom "dipublikasikan" ini
+   ditambahkan), cukup jalankan di SQL Editor:
+
+   alter table kaone_motret_ulasan add column if not exists dipublikasikan boolean not null default false;
+   create policy "Publik boleh update status publikasi ulasan" on kaone_motret_ulasan for update to anon using (true) with check (true);
 */
 const ULASAN_TABLE = 'kaone_motret_ulasan';
 
@@ -986,6 +994,29 @@ async function deleteUlasanItem(id){
   }catch(e){
     console.error('Gagal menghapus ulasan di cloud', e);
     toast('Terhapus di layar ini, tapi gagal sinkron hapus ke cloud');
+  }
+}
+/* Publish / batalkan publish — ulasan dengan dipublikasikan=true akan tampil di
+   halaman pricelist wedding (index.html), yang membaca tabel Supabase yang sama. */
+async function toggleUlasanPublish(id, publish){
+  const idx = ulasanList.findIndex(x=>String(x.id)===String(id));
+  if(idx===-1) return;
+  const before = ulasanList[idx].dipublikasikan;
+  ulasanList[idx] = {...ulasanList[idx], dipublikasikan: publish};
+  saveUlasanLocalCache();
+  render();
+  if(!cloudSyncEnabled){ toast(publish ? 'Ulasan dipublikasikan' : 'Publikasi ulasan dibatalkan'); return; }
+  try{
+    const { error } = await supabaseClient.from(ULASAN_TABLE).update({ dipublikasikan: publish }).eq('id', id);
+    if(error) throw error;
+    toast(publish ? 'Ulasan dipublikasikan ke pricelist wedding' : 'Publikasi ulasan dibatalkan');
+  }catch(e){
+    console.error('Gagal mengubah status publikasi ulasan (pastikan kolom "dipublikasikan" sudah ada di tabel)', e);
+    // Batalkan perubahan di layar kalau gagal disimpan ke cloud, supaya tampilan tetap sesuai data sebenarnya.
+    ulasanList[idx] = {...ulasanList[idx], dipublikasikan: before};
+    saveUlasanLocalCache();
+    render();
+    alert('Gagal menyimpan status publikasi. Pastikan kolom "dipublikasikan" sudah dibuat di tabel kaone_motret_ulasan (lihat komentar di kode dekat SUPABASE_URL).');
   }
 }
 
@@ -3011,8 +3042,9 @@ function viewUlasan(){
     </div>
     <p style="color:var(--ink-soft); font-size:12.5px; margin:-6px 0 18px;">
       Saran, komentar, dan penilaian bintang yang dikirim klien lewat formulir di halaman pricelist wedding — otomatis
-      tersinkron dari cloud. Tekan <b>Buat Gambar</b> untuk mengunduh desain testimoni siap posting ke Instagram Story,
-      supaya calon klien lain makin percaya.
+      tersinkron dari cloud. Ulasan baru tidak langsung tampil ke publik — tekan <b>Publish ke Pricelist</b> pada
+      ulasan yang ingin ditampilkan di halaman pricelist wedding. Tekan <b>Buat Gambar</b> untuk mengunduh desain
+      testimoni siap posting ke Instagram Story, supaya calon klien lain makin percaya.
     </p>
     ${!cloudSyncEnabled ? `
       <div class="info-box">⚠️ Sinkronisasi cloud belum aktif, jadi daftar ulasan mungkin belum lengkap. Cek konfigurasi Supabase.</div>
@@ -3040,13 +3072,16 @@ function viewUlasan(){
         <div class="ulasan-card">
           <div class="ulasan-card-top">
             <div>
-              <div class="ulasan-name">${escapeHtml(u.nama_klien||'Klien')}</div>
+              <div class="ulasan-name">${escapeHtml(u.nama_klien||'Klien')} ${u.dipublikasikan ? '<span class="badge badge-ok">Terpublikasi</span>' : '<span class="badge badge-warn">Belum Dipublikasi</span>'}</div>
               <div class="ulasan-stars">${starsHtml(u.rating)}</div>
             </div>
             <div class="ulasan-date">${fmtUlasanDate(u.created_at)}</div>
           </div>
           <div class="ulasan-comment">${escapeHtml(u.komentar || '(Tidak ada komentar tertulis)')}</div>
           <div class="ulasan-actions">
+            ${u.dipublikasikan
+              ? `<button type="button" class="btn btn-outline" data-ulasan-unpublish="${u.id}">↩️ Batalkan Publish</button>`
+              : `<button type="button" class="btn btn-primary" data-ulasan-publish="${u.id}">📢 Publish ke Pricelist</button>`}
             <button type="button" class="btn btn-outline" data-ulasan-image="${u.id}">🖼️ Buat Gambar</button>
             <button type="button" class="icon-btn icon-btn-danger" data-ulasan-delete="${u.id}">🗑️ Hapus</button>
           </div>
@@ -3527,8 +3562,16 @@ function downloadRekapImage(){
    sama sekali) TIDAK diberi pop-up ini, karena bukan "pembaruan"
    bagi mereka — versi langsung dicatat diam-diam.
 ========================================================= */
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.6.0';
 const CHANGELOG = [
+  {
+    version: '1.6.0',
+    tanggal: '28 Agustus 2026',
+    items: [
+      'Ulasan klien kini tidak langsung tampil ke publik. Ada tombol "Publish ke Pricelist" (dan "Batalkan Publish") di setiap kartu ulasan pada menu Saran & Penilaian.',
+      'Hanya ulasan yang sudah di-publish yang akan muncul di halaman pricelist wedding.'
+    ]
+  },
   {
     version: '1.5.2',
     tanggal: '28 Agustus 2026',
@@ -3899,6 +3942,12 @@ document.addEventListener('click', (e)=>{
 
   const ulasanImageBtn = e.target.closest('[data-ulasan-image]');
   if(ulasanImageBtn){ downloadUlasanImage(ulasanImageBtn.dataset.ulasanImage); return; }
+
+  const ulasanPublishBtn = e.target.closest('[data-ulasan-publish]');
+  if(ulasanPublishBtn){ toggleUlasanPublish(ulasanPublishBtn.dataset.ulasanPublish, true); return; }
+
+  const ulasanUnpublishBtn = e.target.closest('[data-ulasan-unpublish]');
+  if(ulasanUnpublishBtn){ toggleUlasanPublish(ulasanUnpublishBtn.dataset.ulasanUnpublish, false); return; }
 
   const ulasanDeleteBtn = e.target.closest('[data-ulasan-delete]');
   if(ulasanDeleteBtn){ deleteUlasanItem(ulasanDeleteBtn.dataset.ulasanDelete); return; }

@@ -167,7 +167,7 @@
   .form-grid .full{grid-column:1/-1;}
   @media(max-width:720px){.form-grid{grid-template-columns:1fr;}}
   label{font-size:12.5px; font-weight:600; color:#4a4530; display:block; margin-bottom:5px; letter-spacing:.2px;}
-  input[type=text],input[type=date],input[type=number],input[type=tel],select,textarea{
+  input[type=text],input[type=date],input[type=number],input[type=tel],input[type=password],select,textarea{
     width:100%; padding:10px 12px; border:1.5px solid #e5ddc0; border-radius:9px; font-size:14px;
     font-family:inherit; background:#fffefb; color:var(--ink); transition:.15s;
   }
@@ -209,9 +209,21 @@
   }
   .maps-input-wrap input.maps-input{padding-left:34px; width:100%; box-sizing:border-box;}
   .maps-input-wrap .maps-open-btn{
-    flex-shrink:0; white-space:nowrap; padding:0 16px;
-    display:inline-flex; align-items:center; gap:6px;
+    flex-shrink:0; white-space:nowrap; padding:0 20px;
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    color:#231f0f; border:none; font-weight:700; font-size:13.5px;
+    border-radius:10px; box-shadow:0 6px 16px rgba(212,175,0,.3);
   }
+  .maps-input-wrap .maps-open-btn:hover{box-shadow:0 9px 20px rgba(212,175,0,.42);}
+  .maps-input-wrap .maps-open-btn:active{box-shadow:0 3px 10px rgba(212,175,0,.3);}
+  /* Kotak ringkasan jarak & saran transport (di bawah kolom Titik Koordinat) */
+  .jarak-box{
+    background:var(--gold-pale); border-radius:10px; padding:12px 16px; margin-top:10px;
+    display:flex; flex-direction:column; gap:7px;
+  }
+  .jarak-box .jr-row{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:12.5px; font-weight:600; color:#5c4a12;}
+  .jarak-box .jr-row b{font-weight:700; color:#241f0f; white-space:nowrap;}
   .section-title{font-size:15px; font-weight:700; margin:26px 0 10px; color:#241f0f; display:flex; align-items:center; gap:8px;}
   .section-title:first-child{margin-top:0;}
 
@@ -1236,6 +1248,7 @@ const EXCEL_FIELD_MAP = [
   {header:'Kabupaten', field:'kabupaten'},
   {header:'Provinsi', field:'provinsi'},
   {header:'Link Maps', field:'linkMaps'},
+  {header:'Titik Koordinat (Lat, Lng)', field:'koordinat'},
   {header:'Proses Edit (Selesai/Belum Selesai)', field:'prosesEdit'},
   {header:'Proses Cetak (Selesai/Belum Selesai)', field:'prosesCetak'},
   {header:'Pengiriman', field:'pengiriman'},
@@ -1667,6 +1680,59 @@ function hitungSisaPembayaran(j){
   return penghasilan - dp;
 }
 
+/* =========================================================
+   PERHITUNGAN JARAK (dari Titik Koordinat job)
+   Titik acuan = lokasi utama Kaone Motret. Jarak dihitung garis lurus
+   (rumus Haversine) dari titik acuan ke koordinat yang diisi di form job,
+   lalu dipakai untuk menyarankan tambahan biaya transport (Rp100.000/50km).
+========================================================= */
+const ORIGIN_COORD = { lat: 1.4589317712838183, lng: 99.64406954232793 };
+const TARIF_TRANSPORT_PER_KM = 100000 / 50; // Rp2.000/km, setara Rp100rb per 50km
+
+// Menerima format bebas seperti "1.458931, 99.644069" atau "1.458931 99.644069".
+function parseCoordString(str){
+  if(!str) return null;
+  const m = String(str).trim().match(/(-?\d+(?:[.,]\d+)?)\s*[, ]\s*(-?\d+(?:[.,]\d+)?)/);
+  if(!m) return null;
+  const lat = parseFloat(m[1].replace(',', '.'));
+  const lng = parseFloat(m[2].replace(',', '.'));
+  if(isNaN(lat) || isNaN(lng)) return null;
+  if(Math.abs(lat)>90 || Math.abs(lng)>180) return null;
+  return {lat, lng};
+}
+function haversineKm(a, b){
+  const R = 6371;
+  const dLat = (b.lat-a.lat) * Math.PI/180;
+  const dLng = (b.lng-a.lng) * Math.PI/180;
+  const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1-s));
+}
+// Mengembalikan jarak (km, angka) dari titik acuan ke koordinat job, atau null jika kosong/tidak valid.
+function hitungJarakKm(j){
+  const c = parseCoordString(j && j.koordinat);
+  if(!c) return null;
+  return haversineKm(ORIGIN_COORD, c);
+}
+function fmtJarak(km){
+  if(km===null || km===undefined || isNaN(km)) return '-';
+  return km.toLocaleString('id-ID', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' km (garis lurus)';
+}
+// Saran tambahan biaya transport, dibulatkan ke Rp1.000 terdekat.
+function hitungSaranTransport(km){
+  if(km===null || km===undefined || isNaN(km)) return null;
+  return Math.round(km * TARIF_TRANSPORT_PER_KM / 1000) * 1000;
+}
+// Update tampilan jarak & saran transport secara live saat kolom Titik Koordinat diisi di form.
+function updateJarakCalc(){
+  const input = document.getElementById('koordinatInput');
+  if(!input) return;
+  const km = hitungJarakKm({koordinat: input.value});
+  const elJarak = document.getElementById('jarakValueText');
+  const elBiaya = document.getElementById('jarakBiayaText');
+  if(elJarak) elJarak.textContent = km===null ? '-' : fmtJarak(km);
+  if(elBiaya) elBiaya.textContent = km===null ? '-' : fmtRp(hitungSaranTransport(km));
+}
+
 /* ---------- NAV ---------- */
 document.getElementById('mainNav').addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-view]');
@@ -1807,7 +1873,7 @@ function viewBeranda(){
 ========================================================= */
 function buildJobFormHtml(j){
   const d = j || {
-    tanggalAcara:'', desa:'', kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'',
+    tanggalAcara:'', desa:'', kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'', koordinat:'',
     jenisAcara:'', jenisAcaraLain:'', namaKlien:'', noWhatsapp:'', paket:'', deskripsiPaket:'',
     prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Diantar',
     vendor:'', vendorLain:'', timFreelancer:'', dp:'', biayaCetak:'', honorTim:'', diskon:'',
@@ -1815,6 +1881,7 @@ function buildJobFormHtml(j){
     statusPembayaran:'Belum Bayar', catatan:''
   };
   const opt = (list,val)=>list.map(o=>`<option value="${o}" ${o===val?'selected':''}>${o}</option>`).join('');
+  const jarakAwal = hitungJarakKm(d);
 
   return `
     <h2 style="margin-top:0;">${j?'✏️ Edit Job':'📝 Input Job Baru'}</h2>
@@ -1869,9 +1936,24 @@ function buildJobFormHtml(j){
               <span class="maps-prefix">🗺️</span>
               <input type="url" inputmode="url" class="maps-input" id="linkMapsInput" name="linkMaps" value="${escapeHtml(d.linkMaps||'')}" placeholder="https://maps.app.goo.gl/... atau https://goo.gl/maps/...">
             </div>
-            <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaLinkMaps">↗️ Buka</button>
+            <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaLinkMaps">↗️ Buka Maps</button>
           </div>
           <div class="field-hint">Tempel link dari Google Maps (bagikan lokasi → salin link) supaya tim mudah menemukan lokasi acara.</div>
+        </div>
+        <div class="full">
+          <label>Titik Koordinat (untuk hitung jarak otomatis)</label>
+          <div class="maps-input-wrap">
+            <div class="maps-field">
+              <span class="maps-prefix">📍</span>
+              <input type="text" inputmode="decimal" class="maps-input" id="koordinatInput" name="koordinat" value="${escapeHtml(d.koordinat||'')}" placeholder="-1.234567, 101.234567" oninput="updateJarakCalc()">
+            </div>
+            <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaKoordinat">📍 Lihat Titik</button>
+          </div>
+          <div class="field-hint">Format: Lintang, Bujur (contoh: -1.234567, 101.234567). Di Google Maps: tekan lama titik lokasi lalu ketuk koordinat yang muncul untuk menyalinnya.</div>
+          <div class="jarak-box">
+            <div class="jr-row"><span>📏 Jarak dari Kaone Motret</span><b id="jarakValueText">${jarakAwal===null?'-':fmtJarak(jarakAwal)}</b></div>
+            <div class="jr-row"><span>🚗 Saran tambahan transport</span><b id="jarakBiayaText">${jarakAwal===null?'-':fmtRp(hitungSaranTransport(jarakAwal))}</b></div>
+          </div>
         </div>
       </div>
 
@@ -1996,6 +2078,12 @@ function bindJobFormEvents(scopeEl, onDone){
     const val = (scopeEl.querySelector('#linkMapsInput')?.value || '').trim();
     if(!val){ toast('Isi link Maps dulu sebelum dibuka'); return; }
     window.open(val, '_blank', 'noopener');
+  });
+  scopeEl.querySelector('#btnBukaKoordinat')?.addEventListener('click', ()=>{
+    const val = (scopeEl.querySelector('#koordinatInput')?.value || '').trim();
+    const c = parseCoordString(val);
+    if(!c){ toast('Isi Titik Koordinat yang valid dulu (Lintang, Bujur)'); return; }
+    window.open(`https://www.google.com/maps?q=${c.lat},${c.lng}`, '_blank', 'noopener');
   });
   form.addEventListener('submit', (e)=>{
     e.preventDefault();
@@ -2670,6 +2758,7 @@ function openJobDetailModal(jobId){
   if(!j) return;
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
   const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
+  const jarakKmDetail = hitungJarakKm(j);
   const sections = [
     {title:'Data Acara', rows:[
       ['Nama Klien', j.namaKlien||'-'],
@@ -2677,6 +2766,9 @@ function openJobDetailModal(jobId){
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
+      ['Titik Koordinat', j.koordinat||'-'],
+      ['Jarak dari Kaone Motret', fmtJarak(jarakKmDetail)],
+      ['Saran Tambahan Transport', jarakKmDetail===null?'-':fmtRp(hitungSaranTransport(jarakKmDetail))],
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
@@ -2762,12 +2854,14 @@ function buildJobPosterHtml(j){
   const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
   const col = jenisAcaraColor(j.jenisAcara);
   const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
+  const jarakKmPoster = hitungJarakKm(j);
 
   const sections = [
     {title:'Data Acara', rows:[
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
+      ['Jarak dari Kaone Motret', fmtJarak(jarakKmPoster)],
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', truncateText(j.deskripsiPaket, 160) || '-'],
@@ -2900,11 +2994,13 @@ function buildJobStoryHtml(j){
   const col = jenisAcaraColor(j.jenisAcara);
   const lokasiUmum = [j.desa, j.kecamatan, j.kabupaten].filter(Boolean).join(', ')
     || j.provinsi || '';
+  const jarakKmStory = hitungJarakKm(j);
 
   const infoRows = [
     ['Tanggal', fmtTgl(j.tanggalAcara)],
     ...(lokasiUmum ? [['Lokasi', lokasiUmum]] : []),
     ...(j.paket ? [['Paket', truncateText(j.paket, 46)]] : []),
+    ...(jarakKmStory!==null ? [['Jarak', fmtJarak(jarakKmStory)]] : []),
   ];
 
   return `
@@ -2997,6 +3093,7 @@ function copyJobDetails(jobId){
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
   const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
   const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
+  const jarakKmCopy = hitungJarakKm(j);
 
   const groups = [
     {title:'📅 Data Acara', rows:[
@@ -3005,6 +3102,9 @@ function copyJobDetails(jobId){
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
+      ['Titik Koordinat', j.koordinat||'-'],
+      ['Jarak dari Kaone Motret', fmtJarak(jarakKmCopy)],
+      ['Saran Tambahan Transport', jarakKmCopy===null?'-':fmtRp(hitungSaranTransport(jarakKmCopy))],
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
@@ -3868,8 +3968,18 @@ function downloadRekapImage(){
    sama sekali) TIDAK diberi pop-up ini, karena bukan "pembaruan"
    bagi mereka — versi langsung dicatat diam-diam.
 ========================================================= */
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.9.0';
 const CHANGELOG = [
+  {
+    version: '1.9.0',
+    tanggal: '29 Agustus 2026',
+    items: [
+      'Ditambahkan kolom "Titik Koordinat" di Lokasi Acara — isi koordinat lokasi job untuk menghitung jarak dari Kaone Motret secara otomatis, lengkap dengan saran tambahan biaya transport (Rp100.000 per 50km).',
+      'Jarak ke lokasi job kini ditampilkan di Detail Job, gambar unduhan Detail Job, dan gambar unduhan Story.',
+      'Tampilan kolom Link Maps & Titik Koordinat disamakan, dan tombol "Buka Maps"/"Lihat Titik" dipercantik dengan gaya emas Kaone Motret.',
+      'Perbaikan tampilan: kolom Password di halaman Login kini bergaya sama dengan kolom Username.'
+    ]
+  },
   {
     version: '1.8.0',
     tanggal: '28 Agustus 2026',

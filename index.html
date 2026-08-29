@@ -224,6 +224,9 @@
   }
   .jarak-box .jr-row{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:12.5px; font-weight:600; color:#5c4a12;}
   .jarak-box .jr-row b{font-weight:700; color:#241f0f; white-space:nowrap;}
+  .jarak-box .jr-group-label{font-size:10.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--warn); margin-top:2px;}
+  .jarak-box .jr-group-label:first-child{margin-top:0;}
+  .jarak-box .jr-divider{height:1px; background:rgba(180,150,0,.18); margin:2px 0;}
   .section-title{font-size:15px; font-weight:700; margin:26px 0 10px; color:#241f0f; display:flex; align-items:center; gap:8px;}
   .section-title:first-child{margin-top:0;}
 
@@ -1682,12 +1685,43 @@ function hitungSisaPembayaran(j){
 
 /* =========================================================
    PERHITUNGAN JARAK (dari Titik Koordinat job)
-   Titik acuan = lokasi utama Kaone Motret. Jarak dihitung garis lurus
-   (rumus Haversine) dari titik acuan ke koordinat yang diisi di form job,
-   lalu dipakai untuk menyarankan tambahan biaya transport (Rp100.000/50km).
+   ---------------------------------------------------------
+   Ada 2 jenis jarak yang dihitung & ditampilkan berdampingan:
+
+   1) JARAK GARIS LURUS (rumus Haversine) — dihitung lokal di
+      perangkat, instan, tidak butuh internet. Ini jarak "burung
+      terbang" — akan lebih PENDEK dari jarak tempuh sesungguhnya
+      kalau rute jalannya banyak belokan/tidak lurus.
+   2) ESTIMASI JARAK JALAN (rute kendaraan via layanan routing
+      publik OSRM — https://project-osrm.org) — memanggil API OSRM,
+      lebih mendekati jarak tempuh nyata. Hasilnya di-cache di
+      localStorage (per koordinat) supaya: (a) tidak perlu memanggil
+      API berulang-ulang untuk koordinat yang sama, (b) tampilan yang
+      dirender sinkron (poster/story/salin teks) tetap bisa
+      menampilkan jarak jalan kalau sebelumnya sudah pernah dihitung.
+      Pemanggilan API dibatasi TIMEOUT supaya form/modal tidak macet
+      kalau koneksi lambat atau API sedang tidak merespons.
+
+   Titik acuan = lokasi utama Kaone Motret. Saran tambahan biaya
+   transport (Rp100.000/50km) dihitung dari MASING-MASING jenis
+   jarak, supaya bisa dibandingkan.
+
+   ⚠️ CATATAN UNTUK DEVELOPER — JANGAN LUPA:
+   Setiap kali blok perhitungan jarak ini diubah (rumus, sumber API,
+   tarif, dsb), tambahkan juga entri baru di daftar CHANGELOG (cari
+   "const CHANGELOG" di file ini) supaya pengguna lama otomatis
+   melihat notifikasi pop-up "Apa yang Baru" saat membuka aplikasi.
 ========================================================= */
 const ORIGIN_COORD = { lat: 1.4589317712838183, lng: 99.64406954232793 };
 const TARIF_TRANSPORT_PER_KM = 100000 / 50; // Rp2.000/km, setara Rp100rb per 50km
+
+// Endpoint OSRM publik (demo server resmi project-osrm.org, gratis, tanpa API key).
+// Kalau suatu saat perlu pindah ke server OSRM sendiri (misal karena rate-limit),
+// cukup ganti URL ini — jangan lupa catat perubahannya di CHANGELOG.
+const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving';
+const OSRM_TIMEOUT_MS = 8000; // batas tunggu API supaya form/modal tidak macet di koneksi lambat
+const OSRM_CACHE_KEY = 'kaone_osrm_road_cache_v1';
+const OSRM_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // cache dianggap "segar" selama 30 hari
 
 // Menerima format bebas seperti "1.458931, 99.644069" atau "1.458931 99.644069".
 function parseCoordString(str){
@@ -1700,6 +1734,8 @@ function parseCoordString(str){
   if(Math.abs(lat)>90 || Math.abs(lng)>180) return null;
   return {lat, lng};
 }
+
+/* ---- 1) Jarak garis lurus (Haversine) — sinkron, instan ---- */
 function haversineKm(a, b){
   const R = 6371;
   const dLat = (b.lat-a.lat) * Math.PI/180;
@@ -1707,30 +1743,132 @@ function haversineKm(a, b){
   const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1-s));
 }
-// Mengembalikan jarak (km, angka) dari titik acuan ke koordinat job, atau null jika kosong/tidak valid.
-function hitungJarakKm(j){
+// Mengembalikan jarak garis lurus (km, angka) dari titik acuan ke koordinat job, atau null jika kosong/tidak valid.
+function hitungJarakLurusKm(j){
   const c = parseCoordString(j && j.koordinat);
   if(!c) return null;
   return haversineKm(ORIGIN_COORD, c);
 }
-function fmtJarak(km){
+
+/* ---- 2) Estimasi jarak jalan (rute kendaraan via OSRM) — async + cache + timeout ---- */
+function loadOsrmCache(){
+  try{ return JSON.parse(localStorage.getItem(OSRM_CACHE_KEY)) || {}; }
+  catch(e){ return {}; }
+}
+function saveOsrmCache(cache){
+  try{ localStorage.setItem(OSRM_CACHE_KEY, JSON.stringify(cache)); }
+  catch(e){ /* localStorage penuh/diblokir browser — abaikan, cache jadi tidak persisten */ }
+}
+function osrmCacheKey(c){
+  return c.lat.toFixed(6) + ',' + c.lng.toFixed(6);
+}
+// Ambil estimasi jarak jalan dari CACHE SAJA (sinkron, tanpa memanggil API). Dipakai
+// di tempat yang harus render langsung tanpa menunggu (poster/story/salin teks) —
+// kalau koordinat ini belum pernah dihitung/cache sudah basi, hasilnya null.
+function getCachedJarakJalanKm(j){
+  const c = parseCoordString(j && j.koordinat);
+  if(!c) return null;
+  const entry = loadOsrmCache()[osrmCacheKey(c)];
+  if(!entry) return null;
+  if(Date.now() - entry.ts > OSRM_CACHE_TTL_MS) return null; // cache basi, anggap belum ada
+  return entry.km;
+}
+// Panggil API OSRM untuk estimasi jarak rute kendaraan (km). Pakai cache dulu kalau
+// ada; kalau tidak, fetch dengan timeout (AbortController) supaya tidak menggantung
+// selamanya kalau koneksi lambat/API tidak merespons. Berhasil → otomatis disimpan
+// ke cache. Gagal/timeout/koordinat kosong → null (gagal senyap, UI tetap fallback
+// ke jarak garis lurus).
+async function fetchJarakJalanKm(j){
+  const c = parseCoordString(j && j.koordinat);
+  if(!c) return null;
+  const cached = getCachedJarakJalanKm(j);
+  if(cached!==null) return cached;
+
+  const url = `${OSRM_BASE_URL}/${ORIGIN_COORD.lng},${ORIGIN_COORD.lat};${c.lng},${c.lat}?overview=false`;
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), OSRM_TIMEOUT_MS);
+  try{
+    const res = await fetch(url, {signal: controller.signal});
+    if(!res.ok) return null;
+    const data = await res.json();
+    const meters = data && data.routes && data.routes[0] && data.routes[0].distance;
+    if(typeof meters !== 'number') return null;
+    const km = meters / 1000;
+    const cache = loadOsrmCache();
+    cache[osrmCacheKey(c)] = {km, ts: Date.now()};
+    saveOsrmCache(cache);
+    return km;
+  }catch(e){
+    return null; // timeout (AbortError), offline, atau error API lainnya
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+/* ---- Format tampilan & saran transport (dipakai untuk kedua jenis jarak) ---- */
+function fmtJarakLurus(km){
   if(km===null || km===undefined || isNaN(km)) return '-';
   return km.toLocaleString('id-ID', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' km (garis lurus)';
 }
-// Saran tambahan biaya transport, dibulatkan ke Rp1.000 terdekat.
+function fmtJarakJalan(km){
+  if(km===null || km===undefined || isNaN(km)) return '-';
+  return km.toLocaleString('id-ID', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' km (estimasi jalan)';
+}
+// Saran tambahan biaya transport, dibulatkan ke Rp1.000 terdekat. Rumus & tarifnya
+// sama untuk kedua jenis jarak — hanya input km-nya yang beda.
 function hitungSaranTransport(km){
   if(km===null || km===undefined || isNaN(km)) return null;
   return Math.round(km * TARIF_TRANSPORT_PER_KM / 1000) * 1000;
 }
-// Update tampilan jarak & saran transport secara live saat kolom Titik Koordinat diisi di form.
+
+// Update tampilan jarak & saran transport secara LIVE saat kolom Titik Koordinat
+// diisi di form. Jarak garis lurus tampil instan (hitung lokal). Jarak jalan (OSRM)
+// menyusul async: kalau sudah ada di cache langsung tampil, kalau belum akan
+// menampilkan status "Menghitung…" dulu lalu terisi otomatis (atau pesan gagal
+// kalau timeout/koneksi bermasalah).
+let jarakJalanReqId = 0; // penanda request terbaru — supaya balasan fetch yang sudah usang (mis. user keburu mengubah koordinat lagi sebelum fetch sebelumnya selesai) tidak menimpa hasil yang lebih baru
 function updateJarakCalc(){
   const input = document.getElementById('koordinatInput');
   if(!input) return;
-  const km = hitungJarakKm({koordinat: input.value});
-  const elJarak = document.getElementById('jarakValueText');
-  const elBiaya = document.getElementById('jarakBiayaText');
-  if(elJarak) elJarak.textContent = km===null ? '-' : fmtJarak(km);
-  if(elBiaya) elBiaya.textContent = km===null ? '-' : fmtRp(hitungSaranTransport(km));
+  const job = {koordinat: input.value};
+  const kmLurus = hitungJarakLurusKm(job);
+
+  const elLurus = document.getElementById('jarakLurusText');
+  const elLurusBiaya = document.getElementById('jarakLurusBiayaText');
+  if(elLurus) elLurus.textContent = kmLurus===null ? '-' : fmtJarakLurus(kmLurus);
+  if(elLurusBiaya) elLurusBiaya.textContent = kmLurus===null ? '-' : fmtRp(hitungSaranTransport(kmLurus));
+
+  const elJalan = document.getElementById('jarakJalanText');
+  const elJalanBiaya = document.getElementById('jarakJalanBiayaText');
+  const reqId = ++jarakJalanReqId;
+
+  if(kmLurus===null){
+    if(elJalan) elJalan.textContent = '-';
+    if(elJalanBiaya) elJalanBiaya.textContent = '-';
+    return;
+  }
+
+  const cachedJalan = getCachedJarakJalanKm(job);
+  if(cachedJalan!==null){
+    if(elJalan) elJalan.textContent = fmtJarakJalan(cachedJalan);
+    if(elJalanBiaya) elJalanBiaya.textContent = fmtRp(hitungSaranTransport(cachedJalan));
+    return;
+  }
+
+  if(elJalan) elJalan.textContent = 'Menghitung…';
+  if(elJalanBiaya) elJalanBiaya.textContent = '…';
+  fetchJarakJalanKm(job).then(kmJalan=>{
+    if(reqId !== jarakJalanReqId) return; // sudah usang (ada input baru sesudahnya) — abaikan hasil ini
+    const elJalan2 = document.getElementById('jarakJalanText');
+    const elJalanBiaya2 = document.getElementById('jarakJalanBiayaText');
+    if(kmJalan===null){
+      if(elJalan2) elJalan2.textContent = 'Tidak tersedia (cek koneksi)';
+      if(elJalanBiaya2) elJalanBiaya2.textContent = '-';
+    }else{
+      if(elJalan2) elJalan2.textContent = fmtJarakJalan(kmJalan);
+      if(elJalanBiaya2) elJalanBiaya2.textContent = fmtRp(hitungSaranTransport(kmJalan));
+    }
+  });
 }
 
 /* ---------- NAV ---------- */
@@ -1881,7 +2019,8 @@ function buildJobFormHtml(j){
     statusPembayaran:'Belum Bayar', catatan:''
   };
   const opt = (list,val)=>list.map(o=>`<option value="${o}" ${o===val?'selected':''}>${o}</option>`).join('');
-  const jarakAwal = hitungJarakKm(d);
+  const jarakAwalLurus = hitungJarakLurusKm(d);
+  const jarakAwalJalan = getCachedJarakJalanKm(d); // hanya dari cache dulu — fetch baru dipicu setelah form ini dipasang ke DOM (lihat bindJobFormEvents)
 
   return `
     <h2 style="margin-top:0;">${j?'✏️ Edit Job':'📝 Input Job Baru'}</h2>
@@ -1951,8 +2090,13 @@ function buildJobFormHtml(j){
           </div>
           <div class="field-hint">Format: Lintang, Bujur (contoh: -1.234567, 101.234567). Di Google Maps: tekan lama titik lokasi lalu ketuk koordinat yang muncul untuk menyalinnya.</div>
           <div class="jarak-box">
-            <div class="jr-row"><span>📏 Jarak dari Kaone Motret</span><b id="jarakValueText">${jarakAwal===null?'-':fmtJarak(jarakAwal)}</b></div>
-            <div class="jr-row"><span>🚗 Saran tambahan transport</span><b id="jarakBiayaText">${jarakAwal===null?'-':fmtRp(hitungSaranTransport(jarakAwal))}</b></div>
+            <div class="jr-group-label">📏 Garis Lurus</div>
+            <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="jarakLurusText">${jarakAwalLurus===null?'-':fmtJarakLurus(jarakAwalLurus)}</b></div>
+            <div class="jr-row"><span>🚗 Saran tambahan transport</span><b id="jarakLurusBiayaText">${jarakAwalLurus===null?'-':fmtRp(hitungSaranTransport(jarakAwalLurus))}</b></div>
+            <div class="jr-divider"></div>
+            <div class="jr-group-label">🛣️ Estimasi Jalan (OSRM)</div>
+            <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="jarakJalanText">${jarakAwalJalan===null?(jarakAwalLurus===null?'-':'Menghitung…'):fmtJarakJalan(jarakAwalJalan)}</b></div>
+            <div class="jr-row"><span>🚗 Saran tambahan transport</span><b id="jarakJalanBiayaText">${jarakAwalJalan===null?(jarakAwalLurus===null?'-':'…'):fmtRp(hitungSaranTransport(jarakAwalJalan))}</b></div>
           </div>
         </div>
       </div>
@@ -2074,6 +2218,9 @@ function viewForm(){
 function bindJobFormEvents(scopeEl, onDone){
   const form = scopeEl.querySelector('#jobForm');
   if(!form) return;
+  // Kalau koordinat sudah terisi (mode edit), langsung picu pengecekan jarak jalan
+  // (OSRM) begitu form tampil — biar tidak menunggu user mengetik ulang di kolom.
+  if(scopeEl.querySelector('#koordinatInput')?.value.trim()) updateJarakCalc();
   scopeEl.querySelector('#btnBukaLinkMaps')?.addEventListener('click', ()=>{
     const val = (scopeEl.querySelector('#linkMapsInput')?.value || '').trim();
     if(!val){ toast('Isi link Maps dulu sebelum dibuka'); return; }
@@ -2758,7 +2905,15 @@ function openJobDetailModal(jobId){
   if(!j) return;
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
   const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
-  const jarakKmDetail = hitungJarakKm(j);
+  const jarakLurusDetail = hitungJarakLurusKm(j);
+  const jarakJalanCachedDetail = getCachedJarakJalanKm(j);
+  // Kalau belum ada di cache tapi koordinatnya valid, tampilkan status "Menghitung…"
+  // dulu — hasil aslinya akan menyusul async & disuntikkan ke DOM lewat id di bawah
+  // (lihat pemanggilan fetchJarakJalanKm setelah showModal(...)).
+  const jarakJalanTeksAwal = jarakJalanCachedDetail!==null ? fmtJarakJalan(jarakJalanCachedDetail)
+    : (jarakLurusDetail===null ? '-' : 'Menghitung…');
+  const jarakJalanBiayaTeksAwal = jarakJalanCachedDetail!==null ? fmtRp(hitungSaranTransport(jarakJalanCachedDetail))
+    : (jarakLurusDetail===null ? '-' : '…');
   const sections = [
     {title:'Data Acara', rows:[
       ['Nama Klien', j.namaKlien||'-'],
@@ -2767,8 +2922,10 @@ function openJobDetailModal(jobId){
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
       ['Titik Koordinat', j.koordinat||'-'],
-      ['Jarak dari Kaone Motret', fmtJarak(jarakKmDetail)],
-      ['Saran Tambahan Transport', jarakKmDetail===null?'-':fmtRp(hitungSaranTransport(jarakKmDetail))],
+      ['Jarak dari Kaone Motret (Garis Lurus)', fmtJarakLurus(jarakLurusDetail)],
+      ['Saran Transport (Garis Lurus)', jarakLurusDetail===null?'-':fmtRp(hitungSaranTransport(jarakLurusDetail))],
+      ['Estimasi Jarak Jalan (OSRM)', jarakJalanTeksAwal, 'jdJarakJalanText'],
+      ['Saran Transport (Jalan)', jarakJalanBiayaTeksAwal, 'jdJarakJalanBiayaText'],
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
@@ -2819,7 +2976,7 @@ function openJobDetailModal(jobId){
       <div class="jd-body">
         ${sections.map(sec=>`
           <div class="jd-section-title">${escapeHtml(sec.title)}</div>
-          ${sec.rows.map(([label,val])=>`<div class="mj-row"><span>${escapeHtml(label)}</span><span>${escapeHtml(String(val))}</span></div>`).join('')}
+          ${sec.rows.map(([label,val,id])=>`<div class="mj-row"><span>${escapeHtml(label)}</span><span${id?` id="${id}"`:''}>${escapeHtml(String(val))}</span></div>`).join('')}
         `).join('')}
       </div>
       <div class="jd-footer">
@@ -2837,6 +2994,25 @@ function openJobDetailModal(jobId){
       <button type="button" class="btn btn-primary admin-only" data-edit="${j.id}">✏️ Edit Job</button>
     </div>
   `);
+
+  // Kalau jarak jalan belum ada di cache, hitung sekarang (async) lalu suntikkan
+  // hasilnya ke baris yang sudah tampil di modal — kalau modalnya sudah ditutup
+  // duluan sebelum fetch selesai, elemen dengan id ini otomatis sudah tidak ada
+  // di DOM lagi sehingga update-nya otomatis diabaikan (tidak error).
+  if(jarakJalanCachedDetail===null && jarakLurusDetail!==null){
+    fetchJarakJalanKm(j).then(kmJalan=>{
+      const elText = document.getElementById('jdJarakJalanText');
+      const elBiaya = document.getElementById('jdJarakJalanBiayaText');
+      if(!elText && !elBiaya) return; // modal sudah ditutup
+      if(kmJalan===null){
+        if(elText) elText.textContent = 'Tidak tersedia (cek koneksi)';
+        if(elBiaya) elBiaya.textContent = '-';
+      }else{
+        if(elText) elText.textContent = fmtJarakJalan(kmJalan);
+        if(elBiaya) elBiaya.textContent = fmtRp(hitungSaranTransport(kmJalan));
+      }
+    });
+  }
 }
 // Potong teks panjang (mis. catatan / deskripsi paket) supaya tinggi poster tetap presisi 1080x1920
 function truncateText(s, max){
@@ -2854,14 +3030,18 @@ function buildJobPosterHtml(j){
   const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
   const col = jenisAcaraColor(j.jenisAcara);
   const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
-  const jarakKmPoster = hitungJarakKm(j);
+  const jarakLurusPoster = hitungJarakLurusKm(j);
+  const jarakJalanPoster = getCachedJarakJalanKm(j); // poster dirender sinkron saat diunduh — pakai cache saja (biasanya sudah terisi kalau Detail Job sempat dibuka lebih dulu)
 
   const sections = [
     {title:'Data Acara', rows:[
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
-      ['Jarak dari Kaone Motret', fmtJarak(jarakKmPoster)],
+      ['Jarak dari Kaone Motret (Garis Lurus)', fmtJarakLurus(jarakLurusPoster)],
+      ...(jarakLurusPoster!==null ? [['Saran Transport (Garis Lurus)', fmtRp(hitungSaranTransport(jarakLurusPoster))]] : []),
+      ...(jarakJalanPoster!==null ? [['Estimasi Jarak Jalan (OSRM)', fmtJarakJalan(jarakJalanPoster)]] : []),
+      ...(jarakJalanPoster!==null ? [['Saran Transport (Jalan)', fmtRp(hitungSaranTransport(jarakJalanPoster))]] : []),
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', truncateText(j.deskripsiPaket, 160) || '-'],
@@ -2994,13 +3174,15 @@ function buildJobStoryHtml(j){
   const col = jenisAcaraColor(j.jenisAcara);
   const lokasiUmum = [j.desa, j.kecamatan, j.kabupaten].filter(Boolean).join(', ')
     || j.provinsi || '';
-  const jarakKmStory = hitungJarakKm(j);
+  const jarakLurusStory = hitungJarakLurusKm(j);
+  const jarakJalanStory = getCachedJarakJalanKm(j); // kartu Story dirender sinkron saat diunduh — pakai cache saja
 
   const infoRows = [
     ['Tanggal', fmtTgl(j.tanggalAcara)],
     ...(lokasiUmum ? [['Lokasi', lokasiUmum]] : []),
     ...(j.paket ? [['Paket', truncateText(j.paket, 46)]] : []),
-    ...(jarakKmStory!==null ? [['Jarak', fmtJarak(jarakKmStory)]] : []),
+    ...(jarakLurusStory!==null ? [['Jarak (Garis Lurus)', fmtJarakLurus(jarakLurusStory)]] : []),
+    ...(jarakJalanStory!==null ? [['Jarak (Estimasi Jalan)', fmtJarakJalan(jarakJalanStory)]] : []),
   ];
 
   return `
@@ -3093,7 +3275,8 @@ function copyJobDetails(jobId){
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
   const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
   const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
-  const jarakKmCopy = hitungJarakKm(j);
+  const jarakLurusCopy = hitungJarakLurusKm(j);
+  const jarakJalanCopy = getCachedJarakJalanKm(j); // teks Salin Detail dibuat sinkron saat tombolnya diklik — pakai cache saja
 
   const groups = [
     {title:'📅 Data Acara', rows:[
@@ -3103,8 +3286,10 @@ function copyJobDetails(jobId){
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
       ['Titik Koordinat', j.koordinat||'-'],
-      ['Jarak dari Kaone Motret', fmtJarak(jarakKmCopy)],
-      ['Saran Tambahan Transport', jarakKmCopy===null?'-':fmtRp(hitungSaranTransport(jarakKmCopy))],
+      ['Jarak dari Kaone Motret (Garis Lurus)', fmtJarakLurus(jarakLurusCopy)],
+      ['Saran Transport (Garis Lurus)', jarakLurusCopy===null?'-':fmtRp(hitungSaranTransport(jarakLurusCopy))],
+      ['Estimasi Jarak Jalan (OSRM)', jarakJalanCopy===null?'- (belum dihitung, buka Detail Job dulu)':fmtJarakJalan(jarakJalanCopy)],
+      ['Saran Transport (Jalan)', jarakJalanCopy===null?'-':fmtRp(hitungSaranTransport(jarakJalanCopy))],
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
@@ -3967,9 +4152,32 @@ function downloadRekapImage(){
    setelah pembaruan tersebut. Pengguna baru (belum pernah buka
    sama sekali) TIDAK diberi pop-up ini, karena bukan "pembaruan"
    bagi mereka — versi langsung dicatat diam-diam.
+
+   ⚠️ WAJIB DIINGAT — SETIAP KALI ADA PERUBAHAN DI FILE INI:
+   1. Naikkan APP_VERSION (ikuti semver: patch untuk perbaikan kecil,
+      minor untuk fitur baru, major untuk perubahan besar/breaking).
+   2. Tambahkan satu entri BARU di paling ATAS array CHANGELOG (jangan
+      menimpa/menghapus entri versi sebelumnya — itu riwayat).
+   3. Isi "items" dengan bahasa yang mudah dipahami pengguna awam
+      (bukan bahasa teknis programmer), singkat & jelas apa yang
+      berubah/ditambah/diperbaiki dari sudut pandang pengguna.
+   Kalau langkah di atas terlewat, perubahan tetap jalan tapi
+   pengguna TIDAK akan melihat notifikasi pop-up "Apa yang Baru" —
+   jadi mereka tidak akan tahu ada pembaruan.
 ========================================================= */
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '1.10.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 const CHANGELOG = [
+  // ⚠️ Entri baru selalu ditambahkan di PALING ATAS (paling baru duluan).
+  // Jangan lupa isi juga saat menambah/mengubah entri di sini!
+  {
+    version: '1.10.0',
+    tanggal: '29 Agustus 2026',
+    items: [
+      'Perhitungan jarak kini mendukung 2 jenis: Jarak Garis Lurus (Haversine, instan) dan Estimasi Jarak Jalan (rute kendaraan via OSRM) — lebih mendekati jarak tempuh asli kalau rute jalannya banyak belokan.',
+      'Estimasi Jarak Jalan otomatis di-cache di perangkat & punya batas waktu tunggu (timeout), jadi form/Detail Job tidak macet kalau koneksi internet sedang lambat.',
+      'Saran tambahan biaya transport kini ditampilkan untuk kedua jenis jarak (Garis Lurus & Estimasi Jalan) di form job, Detail Job, gambar unduhan, gambar Story, dan Salin Detail.',
+    ]
+  },
   {
     version: '1.9.0',
     tanggal: '29 Agustus 2026',

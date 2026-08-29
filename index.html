@@ -200,6 +200,18 @@
   .rp-input-wrap input.money-input{padding-left:32px;}
   input.money-input:read-only{background:#faf6e6; color:#6b6448;}
   .field-hint{font-size:11px; color:var(--ink-soft); margin-top:4px;}
+  /* Kolom Link Maps: ikon peta di kiri + tombol "Buka" di kanan, senada dengan kolom Rp */
+  .maps-input-wrap{position:relative; display:flex; align-items:stretch; gap:8px;}
+  .maps-input-wrap .maps-field{position:relative; flex:1; min-width:0;}
+  .maps-input-wrap .maps-prefix{
+    position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    font-size:14px; pointer-events:none;
+  }
+  .maps-input-wrap input.maps-input{padding-left:34px; width:100%; box-sizing:border-box;}
+  .maps-input-wrap .maps-open-btn{
+    flex-shrink:0; white-space:nowrap; padding:0 16px;
+    display:inline-flex; align-items:center; gap:6px;
+  }
   .section-title{font-size:15px; font-weight:700; margin:26px 0 10px; color:#241f0f; display:flex; align-items:center; gap:8px;}
   .section-title:first-child{margin-top:0;}
 
@@ -501,6 +513,85 @@
   .job-poster.jp-compact2 .jp-row .jp-label{font-size:13px;}
   .job-poster.jp-compact2 .jp-row .jp-value{font-size:16px; line-height:1.3;}
 
+  /* ---------- Gambar Story Instagram (ringkas & nama disensor, untuk diunggah publik) ---------- */
+  .job-story{
+    width:1080px; height:1920px; position:relative; overflow:hidden;
+    background:linear-gradient(165deg,#fffdf6 0%,#fffaeb 55%,#fdf6e0 100%);
+    font-family:'Poppins',sans-serif; color:#1c1a12;
+    box-sizing:border-box;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:0 100px;
+  }
+  .job-story .js-watermark{
+    position:absolute; inset:0; opacity:.06; pointer-events:none;
+    background:
+      radial-gradient(circle at 15% 10%, var(--jp-accent,#d4af00) 0%, transparent 42%),
+      radial-gradient(circle at 88% 92%, var(--jp-accent,#d4af00) 0%, transparent 45%);
+  }
+  .job-story .js-frame{position:absolute; inset:40px; border:2px solid var(--jp-accent,#d4af00); opacity:.4; border-radius:6px; pointer-events:none;}
+  .job-story .js-badge{
+    width:112px; height:112px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--jp-hdr2,#332750),var(--jp-hdr1,#1c1530));
+    color:var(--jp-accent,#d4af00);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; font-size:40px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.12);
+    margin-bottom:26px;
+  }
+  .job-story .js-brand{font-family:'Fraunces',serif; font-weight:700; font-size:27px; letter-spacing:1.5px; color:#241f0f;}
+  .job-story .js-brand-tag{font-size:13px; letter-spacing:4px; text-transform:uppercase; color:var(--ink-soft); margin-top:8px; margin-bottom:56px;}
+  .job-story .js-kicker{font-size:18px; font-weight:700; letter-spacing:6px; text-transform:uppercase; color:var(--jp-accent,#b8860b); margin-bottom:22px;}
+  .job-story .js-name{font-family:'Fraunces',serif; font-weight:700; font-size:66px; line-height:1.22; color:#201c0d; word-break:break-word;}
+  .job-story .js-rule{width:130px; height:3px; margin:38px auto; background:linear-gradient(90deg,transparent,var(--jp-accent,#d4af00),transparent);}
+  .job-story .js-info{display:flex; flex-direction:column; gap:26px; margin-top:4px; width:100%;}
+  .job-story .js-info-label{font-size:14px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--ink-soft);}
+  .job-story .js-info-value{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:32px; color:#241f0f; margin-top:6px;}
+  .job-story .js-footer{position:absolute; left:0; right:0; bottom:100px; text-align:center;}
+  .job-story .js-footer-line{width:210px; height:1px; margin:0 auto 20px; background:linear-gradient(90deg,transparent,var(--jp-accent,#d4af00),transparent);}
+  .job-story .js-footer-brand{font-family:'Fraunces',serif; font-size:21px; font-weight:600; color:#241f0f;}
+  .job-story .js-footer-text{font-size:14px; color:var(--ink-soft); letter-spacing:1px; margin-top:6px;}
+  .job-story .js-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:14px; background:linear-gradient(90deg,var(--jp-hdr1,#1c1530),var(--jp-accent,#d4af00),var(--jp-hdr2,#332750));}
+
+  /* ---------- Login (autentikasi) ---------- */
+  .auth-gate{
+    position:fixed; inset:0; z-index:99999;
+    background:linear-gradient(165deg,#fffdf6 0%,#fffaeb 55%,#fdf6e0 100%);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    box-sizing:border-box;
+  }
+  .auth-card{
+    width:100%; max-width:360px; background:#fff; border-radius:16px;
+    padding:34px 28px; box-shadow:0 20px 50px -20px rgba(90,70,30,.35);
+    border:1px solid var(--line); text-align:center; box-sizing:border-box;
+  }
+  .auth-badge{
+    width:64px; height:64px; border-radius:50%; margin:0 auto 16px;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; font-size:24px; color:#231f0f;
+  }
+  .auth-card h2{margin:0 0 4px; font-size:19px; font-family:'Fraunces',serif;}
+  .auth-card p.auth-sub{color:var(--ink-soft); font-size:12.5px; margin:0 0 22px;}
+  .auth-field{margin-bottom:14px; text-align:left;}
+  .auth-field label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
+  .auth-field input{width:100%; box-sizing:border-box;}
+  .auth-error{color:#b3261e; font-size:12.5px; margin:-4px 0 14px; display:none; text-align:left;}
+  .auth-error.show{display:block;}
+  .auth-card button[type="submit"]{width:100%; margin-top:6px;}
+
+  /* ---------- Chip pengguna (role) di header ---------- */
+  .user-chip{display:flex; align-items:center; gap:8px; font-size:11.5px; color:#d8c98a; flex-shrink:0;}
+  .user-chip .role-badge{
+    padding:3px 10px; border-radius:999px; font-weight:700; font-size:10px; letter-spacing:.5px;
+    text-transform:uppercase; background:var(--gold-pale); color:#7a5f00; white-space:nowrap;
+  }
+  .user-chip button{
+    border:none; background:none; color:#d8c98a; font-size:11px; cursor:pointer;
+    text-decoration:underline; padding:0; white-space:nowrap;
+  }
+  /* Elemen bertanda admin-only otomatis disembunyikan untuk akun peran "Tim". */
+  body.role-tim .admin-only{display:none !important;}
+
   /* ---------- SARAN & PENILAIAN (daftar ulasan klien) ---------- */
   .ulasan-list{display:flex; flex-direction:column; gap:14px; margin-top:22px;}
   .ulasan-card{background:#fffef9; border:1px solid var(--line); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow);}
@@ -785,6 +876,26 @@
 </head>
 <body>
 
+<div class="auth-gate" id="authGate">
+  <div class="auth-card">
+    <div class="auth-badge">KM</div>
+    <h2>Kaone Motret</h2>
+    <p class="auth-sub">Masuk untuk membuka Buku Job Fotografer</p>
+    <form id="authForm">
+      <div class="auth-field">
+        <label>Username</label>
+        <input type="text" id="authUsername" autocomplete="username" required>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" id="authPassword" autocomplete="current-password" required>
+      </div>
+      <div class="auth-error" id="authError">Username atau password salah.</div>
+      <button type="submit" class="btn btn-primary">Masuk</button>
+    </form>
+  </div>
+</div>
+
 <header class="topbar">
   <div class="topbar-row">
     <div class="brand">
@@ -794,6 +905,7 @@
         <div class="tag">Buku Job Fotografer</div>
       </div>
     </div>
+    <div class="user-chip" id="userChip"></div>
     <div class="notif-wrap" id="notifWrap">
       <button type="button" class="notif-btn" id="notifBtn" aria-label="Notifikasi">
         🔔<span class="notif-badge" id="notifBadge" style="display:none;">0</span>
@@ -806,7 +918,7 @@
     <button data-view="kalender">Kalender Job</button>
     <button data-view="rekap">Rekap</button>
     <button data-view="ulasan">⭐ Saran &amp; Penilaian</button>
-    <button data-view="pengaturan">Pengaturan</button>
+    <button data-view="pengaturan" class="admin-only">Pengaturan</button>
   </nav>
   <div class="datetime-strip" id="headerClock">Memuat waktu...</div>
   <div class="datetime-strip" id="syncStatus" style="margin-top:4px; padding-top:0; border-top:none;">⏳ Memuat data...</div>
@@ -833,6 +945,75 @@
 
 const STORAGE_KEY = 'kaoneMotret_jobs_v1';
 const START_NO_URUT = 180;
+
+/* =========================================================
+   LOGIN (autentikasi sederhana, 2 akun tetap)
+   CATATAN KEAMANAN: karena ini file HTML statis tanpa server/back-end,
+   username & password di bawah ini ikut terkirim ke browser siapa pun
+   yang membuka file ini (bisa dilihat lewat "View Source"). Ini cukup
+   untuk mencegah orang iseng yang kebetulan tahu link-nya, TAPI BUKAN
+   perlindungan yang aman untuk data sensitif dari orang yang memang
+   berniat membongkarnya lewat DevTools browser. Untuk keamanan yang
+   sesungguhnya, dibutuhkan login lewat server/back-end sungguhan.
+========================================================= */
+const AUTH_ACCOUNTS = {
+  'rasyidhrp': { password: '17rasyidrekapjob', role: 'admin', label: 'Admin' },
+  'timkaone':  { password: 'timkaone2022',     role: 'tim',   label: 'Tim'   },
+};
+const AUTH_SESSION_KEY = 'kaoneMotret_authSession_v1';
+let currentUserRole = null; // 'admin' | 'tim'
+let currentUsername = null;
+function isAdmin(){ return currentUserRole === 'admin'; }
+
+function applyRoleToUI(){
+  document.body.classList.toggle('role-tim', currentUserRole==='tim');
+  const chip = document.getElementById('userChip');
+  if(!chip) return;
+  const acc = AUTH_ACCOUNTS[currentUsername];
+  chip.innerHTML = `
+    <span class="role-badge">${escapeHtml(acc?acc.label:(currentUserRole||''))}</span>
+    <span>${escapeHtml(currentUsername||'')}</span>
+    <button type="button" id="btnLogout">Keluar</button>
+  `;
+  document.getElementById('btnLogout')?.addEventListener('click', logout);
+}
+function attemptLogin(username, password){
+  const acc = AUTH_ACCOUNTS[username];
+  if(!acc || acc.password !== password) return false;
+  currentUserRole = acc.role;
+  currentUsername = username;
+  try{ localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({username, role:acc.role})); }catch(e){}
+  return true;
+}
+function logout(){
+  if(!confirm('Yakin ingin keluar dari Buku Job?')) return;
+  try{ localStorage.removeItem(AUTH_SESSION_KEY); }catch(e){}
+  location.reload();
+}
+function checkAuthSession(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null'); }catch(e){}
+  if(saved && AUTH_ACCOUNTS[saved.username] && AUTH_ACCOUNTS[saved.username].role === saved.role){
+    currentUserRole = saved.role;
+    currentUsername = saved.username;
+    return true;
+  }
+  return false;
+}
+document.getElementById('authForm')?.addEventListener('submit', function(e){
+  e.preventDefault();
+  const u = document.getElementById('authUsername').value.trim();
+  const p = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  if(attemptLogin(u, p)){
+    errEl.classList.remove('show');
+    document.getElementById('authGate')?.remove();
+    applyRoleToUI();
+    initAppAfterAuth();
+  } else {
+    errEl.classList.add('show');
+  }
+});
 
 /* =========================================================
    SINKRONISASI ANTAR PERANGKAT (Supabase)
@@ -981,6 +1162,7 @@ async function pullUlasanFromCloud(){
   }
 }
 async function deleteUlasanItem(id){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa menghapus ulasan.'); return; }
   const u = ulasanList.find(x=>String(x.id)===String(id));
   const nama = u ? (u.nama_klien || 'ulasan ini') : 'ulasan ini';
   if(!confirm(`Yakin ingin menghapus ulasan dari "${nama}"? Tindakan ini tidak bisa dibatalkan.`)) return;
@@ -1000,6 +1182,7 @@ async function deleteUlasanItem(id){
 /* Publish / batalkan publish — ulasan dengan dipublikasikan=true akan tampil di
    halaman pricelist wedding (index.html), yang membaca tabel Supabase yang sama. */
 async function toggleUlasanPublish(id, publish){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah status publikasi.'); return; }
   const idx = ulasanList.findIndex(x=>String(x.id)===String(id));
   if(idx===-1) return;
   const before = ulasanList[idx].dipublikasikan;
@@ -1052,6 +1235,7 @@ const EXCEL_FIELD_MAP = [
   {header:'Kecamatan', field:'kecamatan'},
   {header:'Kabupaten', field:'kabupaten'},
   {header:'Provinsi', field:'provinsi'},
+  {header:'Link Maps', field:'linkMaps'},
   {header:'Proses Edit (Selesai/Belum Selesai)', field:'prosesEdit'},
   {header:'Proses Cetak (Selesai/Belum Selesai)', field:'prosesCetak'},
   {header:'Pengiriman', field:'pengiriman'},
@@ -1491,6 +1675,9 @@ document.getElementById('mainNav').addEventListener('click', (e)=>{
   navigate(btn.dataset.view);
 });
 function navigate(view){
+  // Peran "Tim" (non-admin) tidak boleh membuka Pengaturan atau form Input/Edit Job —
+  // kalau tombol yang memicu ini sudah disembunyikan lewat CSS, ini jaring pengaman tambahan.
+  if(!isAdmin() && (view==='pengaturan' || view==='form')) view = 'beranda';
   currentView = view;
   document.querySelectorAll('#mainNav button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
   render();
@@ -1556,7 +1743,7 @@ function viewBeranda(){
     <div class="quick-menu-item" data-goto="ulasan">
       <span class="qm-icon">⭐</span><span class="qm-label">Saran &amp; Penilaian</span>
     </div>
-    <div class="quick-menu-item" data-goto="pengaturan">
+    <div class="quick-menu-item admin-only" data-goto="pengaturan">
       <span class="qm-icon">⚙️</span><span class="qm-label">Pengaturan</span>
     </div>
   </div>
@@ -1620,7 +1807,7 @@ function viewBeranda(){
 ========================================================= */
 function buildJobFormHtml(j){
   const d = j || {
-    tanggalAcara:'', desa:'', kecamatan:'', kabupaten:'', provinsi:'',
+    tanggalAcara:'', desa:'', kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'',
     jenisAcara:'', jenisAcaraLain:'', namaKlien:'', noWhatsapp:'', paket:'', deskripsiPaket:'',
     prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Diantar',
     vendor:'', vendorLain:'', timFreelancer:'', dp:'', biayaCetak:'', honorTim:'', diskon:'',
@@ -1675,6 +1862,17 @@ function buildJobFormHtml(j){
         <div><label>Kecamatan</label><input type="text" name="kecamatan" value="${escapeHtml(d.kecamatan)}"></div>
         <div><label>Kabupaten / Kota</label><input type="text" name="kabupaten" value="${escapeHtml(d.kabupaten)}"></div>
         <div><label>Provinsi</label><input type="text" name="provinsi" value="${escapeHtml(d.provinsi)}"></div>
+        <div class="full">
+          <label>Link Maps</label>
+          <div class="maps-input-wrap">
+            <div class="maps-field">
+              <span class="maps-prefix">🗺️</span>
+              <input type="url" inputmode="url" class="maps-input" id="linkMapsInput" name="linkMaps" value="${escapeHtml(d.linkMaps||'')}" placeholder="https://maps.app.goo.gl/... atau https://goo.gl/maps/...">
+            </div>
+            <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaLinkMaps">↗️ Buka</button>
+          </div>
+          <div class="field-hint">Tempel link dari Google Maps (bagikan lokasi → salin link) supaya tim mudah menemukan lokasi acara.</div>
+        </div>
       </div>
 
       <div class="section-title">⚙️ Status Proses</div>
@@ -1794,6 +1992,11 @@ function viewForm(){
 function bindJobFormEvents(scopeEl, onDone){
   const form = scopeEl.querySelector('#jobForm');
   if(!form) return;
+  scopeEl.querySelector('#btnBukaLinkMaps')?.addEventListener('click', ()=>{
+    const val = (scopeEl.querySelector('#linkMapsInput')?.value || '').trim();
+    if(!val){ toast('Isi link Maps dulu sebelum dibuka'); return; }
+    window.open(val, '_blank', 'noopener');
+  });
   form.addEventListener('submit', (e)=>{
     e.preventDefault();
     const fd = new FormData(form);
@@ -1880,8 +2083,8 @@ function viewDaftar(){
           <option value="">Semua Bulan</option>
           ${getAvailableMonthKeys().slice().reverse().map(k=>`<option value="${k}">${monthKeyLabel(k)}</option>`).join('')}
         </select>
-        <button class="btn btn-outline" id="btnCopyPerBulan">📋 Salin per Bulan</button>
-        <button class="btn btn-primary" id="btnInputJob2">+ Job Baru</button>
+        <button class="btn btn-outline admin-only" id="btnCopyPerBulan">📋 Salin per Bulan</button>
+        <button class="btn btn-primary admin-only" id="btnInputJob2">+ Job Baru</button>
       </div>
     </div>
     <div id="daftarTableWrap" class="table-wrap"></div>
@@ -1927,9 +2130,9 @@ function renderDaftarTable(){
         <td>${badgeSelect(j.id, 'statusPembayaran', STATUS_BAYAR_LIST, j.statusPembayaran)}</td>
         <td>${fmtRp(hitungBersih(j))}</td>
         <td class="row-actions">
-          <button class="icon-btn" data-edit="${j.id}">Edit</button>
+          <button class="icon-btn admin-only" data-edit="${j.id}">Edit</button>
           <button class="icon-btn" data-view-job="${j.id}">Lihat</button>
-          <button class="icon-btn icon-btn-danger" data-delete="${j.id}" title="Hapus job">🗑️ Hapus</button>
+          <button class="icon-btn icon-btn-danger admin-only" data-delete="${j.id}" title="Hapus job">🗑️ Hapus</button>
         </td>
       </tr>
     `).join('')}
@@ -2082,7 +2285,7 @@ function badgeClassFor(field, value){
 function badgeSelect(jobId, field, options, value){
   const cls = badgeClassFor(field, value);
   return `<span class="badge-select-wrap ${cls}">
-    <select data-job-id="${jobId}" data-field="${field}">
+    <select data-job-id="${jobId}" data-field="${field}" ${isAdmin()?'':'disabled'}>
       ${options.map(o=>`<option value="${o}" ${o===value?'selected':''}>${o}</option>`).join('')}
     </select>
   </span>`;
@@ -2378,9 +2581,9 @@ function openDateModal(dateIso){
         <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
         <div class="mj-row"><span>Tim/Freelancer</span><span>${escapeHtml(j.timFreelancer||'-')}</span></div>
         <div class="modal-actions">
-          <button type="button" class="btn btn-outline" data-gcal="${j.id}">🗓️ Tambah ke Google Calendar</button>
-          <button type="button" class="btn btn-outline" data-ics="${j.id}">⬇️ Unduh .ics</button>
-          <button type="button" class="btn btn-outline" data-edit="${j.id}">✏️ Edit Job</button>
+          <button type="button" class="btn btn-outline admin-only" data-gcal="${j.id}">🗓️ Tambah ke Google Calendar</button>
+          <button type="button" class="btn btn-outline admin-only" data-ics="${j.id}">⬇️ Unduh .ics</button>
+          <button type="button" class="btn btn-outline admin-only" data-edit="${j.id}">✏️ Edit Job</button>
         </div>
       </div>
     `).join('')}
@@ -2393,8 +2596,13 @@ function showModal(innerHtml){
   ov.className='overlay';
   ov.id='modalOverlay';
   ov.innerHTML = `<div class="modal">${innerHtml}</div>`;
-  // klik di area gelap luar kotak modal -> tutup
-  ov.addEventListener('click',(e)=>{ if(e.target===ov) closeModal(); });
+  // Klik di area gelap luar kotak modal -> tutup. Sengaja dicek DUA event (mousedown DAN
+  // click) sama-sama kena overlay, bukan cuma "click" saja — supaya blok teks di dalam
+  // modal yang tak sengaja terseret sampai keluar kotak (mouse dilepas di area gelap)
+  // TIDAK dianggap sebagai klik-di-luar dan menutup modal secara tidak sengaja.
+  let mouseDownOnOverlay = false;
+  ov.addEventListener('mousedown', (e)=>{ mouseDownOnOverlay = (e.target===ov); });
+  ov.addEventListener('click', (e)=>{ if(e.target===ov && mouseDownOnOverlay) closeModal(); });
   document.body.appendChild(ov);
   document.addEventListener('keydown', escCloseModal);
 
@@ -2422,6 +2630,9 @@ function showModal(innerHtml){
   ov.querySelectorAll('[data-detail-download]').forEach(b=>{
     b.addEventListener('click', (e)=>{ e.stopPropagation(); downloadJobDetailImage(b.dataset.detailDownload); });
   });
+  ov.querySelectorAll('[data-detail-story]').forEach(b=>{
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); downloadJobStoryImage(b.dataset.detailStory); });
+  });
   ov.querySelectorAll('[data-detail-copy]').forEach(b=>{
     b.addEventListener('click', (e)=>{ e.stopPropagation(); copyJobDetails(b.dataset.detailCopy); });
   });
@@ -2437,6 +2648,7 @@ function closeModal(){
 
 /* ---------- Modal Edit Job (popup, tanpa pindah halaman) ---------- */
 function openEditJobModal(jobId){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa menambah/mengedit job.'); return; }
   const j = jobId ? jobs.find(x=>x.id===jobId) : null;
   editingId = j ? j.id : null;
   showModal(`
@@ -2464,6 +2676,7 @@ function openJobDetailModal(jobId){
       ['Tanggal Acara', fmtTgl(j.tanggalAcara)],
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
+      ['Link Maps', j.linkMaps||'-'],
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
@@ -2525,10 +2738,11 @@ function openJobDetailModal(jobId){
     </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-outline" data-detail-download="${j.id}">🖼️ Unduh Gambar</button>
-      <button type="button" class="btn btn-outline" data-detail-copy="${j.id}">📋 Salin Detail</button>
-      <button type="button" class="btn btn-outline" data-ics="${j.id}">⬇️ Unduh .ics</button>
-      <button type="button" class="btn btn-outline" data-gcal="${j.id}">🗓️ Tambah ke Google Calendar</button>
-      <button type="button" class="btn btn-primary" data-edit="${j.id}">✏️ Edit Job</button>
+      <button type="button" class="btn btn-outline" data-detail-story="${j.id}">📱 Unduh Gambar Story</button>
+      <button type="button" class="btn btn-outline admin-only" data-detail-copy="${j.id}">📋 Salin Detail</button>
+      <button type="button" class="btn btn-outline admin-only" data-ics="${j.id}">⬇️ Unduh .ics</button>
+      <button type="button" class="btn btn-outline admin-only" data-gcal="${j.id}">🗓️ Tambah ke Google Calendar</button>
+      <button type="button" class="btn btn-primary admin-only" data-edit="${j.id}">✏️ Edit Job</button>
     </div>
   `);
 }
@@ -2553,6 +2767,7 @@ function buildJobPosterHtml(j){
     {title:'Data Acara', rows:[
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
+      ['Link Maps', j.linkMaps||'-'],
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', truncateText(j.deskripsiPaket, 160) || '-'],
@@ -2566,7 +2781,14 @@ function buildJobPosterHtml(j){
       ['Tim/Freelancer', j.timFreelancer||'-'],
     ]},
     {title:'Keuangan', rows:[
-      ['Penghasilan', fmtRp(j.penghasilan)],
+      ['DP', fmtRp(j.dp)],
+      ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
+      ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
+      ['Biaya Cetak', fmtRp(j.biayaCetak)],
+      ['Honor Tim', fmtRp(j.honorTim)],
+      ['Diskon', fmtRp(j.diskon)],
+      ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
+      ...(j.vendor==='Shia Makeup' ? [['Setoran ke Shia Makeup', fmtRp(j.setoranShia)]] : []),
       ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
     ], highlightLast:true},
     {title:'Catatan', rows:[
@@ -2664,6 +2886,87 @@ function downloadJobDetailImage(jobId){
     setTimeout(capture, 60);
   }
 }
+/* Sensor nama untuk konten publik (story Instagram): setiap kata cukup huruf awalnya
+   yang tampil, sisanya diganti bintang — "Rasid Saleh" -> "R**** S****". */
+function sensorNama(nama){
+  const kata = String(nama||'').trim().split(/\s+/).filter(Boolean);
+  if(kata.length===0) return 'Klien';
+  return kata.map(w=> w.length<=1 ? w.toUpperCase() : w[0].toUpperCase()+'*'.repeat(w.length-1)).join(' ');
+}
+// Kartu ringkas 1080x1920 khusus untuk diunggah ke Instagram Story — hanya data penting
+// (tanpa data keuangan, no. WhatsApp, atau catatan internal) dan nama klien disensor.
+function buildJobStoryHtml(j){
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Acara') : (j.jenisAcara||'Acara');
+  const col = jenisAcaraColor(j.jenisAcara);
+  const lokasiUmum = [j.desa, j.kecamatan, j.kabupaten].filter(Boolean).join(', ')
+    || j.provinsi || '';
+
+  const infoRows = [
+    ['Tanggal', fmtTgl(j.tanggalAcara)],
+    ...(lokasiUmum ? [['Lokasi', lokasiUmum]] : []),
+    ...(j.paket ? [['Paket', truncateText(j.paket, 46)]] : []),
+  ];
+
+  return `
+    <div id="jobStoryExport" class="job-story" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
+      <div class="js-watermark"></div>
+      <div class="js-frame"></div>
+      <div class="js-badge">KM</div>
+      <div class="js-brand">Kaone Motret</div>
+      <div class="js-brand-tag">Wedding Photography</div>
+      <div class="js-kicker">Job #${getJobNo(j.id)} &middot; ${escapeHtml(jenis)}</div>
+      <div class="js-name">${escapeHtml(sensorNama(j.namaKlien))}</div>
+      <div class="js-rule"></div>
+      <div class="js-info">
+        ${infoRows.map(([label,val])=>`
+          <div class="js-info-row">
+            <div class="js-info-label">${escapeHtml(label)}</div>
+            <div class="js-info-value">${escapeHtml(String(val))}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="js-footer">
+        <div class="js-footer-line"></div>
+        <div class="js-footer-brand">Kaone Motret</div>
+        <div class="js-footer-text">Dokumentasi Pernikahan &amp; Acara</div>
+      </div>
+      <div class="js-bottom-bar"></div>
+    </div>
+  `;
+}
+function downloadJobStoryImage(jobId){
+  if(typeof html2canvas === 'undefined'){
+    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  toast('Menyiapkan gambar story...');
+
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;z-index:-1;';
+  holder.innerHTML = buildJobStoryHtml(j);
+  document.body.appendChild(holder);
+  const storyEl = holder.querySelector('#jobStoryExport');
+
+  const captureStory = ()=>{
+    html2canvas(storyEl, {width:1080, height:1920, scale:1, backgroundColor:'#fffdf6'}).then(canvas=>{
+      holder.remove();
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `story-${(j.namaKlien||'kaonemotret').replace(/\s+/g,'_')}-${j.tanggalAcara}.png`;
+      a.click();
+    }).catch(()=>{
+      holder.remove();
+      alert('Gagal membuat gambar. Coba lagi.');
+    });
+  };
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(captureStory).catch(captureStory);
+  } else {
+    setTimeout(captureStory, 60);
+  }
+}
 function copyToClipboard(text, successMsg){
   const done = ()=> toast(successMsg || 'Teks disalin ke clipboard');
   const fail = ()=>{
@@ -2701,6 +3004,7 @@ function copyJobDetails(jobId){
       ['Tanggal Acara', fmtTgl(j.tanggalAcara)],
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
+      ['Link Maps', j.linkMaps||'-'],
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
@@ -3082,10 +3386,10 @@ function viewUlasan(){
           <div class="ulasan-comment">${escapeHtml(u.komentar || '(Tidak ada komentar tertulis)')}</div>
           <div class="ulasan-actions">
             ${u.dipublikasikan
-              ? `<button type="button" class="btn btn-outline" data-ulasan-unpublish="${u.id}">↩️ Batalkan Publish</button>`
-              : `<button type="button" class="btn btn-primary" data-ulasan-publish="${u.id}">📢 Publish ke Pricelist</button>`}
+              ? `<button type="button" class="btn btn-outline admin-only" data-ulasan-unpublish="${u.id}">↩️ Batalkan Publish</button>`
+              : `<button type="button" class="btn btn-primary admin-only" data-ulasan-publish="${u.id}">📢 Publish ke Pricelist</button>`}
             <button type="button" class="btn btn-outline" data-ulasan-image="${u.id}">🖼️ Buat Gambar</button>
-            <button type="button" class="icon-btn icon-btn-danger" data-ulasan-delete="${u.id}">🗑️ Hapus</button>
+            <button type="button" class="icon-btn icon-btn-danger admin-only" data-ulasan-delete="${u.id}">🗑️ Hapus</button>
           </div>
         </div>
       `).join('')}
@@ -3564,8 +3868,35 @@ function downloadRekapImage(){
    sama sekali) TIDAK diberi pop-up ini, karena bukan "pembaruan"
    bagi mereka — versi langsung dicatat diam-diam.
 ========================================================= */
-const APP_VERSION = '1.6.1';
+const APP_VERSION = '1.8.0';
 const CHANGELOG = [
+  {
+    version: '1.8.0',
+    tanggal: '28 Agustus 2026',
+    items: [
+      'Ditambahkan halaman Login — hanya bisa diakses dengan akun Admin (bisa semuanya) atau Tim (khusus melihat & mengunduh gambar).',
+      'Kolom Link Maps kini punya ikon peta dan tombol "Buka" untuk langsung membuka lokasi di tab baru.',
+      'Gambar Story sekarang menampilkan nama Desa juga, tidak hanya Kecamatan/Kabupaten.'
+    ]
+  },
+  {
+    version: '1.7.1',
+    tanggal: '28 Agustus 2026',
+    items: [
+      'Gambar Story kini menampilkan nomor urut job (mis. "Job #12"), bukan cuma jenis acara.',
+      'Perbaikan bug: pop-up/modal (di rekap job maupun pricelist wedding) tidak lagi tertutup tidak sengaja saat memblok/menyeleksi teks lalu kursor terseret sampai ke luar kotak pop-up. Sekarang pop-up hanya tertutup lewat tombol penutup atau klik murni di luar kotak.'
+    ]
+  },
+  {
+    version: '1.7.0',
+    tanggal: '28 Agustus 2026',
+    items: [
+      'Ditambahkan kolom "Link Maps" di Lokasi Acara pada form Input/Edit Job.',
+      'Gambar detail job (tombol "Unduh Gambar") kini lebih lengkap — memuat Link Maps dan seluruh rincian Keuangan (DP, Sisa Pembayaran, Diskon, Setoran ke Shia Makeup, dll), sama lengkapnya dengan tampilan Detail Job.',
+      'Ditambahkan tombol baru "📱 Unduh Gambar Story" di Detail Job — gambar ringkas siap unggah ke Instagram Story, hanya berisi data penting (tanggal, lokasi umum, paket) tanpa data keuangan, dan nama klien otomatis disensor (mis. "Rasid Saleh" → "R**** S****").',
+      'Saran & Penilaian (testimoni) dikembalikan memakai Supabase seperti semula (tidak jadi dipindah ke Google Spreadsheet).'
+    ]
+  },
   {
     version: '1.6.1',
     tanggal: '28 Agustus 2026',
@@ -3698,7 +4029,10 @@ function showUpdatePopup(){
     closeModal();
   });
   // Jika ditutup lewat tombol ✕ / klik luar / Esc, tetap anggap sudah dilihat.
-  ov.addEventListener('click', ()=>{
+  // Dicek juga apakah user sedang menyeleksi teks (bukan sekadar klik), supaya blok teks
+  // yang tak sengaja terseret ke luar modal tidak langsung menandai popup ini "sudah dilihat".
+  ov.addEventListener('click', (e)=>{
+    if(e.target===ov && window.getSelection && String(window.getSelection())) return;
     try{ localStorage.setItem(LAST_SEEN_VERSION_KEY, APP_VERSION); }catch(err){}
   }, {once:true});
 }
@@ -3941,6 +4275,9 @@ document.addEventListener('click', (e)=>{
   const detailDownloadBtn = e.target.closest('[data-detail-download]');
   if(detailDownloadBtn){ downloadJobDetailImage(detailDownloadBtn.dataset.detailDownload); return; }
 
+  const detailStoryBtn = e.target.closest('[data-detail-story]');
+  if(detailStoryBtn){ downloadJobStoryImage(detailStoryBtn.dataset.detailStory); return; }
+
   const detailCopyBtn = e.target.closest('[data-detail-copy]');
   if(detailCopyBtn){ copyJobDetails(detailCopyBtn.dataset.detailCopy); return; }
 
@@ -3965,6 +4302,7 @@ document.addEventListener('click', (e)=>{
   const deleteBtn = e.target.closest('[data-delete]');
   if(deleteBtn){
     e.stopPropagation();
+    if(!isAdmin()){ alert('Hanya Admin yang bisa menghapus job.'); return; }
     const id = deleteBtn.dataset.delete;
     const job = jobs.find(x=>x.id===id);
     const nama = job ? (job.namaKlien || 'job ini') : 'job ini';
@@ -3997,23 +4335,37 @@ if(copyrightYearEl) copyrightYearEl.textContent = new Date().getFullYear();
 const appVersionTagEl = document.getElementById('appVersionTag');
 if(appVersionTagEl) appVersionTagEl.textContent = 'v' + APP_VERSION;
 
-navigate(jobs.length ? 'beranda' : 'beranda');
+// Semua pemanggilan di bawah ini (render tampilan awal, tarik data cloud, dst) baru
+// dijalankan SETELAH login berhasil — lihat pemanggilan initAppAfterAuth() di paling
+// bawah file (dipanggil langsung kalau sesi login tersimpan masih valid, atau dari
+// listener submit form login kalau belum).
+function initAppAfterAuth(){
+  navigate(jobs.length ? 'beranda' : 'beranda');
 
-// Notifikasi: hitung badge begitu app dibuka, lalu cek apakah perlu
-// menampilkan pop-up "Apa yang Baru" (hanya muncul kalau memang ada
-// pembaruan versi sejak terakhir kali device ini membuka web).
-renderNotifBadge();
-setTimeout(checkAppUpdatePopup, 900);
+  // Notifikasi: hitung badge begitu app dibuka, lalu cek apakah perlu
+  // menampilkan pop-up "Apa yang Baru" (hanya muncul kalau memang ada
+  // pembaruan versi sejak terakhir kali device ini membuka web).
+  renderNotifBadge();
+  setTimeout(checkAppUpdatePopup, 900);
 
-// Setelah tampilan awal (dari cache lokal) muncul, tarik versi terbaru dari cloud
-// supaya data yang diinput dari device lain ikut muncul di sini.
-pullFromCloud().then((changed)=>{
-  if(changed){ navigate(currentView); renderNotifBadge(); }
-});
+  // Setelah tampilan awal (dari cache lokal) muncul, tarik versi terbaru dari cloud
+  // supaya data yang diinput dari device lain ikut muncul di sini.
+  pullFromCloud().then((changed)=>{
+    if(changed){ navigate(currentView); renderNotifBadge(); }
+  });
 
-// Tarik juga daftar Saran & Penilaian dari klien (tabel Supabase terpisah) supaya
-// badge notifikasi & menu "Saran & Penilaian" langsung menampilkan data terbaru.
-pullUlasanFromCloud();
+  // Tarik juga daftar Saran & Penilaian dari klien (tabel Supabase terpisah) supaya
+  // badge notifikasi & menu "Saran & Penilaian" langsung menampilkan data terbaru.
+  pullUlasanFromCloud();
+}
+
+// Kalau sesi login sebelumnya masih tersimpan & valid, langsung masuk tanpa perlu
+// login ulang. Kalau belum, gerbang login (#authGate) tetap tampil menunggu submit.
+if(checkAuthSession()){
+  document.getElementById('authGate')?.remove();
+  applyRoleToUI();
+  initAppAfterAuth();
+}
 </script>
 </body>
 </html>

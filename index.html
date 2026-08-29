@@ -167,7 +167,7 @@
   .form-grid .full{grid-column:1/-1;}
   @media(max-width:720px){.form-grid{grid-template-columns:1fr;}}
   label{font-size:12.5px; font-weight:600; color:#4a4530; display:block; margin-bottom:5px; letter-spacing:.2px;}
-  input[type=text],input[type=date],input[type=number],input[type=tel],input[type=password],select,textarea{
+  input[type=text],input[type=url],input[type=date],input[type=number],input[type=tel],input[type=password],select,textarea{
     width:100%; padding:10px 12px; border:1.5px solid #e5ddc0; border-radius:9px; font-size:14px;
     font-family:inherit; background:#fffefb; color:var(--ink); transition:.15s;
   }
@@ -604,7 +604,15 @@
     border:none; background:none; color:#d8c98a; font-size:11px; cursor:pointer;
     text-decoration:underline; padding:0; white-space:nowrap;
   }
-  /* Elemen bertanda admin-only otomatis disembunyikan untuk akun peran "Tim". */
+  /* Elemen bertanda admin-only otomatis disembunyikan untuk akun peran "Tim".
+     Peran "Tim" TIDAK BOLEH: (1) membuka halaman Pengaturan, (2) mempublish/
+     membatalkan publish/menghapus Saran & Penilaian, (3) mengubah teks, ukuran
+     font, warna/tema, dan desain tata letak keseluruhan di Kalender Job, serta
+     (4) mengubah data rekap job (tambah/edit/hapus job, ubah status job langsung
+     di tabel, pulihkan data, hapus semua data, import job dari Excel) — semua
+     aksi itu ditandai admin-only. Aksi lain (lihat, unduh gambar, salin,
+     Google Calendar, melihat & mengirim Saran & Penilaian, dsb) tetap terbuka
+     untuk Tim. */
   body.role-tim .admin-only{display:none !important;}
 
   /* ---------- SARAN & PENILAIAN (daftar ulasan klien) ---------- */
@@ -933,7 +941,7 @@
     <button data-view="kalender">Kalender Job</button>
     <button data-view="rekap">Rekap</button>
     <button data-view="ulasan">⭐ Saran &amp; Penilaian</button>
-    <button data-view="pengaturan" class="admin-only">Pengaturan</button>
+    <button class="admin-only" data-view="pengaturan">Pengaturan</button>
   </nav>
   <div class="datetime-strip" id="headerClock">Memuat waktu...</div>
   <div class="datetime-strip" id="syncStatus" style="margin-top:4px; padding-top:0; border-top:none;">⏳ Memuat data...</div>
@@ -1197,7 +1205,7 @@ async function deleteUlasanItem(id){
 /* Publish / batalkan publish — ulasan dengan dipublikasikan=true akan tampil di
    halaman pricelist wedding (index.html), yang membaca tabel Supabase yang sama. */
 async function toggleUlasanPublish(id, publish){
-  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah status publikasi.'); return; }
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mempublish/membatalkan publikasi ulasan.'); return; }
   const idx = ulasanList.findIndex(x=>String(x.id)===String(id));
   if(idx===-1) return;
   const before = ulasanList[idx].dipublikasikan;
@@ -1266,7 +1274,7 @@ const EXCEL_FIELD_MAP = [
   {header:'Diskon', field:'diskon'},
   {header:'Sedekah Nominal (otomatis)', field:'sedekahNominal'},
   {header:'Status Sedekah (Sudah/Belum)', field:'sedekahStatus'},
-  {header:'Setoran ke Shia Makeup', field:'setoranShia'},
+  {header:'Harga Paket Vendor', field:'setoranShia'},
   {header:'Catatan', field:'catatan'},
 ];
 
@@ -1672,8 +1680,8 @@ function hitungBersih(j){
   // Sedekah baru dikurangkan dari Penghasilan Bersih setelah statusnya "Sudah" (belum
   // dianggap pengeluaran selama masih "Belum" disedekahkan).
   const sedekah = j.sedekahStatus==='Sudah' ? (Number(j.sedekahNominal)||0) : 0;
-  // Setoran ke Shia Makeup hanya relevan (dan dikurangkan) kalau job ini memang dari vendor Shia Makeup.
-  const setoranShia = j.vendor==='Shia Makeup' ? (Number(j.setoranShia)||0) : 0;
+  // Harga Paket Vendor hanya relevan (dan dikurangkan) kalau vendor job ini selain Kaone Motret.
+  const setoranShia = (j.vendor && j.vendor!=='Kaone Motret') ? (Number(j.setoranShia)||0) : 0;
   return penghasilan - biayaCetak - honorTim - diskon - sedekah - setoranShia;
 }
 // Sisa pembayaran = total Penghasilan Dari Klien/Mitra dikurangi DP yang sudah diterima.
@@ -1686,25 +1694,19 @@ function hitungSisaPembayaran(j){
 /* =========================================================
    PERHITUNGAN JARAK (dari Titik Koordinat job)
    ---------------------------------------------------------
-   Ada 2 jenis jarak yang dihitung & ditampilkan berdampingan:
-
-   1) JARAK GARIS LURUS (rumus Haversine) — dihitung lokal di
-      perangkat, instan, tidak butuh internet. Ini jarak "burung
-      terbang" — akan lebih PENDEK dari jarak tempuh sesungguhnya
-      kalau rute jalannya banyak belokan/tidak lurus.
-   2) ESTIMASI JARAK JALAN (rute kendaraan via layanan routing
-      publik OSRM — https://project-osrm.org) — memanggil API OSRM,
-      lebih mendekati jarak tempuh nyata. Hasilnya di-cache di
-      localStorage (per koordinat) supaya: (a) tidak perlu memanggil
-      API berulang-ulang untuk koordinat yang sama, (b) tampilan yang
-      dirender sinkron (poster/story/salin teks) tetap bisa
-      menampilkan jarak jalan kalau sebelumnya sudah pernah dihitung.
-      Pemanggilan API dibatasi TIMEOUT supaya form/modal tidak macet
-      kalau koneksi lambat atau API sedang tidak merespons.
+   Hanya 1 jenis jarak yang dihitung & ditampilkan: JARAK REAL
+   (estimasi rute kendaraan via layanan routing publik OSRM —
+   https://project-osrm.org). Memanggil API OSRM, lebih mendekati
+   jarak tempuh nyata dibanding jarak garis lurus. Hasilnya
+   di-cache di localStorage (per koordinat) supaya: (a) tidak perlu
+   memanggil API berulang-ulang untuk koordinat yang sama, (b)
+   tampilan yang dirender sinkron (poster/story/salin teks) tetap
+   bisa menampilkan jarak jalan kalau sebelumnya sudah pernah
+   dihitung. Pemanggilan API dibatasi TIMEOUT supaya form/modal
+   tidak macet kalau koneksi lambat atau API sedang tidak merespons.
 
    Titik acuan = lokasi utama Kaone Motret. Saran tambahan biaya
-   transport (Rp100.000/50km) dihitung dari MASING-MASING jenis
-   jarak, supaya bisa dibandingkan.
+   transport (Rp100.000/50km) dihitung dari jarak real ini.
 
    ⚠️ CATATAN UNTUK DEVELOPER — JANGAN LUPA:
    Setiap kali blok perhitungan jarak ini diubah (rumus, sumber API,
@@ -1734,23 +1736,28 @@ function parseCoordString(str){
   if(Math.abs(lat)>90 || Math.abs(lng)>180) return null;
   return {lat, lng};
 }
-
-/* ---- 1) Jarak garis lurus (Haversine) — sinkron, instan ---- */
-function haversineKm(a, b){
-  const R = 6371;
-  const dLat = (b.lat-a.lat) * Math.PI/180;
-  const dLng = (b.lng-a.lng) * Math.PI/180;
-  const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1-s));
+// Buka lokasi job di Maps — prioritas Titik Koordinat (lebih akurat & langsung menunjuk
+// titik persis), baru kalau kosong/tidak valid, pakai Link Maps yang ditempel manual.
+// Tersedia untuk Admin maupun Tim karena sifatnya hanya "lihat", bukan mengubah data.
+function openJobMaps(jobId){
+  const j = jobs.find(x=>String(x.id)===String(jobId));
+  if(!j){ toast('Job tidak ditemukan'); return; }
+  const c = parseCoordString(j.koordinat);
+  if(c){
+    window.open(`https://www.google.com/maps?q=${c.lat},${c.lng}`, '_blank', 'noopener');
+    return;
+  }
+  const link = (j.linkMaps||'').trim();
+  if(link){
+    let url = link;
+    if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    window.open(url, '_blank', 'noopener');
+    return;
+  }
+  toast('Job ini belum ada Titik Koordinat maupun Link Maps');
 }
-// Mengembalikan jarak garis lurus (km, angka) dari titik acuan ke koordinat job, atau null jika kosong/tidak valid.
-function hitungJarakLurusKm(j){
-  const c = parseCoordString(j && j.koordinat);
-  if(!c) return null;
-  return haversineKm(ORIGIN_COORD, c);
-}
 
-/* ---- 2) Estimasi jarak jalan (rute kendaraan via OSRM) — async + cache + timeout ---- */
+/* ---- Estimasi jarak jalan real (rute kendaraan via OSRM) — async + cache + timeout ---- */
 function loadOsrmCache(){
   try{ return JSON.parse(localStorage.getItem(OSRM_CACHE_KEY)) || {}; }
   catch(e){ return {}; }
@@ -1805,44 +1812,33 @@ async function fetchJarakJalanKm(j){
   }
 }
 
-/* ---- Format tampilan & saran transport (dipakai untuk kedua jenis jarak) ---- */
-function fmtJarakLurus(km){
-  if(km===null || km===undefined || isNaN(km)) return '-';
-  return km.toLocaleString('id-ID', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' km (garis lurus)';
-}
+/* ---- Format tampilan & saran transport (jarak real via OSRM) ---- */
 function fmtJarakJalan(km){
   if(km===null || km===undefined || isNaN(km)) return '-';
-  return km.toLocaleString('id-ID', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' km (estimasi jalan)';
+  return km.toLocaleString('id-ID', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' km (jarak real)';
 }
-// Saran tambahan biaya transport, dibulatkan ke Rp1.000 terdekat. Rumus & tarifnya
-// sama untuk kedua jenis jarak — hanya input km-nya yang beda.
+// Saran tambahan biaya transport, dibulatkan ke Rp1.000 terdekat.
 function hitungSaranTransport(km){
   if(km===null || km===undefined || isNaN(km)) return null;
   return Math.round(km * TARIF_TRANSPORT_PER_KM / 1000) * 1000;
 }
 
 // Update tampilan jarak & saran transport secara LIVE saat kolom Titik Koordinat
-// diisi di form. Jarak garis lurus tampil instan (hitung lokal). Jarak jalan (OSRM)
-// menyusul async: kalau sudah ada di cache langsung tampil, kalau belum akan
-// menampilkan status "Menghitung…" dulu lalu terisi otomatis (atau pesan gagal
-// kalau timeout/koneksi bermasalah).
+// diisi di form. Jarak real (OSRM): kalau sudah ada di cache langsung tampil, kalau
+// belum akan menampilkan status "Menghitung…" dulu lalu terisi otomatis (atau pesan
+// gagal kalau timeout/koneksi bermasalah).
 let jarakJalanReqId = 0; // penanda request terbaru — supaya balasan fetch yang sudah usang (mis. user keburu mengubah koordinat lagi sebelum fetch sebelumnya selesai) tidak menimpa hasil yang lebih baru
 function updateJarakCalc(){
   const input = document.getElementById('koordinatInput');
   if(!input) return;
   const job = {koordinat: input.value};
-  const kmLurus = hitungJarakLurusKm(job);
-
-  const elLurus = document.getElementById('jarakLurusText');
-  const elLurusBiaya = document.getElementById('jarakLurusBiayaText');
-  if(elLurus) elLurus.textContent = kmLurus===null ? '-' : fmtJarakLurus(kmLurus);
-  if(elLurusBiaya) elLurusBiaya.textContent = kmLurus===null ? '-' : fmtRp(hitungSaranTransport(kmLurus));
+  const c = parseCoordString(job.koordinat);
 
   const elJalan = document.getElementById('jarakJalanText');
   const elJalanBiaya = document.getElementById('jarakJalanBiayaText');
   const reqId = ++jarakJalanReqId;
 
-  if(kmLurus===null){
+  if(!c){
     if(elJalan) elJalan.textContent = '-';
     if(elJalanBiaya) elJalanBiaya.textContent = '-';
     return;
@@ -1879,9 +1875,12 @@ document.getElementById('mainNav').addEventListener('click', (e)=>{
   navigate(btn.dataset.view);
 });
 function navigate(view){
-  // Peran "Tim" (non-admin) tidak boleh membuka Pengaturan atau form Input/Edit Job —
-  // kalau tombol yang memicu ini sudah disembunyikan lewat CSS, ini jaring pengaman tambahan.
-  if(!isAdmin() && (view==='pengaturan' || view==='form')) view = 'beranda';
+  // Peran "Tim" (non-admin) tidak boleh membuka form Input/Edit Job — karena itu
+  // langsung mengubah data rekap job. Halaman lain (termasuk Pengaturan) boleh dibuka;
+  // kontrol yang mengubah data di dalamnya (mis. Pulihkan Data) tetap dikunci sendiri.
+  // Kalau tombol yang memicu ini sudah disembunyikan lewat CSS, ini jaring pengaman tambahan.
+  if(!isAdmin() && view==='form') view = 'beranda';
+  if(!isAdmin() && view==='pengaturan') view = 'beranda';
   currentView = view;
   document.querySelectorAll('#mainNav button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
   render();
@@ -2019,8 +2018,8 @@ function buildJobFormHtml(j){
     statusPembayaran:'Belum Bayar', catatan:''
   };
   const opt = (list,val)=>list.map(o=>`<option value="${o}" ${o===val?'selected':''}>${o}</option>`).join('');
-  const jarakAwalLurus = hitungJarakLurusKm(d);
   const jarakAwalJalan = getCachedJarakJalanKm(d); // hanya dari cache dulu — fetch baru dipicu setelah form ini dipasang ke DOM (lihat bindJobFormEvents)
+  const koordAwalValid = !!parseCoordString(d.koordinat);
 
   return `
     <h2 style="margin-top:0;">${j?'✏️ Edit Job':'📝 Input Job Baru'}</h2>
@@ -2072,10 +2071,10 @@ function buildJobFormHtml(j){
           <label>Link Maps</label>
           <div class="maps-input-wrap">
             <div class="maps-field">
-              <span class="maps-prefix">🗺️</span>
+              <span class="maps-prefix">🔗</span>
               <input type="url" inputmode="url" class="maps-input" id="linkMapsInput" name="linkMaps" value="${escapeHtml(d.linkMaps||'')}" placeholder="https://maps.app.goo.gl/... atau https://goo.gl/maps/...">
             </div>
-            <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaLinkMaps">↗️ Buka Maps</button>
+            <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaLinkMaps">↗️ Buka</button>
           </div>
           <div class="field-hint">Tempel link dari Google Maps (bagikan lokasi → salin link) supaya tim mudah menemukan lokasi acara.</div>
         </div>
@@ -2090,13 +2089,9 @@ function buildJobFormHtml(j){
           </div>
           <div class="field-hint">Format: Lintang, Bujur (contoh: -1.234567, 101.234567). Di Google Maps: tekan lama titik lokasi lalu ketuk koordinat yang muncul untuk menyalinnya.</div>
           <div class="jarak-box">
-            <div class="jr-group-label">📏 Garis Lurus</div>
-            <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="jarakLurusText">${jarakAwalLurus===null?'-':fmtJarakLurus(jarakAwalLurus)}</b></div>
-            <div class="jr-row"><span>🚗 Saran tambahan transport</span><b id="jarakLurusBiayaText">${jarakAwalLurus===null?'-':fmtRp(hitungSaranTransport(jarakAwalLurus))}</b></div>
-            <div class="jr-divider"></div>
-            <div class="jr-group-label">🛣️ Estimasi Jalan (OSRM)</div>
-            <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="jarakJalanText">${jarakAwalJalan===null?(jarakAwalLurus===null?'-':'Menghitung…'):fmtJarakJalan(jarakAwalJalan)}</b></div>
-            <div class="jr-row"><span>🚗 Saran tambahan transport</span><b id="jarakJalanBiayaText">${jarakAwalJalan===null?(jarakAwalLurus===null?'-':'…'):fmtRp(hitungSaranTransport(jarakAwalJalan))}</b></div>
+            <div class="jr-group-label">🛣️ Jarak Real (OSRM)</div>
+            <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="jarakJalanText">${jarakAwalJalan===null?(koordAwalValid?'Menghitung…':'-'):fmtJarakJalan(jarakAwalJalan)}</b></div>
+            <div class="jr-row"><span>🚗 Saran tambahan transport</span><b id="jarakJalanBiayaText">${jarakAwalJalan===null?(koordAwalValid?'…':'-'):fmtRp(hitungSaranTransport(jarakAwalJalan))}</b></div>
           </div>
         </div>
       </div>
@@ -2173,14 +2168,13 @@ function buildJobFormHtml(j){
           <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
             <input type="text" inputmode="numeric" class="money-input" name="sedekahNominal" id="sedekahNominalInput" value="${fmtRibuan(d.sedekahNominal||hitungSedekah(d))}" readonly>
           </div>
-          <div class="field-hint">Rp20.000 jika vendor Shia Makeup, atau kelipatan Rp10.000 per Rp100.000 dari (Penghasilan − Honor Tim − Biaya Cetak − Diskon). Baru dikurangkan dari Penghasilan Bersih setelah Status Sedekah "Sudah".</div>
         </div>
         <div>
           <label>Status Sedekah</label>
           <select name="sedekahStatus" onchange="updateCalc()">${opt(['Belum','Sudah'], d.sedekahStatus)}</select>
         </div>
-        <div id="shiaSetoranWrap" class="full" style="display:${d.vendor==='Shia Makeup'?'block':'none'}">
-          <label>Setoran ke Shia Makeup</label>
+        <div id="shiaSetoranWrap" class="full" style="display:${d.vendor && d.vendor!=='Kaone Motret'?'block':'none'}">
+          <label>Harga Paket Vendor</label>
           <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
             <input type="text" inputmode="numeric" class="money-input" name="setoranShia" value="${fmtRibuan(d.setoranShia)}" oninput="handleMoneyInput(this); updateCalc();">
           </div>
@@ -2221,16 +2215,21 @@ function bindJobFormEvents(scopeEl, onDone){
   // Kalau koordinat sudah terisi (mode edit), langsung picu pengecekan jarak jalan
   // (OSRM) begitu form tampil — biar tidak menunggu user mengetik ulang di kolom.
   if(scopeEl.querySelector('#koordinatInput')?.value.trim()) updateJarakCalc();
-  scopeEl.querySelector('#btnBukaLinkMaps')?.addEventListener('click', ()=>{
-    const val = (scopeEl.querySelector('#linkMapsInput')?.value || '').trim();
-    if(!val){ toast('Isi link Maps dulu sebelum dibuka'); return; }
-    window.open(val, '_blank', 'noopener');
-  });
   scopeEl.querySelector('#btnBukaKoordinat')?.addEventListener('click', ()=>{
     const val = (scopeEl.querySelector('#koordinatInput')?.value || '').trim();
     const c = parseCoordString(val);
     if(!c){ toast('Isi Titik Koordinat yang valid dulu (Lintang, Bujur)'); return; }
     window.open(`https://www.google.com/maps?q=${c.lat},${c.lng}`, '_blank', 'noopener');
+  });
+  // Tombol "Buka" di kolom Link Maps: cukup buka link apa adanya di tab baru — di HP,
+  // browser/OS otomatis mengalihkannya ke app Google Maps (kalau terpasang) karena link
+  // Google Maps memakai universal/app link, sedangkan di laptop tetap terbuka di tab baru.
+  scopeEl.querySelector('#btnBukaLinkMaps')?.addEventListener('click', ()=>{
+    const val = (scopeEl.querySelector('#linkMapsInput')?.value || '').trim();
+    if(!val){ toast('Isi Link Maps yang valid dulu'); return; }
+    let url = val;
+    if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    window.open(url, '_blank', 'noopener');
   });
   form.addEventListener('submit', (e)=>{
     e.preventDefault();
@@ -2275,7 +2274,7 @@ function bindJobFormEvents(scopeEl, onDone){
 }
 function onVendorChange(sel){
   document.getElementById('vendorLainWrap').style.display = sel.value==='Lainnya' ? 'block' : 'none';
-  document.getElementById('shiaSetoranWrap').style.display = sel.value==='Shia Makeup' ? 'block' : 'none';
+  document.getElementById('shiaSetoranWrap').style.display = (sel.value && sel.value!=='Kaone Motret') ? 'block' : 'none';
   updateCalc();
 }
 function updateCalc(){
@@ -2318,7 +2317,7 @@ function viewDaftar(){
           <option value="">Semua Bulan</option>
           ${getAvailableMonthKeys().slice().reverse().map(k=>`<option value="${k}">${monthKeyLabel(k)}</option>`).join('')}
         </select>
-        <button class="btn btn-outline admin-only" id="btnCopyPerBulan">📋 Salin per Bulan</button>
+        <button class="btn btn-outline" id="btnCopyPerBulan">📋 Salin per Bulan</button>
         <button class="btn btn-primary admin-only" id="btnInputJob2">+ Job Baru</button>
       </div>
     </div>
@@ -2367,6 +2366,7 @@ function renderDaftarTable(){
         <td class="row-actions">
           <button class="icon-btn admin-only" data-edit="${j.id}">Edit</button>
           <button class="icon-btn" data-view-job="${j.id}">Lihat</button>
+          <button class="icon-btn" data-open-maps="${j.id}" title="Buka lokasi job di Maps">🗺️ Maps</button>
           <button class="icon-btn icon-btn-danger admin-only" data-delete="${j.id}" title="Hapus job">🗑️ Hapus</button>
         </td>
       </tr>
@@ -2556,7 +2556,7 @@ function viewKalender(){
       </div>
     </div>
 
-    <div class="thanks-editor">
+    <div class="thanks-editor admin-only">
       <div class="section-title" style="margin-top:0;">💌 Ucapan Terima Kasih di Poster — ${MONTH_NAMES[calMonth]} ${calYear}</div>
       <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 10px;">
         Secara otomatis sudah tersedia ucapan puitis yang berbeda tiap bulan. Kosongkan kolom ini untuk memakainya,
@@ -2575,7 +2575,7 @@ function viewKalender(){
       </div>
     </div>
 
-    <div class="layout-picker">
+    <div class="layout-picker admin-only">
       <div class="section-title" style="margin-top:0;">🖼️ Pilih Desain Keseluruhan — ${MONTH_NAMES[calMonth]} ${calYear}</div>
       <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 12px;">
         Ada 12 desain tata letak (font, bentuk tanggal, ornamen bingkai, perataan teks) yang berbeda tiap bulan secara otomatis.
@@ -2591,7 +2591,7 @@ function viewKalender(){
       </div>
     </div>
 
-    <div class="theme-picker">
+    <div class="theme-picker admin-only">
       <div class="section-title" style="margin-top:0;">🎨 Pilih Warna Poster — ${MONTH_NAMES[calMonth]} ${calYear}</div>
       <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 12px;">
         Ada 12 palet warna profesional yang bisa dipilih bebas, terpisah dari desain tata letak di atas — jadi kombinasinya bisa kamu atur sendiri.
@@ -2816,8 +2816,8 @@ function openDateModal(dateIso){
         <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
         <div class="mj-row"><span>Tim/Freelancer</span><span>${escapeHtml(j.timFreelancer||'-')}</span></div>
         <div class="modal-actions">
-          <button type="button" class="btn btn-outline admin-only" data-gcal="${j.id}">🗓️ Tambah ke Google Calendar</button>
-          <button type="button" class="btn btn-outline admin-only" data-ics="${j.id}">⬇️ Unduh .ics</button>
+          <button type="button" class="btn btn-outline" data-gcal="${j.id}">🗓️ Tambah ke Google Calendar</button>
+          <button type="button" class="btn btn-outline" data-ics="${j.id}">⬇️ Unduh .ics</button>
           <button type="button" class="btn btn-outline admin-only" data-edit="${j.id}">✏️ Edit Job</button>
         </div>
       </div>
@@ -2905,15 +2905,15 @@ function openJobDetailModal(jobId){
   if(!j) return;
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
   const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
-  const jarakLurusDetail = hitungJarakLurusKm(j);
   const jarakJalanCachedDetail = getCachedJarakJalanKm(j);
+  const koordDetailValid = !!parseCoordString(j.koordinat);
   // Kalau belum ada di cache tapi koordinatnya valid, tampilkan status "Menghitung…"
   // dulu — hasil aslinya akan menyusul async & disuntikkan ke DOM lewat id di bawah
   // (lihat pemanggilan fetchJarakJalanKm setelah showModal(...)).
   const jarakJalanTeksAwal = jarakJalanCachedDetail!==null ? fmtJarakJalan(jarakJalanCachedDetail)
-    : (jarakLurusDetail===null ? '-' : 'Menghitung…');
+    : (koordDetailValid ? 'Menghitung…' : '-');
   const jarakJalanBiayaTeksAwal = jarakJalanCachedDetail!==null ? fmtRp(hitungSaranTransport(jarakJalanCachedDetail))
-    : (jarakLurusDetail===null ? '-' : '…');
+    : (koordDetailValid ? '…' : '-');
   const sections = [
     {title:'Data Acara', rows:[
       ['Nama Klien', j.namaKlien||'-'],
@@ -2922,10 +2922,8 @@ function openJobDetailModal(jobId){
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
       ['Titik Koordinat', j.koordinat||'-'],
-      ['Jarak dari Kaone Motret (Garis Lurus)', fmtJarakLurus(jarakLurusDetail)],
-      ['Saran Transport (Garis Lurus)', jarakLurusDetail===null?'-':fmtRp(hitungSaranTransport(jarakLurusDetail))],
-      ['Estimasi Jarak Jalan (OSRM)', jarakJalanTeksAwal, 'jdJarakJalanText'],
-      ['Saran Transport (Jalan)', jarakJalanBiayaTeksAwal, 'jdJarakJalanBiayaText'],
+      ['Jarak dari Kaone Motret (Real)', jarakJalanTeksAwal, 'jdJarakJalanText'],
+      ['Saran Transport', jarakJalanBiayaTeksAwal, 'jdJarakJalanBiayaText'],
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
@@ -2946,7 +2944,7 @@ function openJobDetailModal(jobId){
       ['Honor Tim', fmtRp(j.honorTim)],
       ['Diskon', fmtRp(j.diskon)],
       ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
-      ...(j.vendor==='Shia Makeup' ? [['Setoran ke Shia Makeup', fmtRp(j.setoranShia)]] : []),
+      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
       ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
     ]},
     {title:'Catatan', rows:[
@@ -2988,9 +2986,9 @@ function openJobDetailModal(jobId){
     <div class="modal-actions">
       <button type="button" class="btn btn-outline" data-detail-download="${j.id}">🖼️ Unduh Gambar</button>
       <button type="button" class="btn btn-outline" data-detail-story="${j.id}">📱 Unduh Gambar Story</button>
-      <button type="button" class="btn btn-outline admin-only" data-detail-copy="${j.id}">📋 Salin Detail</button>
-      <button type="button" class="btn btn-outline admin-only" data-ics="${j.id}">⬇️ Unduh .ics</button>
-      <button type="button" class="btn btn-outline admin-only" data-gcal="${j.id}">🗓️ Tambah ke Google Calendar</button>
+      <button type="button" class="btn btn-outline" data-detail-copy="${j.id}">📋 Salin Detail</button>
+      <button type="button" class="btn btn-outline" data-ics="${j.id}">⬇️ Unduh .ics</button>
+      <button type="button" class="btn btn-outline" data-gcal="${j.id}">🗓️ Tambah ke Google Calendar</button>
       <button type="button" class="btn btn-primary admin-only" data-edit="${j.id}">✏️ Edit Job</button>
     </div>
   `);
@@ -2999,7 +2997,7 @@ function openJobDetailModal(jobId){
   // hasilnya ke baris yang sudah tampil di modal — kalau modalnya sudah ditutup
   // duluan sebelum fetch selesai, elemen dengan id ini otomatis sudah tidak ada
   // di DOM lagi sehingga update-nya otomatis diabaikan (tidak error).
-  if(jarakJalanCachedDetail===null && jarakLurusDetail!==null){
+  if(jarakJalanCachedDetail===null && koordDetailValid){
     fetchJarakJalanKm(j).then(kmJalan=>{
       const elText = document.getElementById('jdJarakJalanText');
       const elBiaya = document.getElementById('jdJarakJalanBiayaText');
@@ -3030,7 +3028,6 @@ function buildJobPosterHtml(j){
   const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
   const col = jenisAcaraColor(j.jenisAcara);
   const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
-  const jarakLurusPoster = hitungJarakLurusKm(j);
   const jarakJalanPoster = getCachedJarakJalanKm(j); // poster dirender sinkron saat diunduh — pakai cache saja (biasanya sudah terisi kalau Detail Job sempat dibuka lebih dulu)
 
   const sections = [
@@ -3038,10 +3035,8 @@ function buildJobPosterHtml(j){
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
-      ['Jarak dari Kaone Motret (Garis Lurus)', fmtJarakLurus(jarakLurusPoster)],
-      ...(jarakLurusPoster!==null ? [['Saran Transport (Garis Lurus)', fmtRp(hitungSaranTransport(jarakLurusPoster))]] : []),
-      ...(jarakJalanPoster!==null ? [['Estimasi Jarak Jalan (OSRM)', fmtJarakJalan(jarakJalanPoster)]] : []),
-      ...(jarakJalanPoster!==null ? [['Saran Transport (Jalan)', fmtRp(hitungSaranTransport(jarakJalanPoster))]] : []),
+      ...(jarakJalanPoster!==null ? [['Jarak dari Kaone Motret (Real)', fmtJarakJalan(jarakJalanPoster)]] : []),
+      ...(jarakJalanPoster!==null ? [['Saran Transport', fmtRp(hitungSaranTransport(jarakJalanPoster))]] : []),
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', truncateText(j.deskripsiPaket, 160) || '-'],
@@ -3062,7 +3057,7 @@ function buildJobPosterHtml(j){
       ['Honor Tim', fmtRp(j.honorTim)],
       ['Diskon', fmtRp(j.diskon)],
       ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
-      ...(j.vendor==='Shia Makeup' ? [['Setoran ke Shia Makeup', fmtRp(j.setoranShia)]] : []),
+      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
       ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
     ], highlightLast:true},
     {title:'Catatan', rows:[
@@ -3174,15 +3169,13 @@ function buildJobStoryHtml(j){
   const col = jenisAcaraColor(j.jenisAcara);
   const lokasiUmum = [j.desa, j.kecamatan, j.kabupaten].filter(Boolean).join(', ')
     || j.provinsi || '';
-  const jarakLurusStory = hitungJarakLurusKm(j);
   const jarakJalanStory = getCachedJarakJalanKm(j); // kartu Story dirender sinkron saat diunduh — pakai cache saja
 
   const infoRows = [
     ['Tanggal', fmtTgl(j.tanggalAcara)],
     ...(lokasiUmum ? [['Lokasi', lokasiUmum]] : []),
     ...(j.paket ? [['Paket', truncateText(j.paket, 46)]] : []),
-    ...(jarakLurusStory!==null ? [['Jarak (Garis Lurus)', fmtJarakLurus(jarakLurusStory)]] : []),
-    ...(jarakJalanStory!==null ? [['Jarak (Estimasi Jalan)', fmtJarakJalan(jarakJalanStory)]] : []),
+    ...(jarakJalanStory!==null ? [['Jarak (Real)', fmtJarakJalan(jarakJalanStory)]] : []),
   ];
 
   return `
@@ -3275,7 +3268,6 @@ function copyJobDetails(jobId){
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
   const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
   const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
-  const jarakLurusCopy = hitungJarakLurusKm(j);
   const jarakJalanCopy = getCachedJarakJalanKm(j); // teks Salin Detail dibuat sinkron saat tombolnya diklik — pakai cache saja
 
   const groups = [
@@ -3286,10 +3278,8 @@ function copyJobDetails(jobId){
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
       ['Titik Koordinat', j.koordinat||'-'],
-      ['Jarak dari Kaone Motret (Garis Lurus)', fmtJarakLurus(jarakLurusCopy)],
-      ['Saran Transport (Garis Lurus)', jarakLurusCopy===null?'-':fmtRp(hitungSaranTransport(jarakLurusCopy))],
-      ['Estimasi Jarak Jalan (OSRM)', jarakJalanCopy===null?'- (belum dihitung, buka Detail Job dulu)':fmtJarakJalan(jarakJalanCopy)],
-      ['Saran Transport (Jalan)', jarakJalanCopy===null?'-':fmtRp(hitungSaranTransport(jarakJalanCopy))],
+      ['Jarak dari Kaone Motret (Real)', jarakJalanCopy===null?'- (belum dihitung, buka Detail Job dulu)':fmtJarakJalan(jarakJalanCopy)],
+      ['Saran Transport', jarakJalanCopy===null?'-':fmtRp(hitungSaranTransport(jarakJalanCopy))],
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
@@ -3310,7 +3300,7 @@ function copyJobDetails(jobId){
       ['Honor Tim', fmtRp(j.honorTim)],
       ['Diskon', fmtRp(j.diskon)],
       ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
-      ...(j.vendor==='Shia Makeup' ? [['Setoran ke Shia Makeup', fmtRp(j.setoranShia)]] : []),
+      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
       ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
     ]},
   ];
@@ -3785,11 +3775,11 @@ function viewPengaturan(){
     </p>
     <div class="backup-row">
       <button class="btn btn-primary" id="btnExportBackup">⬇️ Cadangkan Data (.json)</button>
-      <label class="btn btn-outline" style="display:inline-flex;align-items:center;gap:8px;">
+      <label class="btn btn-outline admin-only" style="display:inline-flex;align-items:center;gap:8px;">
         ⬆️ Pulihkan Data (.json)
         <input type="file" id="importFile" accept=".json" style="display:none;">
       </label>
-      <button class="btn btn-danger" id="btnResetAll">🗑️ Hapus Semua Data</button>
+      <button class="btn btn-danger admin-only" id="btnResetAll">🗑️ Hapus Semua Data</button>
     </div>
 
     <div class="section-title">📥 Import Job dari Excel</div>
@@ -3799,7 +3789,7 @@ function viewPengaturan(){
     </p>
     <div class="backup-row">
       <button class="btn btn-outline" id="btnDownloadTemplate">⬇️ Unduh Template Excel</button>
-      <label class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;">
+      <label class="btn btn-primary admin-only" style="display:inline-flex;align-items:center;gap:8px;">
         ⬆️ Import Job dari Excel
         <input type="file" id="importExcelInput" accept=".xlsx,.xls" style="display:none;">
       </label>
@@ -3836,6 +3826,7 @@ function daysSinceLastBackup(){
   return Math.floor((Date.now() - Number(raw)) / 86400000);
 }
 function importBackup(file){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa memulihkan data.'); return; }
   const reader = new FileReader();
   reader.onload = (e)=>{
     try{
@@ -3881,7 +3872,7 @@ function downloadExcelTemplate(){
     'Diskon':0,
     'Sedekah Nominal (otomatis)':220000,
     'Status Sedekah (Sudah/Belum)':'Belum',
-    'Setoran ke Shia Makeup':'',
+    'Harga Paket Vendor':'',
     'Catatan':''
   };
   const ws = XLSX.utils.json_to_sheet([exampleRow], {header:headers});
@@ -3898,7 +3889,7 @@ function downloadExcelTemplate(){
     ['7. Pilihan Status Pembayaran: '+STATUS_BAYAR_LIST.join(', ')],
     ['8. Pilihan Status Sedekah: Sudah, Belum'],
     ['9. Pilihan Vendor: '+VENDOR_LIST.join(', ')+'. Jika Lainnya, isi juga kolom "Vendor Lainnya".'],
-    ['10. Kolom angka (DP, Penghasilan, Biaya Cetak, Honor Tim, Diskon, Sedekah Nominal, Setoran ke Shia Makeup) diisi angka saja, tanpa titik/koma/Rp.'],
+    ['10. Kolom angka (DP, Penghasilan, Biaya Cetak, Honor Tim, Diskon, Sedekah Nominal, Harga Paket Vendor) diisi angka saja, tanpa titik/koma/Rp.'],
     ['11. Sedekah Nominal otomatis dihitung ulang oleh aplikasi setiap job dibuka/disimpan lewat form (Rp20.000 jika vendor Shia Makeup, atau kelipatan Rp10.000 per Rp100.000 dari Penghasilan-Honor Tim-Biaya Cetak-Diskon). Nilai di Excel hanya dipakai sebagai cadangan awal.'],
     ['12. Baris tanpa isian Tanggal Acara akan otomatis dilewati saat import.'],
   ]);
@@ -3917,6 +3908,7 @@ function excelJobMatchKey(tanggalAcara, namaKlien, desa){
   return `${norm(tanggalAcara)}|${norm(namaKlien)}|${norm(desa)}`;
 }
 function importExcelFile(file){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengimpor job dari Excel.'); return; }
   if(typeof XLSX==='undefined'){ alert('Pustaka Excel belum termuat. Pastikan koneksi internet aktif lalu coba lagi.'); return; }
   const reader = new FileReader();
   reader.onload = (e)=>{
@@ -4016,6 +4008,7 @@ function attachHandlers(){
     document.getElementById('btnDownloadPoster')?.addEventListener('click', downloadPosterImage);
 
     document.getElementById('btnSaveThanksText')?.addEventListener('click', ()=>{
+      if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah teks ucapan di poster kalender.'); return; }
       const val = (document.getElementById('thanksOverrideInput')?.value || '').trim();
       const key = posterKey(calYear, calMonth);
       if(val){ thanksOverrides[key] = val; } else { delete thanksOverrides[key]; }
@@ -4024,6 +4017,7 @@ function attachHandlers(){
       navigate('kalender');
     });
     document.getElementById('btnResetThanksText')?.addEventListener('click', ()=>{
+      if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah teks ucapan di poster kalender.'); return; }
       const key = posterKey(calYear, calMonth);
       delete thanksOverrides[key];
       saveThanksOverrides();
@@ -4031,17 +4025,20 @@ function attachHandlers(){
       navigate('kalender');
     });
     document.getElementById('btnFontMinus')?.addEventListener('click', ()=>{
+      if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah ukuran font di poster kalender.'); return; }
       thanksFontSize = Math.max(18, thanksFontSize - 2);
       saveThanksFontSize();
       navigate('kalender');
     });
     document.getElementById('btnFontPlus')?.addEventListener('click', ()=>{
+      if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah ukuran font di poster kalender.'); return; }
       thanksFontSize = Math.min(48, thanksFontSize + 2);
       saveThanksFontSize();
       navigate('kalender');
     });
     document.querySelectorAll('.theme-swatch').forEach(b=>{
       b.addEventListener('click', ()=>{
+        if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah warna desain poster kalender.'); return; }
         const idx = Number(b.dataset.themeIdx);
         posterThemeOverrides[posterThemeKey()] = idx;
         savePosterThemeOverrides();
@@ -4050,6 +4047,7 @@ function attachHandlers(){
     });
     document.querySelectorAll('.layout-card').forEach(b=>{
       b.addEventListener('click', ()=>{
+        if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah desain tata letak poster kalender.'); return; }
         const idx = Number(b.dataset.layoutIdx);
         layoutOverrides[posterThemeKey()] = idx;
         saveLayoutOverrides();
@@ -4077,6 +4075,7 @@ function attachHandlers(){
     if(e.target.files[0]) importExcelFile(e.target.files[0]);
   });
   document.getElementById('btnResetAll')?.addEventListener('click', ()=>{
+    if(!isAdmin()){ alert('Hanya Admin yang bisa menghapus semua data.'); return; }
     if(confirm('Yakin ingin menghapus SEMUA data job? Sebaiknya cadangkan dulu sebelum melanjutkan.')){
       jobs = [];
       saveJobs();
@@ -4165,10 +4164,37 @@ function downloadRekapImage(){
    pengguna TIDAK akan melihat notifikasi pop-up "Apa yang Baru" —
    jadi mereka tidak akan tahu ada pembaruan.
 ========================================================= */
-const APP_VERSION = '1.10.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.12.1'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 const CHANGELOG = [
   // ⚠️ Entri baru selalu ditambahkan di PALING ATAS (paling baru duluan).
   // Jangan lupa isi juga saat menambah/mengubah entri di sini!
+  {
+    version: '1.12.1',
+    tanggal: '29 Agustus 2026',
+    items: [
+      'Perbaikan tampilan: kolom Link Maps di form Input/Edit Job kini benar-benar bergaya sama dengan kolom lain (sebelumnya belum ikut bergaya senada karena jenis kolomnya berbeda).',
+      'Ditambahkan tombol "🗺️ Maps" di setiap baris Daftar Job — langsung membuka lokasi job (prioritas Titik Koordinat, kalau kosong pakai Link Maps), bisa dipakai akun Admin maupun Tim.',
+    ]
+  },
+  {
+    version: '1.12.0',
+    tanggal: '29 Agustus 2026',
+    items: [
+      'Kolom Link Maps kembali punya ikon 🔗 dan tombol "Buka" senada dengan kolom Titik Koordinat — tekan untuk langsung membuka lokasi (otomatis ke app Maps di HP, tab baru di laptop).',
+      'Hak akses akun Tim dipersempit lagi: Tim kini TIDAK BISA membuka halaman Pengaturan, tidak bisa mempublish/membatalkan publish/menghapus Saran & Penilaian, dan tidak bisa mengubah teks ucapan, ukuran font, warna tema, maupun desain tata letak keseluruhan di Kalender Job.',
+    ]
+  },
+  {
+    version: '1.11.0',
+    tanggal: '29 Agustus 2026',
+    items: [
+      'Perhitungan Jarak Garis Lurus dihapus — sekarang hanya menampilkan Jarak Real (estimasi rute kendaraan via OSRM) di form job, Detail Job, gambar unduhan, gambar Story, dan Salin Detail.',
+      'Tampilan kolom Link Maps disamakan dengan kolom lokasi lainnya (tanpa ikon/tombol khusus).',
+      'Catatan penjelasan di bawah kolom Sedekah dihapus.',
+      'Kolom "Setoran ke Shia Makeup" diganti nama jadi "Harga Paket Vendor", dan sekarang aktif untuk vendor apa pun selain Kaone Motret (sebelumnya hanya untuk Shia Makeup).',
+      'Hak akses akun Tim diperluas: kini Tim bisa melakukan hampir semua hal (buka Pengaturan, unduh .ics/Google Calendar, Salin Detail, Salin per Bulan, kelola Saran & Penilaian, dll), kecuali aksi yang mengubah data rekap job (tambah/edit/hapus job, ubah status langsung di tabel, pulihkan data, hapus semua data, import job dari Excel).',
+    ]
+  },
   {
     version: '1.10.0',
     tanggal: '29 Agustus 2026',
@@ -4407,7 +4433,7 @@ function buildNotifications(){
   // ~30 hari berikutnya (bukan cuma sekali seumur hidup).
   const BACKUP_REMINDER_DAYS = 30;
   const backupDays = daysSinceLastBackup();
-  if(backupDays===null){
+  if(isAdmin() && backupDays===null){
     list.push({
       id: 'backup_never',
       icon: '💾',
@@ -4415,7 +4441,7 @@ function buildNotifications(){
       desc: 'Simpan salinan .json secara berkala supaya data tetap aman.',
       onClick: ()=>{ closeNotifPanel(); navigate('pengaturan'); }
     });
-  }else if(backupDays>=BACKUP_REMINDER_DAYS){
+  }else if(isAdmin() && backupDays>=BACKUP_REMINDER_DAYS){
     const bucket = Math.floor(backupDays/BACKUP_REMINDER_DAYS);
     list.push({
       id: 'backup_bucket_' + bucket,
@@ -4586,6 +4612,9 @@ document.addEventListener('click', (e)=>{
 
   const gcalBtn = e.target.closest('[data-gcal]');
   if(gcalBtn){ openGoogleCalendar(gcalBtn.dataset.gcal); return; }
+
+  const openMapsBtn = e.target.closest('[data-open-maps]');
+  if(openMapsBtn){ openJobMaps(openMapsBtn.dataset.openMaps); return; }
 
   const icsBtn = e.target.closest('[data-ics]');
   if(icsBtn){ downloadIcs(icsBtn.dataset.ics); return; }

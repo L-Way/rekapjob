@@ -462,6 +462,7 @@
   .bonus-adjust-note{color:#3a3423;font-size:12px;margin-top:2px;}
   .bonus-adjust-meta{font-size:10.5px;color:var(--ink-soft);margin-top:3px;}
   .bonus-claim-btn{background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#231f0f;border:none;padding:9px 16px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 6px 16px rgba(212,175,0,.32);}
+  .bonus-claim-btn:disabled{background:#e7e2cf;color:#9a927a;box-shadow:none;cursor:not-allowed;opacity:.85;}
   .bonus-claim-pending{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;font-size:11.5px;font-weight:700;background:var(--gold-pale);color:#7a6400;white-space:nowrap;}
   .bonus-cair-btn{background:var(--ok);color:#fff;border:none;padding:7px 13px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap;flex-shrink:0;}
   .bonus-claim-alert{margin-top:10px;padding:10px 12px;border-radius:9px;background:#fff6d8;border:1px dashed var(--gold-light);font-size:12px;color:#5c4a12;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
@@ -2458,19 +2459,17 @@ function userBonusRupiah(userId){
   return Math.round(jam * BONUS_PER_JAM);
 }
 /* ---------- PEMBATASAN KLAIM PER BULAN ----------
-   Bonus satu bulan baru boleh mulai diklaim setelah "masa tunggu" beberapa bulan
-   terlewati sejak bulan itu berjalan (lihat KLAIM_BUFFER_BULAN), dan setelah itu
-   boleh diklaim kapan saja (tidak ada batas akhir). Masa tunggu ini sengaja dibuat
-   LEBIH dari sekadar "bulan itu sudah lewat" — supaya ada jeda waktu untuk verifikasi
-   data sebelum Tim mengajukan klaim, dan supaya Tim tidak mengklaim berkali-kali
-   secara tergesa-gesa begitu satu bulan baru saja berakhir.
-   Contoh dengan KLAIM_BUFFER_BULAN = 2: bonus bulan September baru boleh mulai
-   diklaim begitu masuk bulan November (1 November), bukan langsung 1 Oktober. */
+   Bonus satu bulan baru boleh diklaim setelah bulan itu sendiri selesai berjalan
+   (lihat KLAIM_BUFFER_BULAN), dan setelah itu boleh diklaim kapan saja (tidak ada
+   batas akhir). Jeda ini sengaja dibuat supaya Tim tidak mengklaim bonus bulan yang
+   masih berjalan (jam kerja bulan itu belum tentu final).
+   Contoh dengan KLAIM_BUFFER_BULAN = 1: bonus bulan September baru boleh mulai
+   diklaim begitu masuk bulan Oktober (1 Oktober). */
 // Jumlah bulan jeda sebelum bonus satu bulan boleh mulai diklaim, dihitung dari
-// AWAL bulan itu sendiri. Nilai 2 = boleh diklaim begitu masuk 2 bulan setelahnya
-// (mis. bulan 9 → boleh diklaim mulai bulan 11). Ubah angka ini saja kalau kebijakan
-// jeda klaim berubah di kemudian hari.
-const KLAIM_BUFFER_BULAN = 2;
+// AWAL bulan itu sendiri. Nilai 1 = boleh diklaim begitu bulan itu selesai & masuk
+// bulan berikutnya (mis. bulan 9 → boleh diklaim mulai bulan 10). Ubah angka ini saja
+// kalau kebijakan jeda klaim berubah di kemudian hari.
+const KLAIM_BUFFER_BULAN = 1;
 // Bulan berjalan sekarang, format 'YYYY-MM'.
 function currentBulanStr(){
   const d = new Date();
@@ -4937,7 +4936,7 @@ function viewTugas(){
         </div>
         ${myPendingClaim
           ? `<span class="bonus-claim-pending">⏳ Menunggu Dicairkan</span>`
-          : (myClaimableRp > 0 ? `<button type="button" class="bonus-claim-btn" id="btnClaimBonus">📲 Klaim Bonus</button>` : '')}
+          : `<button type="button" class="bonus-claim-btn" id="btnClaimBonus" ${myClaimableRp>0?'':'disabled'} title="${myClaimableRp>0?'Ajukan klaim bonus':escapeHtml(myNextClaim?`Belum bisa diklaim — bonus bulan ${myNextClaim.label} baru bisa diklaim mulai ${myNextClaim.tanggalMulai}`:'Belum ada bonus yang bisa diklaim')}">📲 Klaim Bonus</button>`}
       </div>
       <div class="task-bonus-detail">
         Jam kerja dari tugas: <b>${fmtTaskHours(userTaskHours(currentUserId))}</b>
@@ -6592,12 +6591,20 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.2.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.2.1'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.2.1',
+    tanggal: '02 September 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Jeda klaim bonus tim disesuaikan kembali: bonus satu bulan sekarang bisa mulai diklaim begitu bulan itu selesai (mis. bonus bulan September baru bisa diklaim mulai 1 Oktober), bukan lagi menunggu 2 bulan.' },
+      { kategori: 'Peningkatan', teks: 'Tombol "Klaim Bonus" di halaman Tugas Saya sekarang selalu tampil, tapi otomatis nonaktif (tidak bisa ditekan) selama belum ada bonus yang bisa dicairkan.' },
+    ]
+  },
   {
     version: '1.2.0',
     tanggal: '02 September 2026',

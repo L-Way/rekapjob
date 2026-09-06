@@ -140,6 +140,13 @@
   .stat .value{font-family:'Fraunces',serif; font-size:24px; font-weight:700; margin-top:4px; color:#241f0f; overflow-wrap:break-word; word-break:break-word;}
   .stat.gold{background:linear-gradient(135deg,var(--gold-light),var(--gold)); border:none;}
   .stat.gold .label,.stat.gold .value{color:#231f0f;}
+  .stat-clickable{
+    cursor:pointer;
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, border-color .15s ease;
+  }
+  .stat-clickable:hover{transform:translateY(-3px); box-shadow:0 10px 22px rgba(180,150,0,.2); border-color:var(--gold-light);}
+  .stat-clickable:active{transform:translateY(0) scale(.97); transition-duration:.08s;}
+  .stat-clickable .label::after{content:' 🔍'; font-size:10px; opacity:.6;}
 
   .upcoming{margin-top:34px;}
   .daily-box{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:38px;}
@@ -1264,8 +1271,17 @@
       di file ini). Ikuti semver: patch (x.x.+1) untuk perbaikan kecil,
       minor (x.+1.0) untuk fitur baru, major (+1.0.0) untuk perubahan
       besar/breaking.
+      ⚠️ PENGECUALIAN VERSI: kalau perubahan ini dilakukan di HARI YANG
+      SAMA dengan tanggal entri PALING ATAS yang sudah ada di CHANGELOG
+      saat ini, JANGAN naikkan versi lagi — tetap pakai nomor versi
+      yang sama (anggap sebagai kelanjutan pembaruan hari itu). Versi
+      HANYA dinaikkan kalau perubahan dilakukan di hari yang berbeda
+      dari tanggal entri teratas tersebut.
    2. TAMBAHKAN satu entri BARU di paling ATAS array CHANGELOG (cari
-      "const CHANGELOG" di file ini). JANGAN PERNAH menimpa atau
+      "const CHANGELOG" di file ini) — atau, kalau versinya tidak naik
+      sesuai pengecualian di atas, cukup TAMBAHKAN satu item baru ke
+      dalam "items" milik entri teratas yang sudah ada (jangan buat
+      entri versi/tanggal baru). JANGAN PERNAH menimpa atau
       menghapus entri versi sebelumnya — itu riwayat resmi aplikasi.
       Tulis "items" dengan bahasa yang mudah dipahami pengguna awam
       (bukan istilah teknis programmer), singkat & jelas dari sudut
@@ -3033,6 +3049,11 @@ function navigate(view){
   if(view==='ulasan') pullUlasanFromCloud();
   if(view==='form' && isAdmin()) pullTeamAccountsPublic();
   if(view==='tugas' && isAdmin()) pullAkunFromCloud();
+  // Data 'tasks' sebelumnya hanya ditarik SEKALI saat aplikasi pertama dibuka, jadi kalau
+  // Admin/Tim lain menambah/mengubah tugas dari device lain sementara device ini sudah
+  // terbuka, perubahan itu tidak pernah muncul sampai aplikasi ditutup & dibuka ulang.
+  // Sekarang setiap kali membuka menu Tugas, tarik ulang data terbaru dari cloud.
+  if(view==='tugas') pullFromCloud().then(changed=>{ if(changed && currentView==='tugas') refreshView(); });
   if(view==='laporan' && !isAdmin()) pullTeamAccountsPublic();
   if(view==='pengaturan' && isAdmin()) pullAkunFromCloud();
 }
@@ -3081,6 +3102,9 @@ function viewBeranda(){
   const totalBersihBulanIni = thisMonthJobs.reduce((s,j)=>s+hitungBersih(j),0) - (isAdmin() ? totalBonusDiklaimBulanIni() : 0);
   const belumEdit = jobs.filter(j=>j.prosesEdit!=='Selesai').length;
   const belumCetak = jobs.filter(j=>j.prosesCetak!=='Selesai').length;
+  // "Belum" di sini mencakup dua nilai pengiriman: 'Belum Diantar' dan 'Belum Dijemput'
+  // (lihat PENGIRIMAN_LIST) — keduanya dianggap belum tuntas selama belum diawali kata 'Sudah'.
+  const belumPengiriman = jobs.filter(j=>!(j.pengiriman||'').startsWith('Sudah')).length;
 
   const upcoming = [...jobs]
     .filter(j=>j.tanggalAcara && new Date(j.tanggalAcara) >= new Date(new Date().toDateString()))
@@ -3177,6 +3201,10 @@ function viewBeranda(){
     <div class="stat">
       <div class="label">Cetak Belum Selesai</div>
       <div class="value">${belumCetak}</div>
+    </div>
+    <div class="stat stat-clickable" data-open-status-list="pengiriman" title="Klik untuk melihat daftar job">
+      <div class="label">Belum Dijemput/Diantar</div>
+      <div class="value">${belumPengiriman}</div>
     </div>
   </div>
 
@@ -4175,6 +4203,61 @@ function openDateModal(dateIso){
     `).join('')}
   `);
 }
+/* ---------- Modal daftar job dari kartu statistik Beranda (mis. "Belum Dijemput/Diantar") ----------
+   Dibuat generik per-field supaya gampang dipakai lagi untuk stat lain di masa depan
+   (mis. kalau nanti "Edit/Cetak Belum Selesai" juga ingin dibuat bisa diklik). */
+const STATUS_LIST_CONFIG = {
+  pengiriman: {
+    label: 'Pengiriman',
+    icon: '🚚',
+    options: PENGIRIMAN_LIST,
+    isPending: j => !(j.pengiriman||'').startsWith('Sudah'),
+  },
+};
+function renderStatusListModalHtml(field){
+  const cfg = STATUS_LIST_CONFIG[field];
+  if(!cfg) return '';
+  const list = sortedJobsWithNo().filter(cfg.isPending);
+  return `
+    <button type="button" class="close-x" id="closeModal">✕</button>
+    <h3>${cfg.icon} ${cfg.label} Belum Tuntas</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job dengan status ${cfg.label.toLowerCase()} yang belum tuntas</div>
+    ${list.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">✅</div>Semua ${cfg.label.toLowerCase()} sudah tuntas.</div>` :
+      list.map(j=>`
+        <div class="modal-job">
+          <div style="font-weight:700;margin-bottom:4px;">#${j.noUrut} — ${escapeHtml(j.namaKlien||'Tanpa Nama')} <span class="pill">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara||'-')}</span></div>
+          <div class="mj-row"><span>Tanggal Acara</span><span>${fmtTgl(j.tanggalAcara)}</span></div>
+          <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(j.desa||'-')}, ${escapeHtml(j.kecamatan||'-')}</span></div>
+          <div class="mj-row"><span>Status ${cfg.label}</span><span>${badgeSelect(j.id, field, cfg.options, j[field])}</span></div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" data-view-job="${j.id}">Lihat Detail</button>
+            <button type="button" class="btn btn-outline admin-only" data-edit="${j.id}">✏️ Edit Job</button>
+          </div>
+        </div>
+      `).join('')}
+  `;
+}
+// ⚠️ Kalau fungsi ini diubah (field baru ditambahkan ke STATUS_LIST_CONFIG, dsb),
+// ingat catat juga di CHANGELOG + naikkan APP_VERSION — lihat aturan wajib di atas file ini.
+function openStatusListModal(field){
+  showModal(renderStatusListModalHtml(field));
+  const ov = document.getElementById('modalOverlay');
+  ov?.querySelectorAll('select[data-field]').forEach(sel=>{
+    sel.addEventListener('click', e=> e.stopPropagation());
+    sel.addEventListener('change', e=>{
+      e.stopPropagation();
+      if(!isAdmin()) return;
+      const jobId = sel.dataset.jobId;
+      const idx = jobs.findIndex(x=>x.id===jobId);
+      if(idx===-1) return;
+      jobs[idx][field] = sel.value;
+      saveJobs();
+      toast('Status diperbarui');
+      render(); // supaya angka di kartu statistik Beranda di belakang modal ikut ter-update
+      openStatusListModal(field); // bangun ulang isi modal (job yang sudah tuntas akan hilang dari daftar)
+    });
+  });
+}
 function showModal(innerHtml){
   // hapus modal lama jika ada, agar tidak menumpuk
   closeModal();
@@ -4916,6 +4999,7 @@ function viewTugas(){
         </div>
       </div>
       ${isAdmin()?`<button class="btn btn-primary" id="btnOpenTaskForm">＋ Bagi Tugas</button>`:''}
+      <button type="button" class="btn btn-outline" id="btnRefreshTugas">🔄 Refresh</button>
     </div>
 
     <div class="task-summary-grid">
@@ -6362,6 +6446,9 @@ function attachHandlers(){
   document.querySelectorAll('[data-goto]').forEach(el=>{
     el.addEventListener('click', ()=> navigate(el.dataset.goto));
   });
+  document.querySelectorAll('[data-open-status-list]').forEach(el=>{
+    el.addEventListener('click', ()=> openStatusListModal(el.dataset.openStatusList));
+  });
   if(document.getElementById('dailyQuoteText')){
     renderDailyQuote();
     renderDailyAyat();
@@ -6455,6 +6542,20 @@ function attachHandlers(){
 
   // SARAN & PENILAIAN
   document.getElementById('btnRefreshUlasan')?.addEventListener('click', pullUlasanFromCloud);
+
+  // PEMBAGIAN TUGAS — tombol refresh manual (dipasang di luar bindTaskHandlers supaya
+  // tetap aktif walau daftar tugas sedang kosong)
+  document.getElementById('btnRefreshTugas')?.addEventListener('click', async (e)=>{
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = '⏳ Memeriksa...';
+    const changed = await pullFromCloud();
+    btn.disabled = false;
+    btn.textContent = original;
+    if(currentView==='tugas') refreshView();
+    toast(changed ? 'Data tugas diperbarui' : 'Gagal memuat pembaruan, periksa koneksi internet');
+  });
 
   // PENGATURAN
   document.getElementById('btnExportBackup')?.addEventListener('click', exportBackup);
@@ -6580,9 +6681,15 @@ function downloadRekapImage(){
    OLEH PENGGUNA DI FILE INI (lihat aturan lengkap & pengecualiannya
    di paling atas file ini):
    1. Naikkan APP_VERSION (ikuti semver: patch untuk perbaikan kecil,
-      minor untuk fitur baru, major untuk perubahan besar/breaking).
+      minor untuk fitur baru, major untuk perubahan besar/breaking) —
+      KECUALI kalau perubahan ini masih di HARI YANG SAMA dengan
+      tanggal entri paling atas di CHANGELOG saat ini; dalam kasus itu
+      nomor versi TETAP SAMA (tidak dinaikkan lagi).
    2. Tambahkan satu entri BARU di paling ATAS array CHANGELOG (jangan
-      menimpa/menghapus entri versi sebelumnya — itu riwayat).
+      menimpa/menghapus entri versi sebelumnya — itu riwayat) — atau,
+      kalau versi tidak naik sesuai pengecualian di atas, cukup
+      tambahkan satu item baru ke "items" milik entri teratas yang
+      sudah ada.
    3. Isi "items" dengan bahasa yang mudah dipahami pengguna awam
       (bukan bahasa teknis programmer), singkat & jelas apa yang
       berubah/ditambah/diperbaiki dari sudut pandang pengguna.
@@ -6591,12 +6698,21 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.2.1'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.2.2'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.2.2',
+    tanggal: '06 September 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Menu Pembagian Tugas / Tugas Saya sekarang otomatis menarik data terbaru dari cloud setiap kali dibuka, dan diperiksa ulang otomatis tiap 20 detik selama halaman ini terbuka — supaya tugas baru atau perubahan status dari device lain (Admin maupun Tim) langsung muncul tanpa harus menutup & membuka ulang aplikasi.' },
+      { kategori: 'Fitur', teks: 'Tombol "🔄 Refresh" ditambahkan di halaman Pembagian Tugas / Tugas Saya untuk memeriksa pembaruan data secara langsung kapan saja diinginkan.' },
+      { kategori: 'Fitur', teks: 'Kartu statistik baru "Belum Dijemput/Diantar" di Beranda — bisa diklik untuk melihat daftar lengkap job yang belum dijemput/diantar, dan Admin bisa langsung mengubah status pengirimannya dari daftar tersebut.' },
+    ]
+  },
   {
     version: '1.2.1',
     tanggal: '02 September 2026',
@@ -7216,6 +7332,18 @@ function initAppAfterAuth(){
   setInterval(()=>{
     if(autoUpdateTaskStatuses() && currentView==='tugas') navigate('tugas');
   }, 60000);
+
+  // Selagi halaman Pembagian Tugas sedang dibuka, tarik ulang data dari cloud secara
+  // berkala supaya tugas baru / perubahan status dari device lain (Admin atau anggota
+  // Tim lain) ikut muncul tanpa harus menutup & membuka ulang aplikasi.
+  // ⚠️ Kalau logika penarikan data tugas di sini diubah lagi (interval waktunya,
+  // caranya, dsb), ingat catat juga di CHANGELOG + naikkan APP_VERSION — lihat
+  // aturan wajib di paling atas file ini.
+  setInterval(()=>{
+    if(currentView==='tugas'){
+      pullFromCloud().then(changed=>{ if(changed && currentView==='tugas') refreshView(); });
+    }
+  }, 20000);
 
   // Notifikasi: hitung badge begitu app dibuka, lalu cek apakah perlu
   // menampilkan pop-up "Apa yang Baru" (hanya muncul kalau memang ada

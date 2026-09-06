@@ -514,6 +514,37 @@
   .task-slot-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
   .task-slot-row input[type="time"]{flex:1;min-width:0;}
   .task-slot-sep{color:var(--ink-soft);font-weight:700;}
+  /* Blok per-akun di form "Bagi Tugas Baru": tiap akun Tim yang dicentang punya
+     panel Role + Jam Kerja sendiri-sendiri (lihat renderTaskAkunListHtml). */
+  .task-akun-block{border:1.5px solid #e5ddc0;border-radius:9px;background:#fffef9;padding:10px 12px;}
+  .task-akun-detail{margin-top:10px;padding-top:10px;border-top:1px dashed #e5ddc0;display:flex;flex-direction:column;gap:10px;}
+  .task-akun-detail label{font-size:12px;}
+  /* Dropdown kustom Job/Tanggal Acara — dipakai (bukan <select> bawaan) supaya opsi
+     "Tampilkan job yang sudah lewat" bisa menambah daftar tanpa menutup panel dulu. */
+  .task-job-picker{position:relative;}
+  .task-job-picker-btn{
+    width:100%; text-align:left; padding:10px 12px; border:1.5px solid #e5ddc0; border-radius:9px;
+    font-size:14px; font-family:inherit; background:#fffefb; color:var(--ink); cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .task-job-picker-btn:focus{outline:none; border-color:var(--gold);}
+  .task-job-picker-btn.placeholder{color:#9a927a;}
+  .task-job-picker-caret{color:var(--ink-soft); font-size:11px; flex-shrink:0;}
+  .task-job-dropdown-panel{
+    position:absolute; z-index:60; top:calc(100% + 6px); left:0; right:0;
+    background:#fffefb; border:1.5px solid #e5ddc0; border-radius:10px;
+    box-shadow:0 10px 26px rgba(20,17,5,.18); max-height:280px; overflow-y:auto; padding:6px;
+  }
+  .task-job-option{padding:9px 10px; border-radius:7px; font-size:13.5px; cursor:pointer; line-height:1.4;}
+  .task-job-option:hover{background:var(--gold-pale);}
+  .task-job-option.selected{background:var(--gold-pale); font-weight:700;}
+  .task-job-option-sub{font-size:11px; color:var(--ink-soft); margin-top:1px;}
+  .task-job-option-toggle{
+    padding:9px 10px; border-radius:7px; font-size:12.5px; font-weight:700; cursor:pointer;
+    color:#7a6400; background:var(--gold-pale); text-align:center; margin-top:4px;
+  }
+  .task-job-option-toggle:hover{filter:brightness(.97);}
+  .task-job-option-empty{padding:10px; font-size:12.5px; color:var(--ink-soft); text-align:center;}
 
   /* Modal */
   .overlay{
@@ -1950,6 +1981,7 @@ const EXCEL_FIELD_MAP = [
   {header:'Paket', field:'paket'},
   {header:'Deskripsi Paket', field:'deskripsiPaket'},
   {header:'Desa', field:'desa'},
+  {header:'Dusun (opsional)', field:'dusun'},
   {header:'Kecamatan', field:'kecamatan'},
   {header:'Kabupaten', field:'kabupaten'},
   {header:'Provinsi', field:'provinsi'},
@@ -2773,6 +2805,19 @@ function toast(msg){
 function escapeHtml(s){
   return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+/* Gabungan nama Dusun (kalau dicentang & diisi) dengan nama Desa/Kelurahan,
+   dipakai di semua tempat yang menampilkan alamat lengkap job (daftar, detail,
+   rekap, dsb) supaya info dusun ikut tampil konsisten tanpa mengubah tempat
+   yang memang sengaja dibuat ringkas (poster kalender & judul kalender/ICS). */
+function desaDisplay(j){
+  const desa = (j.desa||'').trim();
+  // Cukup cek isi kolom Dusun-nya saja (bukan status ceklisnya) supaya tetap tampil
+  // benar untuk data yang masuk lewat cara lain di luar form (mis. import Excel).
+  const dusun = (j.dusun||'').trim();
+  if(dusun && desa) return `Dusun ${dusun}, ${desa}`;
+  if(dusun) return `Dusun ${dusun}`;
+  return desa;
+}
 
 /* jobs terurut berdasarkan tanggal acara, dengan no urut otomatis mulai dari 180.
    Di-cache supaya tidak menyortir & memetakan ULANG seluruh daftar job setiap kali
@@ -3215,7 +3260,7 @@ function viewBeranda(){
         <div class="job-mini">
           <div>
             <div class="l">#${getJobNo(j.id)} — ${escapeHtml(j.namaKlien||'Tanpa Nama')} <span class="pill">${escapeHtml(j.jenisAcara||'-')}</span></div>
-            <div class="s">${fmtTgl(j.tanggalAcara)} · ${escapeHtml(j.desa||'')}, ${escapeHtml(j.kecamatan||'')}</div>
+            <div class="s">${fmtTgl(j.tanggalAcara)} · ${escapeHtml(desaDisplay(j))}, ${escapeHtml(j.kecamatan||'')}</div>
           </div>
           <button class="icon-btn" data-view-job="${j.id}">Lihat</button>
         </div>
@@ -3229,7 +3274,7 @@ function viewBeranda(){
 ========================================================= */
 function buildJobFormHtml(j){
   const d = j || {
-    tanggalAcara:'', tanggalSelesai:'', desa:'', kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'', koordinat:'',
+    tanggalAcara:'', tanggalSelesai:'', desa:'', dusun:'', adaDusun:false, kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'', koordinat:'',
     jenisAcara:'', jenisAcaraLain:'', namaKlien:'', noWhatsapp:'', paket:'', deskripsiPaket:'',
     prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Diantar',
     vendor:'', vendorLain:'', timFreelancer:'', dp:'', biayaCetak:'', honorTim:'', honorTimList:[], diskon:'',
@@ -3298,6 +3343,14 @@ function buildJobFormHtml(j){
 
       <div class="section-title">📍 Lokasi Acara</div>
       <div class="form-grid">
+        <div class="full" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="adaDusunInput" name="adaDusun" style="width:18px;height:18px;" ${(d.adaDusun || d.dusun)?'checked':''} onchange="document.getElementById('dusunWrap').style.display=this.checked?'block':'none'">
+          <label for="adaDusunInput" style="margin:0;">Alamat ini punya Dusun</label>
+        </div>
+        <div class="full" id="dusunWrap" style="display:${(d.adaDusun || d.dusun)?'block':'none'}">
+          <label>Nama Dusun</label>
+          <input type="text" name="dusun" value="${escapeHtml(d.dusun||'')}" placeholder="Contoh: Dusun II Sukamaju">
+        </div>
         <div><label>Desa / Kelurahan</label><input type="text" name="desa" value="${escapeHtml(d.desa)}"></div>
         <div><label>Kecamatan</label><input type="text" name="kecamatan" value="${escapeHtml(d.kecamatan)}"></div>
         <div><label>Kabupaten / Kota</label><input type="text" name="kabupaten" value="${escapeHtml(d.kabupaten)}"></div>
@@ -3534,6 +3587,11 @@ function bindJobFormEvents(scopeEl, onDone){
     e.preventDefault();
     const fd = new FormData(form);
     const data = Object.fromEntries(fd.entries());
+    // Checkbox yang tidak dicentang tidak ikut terkirim lewat FormData, jadi harus
+    // dibaca terpisah. Kalau tidak dicentang, kosongkan juga isian Nama Dusun supaya
+    // tidak ada teks dusun "nyangkut" dari isian sebelumnya yang sudah disembunyikan.
+    data.adaDusun = fd.get('adaDusun') === 'on';
+    if(!data.adaDusun) data.dusun = '';
     // Hilangkan spasi berlebih di awal/akhir tiap isian teks (mis. "Portibi " dan "Portibi"
     // supaya dianggap sama di pencarian, filter, maupun rekap).
     Object.keys(data).forEach(k=>{
@@ -3675,7 +3733,7 @@ function renderDaftarTable(){
   const fb = document.getElementById('filterBulan')?.value||'';
   let list = sortedJobsWithNo();
   if(q){
-    list = list.filter(j=>[j.namaKlien,j.desa,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket]
+    list = list.filter(j=>[j.namaKlien,j.desa,j.dusun,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket]
       .join(' ').toLowerCase().includes(q));
   }
   if(fj) list = list.filter(j=>j.jenisAcara===fj);
@@ -3699,7 +3757,7 @@ function renderDaftarTable(){
         <td>${fmtTgl(j.tanggalAcara)}</td>
         <td>${escapeHtml(j.namaKlien||'-')}</td>
         <td>${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara)}</td>
-        <td>${escapeHtml(j.desa||'-')}, ${escapeHtml(j.kecamatan||'-')}</td>
+        <td>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</td>
         <td>${badgeSelect(j.id, 'prosesEdit', ['Belum Selesai','Selesai'], j.prosesEdit)}</td>
         <td>${badgeSelect(j.id, 'prosesCetak', ['Belum Selesai','Selesai'], j.prosesCetak)}</td>
         <td>${badgeSelect(j.id, 'pengiriman', PENGIRIMAN_LIST, j.pengiriman)}</td>
@@ -3759,7 +3817,7 @@ function buildMonthlyCopyText(selectedKeys){
       const tglNum = Number(j.tanggalAcara.slice(8,10));
       const namaHari = namaHariID(new Date(j.tanggalAcara+'T00:00:00'));
       const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : (j.jenisAcara||'-');
-      const desa = j.desa || '-';
+      const desa = desaDisplay(j) || '-';
       const tim = (j.timFreelancer||'').trim();
       const noUrut = getJobNo(j.id);
       const lines = [
@@ -4189,7 +4247,7 @@ function openDateModal(dateIso){
       <div class="modal-job">
         <div style="font-weight:700;margin-bottom:4px;">#${getJobNo(j.id)} — ${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
         <div class="mj-row"><span>Jenis Acara</span><span>${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara||'-')}</span></div>
-        <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(j.desa||'-')}, ${escapeHtml(j.kecamatan||'-')}, ${escapeHtml(j.kabupaten||'-')}</span></div>
+        <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}, ${escapeHtml(j.kabupaten||'-')}</span></div>
         <div class="mj-row"><span>Paket</span><span>${escapeHtml(j.paket||'-')}</span></div>
         <div class="mj-row"><span>WhatsApp</span><span>${escapeHtml(j.noWhatsapp||'-')}</span></div>
         <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
@@ -4227,7 +4285,7 @@ function renderStatusListModalHtml(field){
         <div class="modal-job">
           <div style="font-weight:700;margin-bottom:4px;">#${j.noUrut} — ${escapeHtml(j.namaKlien||'Tanpa Nama')} <span class="pill">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara||'-')}</span></div>
           <div class="mj-row"><span>Tanggal Acara</span><span>${fmtTgl(j.tanggalAcara)}</span></div>
-          <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(j.desa||'-')}, ${escapeHtml(j.kecamatan||'-')}</span></div>
+          <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</span></div>
           <div class="mj-row"><span>Status ${cfg.label}</span><span>${badgeSelect(j.id, field, cfg.options, j[field])}</span></div>
           <div class="modal-actions">
             <button type="button" class="btn btn-outline" data-view-job="${j.id}">Lihat Detail</button>
@@ -4339,7 +4397,7 @@ function openJobDetailModal(jobId){
   const j = jobs.find(x=>x.id===jobId);
   if(!j) return;
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
-  const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
+  const lokasiFull = [desaDisplay(j),j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
   const jarakJalanCachedDetail = getCachedJarakJalanKm(j);
   const koordDetailValid = !!parseCoordString(j.koordinat);
   // Kalau belum ada di cache tapi koordinatnya valid, tampilkan status "Menghitung…"
@@ -4460,7 +4518,7 @@ function truncateText(s, max){
    otomatis disembunyikan supaya poster tidak penuh sesak oleh data kosong. */
 function buildJobPosterHtml(j){
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
-  const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
+  const lokasiFull = [desaDisplay(j),j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
   const col = jenisAcaraColor(j.jenisAcara);
   const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
   const jarakJalanPoster = getCachedJarakJalanKm(j); // poster dirender sinkron saat diunduh — pakai cache saja (biasanya sudah terisi kalau Detail Job sempat dibuka lebih dulu)
@@ -4602,7 +4660,7 @@ function sensorNama(nama){
 function buildJobStoryHtml(j){
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Acara') : (j.jenisAcara||'Acara');
   const col = jenisAcaraColor(j.jenisAcara);
-  const lokasiUmum = [j.desa, j.kecamatan, j.kabupaten].filter(Boolean).join(', ')
+  const lokasiUmum = [desaDisplay(j), j.kecamatan, j.kabupaten].filter(Boolean).join(', ')
     || j.provinsi || '';
   const jarakJalanStory = getCachedJarakJalanKm(j); // kartu Story dirender sinkron saat diunduh — pakai cache saja
 
@@ -4701,7 +4759,7 @@ function copyJobDetails(jobId){
   const j = jobs.find(x=>x.id===jobId);
   if(!j) return;
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
-  const lokasiFull = [j.desa,j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
+  const lokasiFull = [desaDisplay(j),j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
   const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
   const jarakJalanCopy = getCachedJarakJalanKm(j); // teks Salin Detail dibuat sinkron saat tombolnya diklik — pakai cache saja
 
@@ -4923,10 +4981,10 @@ function viewTugas(){
     .sort((a,b)=>new Date(b.tanggalAcara)-new Date(a.tanggalAcara)) : [];
   const totalHonorSaya = honorJobList.reduce((s,x)=>s+x.nominal,0);
   const jobOpts = taskJobOptions();
-  // Kalau Admin sedang mengedit tugas yang sudah ada, form "Bagi Tugas" dipakai ulang
-  // dalam mode edit: judul, tombol, dan seluruh isian di-prefill dari tugas ini.
-  const editTask = (isAdmin() && editingTaskId) ? tasks.find(x=>String(x.id)===String(editingTaskId)) : null;
-  const editSlots = editTask ? getTaskSlots(editTask) : [];
+  // Catatan: form "Bagi Tugas" / "Edit Tugas" sekarang dibuka lewat modal popup
+  // (lihat openTaskFormModal & buildTaskFormHtml), bukan lagi kartu inline di
+  // halaman ini — jobOpts di atas tetap dipakai untuk cek "Belum ada job" pada
+  // tombol Bagi Tugas di toolbar.
   const filterUser = taskRekapFilter.userId || '';
   const filterRole = taskRekapFilter.role || '';
   const filterStatus = taskRekapFilter.status || '';
@@ -5164,34 +5222,224 @@ function viewTugas(){
       </table>` : `<div class="empty-state"><div class="em">🗂️</div>Belum ada tugas yang sesuai filter.</div>`}
     </div>
   </div>
-
-  ${isAdmin()?`
-  <div class="card admin-only" id="taskFormCard" style="display:${editTask?'block':'none'};">
-    <div class="toolbar">
-      <div><h2 style="margin:0;">${editTask?'✏️ Edit Pembagian Tugas':'➕ Bagi Tugas Baru'}</h2><div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">Tugas terhubung langsung ke job yang sudah tercatat.</div></div>
-      <button type="button" class="btn btn-outline" id="btnCloseTaskForm">Tutup</button>
+  `;
+}
+/* Markup form Bagi Tugas / Edit Tugas — dipakai di dalam modal popup (lihat
+   openTaskFormModal) supaya proses isi tugas tidak lagi berbagi DOM dengan
+   #app (yang di-render ulang tiap 20 detik oleh auto-refresh cloud saat
+   Admin membuka menu Pembagian Tugas). Karena modal ditaruh terpisah di luar
+   #app, render ulang #app itu tidak lagi ikut menutup/mereset form ini. */
+/* ---------- Akun Tim + Role + Jam Kerja sendiri-sendiri di form "Bagi Tugas Baru" ----------
+   State ini hanya dipakai saat menambah tugas baru (bukan mode edit, yang tetap satu
+   akun/role/jam saja). Tiap akun Tim yang dicentang punya entri sendiri, sehingga role
+   dan jam kerjanya bisa diatur berbeda-beda per akun. */
+let taskFormAkunTugas = []; // [{userId, username, role, slots:[{mulai,selesai}]}, ...]
+function renderTaskAkunListHtml(){
+  const people = taskEligibleAccounts();
+  return people.map(a=>{
+    const sel = taskFormAkunTugas.find(x=>String(x.userId)===String(a.id));
+    return `
+    <div class="task-akun-block">
+      <label class="honor-tim-check" style="cursor:pointer;">
+        <input type="checkbox" data-task-akun="${escapeHtml(a.id)}" data-task-akun-nama="${escapeHtml(a.username)}" ${sel?'checked':''} onchange="toggleTaskAkun(this)">
+        <span>👤 ${escapeHtml(a.username)}</span>
+      </label>
+      ${sel ? `
+      <div class="task-akun-detail">
+        <div>
+          <label>Role Tugas *</label>
+          <select data-task-akun-role="${escapeHtml(a.id)}" onchange="onTaskAkunRoleChange(this)" required>
+            <option value="">Pilih role...</option>
+            <option value="Fotografer" ${sel.role==='Fotografer'?'selected':''}>📷 Fotografer</option>
+            <option value="Videografer" ${sel.role==='Videografer'?'selected':''}>🎥 Videografer</option>
+          </select>
+        </div>
+        <div>
+          <label>Jam Kerja * <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">(bisa tambah lebih dari satu sesi, mis. pagi 08.00–10.00 lalu sore 14.00–16.00)</span></label>
+          <div class="task-akun-slots">
+            ${sel.slots.map((s,idx)=>`
+            <div class="task-slot-row">
+              <input type="time" required value="${escapeHtml(s.mulai||'08:00')}" onchange="onTaskAkunSlotChange(this,'${escapeHtml(a.id)}',${idx},'mulai')">
+              <span class="task-slot-sep">–</span>
+              <input type="time" required value="${escapeHtml(s.selesai||'10:00')}" onchange="onTaskAkunSlotChange(this,'${escapeHtml(a.id)}',${idx},'selesai')">
+              <button type="button" class="icon-btn icon-btn-danger" title="Hapus sesi jam ini" onclick="removeTaskAkunSlot('${escapeHtml(a.id)}',${idx})">🗑️</button>
+            </div>`).join('')}
+          </div>
+          <button type="button" class="btn btn-outline" style="margin-top:2px;" onclick="addTaskAkunSlot('${escapeHtml(a.id)}')">➕ Tambah Jam</button>
+        </div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+function refreshTaskAkunList(){
+  const wrap = document.getElementById('taskAkunList');
+  if(wrap) wrap.innerHTML = renderTaskAkunListHtml();
+}
+function toggleTaskAkun(cb){
+  const id = cb.dataset.taskAkun;
+  const username = cb.dataset.taskAkunNama || '';
+  if(cb.checked){
+    if(!taskFormAkunTugas.find(x=>String(x.userId)===String(id))){
+      taskFormAkunTugas.push({userId:id, username, role:'', slots:[{mulai:'08:00',selesai:'10:00'}]});
+    }
+  } else {
+    taskFormAkunTugas = taskFormAkunTugas.filter(x=>String(x.userId)!==String(id));
+  }
+  refreshTaskAkunList();
+}
+function onTaskAkunRoleChange(sel){
+  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(sel.dataset.taskAkunRole));
+  if(item) item.role = sel.value;
+}
+function onTaskAkunSlotChange(inp, userId, idx, field){
+  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(userId));
+  if(item && item.slots[idx]) item.slots[idx][field] = inp.value;
+}
+function addTaskAkunSlot(userId){
+  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(userId));
+  if(!item) return;
+  item.slots.push({mulai:'08:00', selesai:'10:00'});
+  refreshTaskAkunList();
+}
+function removeTaskAkunSlot(userId, idx){
+  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(userId));
+  if(!item) return;
+  if(item.slots.length<=1){ toast('Minimal harus ada satu sesi jam kerja.'); return; }
+  item.slots.splice(idx,1);
+  refreshTaskAkunList();
+}
+/* ---------- Dropdown kustom Job / Tanggal Acara ----------
+   Dipakai (bukan <select> bawaan) supaya opsi "Tampilkan job yang sudah lewat" bisa
+   langsung menambah daftar job lewat DI DALAM panel yang sedang terbuka, tanpa perlu
+   menutup dropdown-nya dulu (yang tidak mungkin dilakukan dengan <select> native).
+   "Sudah lewat" dihitung dari tanggal SELESAI job (bukan tanggal mulai), supaya job yang
+   masih berlangsung beberapa hari tidak ikut disembunyikan. Job yang sudah lewat lebih
+   dari 2 bulan tidak pernah ditampilkan sama sekali (dianggap sudah terlalu lama). */
+function isJobPast(job){
+  const finish = getJobFinishDate(job);
+  if(!finish) return false;
+  return new Date(finish+'T00:00:00') < new Date(new Date().toDateString());
+}
+function taskJobPastLimitDate(){
+  const d = new Date(new Date().toDateString());
+  d.setMonth(d.getMonth()-2);
+  return d;
+}
+function isJobPastWithinTwoMonths(job){
+  if(!isJobPast(job)) return false;
+  return new Date(getJobFinishDate(job)+'T00:00:00') >= taskJobPastLimitDate();
+}
+let taskFormShowPastJobs = false;   // sedang menampilkan job yang sudah lewat di dalam panel atau tidak
+let taskFormEditingJobId = null;    // job yang lagi dipilih/diedit, supaya tetap terlihat di daftar
+let taskFormJobDropdownOpen = false; // status buka/tutup panel dropdown Job
+let taskJobPickerOutsideHandler = null; // listener klik-di-luar-dropdown, dipasang ulang tiap form dibuka
+function taskJobOptionLabel(j){
+  return `${formatTaskDate(j.tanggalAcara)}${getJobDurasiHari(j)>1?` (s/d ${formatTaskDate(getJobFinishDate(j))})`:''} · #${getJobNo(j.id)} · ${j.namaKlien||'Tanpa Nama'}`;
+}
+function renderTaskJobOptionHtml(j){
+  return `<div class="task-job-option${String(taskFormEditingJobId)===String(j.id)?' selected':''}" onclick="selectTaskJob('${escapeHtml(j.id)}')">
+    <div>${escapeHtml(taskJobOptionLabel(j))}${isJobPast(j)?' · <span style="color:var(--ink-soft);">sudah lewat</span>':''}</div>
+    ${j.jenisAcara?`<div class="task-job-option-sub">${escapeHtml(j.jenisAcara)}</div>`:''}
+  </div>`;
+}
+function renderTaskJobDropdownPanelHtml(){
+  const allJobOpts = taskJobOptions();
+  const upcomingJobOpts = allJobOpts.filter(j=>!isJobPast(j));
+  const pastJobOptsAvailable = allJobOpts.filter(isJobPastWithinTwoMonths)
+    .sort((a,b)=> new Date(getJobFinishDate(b)+'T00:00:00') - new Date(getJobFinishDate(a)+'T00:00:00'));
+  let html = upcomingJobOpts.length
+    ? upcomingJobOpts.map(renderTaskJobOptionHtml).join('')
+    : `<div class="task-job-option-empty">Belum ada job yang akan datang.</div>`;
+  if(pastJobOptsAvailable.length){
+    html += `<div class="task-job-option-toggle" onclick="event.stopPropagation(); toggleTaskFormPastJobsInline()">${taskFormShowPastJobs ? '🙈 Sembunyikan job yang sudah lewat' : `🕒 Tampilkan job yang sudah lewat (${pastJobOptsAvailable.length}, 2 bulan terakhir)`}</div>`;
+    if(taskFormShowPastJobs) html += pastJobOptsAvailable.map(renderTaskJobOptionHtml).join('');
+  }
+  return html;
+}
+function renderTaskJobSectionHtml(){
+  const editJob = jobs.find(j=>String(j.id)===String(taskFormEditingJobId));
+  return `
+    <label>Job / Tanggal Acara *</label>
+    <div class="task-job-picker" id="taskJobPicker">
+      <button type="button" class="task-job-picker-btn${editJob?'':' placeholder'}" onclick="event.stopPropagation(); toggleTaskJobDropdown();">
+        <span>${escapeHtml(editJob ? taskJobOptionLabel(editJob) : 'Pilih job yang sudah ada...')}</span>
+        <span class="task-job-picker-caret">▾</span>
+      </button>
+      <input type="hidden" id="taskJobId" value="${escapeHtml(taskFormEditingJobId||'')}">
+      ${taskFormJobDropdownOpen ? `<div class="task-job-dropdown-panel" id="taskJobDropdownPanel" onclick="event.stopPropagation()">${renderTaskJobDropdownPanelHtml()}</div>` : ''}
     </div>
+    <div class="field-hint">Tanggal tugas mengikuti tanggal acara dari job yang dipilih. Daftar di atas hanya menampilkan job yang akan datang — pilih "Tampilkan job yang sudah lewat" untuk melihat job yang sudah lewat dalam 2 bulan terakhir, tanpa perlu menutup daftarnya dulu.</div>
+  `;
+}
+function refreshTaskJobSection(){
+  const wrap = document.getElementById('taskJobSection');
+  if(wrap) wrap.innerHTML = renderTaskJobSectionHtml();
+}
+function toggleTaskJobDropdown(){
+  taskFormJobDropdownOpen = !taskFormJobDropdownOpen;
+  refreshTaskJobSection();
+}
+function selectTaskJob(jobId){
+  taskFormEditingJobId = jobId;
+  taskFormJobDropdownOpen = false;
+  refreshTaskJobSection();
+}
+// Menyalakan/mematikan daftar job yang sudah lewat DI DALAM panel yang sama, tanpa
+// mengubah status buka/tutup dropdown-nya — jadi dropdown tetap terbuka dan daftar
+// job yang sudah lewat langsung tampil di bawah, tidak perlu klik dua kali.
+function toggleTaskFormPastJobsInline(){
+  taskFormShowPastJobs = !taskFormShowPastJobs;
+  refreshTaskJobSection();
+}
+function bindTaskJobPickerOutsideClick(scopeEl){
+  if(taskJobPickerOutsideHandler) document.removeEventListener('click', taskJobPickerOutsideHandler);
+  taskJobPickerOutsideHandler = (e)=>{
+    if(!taskFormJobDropdownOpen) return;
+    const picker = scopeEl.querySelector('#taskJobPicker');
+    if(picker && !picker.contains(e.target)){
+      taskFormJobDropdownOpen = false;
+      refreshTaskJobSection();
+    }
+  };
+  document.addEventListener('click', taskJobPickerOutsideHandler);
+}
+function buildTaskFormHtml(editTask){
+  const people = taskEligibleAccounts();
+  const editSlots = editTask ? getTaskSlots(editTask) : [];
+  if(!editTask) taskFormAkunTugas = []; // reset tiap kali form "Bagi Tugas Baru" dibuka
+  taskFormEditingJobId = editTask ? editTask.jobId : null;
+  taskFormJobDropdownOpen = false;
+  // Kalau job milik tugas yang sedang diedit sudah lewat, otomatis nyalakan status
+  // "tampilkan job yang sudah lewat" supaya job itu tetap muncul & tersorot di daftar
+  // (bukan malah hilang saat form dibuka).
+  taskFormShowPastJobs = editTask ? isJobPastWithinTwoMonths(jobs.find(j=>String(j.id)===String(editTask.jobId)) || {}) : false;
+  return `
+    <h2 style="margin-top:0;">${editTask?'✏️ Edit Pembagian Tugas':'➕ Bagi Tugas Baru'}</h2>
+    <div style="font-size:12px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">Tugas terhubung langsung ke job yang sudah tercatat.</div>
     ${!people.length?`<div class="task-form-note">⚠️ Belum ada akun dengan peran <b>Tim</b>. Buat/daftarkan akun Tim terlebih dahulu.</div>`:''}
-    <form id="taskForm" class="form-grid" style="margin-top:16px;">
+    <form id="taskForm" class="form-grid">
+      ${editTask ? `
       <div>
         <label>Akun Tim *</label>
         <select id="taskUserId" required ${people.length?'':'disabled'}>
           <option value="">Pilih akun tim...</option>
-          ${people.map(a=>`<option value="${escapeHtml(a.id)}" ${editTask && String(editTask.userId)===String(a.id)?'selected':''}>${escapeHtml(a.username)}</option>`).join('')}
+          ${people.map(a=>`<option value="${escapeHtml(a.id)}" ${String(editTask.userId)===String(a.id)?'selected':''}>${escapeHtml(a.username)}</option>`).join('')}
         </select>
       </div>
       <div>
         <label>Role Tugas *</label>
         <select id="taskRole" required><option value="">Pilih role...</option><option value="Fotografer" ${editTask?.role==='Fotografer'?'selected':''}>📷 Fotografer</option><option value="Videografer" ${editTask?.role==='Videografer'?'selected':''}>🎥 Videografer</option></select>
-      </div>
+      </div>` : `
       <div class="full">
-        <label>Job / Tanggal Acara *</label>
-        <select id="taskJobId" required ${jobOpts.length?'':'disabled'}>
-          <option value="">Pilih job yang sudah ada...</option>
-          ${jobOpts.map(j=>`<option value="${escapeHtml(j.id)}" ${editTask && String(editTask.jobId)===String(j.id)?'selected':''}>${escapeHtml(formatTaskDate(j.tanggalAcara))}${getJobDurasiHari(j)>1?` (s/d ${escapeHtml(formatTaskDate(getJobFinishDate(j)))})`:''} · #${escapeHtml(getJobNo(j.id))} · ${escapeHtml(j.namaKlien||'Tanpa Nama')}${j.jenisAcara?' · '+escapeHtml(j.jenisAcara):''}</option>`).join('')}
-        </select>
-        <div class="field-hint">Tanggal tugas mengikuti tanggal acara dari job yang dipilih.</div>
+        <label>Akun Tim, Role &amp; Jam Kerja * <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">(bisa pilih lebih dari satu tim/role — centang akun, lalu atur role dan jam kerjanya sendiri-sendiri untuk tiap akun)</span></label>
+        <div class="honor-tim-list" id="taskAkunList">
+          ${renderTaskAkunListHtml()}
+        </div>
+      </div>`}
+      <div class="full" id="taskJobSection">
+        ${renderTaskJobSectionHtml()}
       </div>
+      ${editTask ? `
       <div class="full">
         <label>Jam Kerja * <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">(bisa tambah lebih dari satu sesi, mis. pagi 08.00–10.00 lalu sore 14.00–16.00)</span></label>
         <div id="taskTimeSlots">
@@ -5204,7 +5452,7 @@ function viewTugas(){
           </div>`).join('')}
         </div>
         <button type="button" class="btn btn-outline" id="btnAddTaskSlot" style="margin-top:8px;">➕ Tambah Jam</button>
-      </div>
+      </div>` : ''}
       <div class="full">
         <label>Keterangan</label>
         <textarea id="taskNote" rows="4" placeholder="Contoh: Foto akad, ambil detail dekorasi, backup file setelah acara...">${escapeHtml(editTask?.keterangan||'')}</textarea>
@@ -5214,12 +5462,140 @@ function viewTugas(){
       </div>
       <div class="form-actions full">
         <button type="button" class="btn btn-outline" id="btnCancelTask">Batal</button>
-        <button type="submit" class="btn btn-primary" ${people.length&&jobOpts.length?'':'disabled'}>${editTask?'💾 Simpan Perubahan':'💾 Simpan Pembagian Tugas'}</button>
+        <button type="submit" class="btn btn-primary" ${people.length&&taskJobOptions().length?'':'disabled'}>${editTask?'💾 Simpan Perubahan':'💾 Simpan Pembagian Tugas'}</button>
       </div>
     </form>
-  </div>`:''}
   `;
 }
+/* Membuka form Bagi Tugas / Edit Tugas sebagai POPUP modal (bukan kartu di
+   tengah halaman lagi). Modal ini ditaruh di document.body (lewat showModal),
+   terpisah dari #app, jadi auto-refresh cloud tiap 20 detik di menu Pembagian
+   Tugas (yang hanya me-render ulang #app) tidak akan menutup atau mereset
+   isian yang sedang diketik Admin di sini. */
+function openTaskFormModal(taskId){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa membagi tugas.'); return; }
+  editingTaskId = taskId || null;
+  const editTask = editingTaskId ? tasks.find(x=>String(x.id)===String(editingTaskId)) : null;
+  if(taskId && !editTask){ alert('Tugas tidak ditemukan (mungkin sudah dihapus).'); editingTaskId=null; return; }
+  showModal(`
+    <button type="button" class="close-x" id="closeModal">✕</button>
+    ${buildTaskFormHtml(editTask)}
+  `);
+  const ov = document.getElementById('modalOverlay');
+  bindTaskFormEvents(ov, ()=>{
+    closeModal();
+    editingTaskId = null;
+    refreshView();
+  });
+}
+/* Pasang event handler form Bagi Tugas di dalam scope tertentu (modal
+   overlay-nya) — dipisah dari bindTaskHandlers() supaya bisa dipasang ulang
+   tiap kali modal dibuka, tanpa bentrok dengan handler tabel/filter Tugas
+   yang tetap hidup di #app. */
+function bindTaskFormEvents(scopeEl, onDone){
+  const form = scopeEl.querySelector('#taskForm');
+  if(!form) return;
+  bindTaskJobPickerOutsideClick(scopeEl);
+  scopeEl.querySelector('#btnCancelTask')?.addEventListener('click',()=>{
+    editingTaskId = null;
+    closeModal();
+  });
+  scopeEl.querySelector('#btnAddTaskSlot')?.addEventListener('click',()=>{
+    const container=scopeEl.querySelector('#taskTimeSlots');
+    if(!container) return;
+    const row=document.createElement('div');
+    row.className='task-slot-row';
+    row.setAttribute('data-slot-row','');
+    row.innerHTML=`
+      <input type="time" class="task-slot-start" required>
+      <span class="task-slot-sep">–</span>
+      <input type="time" class="task-slot-end" required>
+      <button type="button" class="icon-btn icon-btn-danger task-slot-remove" title="Hapus sesi jam ini">🗑️</button>
+    `;
+    container.appendChild(row);
+    row.querySelector('.task-slot-start')?.focus();
+  });
+  scopeEl.querySelector('#taskTimeSlots')?.addEventListener('click',(e)=>{
+    const btn=e.target.closest('.task-slot-remove');
+    if(!btn) return;
+    const container=scopeEl.querySelector('#taskTimeSlots');
+    const rows=container?.querySelectorAll('[data-slot-row]');
+    if(!rows || rows.length<=1){ toast('Minimal harus ada satu sesi jam kerja.'); return; }
+    btn.closest('[data-slot-row]')?.remove();
+  });
+  form.addEventListener('submit',(e)=>{
+    e.preventDefault();
+    if(!isAdmin()) return;
+    const jobId=scopeEl.querySelector('#taskJobId')?.value;
+    const keterangan=(scopeEl.querySelector('#taskNote')?.value||'').trim();
+    const job=jobs.find(j=>String(j.id)===String(jobId));
+    if(!job){alert('Pilih job yang sudah ada.');return;}
+
+    if(editingTaskId){
+      // Mode edit: satu tugas yang sudah ada tetap terikat ke SATU akun, SATU role, dan
+      // SATU set jam kerja saja (pilihan beberapa tim/role dengan jam sendiri-sendiri
+      // hanya berlaku saat membuat tugas baru — lihat cabang di bawah).
+      const role=scopeEl.querySelector('#taskRole')?.value;
+      if(!role){alert('Pilih role tugas.');return;}
+      const userId=scopeEl.querySelector('#taskUserId')?.value;
+      const akun=taskEligibleAccounts().find(a=>String(a.id)===String(userId));
+      if(!akun){alert('Pilih akun Tim yang valid.');return;}
+
+      const slotRows=Array.from(scopeEl.querySelectorAll('#taskTimeSlots [data-slot-row]'));
+      const slots=[];
+      for(const row of slotRows){
+        const mulai=row.querySelector('.task-slot-start')?.value;
+        const selesai=row.querySelector('.task-slot-end')?.value;
+        if(!mulai || !selesai){alert('Jam mulai dan jam selesai wajib diisi di setiap sesi jam.');return;}
+        if(mulai===selesai){alert('Jam mulai dan jam selesai tidak boleh sama pada satu sesi jam.');return;}
+        slots.push({mulai, selesai});
+      }
+      if(!slots.length){alert('Tambahkan minimal satu sesi jam kerja.');return;}
+
+      const t = tasks.find(x=>String(x.id)===String(editingTaskId));
+      if(!t){ alert('Tugas yang diedit sudah tidak ditemukan (mungkin sudah dihapus).'); editingTaskId=null; onDone(); return; }
+      t.userId=akun.id; t.username=akun.username; t.role=role;
+      t.jobId=job.id; t.jobName=job.namaKlien||'Tanpa Nama'; t.tanggal=job.tanggalAcara;
+      t.slots=slots; t.keterangan=keterangan;
+      t.updatedAt=Date.now(); t.updatedBy=currentUserId;
+      saveTasks();
+      toast('Perubahan tugas berhasil disimpan');
+      onDone();
+      return;
+    }
+
+    // Mode tambah baru: boleh centang lebih dari satu akun Tim sekaligus, dan tiap akun
+    // punya role serta jam kerjanya SENDIRI-SENDIRI (lihat taskFormAkunTugas, diisi lewat
+    // toggleTaskAkun/onTaskAkunRoleChange/onTaskAkunSlotChange). Job dan keterangan tetap
+    // sama untuk semua akun karena satu pembagian tugas ini merujuk ke satu job yang sama.
+    if(!taskFormAkunTugas.length){alert('Pilih minimal satu akun Tim.');return;}
+    for(const item of taskFormAkunTugas){
+      if(!item.role){alert(`Pilih role tugas untuk akun ${item.username}.`);return;}
+      if(!item.slots.length){alert(`Tambahkan minimal satu sesi jam kerja untuk akun ${item.username}.`);return;}
+      for(const s of item.slots){
+        if(!s.mulai || !s.selesai){alert(`Jam mulai dan jam selesai wajib diisi untuk akun ${item.username}.`);return;}
+        if(s.mulai===s.selesai){alert(`Jam mulai dan jam selesai tidak boleh sama pada satu sesi jam (akun ${item.username}).`);return;}
+      }
+    }
+
+    taskFormAkunTugas.forEach(item=>{
+      const akun=taskEligibleAccounts().find(a=>String(a.id)===String(item.userId));
+      if(!akun) return;
+      tasks.push({
+        id:'task_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+        userId:akun.id, username:akun.username, role:item.role,
+        jobId:job.id, jobName:job.namaKlien||'Tanpa Nama', tanggal:job.tanggalAcara,
+        slots:item.slots.map(s=>({mulai:s.mulai, selesai:s.selesai})), keterangan, status:'Belum',
+        createdAt:Date.now(), createdBy:currentUserId
+      });
+    });
+    saveTasks();
+    toast(taskFormAkunTugas.length>1 ? `Pembagian tugas untuk ${taskFormAkunTugas.length} akun berhasil disimpan` : 'Pembagian tugas berhasil disimpan');
+    taskFormAkunTugas = [];
+    onDone();
+  });
+}
+
 
 function applyTaskFilters(){
   taskRekapFilter = {
@@ -5256,18 +5632,7 @@ function deleteTask(id){
 }
 function bindTaskHandlers(){
   document.getElementById('btnOpenTaskForm')?.addEventListener('click',()=>{
-    editingTaskId = null; // pastikan form dibuka dalam mode "tambah baru", bukan nyangkut mode edit sebelumnya
-    render();
-    const c=document.getElementById('taskFormCard');
-    if(c){c.style.display='block';c.scrollIntoView({behavior:'smooth',block:'start'});}
-  });
-  document.getElementById('btnCloseTaskForm')?.addEventListener('click',()=>{
-    editingTaskId = null;
-    const c=document.getElementById('taskFormCard'); if(c) c.style.display='none';
-  });
-  document.getElementById('btnCancelTask')?.addEventListener('click',()=>{
-    editingTaskId = null;
-    const c=document.getElementById('taskFormCard'); if(c) c.style.display='none';
+    openTaskFormModal(null);
   });
   ['taskFilterUser','taskFilterRole','taskFilterStatus','taskFilterFrom','taskFilterTo'].forEach(id=>{
     document.getElementById(id)?.addEventListener('change',applyTaskFilters);
@@ -5276,97 +5641,16 @@ function bindTaskHandlers(){
     taskRekapFilter={userId:'',role:'',status:'',from:'',to:''}; refreshView();
   });
   document.querySelectorAll('[data-task-toggle]').forEach(btn=>btn.addEventListener('click',()=>toggleTaskStatus(btn.dataset.taskToggle)));
-  document.querySelectorAll('[data-task-edit]').forEach(btn=>btn.addEventListener('click',()=>openEditTaskForm(btn.dataset.taskEdit)));
+  document.querySelectorAll('[data-task-edit]').forEach(btn=>btn.addEventListener('click',()=>openTaskFormModal(btn.dataset.taskEdit)));
   document.querySelectorAll('[data-task-delete]').forEach(btn=>btn.addEventListener('click',()=>deleteTask(btn.dataset.taskDelete)));
   document.querySelectorAll('[data-task-comment]').forEach(btn=>btn.addEventListener('click',()=>openTaskCommentModal(btn.dataset.taskComment)));
   document.querySelectorAll('[data-bonus-adjust]').forEach(btn=>btn.addEventListener('click',()=>openBonusAdjustModal(btn.dataset.bonusAdjust)));
   document.getElementById('btnEditBonusRate')?.addEventListener('click', openBonusRateModal);
   document.getElementById('btnClaimBonus')?.addEventListener('click', claimBonus);
   document.querySelectorAll('[data-cairkan-bonus]').forEach(btn=>btn.addEventListener('click',()=>cairkanBonusClaim(btn.dataset.cairkanBonus)));
-
-  document.getElementById('btnAddTaskSlot')?.addEventListener('click',()=>{
-    const container=document.getElementById('taskTimeSlots');
-    if(!container) return;
-    const row=document.createElement('div');
-    row.className='task-slot-row';
-    row.setAttribute('data-slot-row','');
-    row.innerHTML=`
-      <input type="time" class="task-slot-start" required>
-      <span class="task-slot-sep">–</span>
-      <input type="time" class="task-slot-end" required>
-      <button type="button" class="icon-btn icon-btn-danger task-slot-remove" title="Hapus sesi jam ini">🗑️</button>
-    `;
-    container.appendChild(row);
-    row.querySelector('.task-slot-start')?.focus();
-  });
-  document.getElementById('taskTimeSlots')?.addEventListener('click',(e)=>{
-    const btn=e.target.closest('.task-slot-remove');
-    if(!btn) return;
-    const container=document.getElementById('taskTimeSlots');
-    const rows=container?.querySelectorAll('[data-slot-row]');
-    if(!rows || rows.length<=1){ toast('Minimal harus ada satu sesi jam kerja.'); return; }
-    btn.closest('[data-slot-row]')?.remove();
-  });
-
-  document.getElementById('taskForm')?.addEventListener('submit',(e)=>{
-    e.preventDefault();
-    if(!isAdmin()) return;
-    const userId=document.getElementById('taskUserId')?.value;
-    const role=document.getElementById('taskRole')?.value;
-    const jobId=document.getElementById('taskJobId')?.value;
-    const keterangan=(document.getElementById('taskNote')?.value||'').trim();
-    const akun=taskEligibleAccounts().find(a=>String(a.id)===String(userId));
-    const job=jobs.find(j=>String(j.id)===String(jobId));
-    if(!akun){alert('Pilih akun Tim yang valid.');return;}
-    if(!role){alert('Pilih role tugas.');return;}
-    if(!job){alert('Pilih job yang sudah ada.');return;}
-
-    const slotRows=Array.from(document.querySelectorAll('#taskTimeSlots [data-slot-row]'));
-    const slots=[];
-    for(const row of slotRows){
-      const mulai=row.querySelector('.task-slot-start')?.value;
-      const selesai=row.querySelector('.task-slot-end')?.value;
-      if(!mulai || !selesai){alert('Jam mulai dan jam selesai wajib diisi di setiap sesi jam.');return;}
-      if(mulai===selesai){alert('Jam mulai dan jam selesai tidak boleh sama pada satu sesi jam.');return;}
-      slots.push({mulai, selesai});
-    }
-    if(!slots.length){alert('Tambahkan minimal satu sesi jam kerja.');return;}
-
-    if(editingTaskId){
-      // Mode edit: perbarui tugas yang sudah ada, jangan bikin baris baru.
-      const t = tasks.find(x=>String(x.id)===String(editingTaskId));
-      if(!t){ alert('Tugas yang diedit sudah tidak ditemukan (mungkin sudah dihapus).'); editingTaskId=null; navigate('tugas'); return; }
-      t.userId=akun.id; t.username=akun.username; t.role=role;
-      t.jobId=job.id; t.jobName=job.namaKlien||'Tanpa Nama'; t.tanggal=job.tanggalAcara;
-      t.slots=slots; t.keterangan=keterangan;
-      t.updatedAt=Date.now(); t.updatedBy=currentUserId;
-      saveTasks();
-      toast('Perubahan tugas berhasil disimpan');
-      editingTaskId=null;
-      navigate('tugas');
-      return;
-    }
-
-    tasks.push({
-      id:'task_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
-      userId:akun.id, username:akun.username, role,
-      jobId:job.id, jobName:job.namaKlien||'Tanpa Nama', tanggal:job.tanggalAcara,
-      slots, keterangan, status:'Belum',
-      createdAt:Date.now(), createdBy:currentUserId
-    });
-    saveTasks();
-    toast('Pembagian tugas berhasil disimpan');
-    navigate('tugas');
-  });
 }
 function openEditTaskForm(id){
-  if(!isAdmin()){ alert('Hanya Admin yang bisa mengedit tugas.'); return; }
-  const t = tasks.find(x=>String(x.id)===String(id));
-  if(!t){ alert('Tugas tidak ditemukan.'); return; }
-  editingTaskId = id;
-  render();
-  const c=document.getElementById('taskFormCard');
-  if(c){ c.style.display='block'; c.scrollIntoView({behavior:'smooth',block:'start'}); }
+  openTaskFormModal(id);
 }
 
 /* ---------- Modal Komentar Tugas (Admin mengirim komentar/arahan ke Tim) ---------- */
@@ -5922,8 +6206,27 @@ function renderRekapTable(){
   } else if(rekapTab==='jenis'){
     keyFn = j=> j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : j.jenisAcara;
     keyLabel='Jenis Acara';
-  } else if(rekapTab==='desa'){ keyFn = j=>j.desa; keyLabel='Desa'; }
-  else if(rekapTab==='kecamatan'){ keyFn = j=>j.kecamatan; keyLabel='Kecamatan'; }
+  } else if(rekapTab==='desa'){
+    // Nama desa di Indonesia hanya unik DI DALAM satu kecamatan, bukan unik
+    // se-Indonesia (banyak desa berbeda lokasi tapi kebetulan namanya sama).
+    // Kalau dikelompokkan pakai nama desa saja, desa-desa berbeda lokasi itu
+    // akan salah tergabung jadi satu baris rekap. Makanya kelompokkan
+    // berdasarkan kombinasi Desa + Kecamatan + Kabupaten supaya desa yang
+    // namanya kebetulan sama tapi lokasinya beda tetap terpisah barisnya.
+    // Nama Dusun (kalau diisi) ikut disertakan di depan supaya dusun berbeda
+    // dalam desa yang sama juga tetap terpisah barisnya di rekap.
+    keyFn = j => `${(desaDisplay(j)||'-').trim()} — Kec. ${(j.kecamatan||'-').trim()}, ${(j.kabupaten||'-').trim()}`;
+    keyLabel='Desa';
+  }
+  else if(rekapTab==='kecamatan'){
+    // Sama seperti Desa: nama kecamatan hanya unik DI DALAM satu kabupaten,
+    // bukan unik se-Indonesia (kemungkinannya jauh lebih kecil dibanding nama
+    // desa, tapi tetap bisa terjadi ada 2 kecamatan berbeda kabupaten yang
+    // kebetulan namanya sama). Supaya tidak salah tergabung jadi satu baris,
+    // kelompokkan berdasarkan kombinasi Kecamatan + Kabupaten.
+    keyFn = j => `${(j.kecamatan||'-').trim()} — Kab. ${(j.kabupaten||'-').trim()}`;
+    keyLabel='Kecamatan';
+  }
   else if(rekapTab==='kabupaten'){ keyFn = j=>j.kabupaten; keyLabel='Kabupaten'; }
   else if(rekapTab==='provinsi'){ keyFn = j=>j.provinsi; keyLabel='Provinsi'; }
 
@@ -6711,6 +7014,13 @@ const CHANGELOG = [
       { kategori: 'Perbaikan', teks: 'Menu Pembagian Tugas / Tugas Saya sekarang otomatis menarik data terbaru dari cloud setiap kali dibuka, dan diperiksa ulang otomatis tiap 20 detik selama halaman ini terbuka — supaya tugas baru atau perubahan status dari device lain (Admin maupun Tim) langsung muncul tanpa harus menutup & membuka ulang aplikasi.' },
       { kategori: 'Fitur', teks: 'Tombol "🔄 Refresh" ditambahkan di halaman Pembagian Tugas / Tugas Saya untuk memeriksa pembaruan data secara langsung kapan saja diinginkan.' },
       { kategori: 'Fitur', teks: 'Kartu statistik baru "Belum Dijemput/Diantar" di Beranda — bisa diklik untuk melihat daftar lengkap job yang belum dijemput/diantar, dan Admin bisa langsung mengubah status pengirimannya dari daftar tersebut.' },
+      { kategori: 'Perbaikan', teks: 'Rekap per Desa diperbaiki: sebelumnya desa dengan nama yang kebetulan sama tapi lokasinya beda (kecamatan/kabupaten berbeda) ikut tergabung jadi satu baris. Sekarang rekap mengelompokkan berdasarkan kombinasi Desa + Kecamatan + Kabupaten, jadi lokasi yang berbeda tidak lagi tercampur walau nama desanya sama.' },
+      { kategori: 'Perbaikan', teks: 'Rekap per Kecamatan diperbaiki dengan cara yang sama: kecamatan dengan nama yang kebetulan sama tapi beda kabupaten sekarang dikelompokkan terpisah (berdasarkan kombinasi Kecamatan + Kabupaten), tidak lagi tercampur jadi satu baris.' },
+      { kategori: 'Fitur', teks: 'Form Lokasi Acara sekarang punya ceklis "Alamat ini punya Dusun" — kalau dicentang, muncul kolom Nama Dusun. Nama dusun ini otomatis ikut ditampilkan (format "Dusun ..., Desa ...") di daftar job, detail job, pencarian, dan Rekap per Desa, serta ikut ditambahkan sebagai kolom di Excel.' },
+      { kategori: 'Peningkatan', teks: 'Tombol "＋ Bagi Tugas" dan "✏️ Edit" di menu Pembagian Tugas sekarang membuka form dalam bentuk pop-up, bukan lagi kartu yang muncul di tengah halaman.' },
+      { kategori: 'Perbaikan', teks: 'Mengisi form Bagi Tugas/Edit Tugas sekarang tidak lagi terganggu oleh auto-refresh data cloud tiap 20 detik di menu Pembagian Tugas — karena sekarang berbentuk pop-up terpisah, isian yang sedang diketik tidak akan hilang atau tertutup sendiri walau data di halaman belakang diperbarui.' },
+      { kategori: 'Fitur', teks: 'Saat membuat tugas baru, kolom Akun Tim sekarang bisa mencentang lebih dari satu akun sekaligus, dan tiap akun yang dicentang bisa diatur role serta jam kerjanya sendiri-sendiri (misalnya satu akun jadi Fotografer pagi, akun lain jadi Videografer sore) — tidak perlu lagi role dan jam yang sama untuk semua akun.' },
+      { kategori: 'Peningkatan', teks: 'Pilihan Job / Tanggal Acara di form Bagi Tugas/Edit Tugas sekarang secara default hanya menampilkan job yang akan datang, supaya daftar lebih ringkas dan tidak perlu menggulir job lama. Kalau perlu, pilih "Tampilkan job yang sudah lewat" di bagian bawah daftar untuk langsung melihat job yang sudah lewat dalam 2 bulan terakhir — tanpa perlu menutup daftarnya dulu.' },
     ]
   },
   {

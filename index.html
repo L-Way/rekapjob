@@ -225,8 +225,8 @@
   .honor-tim-check input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(--gold);}
   .honor-tim-nominal-wrap{flex:1; min-width:160px;}
   /* Kolom Link Maps: ikon peta di kiri + tombol "Buka" di kanan, senada dengan kolom Rp */
-  .maps-input-wrap{position:relative; display:flex; align-items:stretch; gap:8px;}
-  .maps-input-wrap .maps-field{position:relative; flex:1; min-width:0;}
+  .maps-input-wrap{position:relative; display:flex; align-items:stretch; gap:8px; flex-wrap:wrap;}
+  .maps-input-wrap .maps-field{position:relative; flex:1 1 200px; min-width:0;}
   .maps-input-wrap .maps-prefix{
     position:absolute; left:12px; top:50%; transform:translateY(-50%);
     font-size:14px; pointer-events:none;
@@ -1271,8 +1271,8 @@
 <main id="app"></main>
 
 <div class="footer-note">
-  Data tersimpan otomatis ke cloud (Supabase) sehingga bisa diakses dari device mana pun lewat link yang sama.<br>
-  Disarankan rutin membuat cadangan lewat menu <b>Pengaturan → Cadangkan Data</b>.
+  Data tersimpan otomatis ke cloud.<br>
+  Disarankan rutin cadangkan data.
 </div>
 
 <footer class="copyright-bar">
@@ -1896,9 +1896,7 @@ function openUlasanPublishModal(id){
     <button type="button" class="close-x" id="closeModal">✕</button>
     <h3>📢 Kelola Publikasi</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">
-      Pilih di halaman mana saja ulasan dari <b>${escapeHtml(u.nama_klien||'Klien')}</b> ini ingin ditampilkan.
-      Boleh pilih salah satu, beberapa, atau semuanya sekaligus — centang untuk mempublikasikan,
-      hilangkan centang untuk membatalkan publikasi di halaman itu.
+      Centang halaman tujuan publikasi.
     </div>
     <div class="publish-target-list">
       ${PUBLISH_TARGETS.map(t=>`
@@ -2455,6 +2453,39 @@ function autoUpdateTaskStatuses(){
     }
   });
   if(changed) saveTasksLocal(); // simpan lokal dulu; sinkron ke cloud lewat siklus saveTasks/pushToCloud yang berjalan
+  return changed;
+}
+// Batas waktu Status Pembayaran dianggap "Lunas otomatis": pukul 23.59 pada hari
+// TERAKHIR job (hari job itu sendiri kalau 1 hari, atau hari kedua kalau job
+// berdurasi 2 hari, dst — pakai getJobFinishDate yang sama dengan logika tugas di atas).
+function getJobPaymentDeadline(job){
+  const tglAkhir = getJobFinishDate(job);
+  if(!tglAkhir) return null;
+  const d = new Date(tglAkhir+'T23:59:00');
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+// Menandai Status Pembayaran job menjadi "Lunas" secara otomatis begitu waktu sekarang
+// sudah melewati pukul 23.59 di hari terakhir job-nya. Job yang statusnya sudah pernah
+// diubah manual oleh Admin lewat dropdown Status Pembayaran (job.manualStatusPembayaranSet)
+// tidak akan disentuh lagi oleh proses otomatis ini, supaya keputusan manual Admin
+// (misalnya sengaja mengembalikan ke "Belum Bayar" karena pembayaran dibatalkan) tetap
+// dihormati dan tidak langsung ditimpa balik jadi "Lunas" di siklus berikutnya.
+function autoUpdateJobPaymentStatuses(){
+  if(!Array.isArray(jobs) || !jobs.length) return false;
+  const now = new Date();
+  let changed = false;
+  jobs.forEach(j=>{
+    if(j.manualStatusPembayaranSet) return; // sudah pernah diubah manual, jangan ditimpa
+    if((j.statusPembayaran||'')==='Lunas') return;
+    const deadline = getJobPaymentDeadline(j);
+    if(deadline && now >= deadline){
+      j.statusPembayaran = 'Lunas';
+      j.autoLunas = true;
+      j.updatedAt = Date.now();
+      changed = true;
+    }
+  });
+  if(changed) saveJobsLocal(); // simpan lokal dulu; sinkron ke cloud lewat siklus saveJobs/pushToCloud yang berjalan
   return changed;
 }
 function getTaskPerson(task){
@@ -3150,6 +3181,10 @@ function viewBeranda(){
   // "Belum" di sini mencakup dua nilai pengiriman: 'Belum Diantar' dan 'Belum Dijemput'
   // (lihat PENGIRIMAN_LIST) — keduanya dianggap belum tuntas selama belum diawali kata 'Sudah'.
   const belumPengiriman = jobs.filter(j=>!(j.pengiriman||'').startsWith('Sudah')).length;
+  // Total nominal sedekah dari job yang status sedekahnya masih "Belum" —
+  // dipakai untuk kartu "Sedekah Belum Selesai" yang bisa diklik di Beranda (admin only).
+  const sedekahBelumJobs = jobs.filter(j=>j.sedekahStatus!=='Sudah');
+  const totalSedekahBelum = sedekahBelumJobs.reduce((s,j)=>s+(Number(j.sedekahNominal||hitungSedekah(j))||0),0);
 
   const upcoming = [...jobs]
     .filter(j=>j.tanggalAcara && new Date(j.tanggalAcara) >= new Date(new Date().toDateString()))
@@ -3165,7 +3200,7 @@ function viewBeranda(){
   <div class="hero">
     <div class="kicker">Kaone Motret · Buku Job</div>
     <h1>Selamat Datang 👋</h1>
-    <p>Catat, kelola, dan pantau seluruh job fotografermu di satu tempat yang rapi.</p>
+    <p>Kelola job fotografermu di sini.</p>
   </div>
 
   <div class="center-btn-wrap">
@@ -3247,10 +3282,15 @@ function viewBeranda(){
       <div class="label">Cetak Belum Selesai</div>
       <div class="value">${belumCetak}</div>
     </div>
-    <div class="stat stat-clickable" data-open-status-list="pengiriman" title="Klik untuk melihat daftar job">
+    <div class="stat stat-clickable" data-open-status-list="pengiriman" title="Lihat daftar job">
       <div class="label">Belum Dijemput/Diantar</div>
       <div class="value">${belumPengiriman}</div>
     </div>
+    ${isAdmin() ? `
+    <div class="stat stat-clickable" data-open-status-list="sedekahStatus" title="Lihat status sedekah">
+      <div class="label">🤲 Sedekah Belum Selesai</div>
+      <div class="value">${fmtRp(totalSedekahBelum)}</div>
+    </div>` : ''}
   </div>
 
   <div class="upcoming">
@@ -3293,7 +3333,7 @@ function buildJobFormHtml(j){
 
   return `
     <h2 style="margin-top:0;">${j?'✏️ Edit Job':'📝 Input Job Baru'}</h2>
-    ${j ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">No. Urut otomatis: <b>#${getJobNo(j.id)}</b> (mengikuti urutan tanggal acara)</div>` : `<div style="font-size:13px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">No. Urut akan otomatis diberikan berdasarkan urutan tanggal acara (mulai dari #180).</div>`}
+    ${j ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">No. Urut otomatis: <b>#${getJobNo(j.id)}</b></div>` : `<div style="font-size:13px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">No. Urut otomatis.</div>`}
 
     <form id="jobForm">
       <div class="section-title">👤 Data Klien &amp; Acara</div>
@@ -3311,7 +3351,7 @@ function buildJobFormHtml(j){
           <label>Tanggal Acara (Selesai) *</label>
           <input type="date" name="tanggalSelesai" id="tanggalSelesaiInput" value="${escapeHtml(getJobFinishDate(d)||d.tanggalAcara||'')}" required
                  oninput="updateDurasiHariHint()">
-          <div class="field-hint">Untuk job 1 hari, isi sama dengan Tanggal Acara Mulai. Untuk job yang berlangsung beberapa hari (mis. akad + resepsi beda hari), pilih tanggal hari terakhirnya di sini.</div>
+          <div class="field-hint">Isi tanggal hari terakhir acara.</div>
         </div>
         <div class="full" id="durasiHariHintWrap">
           <div class="field-hint" id="durasiHariHint">Job 1 hari — tugas tim otomatis ditandai selesai pukul 23.59 pada Tanggal Acara.</div>
@@ -3356,26 +3396,16 @@ function buildJobFormHtml(j){
         <div><label>Kabupaten / Kota</label><input type="text" name="kabupaten" value="${escapeHtml(d.kabupaten)}"></div>
         <div><label>Provinsi</label><input type="text" name="provinsi" value="${escapeHtml(d.provinsi)}"></div>
         <div class="full">
-          <label>Link Maps</label>
-          <div class="maps-input-wrap">
-            <div class="maps-field">
-              <span class="maps-prefix">🔗</span>
-              <input type="url" inputmode="url" class="maps-input" id="linkMapsInput" name="linkMaps" value="${escapeHtml(d.linkMaps||'')}" placeholder="https://maps.app.goo.gl/... atau https://goo.gl/maps/...">
-            </div>
-            <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaLinkMaps">↗️ Buka</button>
-          </div>
-          <div class="field-hint">Tempel link dari Google Maps (bagikan lokasi → salin link) supaya tim mudah menemukan lokasi acara.</div>
-        </div>
-        <div class="full">
-          <label>Titik Koordinat (untuk hitung jarak otomatis)</label>
+          <label>Titik Koordinat</label>
           <div class="maps-input-wrap">
             <div class="maps-field">
               <span class="maps-prefix">📍</span>
               <input type="text" inputmode="decimal" class="maps-input" id="koordinatInput" name="koordinat" value="${escapeHtml(d.koordinat||'')}" placeholder="-1.234567, 101.234567" oninput="updateJarakCalc()">
             </div>
             <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaKoordinat">📍 Lihat Titik</button>
+            <button type="button" class="btn btn-outline maps-open-btn" id="btnCopyLinkMaps">📋 Salin Link Maps</button>
           </div>
-          <div class="field-hint">Format: Lintang, Bujur (contoh: -1.234567, 101.234567). Di Google Maps: tekan lama titik lokasi lalu ketuk koordinat yang muncul untuk menyalinnya.</div>
+          <div class="field-hint">Format: Lintang, Bujur.</div>
           <div class="jarak-box">
             <div class="jr-group-label">🛣️ Jarak Real (OSRM)</div>
             <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="jarakJalanText">${jarakAwalJalan===null?(koordAwalValid?'Menghitung…':'-'):fmtJarakJalan(jarakAwalJalan)}</b></div>
@@ -3502,7 +3532,7 @@ function renderHonorTimSectionHtml(){
   const list = teamAccountsPublic || [];
   const total = currentHonorTimTotal();
   return `
-    <label>Honor Tim — pilih anggota Tim &amp; isi honor masing-masing (boleh lebih dari satu)</label>
+    <label>Honor Tim</label>
     <div class="honor-tim-list">
       ${list.length ? list.map(a=>{
         const nama = a.nama_lengkap || a.username;
@@ -3518,13 +3548,13 @@ function renderHonorTimSectionHtml(){
             <input type="text" inputmode="numeric" class="money-input" data-honor-nominal="${escapeHtml(a.id)}" placeholder="0" value="${fmtRibuan(sel?sel.nominal:'')}" oninput="handleMoneyInput(this); onHonorTimNominalInput(this);">
           </div>
         </div>`;
-      }).join('') : `<div class="info-box">Belum ada akun Tim terdaftar. Anggota tim bisa Daftar Akun lewat halaman login, nanti otomatis muncul di sini untuk dipilih.</div>`}
+      }).join('') : `<div class="info-box">Belum ada akun Tim terdaftar.</div>`}
     </div>
     <div class="rp-input-wrap" style="max-width:260px;">
       <span class="rp-prefix">Rp</span>
       <input type="text" inputmode="numeric" class="money-input" name="honorTim" id="honorTimTotalDisplay" value="${fmtRibuan(total)}" readonly>
     </div>
-    <div class="field-hint">Total Honor Tim (otomatis dijumlahkan dari anggota yang dipilih di atas)${(!jobFormHonorTim.length && jobFormHonorTimLegacy) ? ' — job ini belum pernah dibagi ke anggota tertentu, nilai di atas masih total lama.' : ''}</div>
+    <div class="field-hint">Total Honor Tim otomatis${(!jobFormHonorTim.length && jobFormHonorTimLegacy) ? ' — nilai lama, belum dibagi.' : ''}</div>
   `;
 }
 function refreshHonorTimSection(){
@@ -3573,15 +3603,14 @@ function bindJobFormEvents(scopeEl, onDone){
     if(!c){ toast('Isi Titik Koordinat yang valid dulu (Lintang, Bujur)'); return; }
     window.open(`https://www.google.com/maps?q=${c.lat},${c.lng}`, '_blank', 'noopener');
   });
-  // Tombol "Buka" di kolom Link Maps: cukup buka link apa adanya di tab baru — di HP,
-  // browser/OS otomatis mengalihkannya ke app Google Maps (kalau terpasang) karena link
-  // Google Maps memakai universal/app link, sedangkan di laptop tetap terbuka di tab baru.
-  scopeEl.querySelector('#btnBukaLinkMaps')?.addEventListener('click', ()=>{
-    const val = (scopeEl.querySelector('#linkMapsInput')?.value || '').trim();
-    if(!val){ toast('Isi Link Maps yang valid dulu'); return; }
-    let url = val;
-    if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
-    window.open(url, '_blank', 'noopener');
+  // Tombol "Salin Link Maps": membuat link Google Maps langsung dari Titik Koordinat
+  // yang sudah diisi, lalu menyalinnya ke clipboard — menggantikan kolom Link Maps
+  // manual yang sudah dihapus dari form ini.
+  scopeEl.querySelector('#btnCopyLinkMaps')?.addEventListener('click', ()=>{
+    const val = (scopeEl.querySelector('#koordinatInput')?.value || '').trim();
+    const c = parseCoordString(val);
+    if(!c){ toast('Isi Titik Koordinat yang valid dulu (Lintang, Bujur)'); return; }
+    copyToClipboard(`https://www.google.com/maps?q=${c.lat},${c.lng}`, 'Link Maps disalin');
   });
   form.addEventListener('submit', (e)=>{
     e.preventDefault();
@@ -3740,7 +3769,7 @@ function renderDaftarTable(){
   if(fb) list = list.filter(j=>j.tanggalAcara && j.tanggalAcara.slice(0,7)===fb);
 
   if(list.length===0){
-    wrap.innerHTML = `<div class="empty-state"><div class="em">📭</div>Belum ada job yang cocok / tercatat.</div>`;
+    wrap.innerHTML = `<div class="empty-state"><div class="em">📭</div>Belum ada job.</div>`;
     return;
   }
 
@@ -3766,7 +3795,7 @@ function renderDaftarTable(){
         <td class="row-actions">
           <button class="icon-btn admin-only" data-edit="${j.id}">Edit</button>
           <button class="icon-btn" data-view-job="${j.id}">Lihat</button>
-          <button class="icon-btn" data-open-maps="${j.id}" title="Buka lokasi job di Maps">🗺️ Maps</button>
+          <button class="icon-btn" data-open-maps="${j.id}" title="Buka di Maps">🗺️ Maps</button>
           <button class="icon-btn icon-btn-danger admin-only" data-delete="${j.id}" title="Hapus job">🗑️ Hapus</button>
         </td>
       </tr>
@@ -3783,6 +3812,10 @@ function renderDaftarTable(){
       const idx = jobs.findIndex(x=>x.id===jobId);
       if(idx===-1) return;
       jobs[idx][field] = sel.value;
+      // Kalau Admin mengubah Status Pembayaran secara manual, tandai supaya proses
+      // "Lunas otomatis" (autoUpdateJobPaymentStatuses) tidak menimpa balik pilihan
+      // manual ini di siklus berikutnya — sama seperti perilaku status Tugas.
+      if(field==='statusPembayaran') jobs[idx].manualStatusPembayaranSet = true;
       saveJobs();
       toast('Status diperbarui');
       renderDaftarTable();
@@ -3860,13 +3893,13 @@ function openCopyPerBulanModal(){
     <button class="close-x" id="closeModal">✕</button>
     <h3 style="margin-top:0;">📋 Salin Daftar Job per Bulan</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">
-      Pilih 1–4 bulan yang ingin disalin teksnya (misalnya untuk dikirim ke grup WhatsApp).
+      Pilih 1–4 bulan untuk disalin.
     </div>
     <div id="cpbMonthList" style="max-height:260px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:4px 10px;">
       ${checkboxesHtml}
     </div>
     <div id="cpbLimitWarning" style="display:none;color:var(--danger);font-size:12.5px;margin-top:8px;">
-      Maksimal 4 bulan sekaligus ya — batalkan salah satu centang dulu.
+      Maksimal 4 bulan sekaligus.
     </div>
     <div class="form-actions" style="margin-top:16px;">
       <button type="button" class="btn btn-outline" id="cpbCancel">Batal</button>
@@ -3916,6 +3949,9 @@ function badgeClassFor(field, value){
     if(value==='DP') return 'badge-warn';
     return 'badge-bad';
   }
+  if(field==='sedekahStatus'){
+    return value==='Sudah' ? 'badge-ok' : 'badge-bad';
+  }
   return 'badge-warn';
 }
 function badgeSelect(jobId, field, options, value){
@@ -3960,8 +3996,7 @@ function viewKalender(){
     <div class="thanks-editor admin-only">
       <div class="section-title" style="margin-top:0;">💌 Ucapan Terima Kasih di Poster — ${MONTH_NAMES[calMonth]} ${calYear}</div>
       <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 10px;">
-        Secara otomatis sudah tersedia ucapan puitis yang berbeda tiap bulan. Kosongkan kolom ini untuk memakainya,
-        atau tulis kalimatmu sendiri untuk menggantinya khusus bulan ini.
+        Kosongkan untuk pakai ucapan otomatis.
       </p>
       <textarea id="thanksOverrideInput" rows="2" placeholder="Tulis ucapan terima kasih versimu sendiri di sini...">${escapeHtml(overrideVal)}</textarea>
       <div class="thanks-controls-row">
@@ -3979,8 +4014,7 @@ function viewKalender(){
     <div class="layout-picker admin-only">
       <div class="section-title" style="margin-top:0;">🖼️ Pilih Desain Keseluruhan — ${MONTH_NAMES[calMonth]} ${calYear}</div>
       <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 12px;">
-        Ada 12 desain tata letak (font, bentuk tanggal, ornamen bingkai, perataan teks) yang berbeda tiap bulan secara otomatis.
-        Tidak suka desain bulan ini? Ganti bebas ke salah satu dari 12 pilihan di bawah, khusus untuk bulan ini.
+        Ganti bebas, khusus bulan ini.
       </p>
       <div class="layout-grid">
         ${LAYOUT_STYLES.map((L,i)=>`
@@ -3995,7 +4029,7 @@ function viewKalender(){
     <div class="theme-picker admin-only">
       <div class="section-title" style="margin-top:0;">🎨 Pilih Warna Poster — ${MONTH_NAMES[calMonth]} ${calYear}</div>
       <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 12px;">
-        Ada 12 palet warna profesional yang bisa dipilih bebas, terpisah dari desain tata letak di atas — jadi kombinasinya bisa kamu atur sendiri.
+        Pilih bebas, terpisah dari desain.
       </p>
       <div class="theme-swatches">
         ${POSTER_THEMES.map((t,i)=>`
@@ -4006,7 +4040,7 @@ function viewKalender(){
     </div>
 
     <div class="info-box">
-      💡 Klik salah satu tanggal (yang berwarna kuning) pada kalender untuk melihat detail job, lalu tambahkan ke <b>Google Calendar</b> atau unduh file <b>.ics</b> untuk diimpor. Karena file ini berjalan lokal di browser tanpa server, sinkronisasi dilakukan lewat tautan Google Calendar (menggunakan akun Google yang sedang login di browser kamu) — tidak perlu login ulang setiap saat selama kamu tetap login di Google lewat browser ini.
+      💡 Klik tanggal untuk lihat detail job.
     </div>
   </div>
   `;
@@ -4271,21 +4305,31 @@ const STATUS_LIST_CONFIG = {
     options: PENGIRIMAN_LIST,
     isPending: j => !(j.pengiriman||'').startsWith('Sudah'),
   },
+  sedekahStatus: {
+    label: 'Sedekah',
+    icon: '🤲',
+    options: ['Belum','Sudah'],
+    isPending: j => j.sedekahStatus!=='Sudah',
+    // Nominal sedekah tiap job dipakai untuk menghitung total di kartu Beranda & modal ini.
+    getAmount: j => Number(j.sedekahNominal||hitungSedekah(j))||0,
+  },
 };
 function renderStatusListModalHtml(field){
   const cfg = STATUS_LIST_CONFIG[field];
   if(!cfg) return '';
   const list = sortedJobsWithNo().filter(cfg.isPending);
+  const totalAmount = cfg.getAmount ? list.reduce((s,j)=>s+cfg.getAmount(j),0) : null;
   return `
     <button type="button" class="close-x" id="closeModal">✕</button>
     <h3>${cfg.icon} ${cfg.label} Belum Tuntas</h3>
-    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job dengan status ${cfg.label.toLowerCase()} yang belum tuntas</div>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job dengan status ${cfg.label.toLowerCase()} yang belum tuntas${totalAmount!==null ? ` · Total: <b>${fmtRp(totalAmount)}</b>` : ''}</div>
     ${list.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">✅</div>Semua ${cfg.label.toLowerCase()} sudah tuntas.</div>` :
       list.map(j=>`
         <div class="modal-job">
           <div style="font-weight:700;margin-bottom:4px;">#${j.noUrut} — ${escapeHtml(j.namaKlien||'Tanpa Nama')} <span class="pill">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara||'-')}</span></div>
           <div class="mj-row"><span>Tanggal Acara</span><span>${fmtTgl(j.tanggalAcara)}</span></div>
           <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</span></div>
+          ${cfg.getAmount ? `<div class="mj-row"><span>Nominal Sedekah</span><span>${fmtRp(cfg.getAmount(j))}</span></div>` : ''}
           <div class="mj-row"><span>Status ${cfg.label}</span><span>${badgeSelect(j.id, field, cfg.options, j[field])}</span></div>
           <div class="modal-actions">
             <button type="button" class="btn btn-outline" data-view-job="${j.id}">Lihat Detail</button>
@@ -5053,7 +5097,7 @@ function viewTugas(){
       <div>
         <h2 style="margin:0;">🗂️ ${mine ? 'Tugas Saya' : 'Pembagian Tugas Tim'}</h2>
         <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">
-          ${mine ? 'Lihat seluruh tugas yang diberikan kepada akun ini, lengkap dengan detail job, jam kerja, dan komentar dari Admin.' : 'Admin membagi tugas berdasarkan akun tim, peran kerja, job yang sudah ada, dan jam kerja. Gunakan tombol 💬 untuk mengirim komentar/arahan ke Tim.'}
+          ${mine ? 'Tugas untukmu dari Admin.' : 'Bagi tugas per akun & jam kerja.'}
         </div>
       </div>
       ${isAdmin()?`<button class="btn btn-primary" id="btnOpenTaskForm">＋ Bagi Tugas</button>`:''}
@@ -5114,7 +5158,7 @@ function viewTugas(){
         </div>
       </div>
       <div class="task-bonus-detail">
-        Dijumlahkan dari Honor Tim yang dibagikan Admin ke akun ini di masing-masing job.
+        Total honor dari semua job.
       </div>
       ${honorJobList.length ? `
       <div class="bonus-adjust-list">
@@ -5127,7 +5171,7 @@ function viewTugas(){
             <div class="bonus-adjust-jam plus">${fmtRp(x.nominal)}</div>
           </div>
         `).join('')}
-      </div>` : `<div class="field-hint" style="margin-top:6px;">Belum ada honor job yang dibagikan ke akun ini.</div>`}
+      </div>` : `<div class="field-hint" style="margin-top:6px;">Belum ada honor dibagikan.</div>`}
     </div>` : ''}
 
     ${isAdmin()?`
@@ -5140,7 +5184,7 @@ function viewTugas(){
         <button type="button" class="bonus-adjust-btn" id="btnEditBonusRate">✏️ Ubah Tarif</button>
       </div>
       <div class="task-bonus-detail">
-        Tarif ini dipakai untuk menghitung bonus otomatis seluruh akun Tim dari jam kerja tugas (jam kerja × tarif). Nilai awalnya Rp500/jam, dan bisa diubah kapan saja di sini.
+        Bonus dihitung otomatis dari jam kerja.
       </div>
     </div>
 
@@ -5152,7 +5196,7 @@ function viewTugas(){
         </div>
       </div>
       <div class="task-bonus-detail">
-        Jumlah ini otomatis mengurangi <b>Penghasilan Bersih</b> Admin di Beranda bulan ini — mencakup klaim yang masih <b>Menunggu Dicairkan</b> maupun yang sudah <b>Dicairkan</b>, karena begitu diklaim akun Tim, nominal ini sudah jadi kewajiban yang harus dibayarkan.
+        Mengurangi Penghasilan Bersih Admin otomatis.
       </div>
     </div>
 
@@ -5177,7 +5221,7 @@ function viewTugas(){
 
     <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;">
       <div class="section-title" style="margin-top:0;">📊 Rekap Per Akun Tim</div>
-      ${personRows || `<div class="empty-state" style="padding:25px;">Belum ada akun Tim. Buat akun Tim melalui halaman login.</div>`}
+      ${personRows || `<div class="empty-state" style="padding:25px;">Belum ada akun Tim.</div>`}
     </div>`:''}
 
     <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;">
@@ -5210,7 +5254,7 @@ function viewTugas(){
             <td><b>${escapeHtml(getTaskJobLabel(t))}</b>${job?.jenisAcara?`<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(job.jenisAcara)}</div>`:''}</td>
             <td class="task-time">${getTaskSlots(t).map(s=>`${escapeHtml(s.mulai||'-')} – ${escapeHtml(s.selesai||'-')}`).join('<br>')||'-'}<div style="font-size:10.5px;color:var(--ink-soft);font-weight:400;">${fmtTaskHours(taskHours(t))}</div></td>
             <td><div class="task-ket">${escapeHtml(t.keterangan||'-')}</div></td>
-            <td><span class="task-status-badge ${status==='Selesai'?'task-status-selesai':'task-status-belum'}" ${t.autoCompleted?'title="Ditandai selesai otomatis setelah lewat pukul 23.59 pada hari job"':''}>${status==='Selesai'?(t.autoCompleted?'✓ Selesai (Otomatis)':'✓ Selesai'):'⏳ Belum'}</span></td>
+            <td><span class="task-status-badge ${status==='Selesai'?'task-status-selesai':'task-status-belum'}" ${t.autoCompleted?'title="Selesai otomatis"':''}>${status==='Selesai'?(t.autoCompleted?'✓ Selesai (Otomatis)':'✓ Selesai'):'⏳ Belum'}</span></td>
             <td><div class="row-actions">
               ${(isAdmin() || String(t.userId)===String(currentUserId))?`<button type="button" class="icon-btn" data-task-toggle="${escapeHtml(t.id)}" title="Ubah status">${status==='Selesai'?'↩️':'✓'}</button>`:''}
               ${(isAdmin() || String(t.userId)===String(currentUserId))?`<button type="button" class="icon-btn task-comment-btn" data-task-comment="${escapeHtml(t.id)}" title="Komentar tugas">💬${taskComments(t).length?`<span class="task-comment-count">${taskComments(t).length}</span>`:''}${taskHasUnreadComment(t)?'<span class="task-comment-dot"></span>':''}</button>`:''}
@@ -5255,7 +5299,7 @@ function renderTaskAkunListHtml(){
           </select>
         </div>
         <div>
-          <label>Jam Kerja * <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">(bisa tambah lebih dari satu sesi, mis. pagi 08.00–10.00 lalu sore 14.00–16.00)</span></label>
+          <label>Jam Kerja *</label>
           <div class="task-akun-slots">
             ${sel.slots.map((s,idx)=>`
             <div class="task-slot-row">
@@ -5368,7 +5412,7 @@ function renderTaskJobSectionHtml(){
       <input type="hidden" id="taskJobId" value="${escapeHtml(taskFormEditingJobId||'')}">
       ${taskFormJobDropdownOpen ? `<div class="task-job-dropdown-panel" id="taskJobDropdownPanel" onclick="event.stopPropagation()">${renderTaskJobDropdownPanelHtml()}</div>` : ''}
     </div>
-    <div class="field-hint">Tanggal tugas mengikuti tanggal acara dari job yang dipilih. Daftar di atas hanya menampilkan job yang akan datang — pilih "Tampilkan job yang sudah lewat" untuk melihat job yang sudah lewat dalam 2 bulan terakhir, tanpa perlu menutup daftarnya dulu.</div>
+    <div class="field-hint">Tanggal ikut tanggal acara job.</div>
   `;
 }
 function refreshTaskJobSection(){
@@ -5415,7 +5459,7 @@ function buildTaskFormHtml(editTask){
   taskFormShowPastJobs = editTask ? isJobPastWithinTwoMonths(jobs.find(j=>String(j.id)===String(editTask.jobId)) || {}) : false;
   return `
     <h2 style="margin-top:0;">${editTask?'✏️ Edit Pembagian Tugas':'➕ Bagi Tugas Baru'}</h2>
-    <div style="font-size:12px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">Tugas terhubung langsung ke job yang sudah tercatat.</div>
+    <div style="font-size:12px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">Terhubung ke job tercatat.</div>
     ${!people.length?`<div class="task-form-note">⚠️ Belum ada akun dengan peran <b>Tim</b>. Buat/daftarkan akun Tim terlebih dahulu.</div>`:''}
     <form id="taskForm" class="form-grid">
       ${editTask ? `
@@ -5431,7 +5475,7 @@ function buildTaskFormHtml(editTask){
         <select id="taskRole" required><option value="">Pilih role...</option><option value="Fotografer" ${editTask?.role==='Fotografer'?'selected':''}>📷 Fotografer</option><option value="Videografer" ${editTask?.role==='Videografer'?'selected':''}>🎥 Videografer</option></select>
       </div>` : `
       <div class="full">
-        <label>Akun Tim, Role &amp; Jam Kerja * <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">(bisa pilih lebih dari satu tim/role — centang akun, lalu atur role dan jam kerjanya sendiri-sendiri untuk tiap akun)</span></label>
+        <label>Akun Tim, Role &amp; Jam Kerja *</label>
         <div class="honor-tim-list" id="taskAkunList">
           ${renderTaskAkunListHtml()}
         </div>
@@ -5441,7 +5485,7 @@ function buildTaskFormHtml(editTask){
       </div>
       ${editTask ? `
       <div class="full">
-        <label>Jam Kerja * <span style="font-weight:400;color:var(--ink-soft);font-size:11px;">(bisa tambah lebih dari satu sesi, mis. pagi 08.00–10.00 lalu sore 14.00–16.00)</span></label>
+        <label>Jam Kerja *</label>
         <div id="taskTimeSlots">
           ${(editSlots.length?editSlots:[{mulai:'08:00',selesai:'10:00'}]).map(s=>`
           <div class="task-slot-row" data-slot-row>
@@ -5458,7 +5502,7 @@ function buildTaskFormHtml(editTask){
         <textarea id="taskNote" rows="4" placeholder="Contoh: Foto akad, ambil detail dekorasi, backup file setelah acara...">${escapeHtml(editTask?.keterangan||'')}</textarea>
       </div>
       <div class="full">
-        <div class="task-form-note">📌 Tim hanya melihat tugas yang ditujukan ke akunnya. Admin dapat melihat seluruh tugas dan rekap per akun.</div>
+        <div class="task-form-note">📌 Tim hanya lihat tugas sendiri.</div>
       </div>
       <div class="form-actions full">
         <button type="button" class="btn btn-outline" id="btnCancelTask">Batal</button>
@@ -5681,7 +5725,7 @@ function taskCommentModalHtml(task){
       <div class="form-actions" style="margin-top:10px;">
         <button type="submit" class="btn btn-primary">📨 Kirim Komentar</button>
       </div>
-    </form>` : `<div class="task-form-note">📌 Komentar dikirim oleh Admin sebagai arahan tambahan untuk tugas ini.</div>`}
+    </form>` : `<div class="task-form-note">📌 Komentar dari Admin.</div>`}
   `;
 }
 function openTaskCommentModal(taskId){
@@ -5748,7 +5792,7 @@ function bonusAdjustModalHtml(akun){
             <button type="button" class="icon-btn icon-btn-danger" data-bonus-delete="${escapeHtml(b.id)}" title="Hapus penyesuaian ini">🗑️</button>
           </div>
         </div>`).join('')
-    : `<div class="comment-empty">Belum ada penyesuaian bonus untuk akun ini.</div>`;
+    : `<div class="comment-empty">Belum ada penyesuaian bonus.</div>`;
 
   return `
     <button type="button" class="close-x" id="closeModal">✕</button>
@@ -5850,11 +5894,11 @@ function bonusRateModalHtml(){
     <button type="button" class="close-x" id="closeModal">✕</button>
     <h3>⚙️ Atur Tarif Bonus</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">
-      Tarif ini dipakai untuk menghitung bonus otomatis seluruh akun Tim dari jam kerja tugas (jam kerja × tarif). Tarif saat ini: <b>${fmtRp(BONUS_PER_JAM)}/jam</b>. Nilai awal aplikasi ini adalah Rp500/jam.
+      Tarif saat ini: <b>${fmtRp(BONUS_PER_JAM)}/jam</b>.
     </div>
     <form id="bonusRateForm" class="form-grid">
       <div class="full">
-        <label>Tarif Bonus (Rp per jam) *</label>
+        <label>Tarif Bonus/Jam *</label>
         <input type="number" id="bonusRateInput" min="0" step="1" value="${BONUS_PER_JAM}" required>
       </div>
       <div class="form-actions full">
@@ -5917,7 +5961,7 @@ function viewLaporanAdmin(){
       <div>
         <h2 style="margin:0;">🚨 Laporan Tim</h2>
         <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">
-          Laporan yang dikirim akun Tim mengenai akun Tim lain. Hanya Admin yang bisa melihat daftar ini.
+          Laporan antar akun Tim.
         </div>
       </div>
     </div>
@@ -5959,13 +6003,12 @@ function viewLaporanTim(){
       <div>
         <h2 style="margin:0;">🚨 Laporkan Akun Tim</h2>
         <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">
-          Punya masalah kerja sama dengan rekan tim lain di lapangan? Kirim laporan lewat form ini — laporan akan
-          langsung terkirim ke Admin untuk ditindaklanjuti, dan hanya bisa dilihat oleh Admin.
+          Laporkan masalah ke Admin.
         </div>
       </div>
     </div>
 
-    ${!cloudSyncEnabled ? `<div class="info-box">⚠️ Sinkronisasi cloud belum aktif, sehingga daftar akun Tim mungkin belum bisa dimuat. Cek koneksi internet lalu buka ulang menu ini.</div>` : ''}
+    ${!cloudSyncEnabled ? `<div class="info-box">⚠️ Sinkronisasi cloud belum aktif.</div>` : ''}
 
     <form id="reportForm" class="form-grid" style="margin-top:16px;">
       <div class="full">
@@ -5974,7 +6017,7 @@ function viewLaporanTim(){
           <option value="">Pilih akun Tim yang dilaporkan...</option>
           ${targets.map(a=>`<option value="${escapeHtml(a.id)}">${escapeHtml(a.username)}</option>`).join('')}
         </select>
-        ${!targets.length?`<div class="field-hint">Belum ada akun Tim lain yang bisa dilaporkan.</div>`:''}
+        ${!targets.length?`<div class="field-hint">Belum ada akun untuk dilaporkan.</div>`:''}
       </div>
       <div class="full">
         <label>Isi Laporan *</label>
@@ -5988,7 +6031,7 @@ function viewLaporanTim(){
 
   <div class="card">
     <h2 style="margin-top:0;">🧾 Laporan Saya</h2>
-    <div style="font-size:12px;color:var(--ink-soft);margin:-6px 0 4px;">Riwayat laporan yang sudah Anda kirim, beserta status tindak lanjutnya. Hanya Anda dan Admin yang bisa melihat laporan ini.</div>
+    <div style="font-size:12px;color:var(--ink-soft);margin:-6px 0 4px;">Riwayat laporanmu.</div>
     ${myReports.length ? `<div class="report-list">${myReports.map(r=>reportCardHtml(r, false)).join('')}</div>`
       : `<div class="empty-state"><div class="em">🧾</div>Anda belum pernah mengirim laporan.</div>`}
   </div>
@@ -6295,14 +6338,10 @@ function viewUlasan(){
       <button type="button" class="btn btn-outline" id="btnRefreshUlasan">${ulasanLoading?'⏳ Memuat...':'🔄 Muat Ulang'}</button>
     </div>
     <p style="color:var(--ink-soft); font-size:12.5px; margin:-6px 0 18px;">
-      Saran, komentar, dan penilaian bintang yang dikirim klien lewat formulir di halaman pricelist — otomatis
-      tersinkron dari cloud. Ulasan baru tidak langsung tampil ke publik — tekan <b>Kelola Publikasi</b> pada
-      ulasan yang ingin ditampilkan, lalu pilih halaman tujuannya (Pricelist Wedding, Margondang, Mangayun,
-      dan/atau Isi Biodata — boleh pilih satu, beberapa, atau semuanya). Tekan <b>Buat Gambar</b> untuk mengunduh
-      desain testimoni siap posting ke Instagram Story, supaya calon klien lain makin percaya.
+      Ulasan klien dari halaman pricelist.
     </p>
     ${!cloudSyncEnabled ? `
-      <div class="info-box">⚠️ Sinkronisasi cloud belum aktif, jadi daftar ulasan mungkin belum lengkap. Cek konfigurasi Supabase.</div>
+      <div class="info-box">⚠️ Sinkronisasi cloud belum aktif.</div>
     ` : ''}
     <div class="stat-grid" style="margin-top:0;">
       <div class="stat gold">
@@ -6318,8 +6357,7 @@ function viewUlasan(){
     ${(!ulasanLoading && total===0) ? `
       <div class="empty-state">
         <div class="em">💬</div>
-        Belum ada saran &amp; penilaian dari klien.<br>
-        Ulasan yang dikirim klien lewat halaman pricelist wedding akan tampil di sini secara otomatis.
+        Belum ada penilaian klien.
       </div>
     ` : `
     <div class="ulasan-list">
@@ -6442,9 +6480,7 @@ function viewPengaturan(){
   <div class="card">
     <h2 style="margin-top:0;">🔐 Akun Saya</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">
-      Kamu login sebagai <b>${escapeHtml(currentUsername||'')}</b> (peran: <b>${isAdmin()?'Admin':'Tim'}</b>).
-      Username dan password akun ini hanya bisa diubah oleh kamu sendiri lewat form di bawah — termasuk Admin tidak
-      punya hak mengubahkan akun ini untukmu, dan kamu pun tidak bisa mengubah akun orang lain lewat sini.
+      Kamu login sebagai <b>${escapeHtml(currentUsername||'')}</b> (peran: <b>${isAdmin()?'Admin':'Tim'}</b>). Hanya kamu bisa ubah ini.
     </p>
     <form id="akunSayaForm" class="form-grid">
       <div>
@@ -6456,7 +6492,7 @@ function viewPengaturan(){
         <input type="text" id="akunUsername" value="${escapeHtml(currentUsername||'')}" required>
       </div>
       <div>
-        <label>Password Baru (kosongkan jika tidak ingin mengubah)</label>
+        <label>Password Baru</label>
         <div class="pw-wrap">
           <input type="password" id="akunPassword" autocomplete="new-password" minlength="4" placeholder="••••••••">
           <button type="button" class="pw-toggle" data-pw-target="akunPassword" aria-label="Lihat/sembunyikan password">👁️</button>
@@ -6471,10 +6507,7 @@ function viewPengaturan(){
   <div class="card admin-only">
     <h2 style="margin-top:0;">🗂️ Kelola Akun (Admin)</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">
-      Daftar seluruh akun yang terdaftar (termasuk yang mendaftar sendiri lewat halaman login), lengkap dengan
-      username &amp; password apa adanya. Sebagai Admin kamu hanya bisa <b>melihat</b> akun milik orang lain — untuk
-      mengubah username/password akun lain, minta pemilik akunnya mengubah sendiri lewat panel "Akun Saya" di atas.
-      Untuk mengubah akun Admin milikmu sendiri, gunakan juga panel "Akun Saya" yang sama.
+      Admin hanya bisa melihat.
     </p>
     ${akunLoading ? `<div class="info-box">⏳ Memuat daftar akun...</div>` : `
     <div style="overflow-x:auto;">
@@ -6500,15 +6533,10 @@ function viewPengaturan(){
   <div class="card">
     <h2 style="margin-top:0;">⚙️ Pengaturan &amp; Cadangan Data</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">
-      Semua data job disinkronkan otomatis ke cloud (Supabase), dan disimpan juga sebagai cache di browser perangkat ini
-      (localStorage) supaya tetap bisa diakses walau koneksi internet sedang putus. Karena tersimpan di cloud, data yang
-      diinput di satu device akan otomatis muncul juga saat website ini dibuka dari HP/laptop lain memakai link yang sama.
+      Data tersinkron otomatis ke cloud.
     </p>
     <p style="color:var(--ink-soft);font-size:13.5px;">
-      Meski begitu, tetap disarankan rutin membuat <b>Cadangkan Data</b> (file terpisah) sebagai jaring pengaman tambahan.
-      Backup sekarang mencakup <b>data job sekaligus pembagian tugas tim</b>, sehingga keduanya bisa dipulihkan bersama.
-      dan gunakan <b>Pulihkan Data</b> bila suatu saat perlu memindahkan/mengembalikan data secara manual. Status cadangan
-      terakhir: <b>${lastBackupText}</b>.
+      Disarankan cadangkan data rutin. Status cadangan terakhir: <b>${lastBackupText}</b>.
     </p>
     <div class="backup-row">
       <button class="btn btn-primary" id="btnExportBackup">⬇️ Cadangkan Data (.json)</button>
@@ -6521,8 +6549,7 @@ function viewPengaturan(){
 
     <div class="section-title">📥 Import Job dari Excel</div>
     <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">
-      Punya catatan job lama di Excel? Unduh template resmi di bawah, isi datanya mengikuti format kolom yang sudah disediakan,
-      lalu unggah kembali file tersebut untuk mengimpor banyak job sekaligus.
+      Unduh template, isi, lalu unggah.
     </p>
     <div class="backup-row">
       <button class="btn btn-outline" id="btnDownloadTemplate">⬇️ Unduh Template Excel</button>
@@ -6532,17 +6559,12 @@ function viewPengaturan(){
       </label>
     </div>
     <div class="info-box">
-      ℹ️ Jangan mengubah nama judul kolom pada baris pertama template. Setiap baris berikutnya akan dibaca sebagai satu job.
-      Baris tanpa isian <b>Tanggal Acara</b> akan otomatis dilewati.
+      ℹ️ Jangan ubah judul kolom pertama.
     </div>
 
     <div class="section-title">📅 Google Calendar</div>
     <div class="info-box">
-      Karena file ini adalah file HTML statis yang berjalan langsung di browser tanpa server/back-end, aplikasi ini
-      <b>tidak</b> melakukan login OAuth Google secara langsung di dalam aplikasi.
-      Sebagai gantinya, tombol <i>"Tambah ke Google Calendar"</i> akan membuka Google Calendar di tab baru menggunakan akun
-      Google yang sedang aktif di browser kamu (tidak perlu login berulang selama kamu tetap login di Google lewat browser),
-      atau kamu bisa memakai tombol <i>"Unduh .ics"</i> untuk mengimpor job ke Google Calendar / Outlook / Apple Calendar secara manual.
+      Tambah manual ke Google Calendar.
     </div>
   </div>
   `;
@@ -7001,12 +7023,22 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.2.2'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.3.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.3.0',
+    tanggal: '08 September 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Kartu statistik baru "Sedekah Belum Selesai" di Beranda — menampilkan total nominal sedekah yang belum tuntas, bisa diklik untuk melihat daftar job dan langsung mengubah status sedekahnya (Belum/Sudah).' },
+      { kategori: 'Peningkatan', teks: 'Kolom Link Maps di form Input/Edit Job dihapus. Sekarang cukup isi Titik Koordinat, lalu pakai tombol "📋 Salin Link Maps" untuk menyalin link Google Maps-nya secara otomatis.' },
+      { kategori: 'Peningkatan', teks: 'Teks di seluruh aplikasi (label, judul, keterangan) dibuat lebih singkat dan mudah dibaca.' },
+      { kategori: 'Fitur', teks: 'Status Pembayaran di menu Daftar Job sekarang otomatis berubah jadi "Lunas" begitu lewat pukul 23.59 di hari job itu (atau hari terakhir untuk job berdurasi lebih dari 1 hari). Kalau Admin sudah pernah mengubah Status Pembayaran secara manual, proses otomatis ini tidak akan menimpanya lagi.' },
+    ]
+  },
   {
     version: '1.2.2',
     tanggal: '06 September 2026',
@@ -7083,12 +7115,12 @@ const LAST_SEEN_VERSION_KEY = 'kaoneMotret_lastSeenVersion_v1';
 ========================================================= */
 const WELCOME_POPUP_SEEN_KEY = 'kaoneMotret_welcomeFiturSeen_v1';
 const WELCOME_FEATURES = [
-  {icon:'📋', title:'Kelola Job Lengkap', desc:'Catat data klien, lokasi, paket, sampai status edit/cetak/pengiriman — nomor urut job otomatis mengikuti tanggal acara.'},
-  {icon:'🗓️', title:'Kalender & Rentang Tanggal', desc:'Lihat jadwal per bulan, dan untuk acara lebih dari 1 hari cukup pilih Tanggal Mulai & Selesai.'},
-  {icon:'🗂️', title:'Pembagian Tugas Tim', desc:'Bagi tugas per akun Tim lengkap dengan jam kerja, kirim komentar/arahan, dan status tugas otomatis "Selesai" begitu lewat pukul 23.59 di hari terakhir acara.'},
-  {icon:'💰', title:'Hitung Keuangan Otomatis', desc:'Penghasilan bersih, sisa pembayaran, dan sedekah dihitung otomatis dari data yang sudah diisi.'},
-  {icon:'🛣️', title:'Jarak & Transport Otomatis', desc:'Tempel titik koordinat lokasi acara, jarak dari Kaone Motret dan saran biaya transport langsung dihitung.'},
-  {icon:'📊', title:'Rekap & Ekspor', desc:'Rekap bulanan/tahunan, cadangkan & pulihkan data, ekspor/impor lewat Excel kapan saja.'},
+  {icon:'📋', title:'Kelola Job Lengkap', desc:'Data & status job lengkap.'},
+  {icon:'🗓️', title:'Kalender & Rentang Tanggal', desc:'Jadwal bulanan & rentang tanggal.'},
+  {icon:'🗂️', title:'Pembagian Tugas Tim', desc:'Bagi tugas & jam kerja tim.'},
+  {icon:'💰', title:'Hitung Keuangan Otomatis', desc:'Keuangan & sedekah otomatis.'},
+  {icon:'🛣️', title:'Jarak & Transport Otomatis', desc:'Jarak & biaya transport otomatis.'},
+  {icon:'📊', title:'Rekap & Ekspor', desc:'Rekap, cadangkan, ekspor Excel.'},
 ];
 function hasSeenWelcomePopup(){
   try{ return !!localStorage.getItem(WELCOME_POPUP_SEEN_KEY); }
@@ -7103,8 +7135,8 @@ function showWelcomePopup(){
       <button type="button" class="close-x" id="closeModal">✕</button>
       <div class="welcome-hero">
         <div class="welcome-badge-icon">📸</div>
-        <h3>Selamat Datang di Kaone Motret</h3>
-        <p>Buku Job digital untuk mengelola pekerjaan fotografer/videografer — dari input job sampai pembagian tugas tim, semua di satu tempat. Berikut beberapa fitur unggulannya:</p>
+        <h3>Selamat Datang</h3>
+        <p>Buku Job digital fotografer/videografer.</p>
       </div>
       <ul class="welcome-feature-list">
         ${WELCOME_FEATURES.map(f=>`<li>
@@ -7212,7 +7244,7 @@ function showChangelogHistoryModal(){
       <button type="button" class="close-x" id="closeModal">✕</button>
       <h3 style="margin-top:0;">📜 Riwayat Pembaruan</h3>
       <div style="font-size:13px; color:var(--ink-soft); margin-bottom:4px;">
-        Semua catatan perubahan Kaone Motret dari versi ke versi.
+        Riwayat perubahan aplikasi.
       </div>
       <div class="changelog-history">
         ${CHANGELOG.map((c, idx)=>`
@@ -7641,6 +7673,14 @@ function initAppAfterAuth(){
   autoUpdateTaskStatuses();
   setInterval(()=>{
     if(autoUpdateTaskStatuses() && currentView==='tugas') navigate('tugas');
+  }, 60000);
+
+  // Cek Status Pembayaran job yang harus otomatis jadi "Lunas" begitu app dibuka,
+  // lalu ulangi tiap 1 menit supaya job yang lewat pukul 23.59 di hari job itu tetap
+  // otomatis tertandai Lunas meski aplikasi dibiarkan terbuka tanpa berpindah menu.
+  autoUpdateJobPaymentStatuses();
+  setInterval(()=>{
+    if(autoUpdateJobPaymentStatuses() && currentView==='daftar') navigate('daftar');
   }, 60000);
 
   // Selagi halaman Pembagian Tugas sedang dibuka, tarik ulang data dari cloud secara

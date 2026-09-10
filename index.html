@@ -3274,11 +3274,11 @@ function viewBeranda(){
       <div class="label">Penghasilan Job Saya Bulan Ini</div>
       <div class="value">${fmtRp(honorSayaBulanIni)}</div>
     </div>` : ''}
-    <div class="stat">
+    <div class="stat stat-clickable" data-open-status-list="prosesEdit" title="Lihat daftar job">
       <div class="label">Edit Belum Selesai</div>
       <div class="value">${belumEdit}</div>
     </div>
-    <div class="stat">
+    <div class="stat stat-clickable" data-open-status-list="prosesCetak" title="Lihat daftar job">
       <div class="label">Cetak Belum Selesai</div>
       <div class="value">${belumCetak}</div>
     </div>
@@ -3986,6 +3986,7 @@ function viewKalender(){
         <button id="calNext">›</button>
       </div>
       <button class="btn btn-primary" id="btnDownloadPoster">⬇️ Unduh Gambar (1080×1920)</button>
+      <button class="btn btn-outline" id="btnDownloadPosterKeterangan">⬇️ Unduh dengan Keterangan Tanggal</button>
     </div>
     <div class="poster-wrap">
       <div class="poster-scale-inner" id="posterScaleInner">
@@ -4071,10 +4072,10 @@ function buildFullStats(list, keyFn){
   return entries.map(([label,count])=>({label, count, pct: total ? (count/total*100) : 0}));
 }
 // Format persen apa adanya (tidak dibulatkan ke bilangan bulat). Presisi dijaga
-// sampai 4 angka di belakang koma (dibuang bila 0) supaya total tetap terlihat 100% akurat,
-// lalu ditulis dengan koma sesuai kebiasaan format angka Indonesia.
+// maksimal 2 angka di belakang koma (dibuang bila 0), lalu ditulis dengan koma
+// sesuai kebiasaan format angka Indonesia.
 function formatPctExact(pct){
-  let s = pct.toFixed(4);
+  let s = pct.toFixed(2);
   s = s.replace(/0+$/,'').replace(/\.$/,'');
   return s.replace('.', ',');
 }
@@ -4130,11 +4131,11 @@ function renderPosterHtml(){
     <div class="cp-stats">
       <div class="cp-stats-inner">
         <div class="cp-stats-col">
-          <div class="cp-stats-title" style="margin-bottom:${jenisSz.titleGap}px;">Jenis Acara</div>
+          <div class="cp-stats-title" style="margin-bottom:${jenisSz.titleGap}px;"></div>
           ${jenisStats.map(s=>statsRowHtml(s, jenisSz)).join('')}
         </div>
         <div class="cp-stats-col">
-          <div class="cp-stats-title" style="margin-bottom:${kecSz.titleGap}px;">Kecamatan</div>
+          <div class="cp-stats-title" style="margin-bottom:${kecSz.titleGap}px;"></div>
           ${kecStats.map(s=>statsRowHtml(s, kecSz)).join('')}
         </div>
       </div>
@@ -4299,6 +4300,18 @@ function openDateModal(dateIso){
    Dibuat generik per-field supaya gampang dipakai lagi untuk stat lain di masa depan
    (mis. kalau nanti "Edit/Cetak Belum Selesai" juga ingin dibuat bisa diklik). */
 const STATUS_LIST_CONFIG = {
+  prosesEdit: {
+    label: 'Proses Edit',
+    icon: '✏️',
+    options: ['Belum Selesai','Selesai'],
+    isPending: j => j.prosesEdit!=='Selesai',
+  },
+  prosesCetak: {
+    label: 'Proses Cetak',
+    icon: '🖨️',
+    options: ['Belum Selesai','Selesai'],
+    isPending: j => j.prosesCetak!=='Selesai',
+  },
   pengiriman: {
     label: 'Pengiriman',
     icon: '🚚',
@@ -6802,7 +6815,8 @@ function attachHandlers(){
     window.addEventListener('resize', scalePoster);
     document.getElementById('calPrev')?.addEventListener('click', ()=>{ calMonth--; if(calMonth<0){calMonth=11;calYear--;} navigate('kalender'); });
     document.getElementById('calNext')?.addEventListener('click', ()=>{ calMonth++; if(calMonth>11){calMonth=0;calYear++;} navigate('kalender'); });
-    document.getElementById('btnDownloadPoster')?.addEventListener('click', downloadPosterImage);
+    document.getElementById('btnDownloadPoster')?.addEventListener('click', ()=>downloadPosterImage(false));
+    document.getElementById('btnDownloadPosterKeterangan')?.addEventListener('click', ()=>downloadPosterImage(true));
 
     document.getElementById('btnSaveThanksText')?.addEventListener('click', ()=>{
       if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah teks ucapan di poster kalender.'); return; }
@@ -6934,7 +6948,12 @@ function attachHandlers(){
 }
 
 /* ---------- Export gambar (html2canvas) ---------- */
-function downloadPosterImage(){
+// includeKeterangan=false (default) -> gambar polos seperti semula (blok "Keterangan
+// Tanggal" disembunyikan, sama seperti sebelum ada fitur ini). includeKeterangan=true
+// -> blok "Keterangan Tanggal" ([tanggal] - [desa] per job bulan ini) ikut disertakan
+// di gambar, statistik otomatis bergeser ke bawahnya (lihat positionPosterStats).
+function downloadPosterImage(includeKeterangan){
+  if(includeKeterangan===undefined) includeKeterangan = false;
   if(typeof html2canvas === 'undefined'){
     alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
     return;
@@ -6950,15 +6969,19 @@ function downloadPosterImage(){
   try{
     poster.style.transform = 'none'; // render ukuran asli 1080x1920 untuk capture
     poster.style.zoom = 1;
-    // Sembunyikan blok keterangan (khusus layar) & kembalikan statistik ke posisi
-    // tepat di bawah grid, supaya keterangan TIDAK ikut muncul di gambar yang diunduh.
-    positionPosterStats(poster, false);
+    // Kalau includeKeterangan=false: sembunyikan blok keterangan & kembalikan statistik
+    // ke posisi tepat di bawah grid (perilaku tombol unduh biasa, sama seperti semula).
+    // Kalau includeKeterangan=true: blok keterangan ikut ditampilkan & statistik
+    // otomatis digeser ke bawahnya, supaya keduanya ikut ter-capture di gambar.
+    positionPosterStats(poster, includeKeterangan);
     toast('Menyiapkan gambar kalender...');
     html2canvas(poster, {width:1080, height:1920, scale:1, backgroundColor:'#fffef9'}).then(canvas=>{
       restore();
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
-      a.download = `kalender-job-${MONTH_NAMES[calMonth]}-${calYear}.png`;
+      a.download = includeKeterangan
+        ? `kalender-job-${MONTH_NAMES[calMonth]}-${calYear}-keterangan-tanggal.png`
+        : `kalender-job-${MONTH_NAMES[calMonth]}-${calYear}.png`;
       a.click();
     }).catch(()=>{
       restore();
@@ -7023,12 +7046,22 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.3.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.4.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.4.0',
+    tanggal: '10 September 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Kartu statistik "Edit Belum Selesai" dan "Cetak Belum Selesai" di Beranda sekarang bisa diklik — menampilkan daftar job yang prosesnya belum tuntas, dan Admin bisa langsung mengubah status Selesai/Belum Selesai dari daftar tersebut.' },
+      { kategori: 'Perbaikan', teks: 'Angka persentase di Poster Kalender sekarang maksimal ditampilkan 2 angka di belakang koma (sebelumnya bisa sampai 4 angka).' },
+      { kategori: 'Peningkatan', teks: 'Judul "Jenis Acara" dan "Kecamatan" di atas daftar statistik Poster Kalender dihilangkan agar tampilan lebih ringkas.' },
+      { kategori: 'Fitur', teks: 'Tombol unduh baru di menu Kalender Job: "Unduh dengan Keterangan Tanggal" — gambar kalender yang diunduh akan menyertakan daftar keterangan tanggal job (format [tanggal] - [desa]) yang sebelumnya hanya tampil di layar saja.' },
+    ]
+  },
   {
     version: '1.3.0',
     tanggal: '08 September 2026',

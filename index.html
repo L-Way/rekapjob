@@ -2,7 +2,12 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1c1a12">
+<meta name="format-detection" content="telephone=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Kaone Motret — Buku Job Fotografer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Italiana&family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -61,6 +66,7 @@
     display:flex; align-items:center; justify-content:space-between;
     flex-wrap:wrap; gap:10px;
     padding-right:56px; /* ruang aman supaya tidak tertindih tombol notifikasi yang fixed */
+    padding-left:env(safe-area-inset-left, 0px);
   }
   .datetime-strip{
     margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.09);
@@ -1137,7 +1143,8 @@
     table.jobtable, table.rekaptable{font-size:11.5px;}
     table.jobtable th, table.rekaptable th{padding:8px 6px; font-size:10px;}
     table.jobtable td, table.rekaptable td{padding:8px 6px;}
-    .row-actions{flex-direction:column; gap:4px;}
+    .row-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px; flex:1; width:100%;}
+    .row-actions .icon-btn{width:100%; text-align:center; padding:9px 4px;}
     .badge-select-wrap select{min-width:100px; font-size:10.5px; padding:4px 18px 4px 8px;}
 
     .cal-controls{gap:8px;}
@@ -1173,6 +1180,318 @@
     .task-stat .ts-value{font-size:16px;}
     .task-bonus-row{flex-direction:column; align-items:stretch;}
     .task-bonus-row .bonus-adjust-btn, .task-bonus-row .bonus-claim-btn{width:100%; text-align:center;}
+  }
+
+  /* =========================================================
+     ✨ PENYEGARAN TAMPILAN & RESPONSIF HP  (v1.5.0)
+     Blok ini sengaja diletakkan PALING BAWAH di dalam <style> supaya
+     aturannya menimpa aturan lama di atas tanpa perlu mengubah/merusak
+     gaya yang sudah ada. Isinya 4 hal besar:
+       1. Perbaikan dasar untuk Android & iPhone (safe-area, anti zoom
+          otomatis saat mengetik, area sentuh minimal 44px).
+       2. Navigasi atas jadi strip geser yang jelas + tombol "naik ke atas".
+       3. Tabel Daftar Job berubah jadi kartu di layar HP (tidak lagi
+          perlu digeser ke samping untuk membaca).
+       4. Polesan visual: bayangan lebih lembut, jarak lebih lega,
+          warna lebih tenang di mata.
+  ========================================================= */
+
+  /* ---------- 1. DASAR: ANDROID & IPHONE ---------- */
+  html{
+    -webkit-text-size-adjust:100%; text-size-adjust:100%;
+    scroll-behavior:smooth;
+  }
+  body{
+    -webkit-tap-highlight-color:transparent;
+    overflow-x:hidden;
+    /* Ruang aman bawah untuk iPhone dengan home-indicator */
+    padding-bottom:calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+  /* Semua kolom isian & tombol tidak lagi "melompat"/ter-zoom paksa di iPhone */
+  input, select, textarea, button{
+    -webkit-tap-highlight-color:transparent;
+    max-width:100%;
+  }
+  /* Elemen yang sering bikin halaman melar ke samping di HP */
+  img, svg, canvas, video, table{max-width:100%;}
+
+  /* Fokus keyboard terlihat jelas (aksesibilitas) tanpa mengganggu klik mouse */
+  :focus-visible{
+    outline:2.5px solid var(--gold);
+    outline-offset:2px;
+    border-radius:8px;
+  }
+
+  /* ---------- 2. HEADER & NAVIGASI ---------- */
+  header.topbar{
+    padding-top:calc(12px + env(safe-area-inset-top, 0px));
+    padding-left:calc(22px + env(safe-area-inset-left, 0px));
+    padding-right:calc(22px + env(safe-area-inset-right, 0px));
+    background:linear-gradient(120deg,#16140d 0%,#221e10 55%,#2f2913 100%);
+    box-shadow:0 6px 22px rgba(20,17,5,.28);
+  }
+  .notif-wrap{
+    top:calc(14px + env(safe-area-inset-top, 0px));
+    right:calc(16px + env(safe-area-inset-right, 0px));
+  }
+  /* Strip menu: tetap bisa digeser, tapi sekarang ada petunjuk bayangan di tepi
+     kanan supaya jelas bahwa masih ada menu lain di sebelahnya. */
+  .mainnav-shell{position:relative;}
+  .mainnav-shell::after{
+    content:''; position:absolute; top:0; bottom:0; right:0; width:34px; pointer-events:none;
+    background:linear-gradient(90deg, rgba(25,22,12,0), rgba(25,22,12,.92));
+    opacity:0; transition:opacity .2s ease; border-radius:0 999px 999px 0;
+  }
+  .mainnav-shell.has-more::after{opacity:1;}
+  nav.mainnav{
+    scroll-behavior:smooth; scroll-padding:0 12px;
+    background:rgba(255,255,255,.05); border-radius:16px; padding:4px;
+    border:1px solid rgba(255,255,255,.07);
+  }
+  nav.mainnav button{
+    border:none; background:transparent; color:#ddd0a4;
+    scroll-snap-align:center;
+  }
+  nav.mainnav button:hover{transform:none; background:rgba(255,255,255,.09);}
+  nav.mainnav button.active{
+    box-shadow:0 4px 14px rgba(212,175,0,.35);
+    transform:none;
+  }
+
+  /* ---------- 3. TOMBOL "NAIK KE ATAS" ---------- */
+  .to-top-btn{
+    position:fixed; z-index:180;
+    right:calc(16px + env(safe-area-inset-right, 0px));
+    bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+    width:46px; height:46px; border-radius:50%; border:none;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    color:#231f0f; font-size:19px; font-weight:700; line-height:1;
+    box-shadow:0 10px 26px rgba(120,95,0,.32);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; visibility:hidden; transform:translateY(14px) scale(.85);
+    transition:opacity .22s ease, transform .22s cubic-bezier(.34,1.56,.64,1), visibility .22s;
+  }
+  .to-top-btn.show{opacity:1; visibility:visible; transform:translateY(0) scale(1);}
+  .to-top-btn:hover{transform:translateY(-3px) scale(1.05);}
+  .to-top-btn:active{transform:scale(.92);}
+
+  /* ---------- 4. POLESAN VISUAL UMUM ---------- */
+  body{
+    background:
+      radial-gradient(1100px 520px at 8% -6%, rgba(244,217,62,.16), transparent 62%),
+      radial-gradient(900px 480px at 96% 2%, rgba(212,175,0,.10), transparent 60%),
+      linear-gradient(180deg,#fffdf6 0%,#fdf8ea 100%);
+    background-attachment:fixed;
+  }
+  .card{
+    border-radius:18px;
+    border:1px solid rgba(214,196,130,.45);
+    box-shadow:0 1px 2px rgba(60,48,10,.05), 0 10px 30px -14px rgba(90,72,10,.22);
+  }
+  .card h2{letter-spacing:.2px;}
+  .stat, .task-stat, .daily-card, .quick-menu-item, .job-mini,
+  .report-card, .task-person-card, .ulasan-card{
+    border-radius:16px;
+  }
+  .stat, .task-stat{
+    box-shadow:0 1px 2px rgba(60,48,10,.04), 0 8px 22px -14px rgba(90,72,10,.28);
+  }
+  .stat.gold, .task-stat.gold{
+    box-shadow:0 8px 22px -10px rgba(190,155,0,.55);
+  }
+  .section-title{
+    letter-spacing:.2px;
+    padding-bottom:8px;
+    border-bottom:1px solid rgba(214,196,130,.4);
+  }
+  .info-box{
+    border-radius:14px;
+    border-left:4px solid var(--gold);
+  }
+  .btn{border-radius:11px; letter-spacing:.2px;}
+  .btn-primary{box-shadow:0 6px 18px -8px rgba(190,155,0,.85);}
+  input[type=text],input[type=url],input[type=date],input[type=number],
+  input[type=tel],input[type=password],input[type=time],select,textarea{
+    border-radius:11px; border-color:#e8e0c6;
+  }
+  input:focus,select:focus,textarea:focus{
+    box-shadow:0 0 0 3.5px rgba(212,175,0,.16);
+  }
+  table.jobtable th, table.rekaptable th{
+    background:linear-gradient(120deg,#231f10,#332d15);
+    position:sticky; top:0; z-index:2;
+  }
+  .table-wrap{border-radius:14px;}
+  .toast{
+    bottom:calc(22px + env(safe-area-inset-bottom, 0px));
+    border-radius:14px; padding:13px 20px; font-weight:500;
+    max-width:min(420px, calc(100vw - 32px)); text-align:center; line-height:1.45;
+  }
+  .copyright-bar{
+    padding-bottom:calc(18px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ---------- 5. MODAL: JADI "BOTTOM SHEET" DI HP ---------- */
+  .overlay{
+    backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+    overscroll-behavior:contain;
+  }
+  .modal{
+    border-radius:18px;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    animation:modalRise .26s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes modalRise{
+    from{opacity:0; transform:translateY(16px) scale(.98);}
+    to{opacity:1; transform:none;}
+  }
+
+  /* ---------- 6. RESPONSIF LAYAR HP (≤640px) ---------- */
+  @media(max-width:640px){
+    header.topbar{
+      padding:calc(10px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) 10px calc(14px + env(safe-area-inset-left, 0px));
+    }
+    /* iOS memperbesar halaman sendiri kalau font kolom isian < 16px.
+       Disamakan 16px supaya layar tidak "meloncat" saat mulai mengetik. */
+    input[type=text],input[type=url],input[type=date],input[type=number],
+    input[type=tel],input[type=password],input[type=time],input[type=search],
+    select,textarea{
+      font-size:16px; padding:12px 13px;
+    }
+    .rp-input-wrap input.money-input{padding-left:34px;}
+
+    /* Area sentuh nyaman: minimal 44px (rekomendasi Apple & Google) */
+    nav.mainnav button{min-height:40px; padding:9px 15px; font-size:13px;}
+    .btn{min-height:46px; padding:12px 20px; font-size:14px;}
+    .icon-btn{min-height:40px; padding:9px 13px; font-size:12.5px;}
+    .notif-btn, .to-top-btn{min-width:44px; min-height:44px;}
+    .badge-select-wrap select{min-height:34px;}
+
+    main{padding:14px 12px 6px;}
+    .card{padding:16px 14px; border-radius:16px;}
+    #app .card + .card{margin-top:14px;}
+
+    /* ---- Tabel yang berbasis "jobtable" (Daftar Job & Rekap Tugas Detail)
+       jadi tampilan KARTU di HP, tidak perlu digeser ke samping ---- */
+    .table-wrap{overflow-x:visible; border:none; border-radius:0; background:transparent;}
+    table.jobtable{display:block; width:100%; font-size:13px;}
+    table.jobtable thead{display:none;}
+    table.jobtable tbody{display:block;}
+    table.jobtable tr{
+      display:block; background:#fffefa; border:1px solid var(--line);
+      border-radius:14px; padding:12px 14px; margin-bottom:10px;
+      box-shadow:0 1px 2px rgba(60,48,10,.04), 0 8px 20px -16px rgba(90,72,10,.4);
+    }
+    table.jobtable tr:hover td{background:transparent;}
+    table.jobtable td{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:7px 0; border-bottom:1px dashed rgba(214,196,130,.5);
+      text-align:right; word-break:break-word;
+    }
+    table.jobtable td:last-child{border-bottom:none;}
+    table.jobtable td::before{
+      content:attr(data-label);
+      font-size:11px; font-weight:700; letter-spacing:.4px; text-transform:uppercase;
+      color:var(--ink-soft); text-align:left; flex-shrink:0; white-space:nowrap;
+    }
+    table.jobtable td[data-label]:empty{display:none;}
+    /* Baris pertama (nomor + tanggal) dibuat menonjol sebagai "judul kartu" */
+    table.jobtable td[data-label="No"]{
+      border-bottom:none; padding-bottom:0;
+      font-family:'Fraunces',serif; font-weight:700; font-size:15px; color:#241f0f;
+    }
+    table.jobtable td[data-label="Klien"]{
+      font-weight:700; font-size:14.5px; color:#241f0f;
+    }
+    table.jobtable td.row-actions{
+      display:grid; grid-template-columns:1fr 1fr; gap:8px;
+      padding-top:12px; margin-top:4px; border-top:1px solid var(--line); border-bottom:none;
+    }
+    table.jobtable td.row-actions::before{display:none;}
+    table.jobtable td.row-actions .icon-btn{width:100%; text-align:center;}
+
+    /* Tabel Rekap (bukan jobtable) tetap tabel biasa yang digeser ke samping. */
+    table.rekaptable{font-size:12.5px;}
+
+    /* ---- Modal jadi bottom sheet ---- */
+    .overlay{padding:0; align-items:flex-end;}
+    .modal{
+      max-width:100%; width:100%;
+      max-height:92vh; max-height:92dvh;
+      border-radius:22px 22px 0 0;
+      padding:22px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+      animation:sheetUp .28s cubic-bezier(.22,1,.36,1) both;
+    }
+    /* Gagang kecil di atas sheet, penanda visual bahwa ini panel yang muncul dari bawah */
+    .modal::before{
+      content:''; display:block; width:42px; height:4px; border-radius:999px;
+      background:#e2d8b6; margin:-6px auto 14px;
+    }
+    .modal h3{font-size:18px;}
+    @keyframes sheetUp{
+      from{transform:translateY(100%);}
+      to{transform:translateY(0);}
+    }
+
+    /* ---- Kalender: kontrol dirapikan jadi satu kolom yang enak ditekan ---- */
+    .cal-controls{flex-direction:column; align-items:stretch; gap:10px;}
+    .cal-controls h2{text-align:center; font-size:19px;}
+    .cal-nav{justify-content:space-between; background:var(--gold-pale); border-radius:999px; padding:5px;}
+    .cal-nav .cur{flex:1; min-width:0; font-size:16px;}
+    .cal-nav button{min-width:42px; min-height:38px; border-radius:999px;}
+    .cal-controls .btn{width:100%;}
+    .poster-wrap{padding:10px; border-radius:14px;}
+    .layout-grid{grid-template-columns:repeat(3,1fr); gap:8px;}
+    .layout-card{min-height:62px;}
+    .theme-swatch{width:42px; height:42px;}
+
+    .quick-menu-item{min-height:74px;}
+    .stat-clickable .label::after{content:' 👆'; opacity:.75;}
+  }
+
+  @media(max-width:380px){
+    .hero h1{font-size:23px;}
+    nav.mainnav button{font-size:12px; padding:9px 12px;}
+    table.jobtable td{font-size:12.5px;}
+    table.jobtable td.row-actions{grid-template-columns:1fr;}
+  }
+
+  /* ---------- 7. POSTER KALENDER: PRATINJAU STABIL DI IPHONE ----------
+     Penyebab lama pratinjau kadang acak/geser di iPhone: poster diperkecil
+     memakai properti `zoom`, yang di Safari iOS dihitung berbeda dengan
+     browser lain — akibatnya hasil pengukuran posisi blok di dalam poster
+     jadi meleset. Sekarang poster SELALU diperkecil dengan transform:scale
+     dari titik kiri-atas, dan tinggi ruangnya dihitung pasti lewat JS. */
+  .poster-wrap{
+    overflow:hidden;
+    /* jangan biarkan poster 1080px memaksa halaman melebar di HP */
+    max-width:100%;
+  }
+  .poster-scale-inner{
+    position:relative; width:100%; overflow:hidden;
+    /* ruang sementara sebelum JS selesai menghitung, supaya tidak "loncat" */
+    min-height:120px;
+    /* Disembunyikan sesaat supaya poster tidak sempat berkedip dalam ukuran
+       asli 1080px sebelum diperkecil (kedipan ini yang dulu terlihat di iPhone).
+       Kalau karena suatu hal JS gagal, ada pengaman waktu di skrip yang tetap
+       memunculkannya — jadi poster tidak pernah hilang permanen. */
+    opacity:0; transition:opacity .28s ease;
+  }
+  .poster-scale-inner.is-ready{opacity:1;}
+  #calendarPoster{
+    transform-origin:top left !important;
+    zoom:1;
+    position:absolute; top:0; left:0;
+    margin:0;
+    /* Safari iOS kadang me-render ulang elemen ber-transform dengan salah kalau
+       tidak dipromosikan ke lapisan komposit sendiri. */
+    -webkit-backface-visibility:hidden; backface-visibility:hidden;
+    will-change:transform;
+  }
+  .poster-loading{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:26px 16px; color:#d8c98a; font-size:12.5px; letter-spacing:1px;
   }
 </style>
 </head>
@@ -1254,6 +1573,7 @@
       </button>
     </div>
   </div>
+  <div class="mainnav-shell" id="mainNavShell">
   <nav class="mainnav" id="mainNav">
     <button data-view="beranda">Beranda</button>
     <button data-view="daftar">Daftar Job</button>
@@ -1264,6 +1584,7 @@
     <button data-view="ulasan">Saran &amp; Penilaian</button>
     <button data-view="pengaturan">Pengaturan</button>
   </nav>
+  </div>
   <div class="datetime-strip" id="headerClock">Memuat waktu...</div>
   <div class="datetime-strip" id="syncStatus" style="margin-top:4px; padding-top:0; border-top:none;">⏳ Memuat data...</div>
 </header>
@@ -1278,6 +1599,8 @@
 <footer class="copyright-bar">
   <div>© <span id="copyrightYear"></span> Kaone Motret. All Right Reserved. <span class="version-tag" id="appVersionTag"></span></div>
 </footer>
+
+<button type="button" class="to-top-btn" id="toTopBtn" aria-label="Kembali ke atas" title="Kembali ke atas">↑</button>
 
 <div id="toast" class="toast"></div>
 
@@ -3108,6 +3431,50 @@ document.getElementById('mainNav').addEventListener('click', (e)=>{
   editingId = null;
   navigate(btn.dataset.view);
 });
+
+/* ---------- Strip menu atas: petunjuk "masih ada menu lain" ----------
+   Di layar HP, menu utama berbentuk strip yang digeser ke samping. Tanpa penanda,
+   menu di sebelah kanan sering tidak disadari ada. Bayangan gelap tipis di tepi
+   kanan hanya muncul kalau memang masih ada menu yang belum terlihat. */
+function updateNavScrollHint(){
+  const nav = document.getElementById('mainNav');
+  const shell = document.getElementById('mainNavShell');
+  if(!nav || !shell) return;
+  const sisaKanan = nav.scrollWidth - nav.clientWidth - nav.scrollLeft;
+  shell.classList.toggle('has-more', sisaKanan > 8);
+}
+/* Menu yang sedang aktif selalu digeser ke tengah pandangan, jadi pengguna tahu
+   persis sedang berada di halaman mana tanpa harus menggeser strip menu sendiri. */
+function scrollActiveNavIntoView(){
+  const active = document.querySelector('#mainNav button.active');
+  if(!active) return;
+  try{ active.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'}); }
+  catch(e){ /* browser lama: abaikan saja */ }
+  setTimeout(updateNavScrollHint, 320);
+}
+document.getElementById('mainNav')?.addEventListener('scroll', updateNavScrollHint, {passive:true});
+window.addEventListener('resize', updateNavScrollHint, {passive:true});
+setTimeout(updateNavScrollHint, 200);
+
+/* ---------- Tombol "kembali ke atas" ----------
+   Halaman Daftar Job / Rekap bisa sangat panjang di HP. Tombol ini muncul sendiri
+   setelah digulir cukup jauh, lalu hilang lagi saat sudah berada di bagian atas. */
+(function setupToTopButton(){
+  const btn = document.getElementById('toTopBtn');
+  if(!btn) return;
+  let ticking = false;
+  const sync = ()=>{
+    btn.classList.toggle('show', window.scrollY > 420);
+    ticking = false;
+  };
+  window.addEventListener('scroll', ()=>{
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(sync);
+  }, {passive:true});
+  btn.addEventListener('click', ()=> window.scrollTo({top:0, behavior:'smooth'}));
+  sync();
+})();
 function navigate(view){
   // Peran "Tim" (non-admin) tidak boleh membuka form Input/Edit Job — karena itu
   // langsung mengubah data rekap job. Halaman lain (termasuk Pengaturan) boleh dibuka;
@@ -3121,6 +3488,7 @@ function navigate(view){
   currentView = view;
   document.querySelectorAll('#mainNav button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
   render();
+  scrollActiveNavIntoView();
   window.scrollTo({top:0,behavior:'smooth'});
   if(view==='ulasan') pullUlasanFromCloud();
   if(view==='form' && isAdmin()) pullTeamAccountsPublic();
@@ -3782,16 +4150,16 @@ function renderDaftarTable(){
     <tbody>
     ${list.map(j=>`
       <tr>
-        <td>#${j.noUrut}</td>
-        <td>${fmtTgl(j.tanggalAcara)}</td>
-        <td>${escapeHtml(j.namaKlien||'-')}</td>
-        <td>${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara)}</td>
-        <td>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</td>
-        <td>${badgeSelect(j.id, 'prosesEdit', ['Belum Selesai','Selesai'], j.prosesEdit)}</td>
-        <td>${badgeSelect(j.id, 'prosesCetak', ['Belum Selesai','Selesai'], j.prosesCetak)}</td>
-        <td>${badgeSelect(j.id, 'pengiriman', PENGIRIMAN_LIST, j.pengiriman)}</td>
-        <td>${badgeSelect(j.id, 'statusPembayaran', STATUS_BAYAR_LIST, j.statusPembayaran)}</td>
-        <td>${fmtRp(hitungBersih(j))}</td>
+        <td data-label="No">#${j.noUrut}</td>
+        <td data-label="Tanggal">${fmtTgl(j.tanggalAcara)}</td>
+        <td data-label="Klien">${escapeHtml(j.namaKlien||'-')}</td>
+        <td data-label="Jenis Acara">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara)}</td>
+        <td data-label="Lokasi">${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</td>
+        <td data-label="Edit">${badgeSelect(j.id, 'prosesEdit', ['Belum Selesai','Selesai'], j.prosesEdit)}</td>
+        <td data-label="Cetak">${badgeSelect(j.id, 'prosesCetak', ['Belum Selesai','Selesai'], j.prosesCetak)}</td>
+        <td data-label="Pengiriman">${badgeSelect(j.id, 'pengiriman', PENGIRIMAN_LIST, j.pengiriman)}</td>
+        <td data-label="Bayar">${badgeSelect(j.id, 'statusPembayaran', STATUS_BAYAR_LIST, j.statusPembayaran)}</td>
+        <td data-label="Bersih">${fmtRp(hitungBersih(j))}</td>
         <td class="row-actions">
           <button class="icon-btn admin-only" data-edit="${j.id}">Edit</button>
           <button class="icon-btn" data-view-job="${j.id}">Lihat</button>
@@ -4217,55 +4585,130 @@ function positionPosterStats(poster, showKeterangan){
   // showKeterangan=false (dipakai saat mengunduh gambar): blok keterangan disembunyikan
   //   total (tidak ikut ter-capture) dan statistik kembali menempel tepat di bawah grid,
   //   persis seperti sebelum ada fitur keterangan ini.
+  //
+  // ⚠️ PENTING (perbaikan tampilan di iPhone):
+  // Dulu posisi dihitung memakai getBoundingClientRect(), yaitu ukuran NYATA di
+  // layar — yang ikut terpengaruh oleh pengecilan poster (scale/zoom). Di Safari
+  // iPhone hasil pembagian itu sering meleset sedikit, sehingga blok keterangan
+  // dan statistik bisa tampil bertumpuk atau melompat-lompat ("acak").
+  // Sekarang dipakai offsetTop/offsetHeight, yaitu ukuran TATA LETAK asli poster
+  // (selalu dalam skala 1080×1920, tidak terpengaruh scale sama sekali), jadi
+  // hasilnya identik di semua browser & semua ukuran layar.
   if(showKeterangan===undefined) showKeterangan = true;
   const stats = poster.querySelector('.cp-stats');
   const keterangan = poster.querySelector('.cp-keterangan');
-  const grid = poster.querySelector('.cp-grid table');
-  if(!stats || !grid) return;
-  const gridRect = grid.getBoundingClientRect();
-  const posterRect = poster.getBoundingClientRect();
-  const currentZoom = parseFloat(poster.style.zoom) || 1;
-  const gridBottom = (gridRect.bottom - posterRect.top) / currentZoom;
+  const gridWrap = poster.querySelector('.cp-grid');
+  if(!stats || !gridWrap) return;
+
+  const gridBottom = gridWrap.offsetTop + gridWrap.offsetHeight;
 
   if(keterangan && showKeterangan){
     keterangan.style.display = 'flex';
     keterangan.style.top = Math.round(gridBottom + 40) + 'px';
-    const ketRect = keterangan.getBoundingClientRect();
-    const ketBottom = (ketRect.bottom - posterRect.top) / currentZoom;
+    // Baca tinggi keterangan SETELAH posisinya ditetapkan supaya jumlah barisnya
+    // sudah final (jumlah baris berubah tergantung banyaknya job bulan itu).
+    const ketBottom = keterangan.offsetTop + keterangan.offsetHeight;
     stats.style.top = Math.round(ketBottom + 36) + 'px';
   } else {
     if(keterangan) keterangan.style.display = 'none';
     stats.style.top = Math.round(gridBottom + 40) + 'px';
   }
 }
+/* Menyesuaikan ukuran pratinjau poster kalender dengan lebar layar.
+   ------------------------------------------------------------------
+   Versi lama memakai properti CSS `zoom` untuk memperkecil poster. Di Safari
+   iPhone `zoom` diperlakukan berbeda dengan browser lain, dan hasil
+   pengukurannya bercampur dengan skala layar — itulah sebab pratinjau kalender
+   kadang terlihat acak, terpotong, atau bergeser sendiri di iPhone.
+
+   Versi ini SELALU memakai transform:scale dengan titik tumpu kiri-atas:
+   - Ukuran tata letak poster tetap 1080×1920 (jadi hasil unduhan gambar tetap
+     presisi & isi poster tidak pernah berubah posisi).
+   - Tinggi ruang pratinjau dihitung pasti (1920 × skala), jadi tidak ada
+     ruang kosong berlebih maupun konten yang saling menimpa.
+   - Cara ini berperilaku persis sama di Safari iPhone, Chrome Android,
+     dan browser desktop. */
 function scalePoster(){
   const inner = document.getElementById('posterScaleInner');
   const wrap = inner?.parentElement;
   const poster = document.getElementById('calendarPoster');
   if(!inner || !wrap || !poster) return;
 
-  // Ukur & posisikan blok keterangan + statistik dulu selagi ukuran masih wajar untuk diukur.
-  // Di layar, keterangan tanggal job ditampilkan (true).
+  // Ukur & posisikan blok keterangan + statistik dulu. Pengukuran ini memakai
+  // ukuran tata letak asli, jadi aman dilakukan kapan pun.
   positionPosterStats(poster, true);
 
-  const containerWidth = wrap.clientWidth || wrap.getBoundingClientRect().width;
-  if(!containerWidth) return; // hindari scale 0 saat elemen belum sempat ter-layout
-  const scale = Math.min(1, containerWidth / 1080);
+  const containerWidth = inner.clientWidth || wrap.clientWidth;
+  if(!containerWidth) return; // hindari skala 0 saat elemen belum sempat ter-layout
 
-  if('zoom' in poster.style){
-    // 'zoom' me-reflow ukuran elemen secara nyata (bukan hanya efek visual seperti
-    // transform:scale), sehingga jauh lebih stabil dirender di browser mobile /
-    // di dalam iframe pratinjau dibanding transform+overflow:hidden.
-    poster.style.transform = 'none';
-    poster.style.zoom = scale;
-    wrap.style.height = 'auto';
-  } else {
-    // Fallback untuk browser yang tidak mendukung 'zoom' (misalnya Firefox)
-    poster.style.zoom = '';
-    poster.style.transform = `scale(${scale})`;
-    poster.style.transformOrigin = 'top center';
-    wrap.style.height = (1920*scale) + 'px';
+  const scale = Math.min(1, containerWidth / 1080);
+  poster.style.zoom = '';            // pastikan sisa nilai 'zoom' lama dibersihkan
+  poster.style.transformOrigin = 'top left';
+  poster.style.transform = `scale(${scale})`;
+  inner.style.height = Math.ceil(1920 * scale) + 'px';
+  wrap.style.height = 'auto';
+  inner.classList.add('is-ready');
+}
+
+/* Jalankan ulang scalePoster dengan aman & tidak berlebihan.
+   Dipanggil saat: layar diputar, ukuran jendela berubah, font selesai dimuat,
+   atau saat pengguna kembali ke tab ini. Di iPhone, ukuran layar yang dilaporkan
+   browser sering baru benar beberapa saat setelah perubahan terjadi (bilah alamat
+   Safari menyusut/membesar saat digulir), jadi perhitungan diulang beberapa kali
+   pada jeda pendek — inilah yang membuat pratinjau tidak lagi "acak". */
+let _posterScaleRaf = null;
+function requestScalePoster(){
+  if(!document.getElementById('calendarPoster')) return;
+  if(_posterScaleRaf) cancelAnimationFrame(_posterScaleRaf);
+  _posterScaleRaf = requestAnimationFrame(()=>{
+    _posterScaleRaf = null;
+    scalePoster();
+  });
+}
+function schedulePosterRescale(){
+  requestScalePoster();
+  [60, 180, 400, 900].forEach(ms=> setTimeout(requestScalePoster, ms));
+  // Pengaman: apa pun yang terjadi, pratinjau poster wajib terlihat.
+  setTimeout(()=>{
+    document.getElementById('posterScaleInner')?.classList.add('is-ready');
+  }, 1200);
+}
+
+/* Pemantau ini dipasang SATU KALI saja untuk seluruh masa hidup halaman.
+   (Dulu listener 'resize' ditambahkan ulang tiap kali menu Kalender dibuka,
+   sehingga menumpuk dan membuat perhitungan dijalankan berkali-kali sekaligus.) */
+let _posterWatchersReady = false;
+let _posterResizeObserver = null;
+function setupPosterWatchers(){
+  if(_posterWatchersReady) return;
+  _posterWatchersReady = true;
+
+  window.addEventListener('resize', requestScalePoster, {passive:true});
+  window.addEventListener('orientationchange', schedulePosterRescale, {passive:true});
+  window.addEventListener('pageshow', schedulePosterRescale);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) schedulePosterRescale(); });
+
+  // Font Fraunces/Poppins dimuat dari internet. Sebelum font itu siap, tinggi
+  // baris di dalam poster masih memakai font cadangan — kalau skala dihitung
+  // pada saat itu saja, tata letak bisa bergeser begitu font aslinya datang.
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(schedulePosterRescale).catch(()=>{});
   }
+
+  if('ResizeObserver' in window){
+    _posterResizeObserver = new ResizeObserver(()=> requestScalePoster());
+  }
+}
+/* Pantau lebar kotak pratinjau secara langsung (paling akurat — ikut berubah
+   walau yang berubah hanya lebar kartu, bukan ukuran jendela). */
+function observePosterContainer(){
+  if(!_posterResizeObserver) return;
+  const inner = document.getElementById('posterScaleInner');
+  if(!inner) return;
+  try{
+    _posterResizeObserver.disconnect();
+    _posterResizeObserver.observe(inner);
+  }catch(e){}
 }
 
 
@@ -6811,8 +7254,9 @@ function attachHandlers(){
 
   // KALENDER
   if(document.getElementById('posterScaleInner')){
-    setTimeout(scalePoster, 30);
-    window.addEventListener('resize', scalePoster);
+    setupPosterWatchers();
+    observePosterContainer();
+    schedulePosterRescale();
     document.getElementById('calPrev')?.addEventListener('click', ()=>{ calMonth--; if(calMonth<0){calMonth=11;calYear--;} navigate('kalender'); });
     document.getElementById('calNext')?.addEventListener('click', ()=>{ calMonth++; if(calMonth>11){calMonth=0;calYear++;} navigate('kalender'); });
     document.getElementById('btnDownloadPoster')?.addEventListener('click', ()=>downloadPosterImage(false));
@@ -6959,16 +7403,17 @@ function downloadPosterImage(includeKeterangan){
     return;
   }
   const poster = document.getElementById('calendarPoster');
-  const prevTransform = poster.style.transform;
-  const prevZoom = poster.style.zoom;
+  const inner = document.getElementById('posterScaleInner');
   const restore = ()=>{
-    poster.style.transform = prevTransform;
-    poster.style.zoom = prevZoom;
-    scalePoster(); // scalePoster akan menampilkan lagi blok keterangan (khusus layar)
+    if(inner){ inner.style.overflow = ''; }
+    scalePoster(); // scalePoster memasang kembali skala layar + blok keterangan
   };
   try{
-    poster.style.transform = 'none'; // render ukuran asli 1080x1920 untuk capture
-    poster.style.zoom = 1;
+    // Selama pengambilan gambar, poster dikembalikan ke ukuran asli 1080×1920 agar
+    // hasil unduhan selalu tajam & presisi — tidak terpengaruh ukuran layar HP.
+    poster.style.transform = 'none';
+    poster.style.zoom = '';
+    if(inner){ inner.style.overflow = 'visible'; }
     // Kalau includeKeterangan=false: sembunyikan blok keterangan & kembalikan statistik
     // ke posisi tepat di bawah grid (perilaku tombol unduh biasa, sama seperti semula).
     // Kalau includeKeterangan=true: blok keterangan ikut ditampilkan & statistik
@@ -7046,12 +7491,30 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.4.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.5.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.5.0',
+    tanggal: '15 September 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Pratinjau gambar di menu Kalender Job tidak lagi tampil acak, terpotong, atau bergeser sendiri di iPhone. Ukuran pratinjau sekarang dihitung ulang otomatis saat layar diputar, saat halaman digulir, dan setelah huruf/font selesai dimuat — jadi tampilannya selalu rapi dan sama persis di iPhone maupun Android.' },
+      { kategori: 'Perbaikan', teks: 'Tombol aksi (Ubah Status, Komentar, Edit, Hapus) pada tampilan kartu di menu Rekap Tugas Detail sekarang tersusun rapi 2×2, tidak lagi turun ke bawah satu per satu.' },
+      { kategori: 'Peningkatan', teks: 'Daftar Job di layar HP sekarang ditampilkan sebagai kartu bertumpuk, bukan lagi tabel yang harus digeser ke samping. Setiap keterangan (Tanggal, Klien, Lokasi, Bayar, dan lainnya) punya labelnya sendiri, dan tombol Edit/Lihat/Maps/Hapus dibuat lebih besar agar mudah ditekan.' },
+      { kategori: 'Peningkatan', teks: 'Semua jendela pop-up di HP kini muncul dari bawah layar seperti panel aplikasi pada umumnya — lebih mudah dijangkau ibu jari dan tidak lagi terpotong di layar kecil.' },
+      { kategori: 'Perbaikan', teks: 'Layar tidak lagi ikut membesar sendiri (zoom) saat mulai mengetik di kolom isian pada iPhone.' },
+      { kategori: 'Perbaikan', teks: 'Tampilan menyesuaikan bentuk layar iPhone: bagian atas tidak lagi tertutup poni/kamera, dan bagian bawah tidak tertimpa garis indikator layar.' },
+      { kategori: 'Fitur', teks: 'Tombol "↑" untuk kembali ke atas halaman muncul otomatis saat menggulir jauh — membantu di halaman panjang seperti Daftar Job dan Rekap.' },
+      { kategori: 'Peningkatan', teks: 'Menu utama di HP kini menampilkan penanda halus di tepi kanan saat masih ada menu lain yang belum terlihat, dan menu yang sedang aktif otomatis digeser ke tengah pandangan.' },
+      { kategori: 'Peningkatan', teks: 'Tombol navigasi bulan dan tombol unduh di menu Kalender Job ditata ulang agar lebih lega dan mudah ditekan di layar HP.' },
+      { kategori: 'Peningkatan', teks: 'Tampilan keseluruhan dipoles: warna latar lebih lembut, sudut kartu lebih membulat, bayangan lebih halus, dan jarak antar bagian lebih lega supaya nyaman dipandang lama.' },
+      { kategori: 'Peningkatan', teks: 'Judul kolom pada tabel Rekap kini tetap menempel di atas saat tabel digulir, jadi tidak bingung membaca angka di baris bawah.' },
+      { kategori: 'Peningkatan', teks: 'Semua tombol dan kolom isian di HP diperbesar ke ukuran sentuh yang nyaman, sehingga lebih jarang salah tekan.' },
+    ]
+  },
   {
     version: '1.4.0',
     tanggal: '10 September 2026',

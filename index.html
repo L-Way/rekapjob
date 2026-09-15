@@ -88,11 +88,14 @@
     padding:9px 15px; border-radius:999px; font-size:13.5px; font-weight:500;
     transition:.15s; white-space:nowrap; flex-shrink:0;
   }
-  nav.mainnav button:hover{background:rgba(255,255,255,.08);}
+  nav.mainnav button:focus{outline:none;}
+  nav.mainnav button:focus-visible{outline:2px solid var(--gold-light); outline-offset:2px;}
+  nav.mainnav button:hover{background:rgba(244,217,62,.18); border-color:rgba(244,217,62,.55); color:#fff;}
   nav.mainnav button.active{
     background:linear-gradient(135deg,var(--gold-light),var(--gold));
     color:#231f0f; font-weight:700; border-color:transparent;
   }
+  nav.mainnav button.active:hover{background:linear-gradient(135deg,var(--gold-light),var(--gold)); color:#231f0f;}
 
   main{max-width:1180px; margin:0 auto; padding:28px 20px 10px;}
 
@@ -1252,11 +1255,16 @@
     border:none; background:transparent; color:#ddd0a4;
     scroll-snap-align:center;
   }
-  nav.mainnav button:hover{transform:none; background:rgba(255,255,255,.09);}
+  nav.mainnav button:focus{outline:none;}
+  nav.mainnav button:focus-visible{outline:2px solid var(--gold-light); outline-offset:2px;}
+  nav.mainnav button:hover, nav.mainnav button:focus-visible{transform:none; background:rgba(244,217,62,.2); color:#fff;}
   nav.mainnav button.active{
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    color:#231f0f;
     box-shadow:0 4px 14px rgba(212,175,0,.35);
     transform:none;
   }
+  nav.mainnav button.active:hover{background:linear-gradient(135deg,var(--gold-light),var(--gold)); color:#231f0f;}
 
   /* ---------- 3. TOMBOL "NAIK KE ATAS" ---------- */
   .to-top-btn{

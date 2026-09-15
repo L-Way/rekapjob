@@ -1984,6 +1984,7 @@ const PUBLISH_TARGETS = [
   { key:'wisuda',           label:'Pricelist Wisuda'          },
   { key:'undangan_digital', label:'Pricelist Undangan Digital'},
   { key:'biodata',          label:'Isi Biodata'               },
+  { key:'self_photo',       label:'Pricelist Self Photo (Kaone Studio)' },
 ];
 function getUlasanTargets(u){
   if(Array.isArray(u.publish_targets)) return u.publish_targets;
@@ -2012,7 +2013,14 @@ function ulasanTargetLabels(targets){
    pricelist wedding/prewedding/margondang/mangayun/wisuda/undangan digital dan formulir
    Isi Biodata (file terpisah dari rekap job ini) ikut disesuaikan supaya saat insert ke
    tabel kaone_motret_ulasan, mereka menyertakan asal_form (dan jenis_acara khusus untuk
-   biodata) sesuai halaman asalnya masing-masing. */
+   biodata) sesuai halaman asalnya masing-masing.
+
+   Pricelist Self Photo (Kaone Studio, file terpisah "pricelist-kaone-studio.html") juga
+   mengirim ulasan ke tabel yang sama ini, dengan asal_form = 'self_photo'. Ulasan yang
+   masuk dari sana muncul di daftar Saran & Penilaian seperti biasa, dan baru tampil di
+   halaman pricelist-nya setelah Admin mencentang target "Pricelist Self Photo (Kaone
+   Studio)" lewat tombol "📢 Kelola Publikasi" — tidak ada kolom/tabel tambahan yang
+   perlu dibuat di Supabase untuk ini. */
 const ASAL_FORM_LABELS = {
   wedding:          'Wedding',
   prewedding:       'Prewedding',
@@ -2020,6 +2028,7 @@ const ASAL_FORM_LABELS = {
   mangayun:         'Mangayun',
   wisuda:           'Wisuda',
   undangan_digital: 'Undangan Digital',
+  self_photo:       'Self Photo Studio',
 };
 function ulasanSourceLabel(u){
   const asal = u.asal_form;

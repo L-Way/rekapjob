@@ -2291,7 +2291,7 @@ async function saveUlasanPublishTargets(id, targets){
 }
 
 
-const JENIS_ACARA_LIST = ['Marbagas','Mangayun/Aqiqah','Margondang 1 Hari','Margondang 2 Hari','Wisuda','Lainnya'];
+const JENIS_ACARA_LIST = ['Marbagas','Mangayun/Aqiqah','Margondang 1 Hari','Margondang 2 Hari','Wisuda','Patuaekkon','Lainnya'];
 
 // Warna kartu detail job — berbeda tiap jenis acara supaya gambar yang diunduh mudah dibedakan sekilas
 const JENIS_ACARA_COLORS = {
@@ -2300,6 +2300,7 @@ const JENIS_ACARA_COLORS = {
   'Margondang 1 Hari':    {hdr1:'#0f2224', hdr2:'#1c3a3d', accent:'#5cc2c7', soft:'#c9ecee'},
   'Margondang 2 Hari':    {hdr1:'#1c1530', hdr2:'#332750', accent:'#ab8fe0', soft:'#e2d7f5'},
   'Wisuda':               {hdr1:'#101d30', hdr2:'#1e3556', accent:'#7cb0e8', soft:'#d4e6f7'},
+  'Patuaekkon':           {hdr1:'#2b1a0c', hdr2:'#4a2f14', accent:'#c99a4e', soft:'#f0dfb8'},
   'Lainnya':              {hdr1:'#1c1a12', hdr2:'#2c2712', accent:'#d4af00', soft:'#f4d93e'},
 };
 function jenisAcaraColor(jenisAcara){
@@ -2763,6 +2764,34 @@ function getJobDurasiHari(job){
   const diffMs = new Date(akhir+'T00:00:00') - new Date(mulai+'T00:00:00');
   const diff = Math.round(diffMs/86400000) + 1;
   return diff>=1 ? diff : 1;
+}
+// Cek apakah sebuah tanggal (YYYY-MM-DD) termasuk dalam rentang hari job ini
+// (dari Tanggal Acara sampai Tanggal Selesai/getJobFinishDate, inklusif kedua ujung).
+function isJobOnDate(job, dateIso){
+  if(!job?.tanggalAcara || !dateIso) return false;
+  const mulai = job.tanggalAcara;
+  const akhir = getJobFinishDate(job) || mulai;
+  return dateIso>=mulai && dateIso<=akhir;
+}
+// Semua tanggal (YYYY-MM-DD) yang dilewati job ini, dari Tanggal Acara sampai
+// Tanggal Selesai, inklusif. Untuk job 1 hari hasilnya cuma 1 tanggal.
+// Dipakai supaya job berdurasi 2 hari (atau lebih) ditandai di SEMUA harinya
+// di kalender poster — bukan cuma di hari pertama — dan supaya klik di hari
+// kedua/ketiga dst tetap bisa menampilkan detail job tersebut.
+function getJobDateRange(job){
+  const mulai = job?.tanggalAcara;
+  const akhir = getJobFinishDate(job) || mulai;
+  if(!mulai) return [];
+  const out = [];
+  let d = new Date(mulai+'T00:00:00');
+  const end = new Date(akhir+'T00:00:00');
+  let guard = 0;
+  while(d<=end && guard<366){
+    out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    d.setDate(d.getDate()+1);
+    guard++;
+  }
+  return out;
 }
 // Batas waktu tugas dianggap "selesai otomatis": pukul 23.59 pada hari TERAKHIR job
 // (hari job itu sendiri kalau 1 hari, atau hari kedua kalau job berdurasi 2 hari, dst).
@@ -4470,11 +4499,23 @@ function renderPosterHtml(){
   const startWeekday = firstDay.getDay(); // 0=Sunday
   const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
 
+  // Sertakan job yang RENTANG harinya (Tanggal Acara s/d Tanggal Selesai) menyentuh
+  // bulan ini — bukan cuma yang tanggal mulainya di bulan ini. Ini penting supaya
+  // job 2 hari (atau lebih) yang menyeberang ke bulan berikutnya tetap muncul di
+  // kedua poster bulan yang bersangkutan.
+  const monthPrefix = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
   const jobsThisMonth = jobs.filter(j=>{
-    const d = new Date(j.tanggalAcara+'T00:00:00');
-    return d.getMonth()===calMonth && d.getFullYear()===calYear;
+    if(!j.tanggalAcara) return false;
+    return getJobDateRange(j).some(iso=> iso.slice(0,7)===monthPrefix);
   });
-  const jobDates = new Set(jobsThisMonth.map(j=> new Date(j.tanggalAcara+'T00:00:00').getDate()));
+  // Tandai SEMUA tanggal yang dilewati job (bukan cuma hari pertamanya) supaya job
+  // berdurasi 2 hari atau lebih ditandai di seluruh harinya di kalender poster.
+  const jobDates = new Set();
+  jobsThisMonth.forEach(j=>{
+    getJobDateRange(j).forEach(iso=>{
+      if(iso.slice(0,7)===monthPrefix) jobDates.add(Number(iso.slice(8,10)));
+    });
+  });
 
   let cells = [];
   for(let i=0;i<startWeekday;i++) cells.push(null);
@@ -4527,16 +4568,25 @@ function renderPosterHtml(){
     </div>` : '';
 
   // Keterangan tanggal job (tampil di layar saja, di bawah grid tanggal & sebelum
-  // persentase). Formatnya "[tanggal] - [desa]" untuk SEMUA tanggal yang ada job-nya
-  // bulan ini, diurutkan berdasarkan tanggal.
+  // persentase). Satu job = satu baris keterangan (bukan per-hari), diurutkan
+  // berdasarkan tanggal mulai. Formatnya:
+  //   - Job 1 hari:  "[tanggal] - [desa]"
+  //   - Job >1 hari: "[tanggal mulai]-[tanggal selesai] - [desa]"
+  // Tanggal mulai/selesai yang ditulis dipotong (clip) ke rentang bulan yang
+  // sedang ditampilkan, supaya tetap masuk akal kalau job menyeberang bulan.
   const keteranganItems = jobsThisMonth
     .slice()
     .sort((a,b)=> a.tanggalAcara.localeCompare(b.tanggalAcara))
     .map(j=>{
-      const tglNum = Number(j.tanggalAcara.slice(8,10));
+      const rangeInMonth = getJobDateRange(j).filter(iso=> iso.slice(0,7)===monthPrefix);
+      if(rangeInMonth.length===0) return null;
       const desa = j.desa || '-';
-      return `${tglNum} - ${escapeHtml(desa)}`;
-    });
+      const tglAwal = Number(rangeInMonth[0].slice(8,10));
+      const tglAkhir = Number(rangeInMonth[rangeInMonth.length-1].slice(8,10));
+      const tglLabel = tglAwal===tglAkhir ? `${tglAwal}` : `${tglAwal}-${tglAkhir}`;
+      return `${tglLabel} - ${escapeHtml(desa)}`;
+    })
+    .filter(Boolean);
   const keteranganHtml = keteranganItems.length ? `
     <div class="cp-keterangan" id="cpKeterangan">
       <div class="cp-ket-title">Keterangan Tanggal</div>
@@ -4731,7 +4781,9 @@ function observePosterContainer(){
 
 /* ---------- Modal detail tanggal / job ---------- */
 function openDateModal(dateIso){
-  const list = jobs.filter(j=>j.tanggalAcara===dateIso);
+  // Pakai isJobOnDate (bukan cocok persis dengan tanggalAcara) supaya klik di hari
+  // kedua/ketiga dst dari job berdurasi >1 hari tetap menampilkan detail job itu.
+  const list = jobs.filter(j=>isJobOnDate(j, dateIso));
   if(list.length===0) return;
   modalDateJobs = list;
   showModal(`
@@ -7508,12 +7560,21 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.5.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.5.1'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.5.1',
+    tanggal: '16 September 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Job yang acaranya berlangsung 2 hari atau lebih sekarang ditandai di SEMUA harinya di Kalender Job (sebelumnya hanya hari pertama yang ditandai). Keterangan Tanggal di bawah kalender juga menampilkan setiap tanggalnya, dan mengklik tanggal hari kedua/ketiga dst kini tetap membuka detail job tersebut.' },
+      { kategori: 'Perbaikan', teks: 'Keterangan Tanggal untuk job berdurasi lebih dari 1 hari disederhanakan menjadi satu baris saja (misalnya "5-6 - Desa"), bukan lagi dipecah jadi satu baris per tanggal — karena tetap acara yang sama.' },
+      { kategori: 'Fitur', teks: 'Jenis Acara baru "Patuaekkon" ditambahkan ke pilihan Jenis Acara di form Input/Edit Job.' },
+    ]
+  },
   {
     version: '1.5.0',
     tanggal: '15 September 2026',

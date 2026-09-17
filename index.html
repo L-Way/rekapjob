@@ -1501,9 +1501,89 @@
     display:flex; align-items:center; justify-content:center; gap:10px;
     padding:26px 16px; color:#d8c98a; font-size:12.5px; letter-spacing:1px;
   }
+
+/* Ikon SVG buatan sendiri (menggantikan emoji) — lihat sprite <symbol> di awal <body>
+   dan helper JS ic('nama'). Ukuran ikut ukuran font di sekitarnya (1em), warna ikut
+   currentColor supaya otomatis kebagian warna teks/tombol tempat ia dipasang. */
+.ic{width:1.1em;height:1.1em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.18em;display:inline-block;}
+.ic-fw{stroke-width:1.6;}
 </style>
 </head>
 <body>
+
+<!-- ============================================================
+     ICON SPRITE — kumpulan ikon SVG buatan sendiri (garis minimalis,
+     gaya konsisten: viewBox 0 0 24 24, stroke=currentColor, stroke-width 2,
+     rounded cap/join). Dipakai lewat helper JS ic('nama') yang menghasilkan
+     <svg class="ic"><use href="#ic-nama"></use></svg>. Menggantikan emoji
+     yang sebelumnya dipakai sebagai ikon visual di seluruh aplikasi.
+     JANGAN dipakai di dalam alert()/confirm()/textContent/CSS content —
+     tempat itu tidak bisa merender HTML/SVG.
+     ============================================================ -->
+<svg style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
+<defs>
+<symbol id="ic-warning" viewBox="0 0 24 24"><path d="M12 3 L22 20 L2 20 Z" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.2" r="0.9" fill="currentColor" stroke="none"/></symbol>
+<symbol id="ic-close" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></symbol>
+<symbol id="ic-save" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3"/><rect x="8" y="14" width="8" height="6"/></symbol>
+<symbol id="ic-edit" viewBox="0 0 24 24"><path d="M4 20 L4.8 16.5 L15 6.3 L17.7 9 L7.5 19.2 Z"/><line x1="13.2" y1="8.1" x2="15.9" y2="10.8"/></symbol>
+<symbol id="ic-trash" viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7 L7 21 h10 l1-14"/><path d="M9 7 V4 h6 v3"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></symbol>
+<symbol id="ic-clipboard" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="1.5"/><rect x="9" y="2.5" width="6" height="3" rx="1"/><line x1="8.5" y1="10" x2="15.5" y2="10"/><line x1="8.5" y1="13.5" x2="15.5" y2="13.5"/><line x1="8.5" y1="17" x2="13" y2="17"/></symbol>
+<symbol id="ic-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M4.2 6.2l2.1 2.1M17.7 15.7l2.1 2.1M3 12h3M18 12h3M4.2 17.8l2.1-2.1M17.7 8.3l2.1-2.1" stroke-linecap="round"/></symbol>
+<symbol id="ic-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="8,12.3 11,15.3 16,9"/></symbol>
+<symbol id="ic-check" viewBox="0 0 24 24"><polyline points="4,12.5 9.5,18 20,6"/></symbol>
+<symbol id="ic-money" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="5.5" y1="9" x2="5.5" y2="9.01"/><line x1="18.5" y1="15" x2="18.5" y2="15.01"/></symbol>
+<symbol id="ic-download" viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7,10.5 12,15.5 17,10.5"/><line x1="4.5" y1="19.5" x2="19.5" y2="19.5"/></symbol>
+<symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="7.5" y1="14" x2="7.5" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16.5" y1="14" x2="16.5" y2="14.01"/><line x1="7.5" y1="17.5" x2="7.5" y2="17.51"/><line x1="12" y1="17.5" x2="12" y2="17.51"/></symbol>
+<symbol id="ic-eye" viewBox="0 0 24 24"><path d="M2 12 C5 6.5 9 4 12 4 s7 2.5 10 8 c-3 5.5 -7 8 -10 8 s-7 -2.5 -10 -8 Z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="ic-eye-off" viewBox="0 0 24 24"><path d="M2 12 C5 6.5 9 4 12 4 s7 2.5 10 8 c-3 5.5 -7 8 -10 8 s-7 -2.5 -10 -8 Z"/><circle cx="12" cy="12" r="3"/><line x1="3" y1="21" x2="21" y2="3"/></symbol>
+<symbol id="ic-folder" viewBox="0 0 24 24"><path d="M3 6.5 h6 l2 2.5 h10 v11 h-18 Z"/></symbol>
+<symbol id="ic-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7.5" x2="12" y2="13"/><line x1="12" y1="16.3" x2="12" y2="16.31"/></symbol>
+<symbol id="ic-camera" viewBox="0 0 24 24"><path d="M3 8 h4 l1.6-2.5h6.8L17 8h4v11H3Z"/><circle cx="12" cy="13.2" r="3.6"/></symbol>
+<symbol id="ic-video" viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="13" height="11" rx="1.5"/><path d="M15.5 10.5 L21 7 v10 l-5.5-3.5Z"/></symbol>
+<symbol id="ic-chart" viewBox="0 0 24 24"><line x1="4" y1="20" x2="4" y2="4"/><line x1="4" y1="20" x2="21" y2="20"/><rect x="7" y="13" width="3" height="7"/><rect x="12.5" y="9" width="3" height="11"/><rect x="18" y="5" width="3" height="15"/></symbol>
+<symbol id="ic-star" viewBox="0 0 24 24"><path d="M12 3.5 L14.6 9.3 L21 10.1 L16.3 14.4 L17.6 20.6 L12 17.3 L6.4 20.6 L7.7 14.4 L3 10.1 L9.4 9.3 Z" stroke-linejoin="round"/></symbol>
+<symbol id="ic-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20 c0-4.5 3.5-7 8-7s8 2.5 8 7"/></symbol>
+<symbol id="ic-crown" viewBox="0 0 24 24"><path d="M3 18 L4.5 8 L9 13 L12 6 L15 13 L19.5 8 L21 18 Z" stroke-linejoin="round"/><line x1="3" y1="20.5" x2="21" y2="20.5"/></symbol>
+<symbol id="ic-refresh" viewBox="0 0 24 24"><path d="M20 11 A8 8 0 1 0 18.6 15.5"/><polyline points="20,5 20,11 14,11"/></symbol>
+<symbol id="ic-chat" viewBox="0 0 24 24"><path d="M3 5.5 h18 v11 h-7.5 l-4 4 v-4 H3 Z"/></symbol>
+<symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="4.5" x2="12" y2="19.5"/><line x1="4.5" y1="12" x2="19.5" y2="12"/></symbol>
+<symbol id="ic-minus" viewBox="0 0 24 24"><line x1="4.5" y1="12" x2="19.5" y2="12"/></symbol>
+<symbol id="ic-sparkle" viewBox="0 0 24 24"><path d="M12 2.5 L13.6 9 L20 10.5 L13.6 12 L12 18.5 L10.4 12 L4 10.5 L10.4 9 Z" stroke-linejoin="round"/></symbol>
+<symbol id="ic-megaphone" viewBox="0 0 24 24"><path d="M3 10 v4 h3 l9 5 V5 l-9 5 Z"/><path d="M14 8.5 a5 5 0 0 1 0 7"/><path d="M6 14 l1 5 h2.5 l-0.8-5Z"/></symbol>
+<symbol id="ic-note" viewBox="0 0 24 24"><path d="M6 3 h9 l4 4 v14 h-13 Z"/><path d="M15 3 v4 h4"/><line x1="8.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="15.5" y2="16"/></symbol>
+<symbol id="ic-map-pin" viewBox="0 0 24 24"><path d="M12 21 C8 16.5 5 13 5 9.5 a7 7 0 1 1 14 0 c0 3.5 -3 7 -7 11.5 Z"/><circle cx="12" cy="9.3" r="2.4"/></symbol>
+<symbol id="ic-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.3" cy="9.3" r="1.8"/><path d="M4 17 l5-5 4 4 3-3 4 4"/></symbol>
+<symbol id="ic-pin" viewBox="0 0 24 24"><path d="M14.5 3.5 l6 6 -3 3 -1.5 5.5 -2-2 -5 5 -1-1 5-5 -2-2 5.5-1.5 Z" stroke-linejoin="round"/></symbol>
+<symbol id="ic-receipt" viewBox="0 0 24 24"><path d="M6 2.5 h12 v19 l-2-1.5 -2 1.5 -2-1.5 -2 1.5 -2-1.5 -2 1.5 Z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></symbol>
+<symbol id="ic-bell" viewBox="0 0 24 24"><path d="M6 11 a6 6 0 1 1 12 0 c0 4 1.5 5.5 1.5 5.5 h-15 s1.5-1.5 1.5-5.5Z"/><path d="M10 19.5 a2 2 0 0 0 4 0"/></symbol>
+<symbol id="ic-arrow-up" viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="5"/><polyline points="6,10.5 12,4.5 18,10.5"/></symbol>
+<symbol id="ic-arrow-right" viewBox="0 0 24 24"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13.5,6 19.5,12 13.5,18"/></symbol>
+<symbol id="ic-undo" viewBox="0 0 24 24"><path d="M5 10 h9 a5.5 5.5 0 1 1 -3.9 9.4"/><polyline points="9,5 5,10 9,15"/></symbol>
+<symbol id="ic-hands" viewBox="0 0 24 24"><path d="M4 20 C4 15 6 10 9 6 M11 6 c0 5 0 9 1 14 M13 6 c0 5 0 9 -1 14 M15 6 c3 4 5 9 5 14"/></symbol>
+<symbol id="ic-wave" viewBox="0 0 24 24"><path d="M4 15 c0-4 1-9 3-11 1.5-1.5 3.5-1 3 1 -0.5 2 -1.5 3 -1 5 M9 16 c-1-3 0-8 1.5-10 1.5-1.5 3-0.5 2.5 1.5 M13 17 c-1.5-3 -1-7 0.5-9 1.5-1.5 3-0.5 2 1.5 M15.5 18 c-0.5-2 0-4.5 1-6 1-1.5 3-0.5 2.5 1.5 -0.5 2 -2 4.5 -4 6" stroke-linejoin="round"/></symbol>
+<symbol id="ic-road" viewBox="0 0 24 24"><path d="M9 3 L4 21"/><path d="M15 3 L20 21"/><line x1="12" y1="4" x2="12" y2="7"/><line x1="12" y1="10.5" x2="12" y2="13.5"/><line x1="12" y1="17" x2="12" y2="20"/></symbol>
+<symbol id="ic-mailbox-empty" viewBox="0 0 24 24"><path d="M4 10 a5 5 0 0 1 10 0 v8 H4 Z"/><line x1="1.5" y1="18" x2="16.5" y2="18"/><line x1="14" y1="7" x2="20" y2="7"/></symbol>
+<symbol id="ic-inbox" viewBox="0 0 24 24"><polyline points="3,12 8,12 10,15 14,15 16,12 21,12"/><path d="M6 5 h12 l3 7 v7 H3 v-7 Z"/></symbol>
+<symbol id="ic-printer" viewBox="0 0 24 24"><path d="M6 8 V3 h12 v5"/><rect x="3" y="8" width="18" height="8" rx="1"/><path d="M6 16 v5 h12 v-5"/><line x1="7" y1="11.5" x2="7" y2="11.51"/></symbol>
+<symbol id="ic-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2"/><line x1="10" y1="19" x2="14" y2="19"/></symbol>
+<symbol id="ic-mail" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="1.5"/><polyline points="3.5,6.5 12,13 20.5,6.5"/></symbol>
+<symbol id="ic-party" viewBox="0 0 24 24"><path d="M4 21 L8 9 l7 7 Z"/><circle cx="16" cy="5" r="1"/><circle cx="20" cy="9" r="1"/><circle cx="19" cy="4" r="1"/><path d="M9.5 11.5 l3-3"/></symbol>
+<symbol id="ic-scroll" viewBox="0 0 24 24"><path d="M6 4 a2 2 0 0 0 0 4 h13 v11 a2 2 0 0 1 -2 2 H6 a2 2 0 0 1 -2-2 V6 a2 2 0 0 1 2-2 Z"/><path d="M17 8 a2 2 0 0 1 2 2 v0"/><line x1="7.5" y1="12" x2="14" y2="12"/><line x1="7.5" y1="15.5" x2="14" y2="15.5"/></symbol>
+<symbol id="ic-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.3" y1="15.3" x2="21" y2="21"/></symbol>
+<symbol id="ic-book" viewBox="0 0 24 24"><path d="M4 4.5 c3 -1.5 6 -1.5 8 0 v15 c-2-1.5-5-1.5-8 0 Z"/><path d="M20 4.5 c-3 -1.5 -6 -1.5 -8 0 v15 c2-1.5 5-1.5 8 0 Z"/></symbol>
+<symbol id="ic-car" viewBox="0 0 24 24"><path d="M4 16 l1.5-5.5 A2 2 0 0 1 7.4 9 h9.2 a2 2 0 0 1 1.9 1.5 L20 16"/><rect x="2.5" y="16" width="19" height="4" rx="1.5"/><circle cx="7" cy="20" r="1.6"/><circle cx="17" cy="20" r="1.6"/></symbol>
+<symbol id="ic-map" viewBox="0 0 24 24"><polygon points="9,4 15,6.5 21,4 21,18 15,20.5 9,18 3,20.5 3,6.5" stroke-linejoin="round"/><line x1="9" y1="4" x2="9" y2="18"/><line x1="15" y1="6.5" x2="15" y2="20.5"/></symbol>
+<symbol id="ic-palette" viewBox="0 0 24 24"><path d="M12 3 a9 8 0 1 0 0 16 c1.4 0 2-0.8 2-1.8 0-0.7-0.4-1-0.4-1.7 0-1 0.8-1.5 1.8-1.5 h2 a4 4 0 0 0 4-4 C21.4 6.4 17.2 3 12 3Z"/><circle cx="7.5" cy="10.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="11" cy="7.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.2" cy="8" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="ic-bulb" viewBox="0 0 24 24"><path d="M8 10 a4 4 0 1 1 8 0 c0 2 -1 3 -1.8 4.2 -0.5 0.8 -0.7 1.3 -0.7 1.8 h-3 c0-0.5-0.2-1-0.7-1.8 C9 13 8 12 8 10Z"/><line x1="9.5" y1="19" x2="14.5" y2="19"/><line x1="10" y1="21.2" x2="14" y2="21.2"/></symbol>
+<symbol id="ic-truck" viewBox="0 0 24 24"><rect x="1.5" y="7" width="12" height="9" rx="1"/><path d="M13.5 10.5 h4 l3 3.2 V16 h-7Z"/><circle cx="6" cy="18.5" r="1.7"/><circle cx="17" cy="18.5" r="1.7"/></symbol>
+<symbol id="ic-trend-down" viewBox="0 0 24 24"><polyline points="3,7 10,14 14,10 21,17"/><polyline points="21,11 21,17 15,17"/></symbol>
+<symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="12" x2="12" y2="7"/><line x1="12" y1="12" x2="15.5" y2="14"/></symbol>
+<symbol id="ic-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5 V7 a4 4 0 0 1 8 0 v3.5"/></symbol>
+<symbol id="ic-rocket" viewBox="0 0 24 24"><path d="M12 2 c3 2 5 6 5 10.5 c0 2-1 4-2 5 l-3-2 l-3 2 c-1-1-2-3-2-5 C7 8 9 4 12 2Z"/><path d="M9 15.5 l-3 1.5 1-3.5 M15 15.5 l3 1.5 -1-3.5"/><circle cx="12" cy="10" r="1.6" fill="currentColor" stroke="none"/></symbol>
+<symbol id="ic-new-badge" viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="10" rx="2"/><path d="M6.5 14.5 V9.5 l3 5 V9.5 M11.5 14.5 v-5 h2.5 M11.5 12 h2 M11.5 14.5 h2.5 M16 9.5 h2.2 c1 0 1.5 0.5 1.5 1.2 s-0.5 1.1 -1.5 1.1 H16 v2.7 M16 11.8 h2" stroke-width="1.4"/></symbol>
+<symbol id="ic-hourglass" viewBox="0 0 24 24"><path d="M6 3 h12 M6 21 h12 M7 3 c0 4.5 2 6.5 5 9 c3-2.5 5-4.5 5-9 M7 21 c0-4.5 2-6.5 5-9 c3 2.5 5 4.5 5 9"/></symbol>
+</defs>
+</svg>
 
 <div class="auth-gate" id="authGate">
   <div class="auth-card">
@@ -1525,7 +1605,7 @@
         <label>Password</label>
         <div class="pw-wrap">
           <input type="password" id="authPassword" autocomplete="current-password" required>
-          <button type="button" class="pw-toggle" data-pw-target="authPassword" aria-label="Lihat/sembunyikan password">👁️</button>
+          <button type="button" class="pw-toggle" data-pw-target="authPassword" aria-label="Lihat/sembunyikan password"><svg class="ic" aria-hidden="true"><use href="#ic-eye"></use></svg></button>
         </div>
       </div>
       <div class="auth-error" id="authError">Username atau password salah.</div>
@@ -1545,14 +1625,14 @@
         <label>Password</label>
         <div class="pw-wrap">
           <input type="password" id="regPassword" autocomplete="new-password" required minlength="4">
-          <button type="button" class="pw-toggle" data-pw-target="regPassword" aria-label="Lihat/sembunyikan password">👁️</button>
+          <button type="button" class="pw-toggle" data-pw-target="regPassword" aria-label="Lihat/sembunyikan password"><svg class="ic" aria-hidden="true"><use href="#ic-eye"></use></svg></button>
         </div>
       </div>
       <div class="auth-field">
         <label>Ulangi Password</label>
         <div class="pw-wrap">
           <input type="password" id="regPassword2" autocomplete="new-password" required minlength="4">
-          <button type="button" class="pw-toggle" data-pw-target="regPassword2" aria-label="Lihat/sembunyikan password">👁️</button>
+          <button type="button" class="pw-toggle" data-pw-target="regPassword2" aria-label="Lihat/sembunyikan password"><svg class="ic" aria-hidden="true"><use href="#ic-eye"></use></svg></button>
         </div>
       </div>
       <div class="auth-error" id="registerError">Username sudah digunakan.</div>
@@ -1577,7 +1657,7 @@
     <div class="user-chip" id="userChip"></div>
     <div class="notif-wrap" id="notifWrap">
       <button type="button" class="notif-btn" id="notifBtn" aria-label="Notifikasi">
-        🔔<span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+        <svg class="ic" aria-hidden="true"><use href="#ic-bell"></use></svg><span class="notif-badge" id="notifBadge" style="display:none;">0</span>
       </button>
     </div>
   </div>
@@ -1608,7 +1688,7 @@
   <div>© <span id="copyrightYear"></span> Kaone Motret. All Right Reserved. <span class="version-tag" id="appVersionTag"></span></div>
 </footer>
 
-<button type="button" class="to-top-btn" id="toTopBtn" aria-label="Kembali ke atas" title="Kembali ke atas">↑</button>
+<button type="button" class="to-top-btn" id="toTopBtn" aria-label="Kembali ke atas" title="Kembali ke atas"><svg class="ic" aria-hidden="true"><use href="#ic-arrow-up"></use></svg></button>
 
 <div id="toast" class="toast"></div>
 
@@ -1617,6 +1697,16 @@
    KAONE MOTRET — BUKU JOB FOTOGRAFER
    Single-file app. Data disimpan di localStorage browser.
 ========================================================= */
+
+// Helper ikon SVG — mengembalikan markup <svg> yang mengambil bentuknya dari sprite
+// <symbol> di awal <body> (cari id="ic-NAMA"). Dipakai di SEMUA tempat yang dulu
+// memakai emoji sebagai ikon visual (tombol, judul section, badge, dsb). HANYA aman
+// dipakai di tempat yang dirender sebagai HTML (innerHTML/template) — JANGAN dipakai
+// di alert(), confirm(), .textContent, atau CSS content:, karena semua itu menampilkan
+// teks polos dan tidak bisa merender tag SVG.
+function ic(name, cls){
+  return `<svg class="ic${cls?' '+cls:''}" aria-hidden="true"><use href="#ic-${name}"></use></svg>`;
+}
 
 /* =========================================================
    ⚠️⚠️ ATURAN WAJIB — BERLAKU UNTUK SETIAP PERUBAHAN DI FILE INI ⚠️⚠️
@@ -1923,7 +2013,7 @@ document.addEventListener('click', function(e){
     if(input){
       const show = input.type === 'password';
       input.type = show ? 'text' : 'password';
-      pwToggle.textContent = show ? '🙈' : '👁️';
+      pwToggle.innerHTML = show ? ic('eye-off') : ic('eye');
     }
     return;
   }
@@ -2233,8 +2323,8 @@ function openUlasanPublishModal(id){
   if(!u) return;
   const current = getUlasanTargets(u);
   showModal(`
-    <button type="button" class="close-x" id="closeModal">✕</button>
-    <h3>📢 Kelola Publikasi</h3>
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('megaphone')} Kelola Publikasi</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">
       Centang halaman tujuan publikasi.
     </div>
@@ -2247,7 +2337,7 @@ function openUlasanPublishModal(id){
       `).join('')}
     </div>
     <div class="modal-actions" style="justify-content:flex-end;margin-top:18px;">
-      <button type="button" class="btn btn-primary" id="btnSavePublishTargets">💾 Simpan Publikasi</button>
+      <button type="button" class="btn btn-primary" id="btnSavePublishTargets">${ic('save')} Simpan Publikasi</button>
     </div>
   `);
   const ov = document.getElementById('modalOverlay');
@@ -2793,6 +2883,15 @@ function getJobDateRange(job){
   }
   return out;
 }
+// Cek apakah RENTANG HARI job (bukan cuma tanggal mulainya) menyentuh bulan tertentu
+// (monthKey format 'YYYY-MM'). Dipakai di semua tempat yang mengelompokkan/menghitung
+// job per bulan (Kalender Job, filter bulan di Daftar Job, Salin Daftar Job per Bulan)
+// supaya job berdurasi >1 hari yang menyeberang ke bulan berikutnya tetap konsisten
+// muncul di kedua bulan yang bersangkutan, bukan hanya di bulan tanggal mulainya.
+function jobOverlapsMonth(job, monthKey){
+  if(!job?.tanggalAcara) return false;
+  return getJobDateRange(job).some(iso=> iso.slice(0,7)===monthKey);
+}
 // Batas waktu tugas dianggap "selesai otomatis": pukul 23.59 pada hari TERAKHIR job
 // (hari job itu sendiri kalau 1 hari, atau hari kedua kalau job berdurasi 2 hari, dst).
 function getTaskDeadline(task){
@@ -3077,7 +3176,7 @@ function claimBonus(){
   });
   saveBonusClaims();
 
-  const pesan = `Halo Admin, saya *${currentUsername}* ingin mengklaim bonus tim bulan *${labelBulan}* sebesar *${fmtRp(jumlah)}* (${fmtTaskHours(jam)} jam kerja). Mohon dicairkan. Terima kasih 🙏`;
+  const pesan = `Halo Admin, saya *${currentUsername}* ingin mengklaim bonus tim bulan *${labelBulan}* sebesar *${fmtRp(jumlah)}* (${fmtTaskHours(jam)} jam kerja). Mohon dicairkan. Terima kasih ${ic('hands')}`;
   window.open(`https://wa.me/${BONUS_CLAIM_WA_NUMBER}?text=${encodeURIComponent(pesan)}`, '_blank');
 
   toast('Klaim bonus diajukan — mengarahkan ke WhatsApp Admin');
@@ -3186,6 +3285,33 @@ function fmtTgl(iso){
   if(!iso) return '-';
   const d = new Date(iso+'T00:00:00');
   return d.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+}
+// Format rentang tanggal secara ringkas & wajar dibaca:
+//  - 1 hari                         -> "22 September 2026"
+//  - >1 hari, bulan & tahun sama     -> "22-23 September 2026"
+//  - >1 hari, bulan beda tapi tahun sama -> "30 September - 1 Oktober 2026"
+//  - >1 hari, tahun beda             -> "31 Desember 2026 - 1 Januari 2027"
+function fmtTglRange(startIso, endIso){
+  if(!startIso) return '-';
+  if(!endIso || endIso===startIso) return fmtTgl(startIso);
+  const d1 = new Date(startIso+'T00:00:00');
+  const d2 = new Date(endIso+'T00:00:00');
+  if(Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return fmtTgl(startIso);
+  const bulan1 = d1.toLocaleDateString('id-ID',{month:'long'});
+  const bulan2 = d2.toLocaleDateString('id-ID',{month:'long'});
+  const tahun1 = d1.getFullYear(), tahun2 = d2.getFullYear();
+  if(tahun1===tahun2 && bulan1===bulan2) return `${d1.getDate()}-${d2.getDate()} ${bulan1} ${tahun1}`;
+  if(tahun1===tahun2) return `${d1.getDate()} ${bulan1} - ${d2.getDate()} ${bulan2} ${tahun1}`;
+  return `${fmtTgl(startIso)} - ${fmtTgl(endIso)}`;
+}
+// Format tanggal SEBUAH JOB (bukan tanggal mentah) — otomatis menampilkan rentang
+// "mulai - selesai" untuk job berdurasi lebih dari 1 hari, dan tanggal tunggal untuk
+// job 1 hari. Dipakai di SEMUA tempat yang menampilkan/menyalin tanggal acara sebuah
+// job (Daftar Job, Detail Job, Salin Detail Job, poster/story unduhan, notifikasi,
+// dsb) supaya job multi-hari selalu tampil konsisten di seluruh aplikasi.
+function fmtTglJob(job){
+  if(!job?.tanggalAcara) return '-';
+  return fmtTglRange(job.tanggalAcara, getJobFinishDate(job) || job.tanggalAcara);
 }
 /* Nama hari dalam Bahasa Indonesia, dengan penamaan "Ahad" & "Jum'at"
    (bukan "Minggu" / "Jumat") — dipakai di semua tempat yang menampilkan nama hari. */
@@ -3613,7 +3739,7 @@ function viewBeranda(){
   return `
   <div class="hero">
     <div class="kicker">Kaone Motret · Buku Job</div>
-    <h1>Selamat Datang 👋</h1>
+    <h1>Selamat Datang ${ic('wave')}</h1>
     <p>Kelola job fotografermu di sini.</p>
   </div>
 
@@ -3625,35 +3751,35 @@ function viewBeranda(){
 
   <div class="quick-menu">
     <div class="quick-menu-item" data-goto="daftar">
-      <span class="qm-icon">📋</span><span class="qm-label">Daftar Job</span>
+      <span class="qm-icon">${ic('clipboard')}</span><span class="qm-label">Daftar Job</span>
     </div>
     <div class="quick-menu-item" data-goto="kalender">
-      <span class="qm-icon">📆</span><span class="qm-label">Kalender Job</span>
+      <span class="qm-icon">${ic('calendar')}</span><span class="qm-label">Kalender Job</span>
     </div>
     <div class="quick-menu-item" data-goto="rekap">
-      <span class="qm-icon">📊</span><span class="qm-label">Rekap</span>
+      <span class="qm-icon">${ic('chart')}</span><span class="qm-label">Rekap</span>
     </div>
     <div class="quick-menu-item" data-goto="tugas">
-      <span class="qm-icon">🗂️</span><span class="qm-label">${isAdmin()?'Pembagian Tugas':'Tugas Saya'}</span>
+      <span class="qm-icon">${ic('folder')}</span><span class="qm-label">${isAdmin()?'Pembagian Tugas':'Tugas Saya'}</span>
     </div>
     <div class="quick-menu-item" data-goto="laporan">
-      <span class="qm-icon">🚨</span><span class="qm-label">${isAdmin()?'Laporan':'Buat Laporan'}</span>
+      <span class="qm-icon">${ic('alert')}</span><span class="qm-label">${isAdmin()?'Laporan':'Buat Laporan'}</span>
     </div>
     <div class="quick-menu-item" data-goto="ulasan">
-      <span class="qm-icon">⭐</span><span class="qm-label">Saran &amp; Penilaian</span>
+      <span class="qm-icon">${ic('star')}</span><span class="qm-label">Saran &amp; Penilaian</span>
     </div>
     <div class="quick-menu-item" data-goto="pengaturan">
-      <span class="qm-icon">⚙️</span><span class="qm-label">Pengaturan</span>
+      <span class="qm-icon">${ic('settings')}</span><span class="qm-label">Pengaturan</span>
     </div>
   </div>
 
   <div class="daily-box">
     <div class="daily-card">
-      <div class="dq-label">✨ Motivasi Hari Ini</div>
+      <div class="dq-label">${ic('sparkle')} Motivasi Hari Ini</div>
       <div class="dq-text" id="dailyQuoteText">Memuat...</div>
     </div>
     <div class="daily-card">
-      <div class="dq-label">📖 Renungan Hari Ini</div>
+      <div class="dq-label">${ic('book')} Renungan Hari Ini</div>
       <div id="dailyAyatBox"><div class="dq-loading">Memuat ayat...</div></div>
     </div>
   </div>
@@ -3702,19 +3828,19 @@ function viewBeranda(){
     </div>
     ${isAdmin() ? `
     <div class="stat stat-clickable" data-open-status-list="sedekahStatus" title="Lihat status sedekah">
-      <div class="label">🤲 Sedekah Belum Selesai</div>
+      <div class="label">${ic('hands')} Sedekah Belum Selesai</div>
       <div class="value">${fmtRp(totalSedekahBelum)}</div>
     </div>` : ''}
   </div>
 
   <div class="upcoming">
-    <h3>📅 Job Terdekat</h3>
-    ${upcoming.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">🗓️</div>Belum ada job yang akan datang.</div>` :
+    <h3>${ic('calendar')} Job Terdekat</h3>
+    ${upcoming.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">${ic('calendar')}</div>Belum ada job yang akan datang.</div>` :
       upcoming.map(j=>`
         <div class="job-mini">
           <div>
             <div class="l">#${getJobNo(j.id)} — ${escapeHtml(j.namaKlien||'Tanpa Nama')} <span class="pill">${escapeHtml(j.jenisAcara||'-')}</span></div>
-            <div class="s">${fmtTgl(j.tanggalAcara)} · ${escapeHtml(desaDisplay(j))}, ${escapeHtml(j.kecamatan||'')}</div>
+            <div class="s">${fmtTglJob(j)} · ${escapeHtml(desaDisplay(j))}, ${escapeHtml(j.kecamatan||'')}</div>
           </div>
           <button class="icon-btn" data-view-job="${j.id}">Lihat</button>
         </div>
@@ -3746,11 +3872,11 @@ function buildJobFormHtml(j){
   const koordAwalValid = !!parseCoordString(d.koordinat);
 
   return `
-    <h2 style="margin-top:0;">${j?'✏️ Edit Job':'📝 Input Job Baru'}</h2>
+    <h2 style="margin-top:0;">${j?ic('edit')+' Edit Job':ic('note')+' Input Job Baru'}</h2>
     ${j ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">No. Urut otomatis: <b>#${getJobNo(j.id)}</b></div>` : `<div style="font-size:13px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">No. Urut otomatis.</div>`}
 
     <form id="jobForm">
-      <div class="section-title">👤 Data Klien &amp; Acara</div>
+      <div class="section-title">${ic('user')} Data Klien &amp; Acara</div>
       <div class="form-grid">
         <div>
           <label>Nama Klien / Pemesan</label>
@@ -3795,7 +3921,7 @@ function buildJobFormHtml(j){
         </div>
       </div>
 
-      <div class="section-title">📍 Lokasi Acara</div>
+      <div class="section-title">${ic('map-pin')} Lokasi Acara</div>
       <div class="form-grid">
         <div class="full" style="display:flex;align-items:center;gap:8px;">
           <input type="checkbox" id="adaDusunInput" name="adaDusun" style="width:18px;height:18px;" ${(d.adaDusun || d.dusun)?'checked':''} onchange="document.getElementById('dusunWrap').style.display=this.checked?'block':'none'">
@@ -3813,22 +3939,22 @@ function buildJobFormHtml(j){
           <label>Titik Koordinat</label>
           <div class="maps-input-wrap">
             <div class="maps-field">
-              <span class="maps-prefix">📍</span>
+              <span class="maps-prefix">${ic('map-pin')}</span>
               <input type="text" inputmode="decimal" class="maps-input" id="koordinatInput" name="koordinat" value="${escapeHtml(d.koordinat||'')}" placeholder="-1.234567, 101.234567" oninput="updateJarakCalc()">
             </div>
-            <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaKoordinat">📍 Lihat Titik</button>
-            <button type="button" class="btn btn-outline maps-open-btn" id="btnCopyLinkMaps">📋 Salin Link Maps</button>
+            <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaKoordinat">${ic('map-pin')} Lihat Titik</button>
+            <button type="button" class="btn btn-outline maps-open-btn" id="btnCopyLinkMaps">${ic('clipboard')} Salin Link Maps</button>
           </div>
           <div class="field-hint">Format: Lintang, Bujur.</div>
           <div class="jarak-box">
-            <div class="jr-group-label">🛣️ Jarak Real (OSRM)</div>
+            <div class="jr-group-label">${ic('road')} Jarak Real (OSRM)</div>
             <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="jarakJalanText">${jarakAwalJalan===null?(koordAwalValid?'Menghitung…':'-'):fmtJarakJalan(jarakAwalJalan)}</b></div>
-            <div class="jr-row"><span>🚗 Saran tambahan transport</span><b id="jarakJalanBiayaText">${jarakAwalJalan===null?(koordAwalValid?'…':'-'):fmtRp(hitungSaranTransport(jarakAwalJalan))}</b></div>
+            <div class="jr-row"><span>${ic('car')} Saran tambahan transport</span><b id="jarakJalanBiayaText">${jarakAwalJalan===null?(koordAwalValid?'…':'-'):fmtRp(hitungSaranTransport(jarakAwalJalan))}</b></div>
           </div>
         </div>
       </div>
 
-      <div class="section-title">⚙️ Status Proses</div>
+      <div class="section-title">${ic('settings')} Status Proses</div>
       <div class="form-grid">
         <div>
           <label>Proses Edit</label>
@@ -3863,7 +3989,7 @@ function buildJobFormHtml(j){
         </div>
       </div>
 
-      <div class="section-title">💰 Keuangan</div>
+      <div class="section-title">${ic('money')} Keuangan</div>
       <div class="form-grid">
         <div>
           <label>DP</label>
@@ -3918,7 +4044,7 @@ function buildJobFormHtml(j){
         <span id="calcBersih">${fmtRp(hitungBersih({...d, sedekahNominal: d.sedekahNominal||hitungSedekah(d)}))}</span>
       </div>
 
-      <div class="section-title">📝 Catatan Tambahan</div>
+      <div class="section-title">${ic('note')} Catatan Tambahan</div>
       <div class="form-grid">
         <div class="full">
           <label>Catatan</label>
@@ -3927,7 +4053,7 @@ function buildJobFormHtml(j){
       </div>
 
       <div class="form-actions">
-        ${j?`<button type="button" class="btn btn-danger" id="btnDeleteJob">🗑️ Hapus Job</button>`:''}
+        ${j?`<button type="button" class="btn btn-danger" id="btnDeleteJob">${ic('trash')} Hapus Job</button>`:''}
         <button type="button" class="btn btn-outline" id="btnCancelForm">Batal</button>
         <button type="submit" class="btn btn-primary">${j?'Simpan Perubahan':'Simpan Job'}</button>
       </div>
@@ -4149,7 +4275,7 @@ function viewDaftar(){
   return `
   <div class="card">
     <div class="toolbar">
-      <h2 style="margin:0;">📋 Daftar Semua Job</h2>
+      <h2 style="margin:0;">${ic('clipboard')} Daftar Semua Job</h2>
       <div class="search-box">
         <input type="text" id="searchBox" placeholder="Cari nama, desa, jenis acara...">
         <select id="filterJenis">
@@ -4160,7 +4286,7 @@ function viewDaftar(){
           <option value="">Semua Bulan</option>
           ${getAvailableMonthKeys().slice().reverse().map(k=>`<option value="${k}">${monthKeyLabel(k)}</option>`).join('')}
         </select>
-        <button class="btn btn-outline" id="btnCopyPerBulan">📋 Salin per Bulan</button>
+        <button class="btn btn-outline" id="btnCopyPerBulan">${ic('clipboard')} Salin per Bulan</button>
         <button class="btn btn-primary admin-only" id="btnInputJob2">+ Job Baru</button>
       </div>
     </div>
@@ -4180,10 +4306,10 @@ function renderDaftarTable(){
       .join(' ').toLowerCase().includes(q));
   }
   if(fj) list = list.filter(j=>j.jenisAcara===fj);
-  if(fb) list = list.filter(j=>j.tanggalAcara && j.tanggalAcara.slice(0,7)===fb);
+  if(fb) list = list.filter(j=>jobOverlapsMonth(j, fb));
 
   if(list.length===0){
-    wrap.innerHTML = `<div class="empty-state"><div class="em">📭</div>Belum ada job.</div>`;
+    wrap.innerHTML = `<div class="empty-state"><div class="em">${ic('mailbox-empty')}</div>Belum ada job.</div>`;
     return;
   }
 
@@ -4197,7 +4323,7 @@ function renderDaftarTable(){
     ${list.map(j=>`
       <tr>
         <td data-label="No">#${j.noUrut}</td>
-        <td data-label="Tanggal">${fmtTgl(j.tanggalAcara)}</td>
+        <td data-label="Tanggal">${fmtTglJob(j)}</td>
         <td data-label="Klien">${escapeHtml(j.namaKlien||'-')}</td>
         <td data-label="Jenis Acara">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara)}</td>
         <td data-label="Lokasi">${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</td>
@@ -4209,8 +4335,8 @@ function renderDaftarTable(){
         <td class="row-actions">
           <button class="icon-btn admin-only" data-edit="${j.id}">Edit</button>
           <button class="icon-btn" data-view-job="${j.id}">Lihat</button>
-          <button class="icon-btn" data-open-maps="${j.id}" title="Buka di Maps">🗺️ Maps</button>
-          <button class="icon-btn icon-btn-danger admin-only" data-delete="${j.id}" title="Hapus job">🗑️ Hapus</button>
+          <button class="icon-btn" data-open-maps="${j.id}" title="Buka di Maps">${ic('map')} Maps</button>
+          <button class="icon-btn icon-btn-danger admin-only" data-delete="${j.id}" title="Hapus job">${ic('trash')} Hapus</button>
         </td>
       </tr>
     `).join('')}
@@ -4244,7 +4370,7 @@ function getAvailableMonthKeys(){
   const set = new Set();
   jobs.forEach(j=>{
     if(!j.tanggalAcara) return;
-    set.add(j.tanggalAcara.slice(0,7)); // 'YYYY-MM'
+    getJobDateRange(j).forEach(iso=> set.add(iso.slice(0,7))); // 'YYYY-MM' — sertakan tiap bulan yang disentuh rentang job
   });
   return [...set].sort(); // urut kronologis lama -> baru
 }
@@ -4255,27 +4381,33 @@ function monthKeyLabel(key){
 function buildMonthlyCopyText(selectedKeys){
   const sortedKeys = [...selectedKeys].sort();
   const blocks = sortedKeys.map(key=>{
-    const [y,m] = key.split('-').map(Number);
     const monthJobs = jobs
-      .filter(j=>j.tanggalAcara && j.tanggalAcara.slice(0,7)===key)
+      .filter(j=> jobOverlapsMonth(j, key))
       .sort((a,b)=> a.tanggalAcara.localeCompare(b.tanggalAcara));
 
     const items = monthJobs.map((j)=>{
-      const tglNum = Number(j.tanggalAcara.slice(8,10));
+      // Satu job = satu baris tanggal (bukan per-hari), tetap acara yang sama meski
+      // berdurasi >1 hari. Tanggalnya dipotong (clip) ke rentang bulan yang sedang
+      // disalin, lalu ditulis "awal-akhir" kalau >1 hari di bulan ini, atau tanggal
+      // tunggal kalau cuma 1 hari.
+      const rangeInMonth = getJobDateRange(j).filter(iso=> iso.slice(0,7)===key);
+      const tglAwal = Number(rangeInMonth[0].slice(8,10));
+      const tglAkhir = Number(rangeInMonth[rangeInMonth.length-1].slice(8,10));
+      const tglLabel = tglAwal===tglAkhir ? `${tglAwal}` : `${tglAwal}-${tglAkhir}`;
       const namaHari = namaHariID(new Date(j.tanggalAcara+'T00:00:00'));
       const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : (j.jenisAcara||'-');
       const desa = desaDisplay(j) || '-';
       const tim = (j.timFreelancer||'').trim();
       const noUrut = getJobNo(j.id);
       const lines = [
-        `${noUrut}. Tgl ${tglNum} (${namaHari}) — ${desa}`,
+        `${noUrut}. Tgl ${tglLabel} (${namaHari}) — ${desa}`,
         `    Acara : ${jenis}`,
       ];
       if(tim) lines.push(`    Tim   : ${tim}`);
       return lines.join('\n');
     });
 
-    const header = `📅 *${monthKeyLabel(key).toUpperCase()}*`;
+    const header = `${ic('calendar')} *${monthKeyLabel(key).toUpperCase()}*`;
     const divider = '━━━━━━━━━━━━━━━━━━━━━';
     const body = items.length ? items.join('\n\n') : '(Belum ada job di bulan ini)';
     const total = `Total: ${monthJobs.length} job`;
@@ -4283,7 +4415,7 @@ function buildMonthlyCopyText(selectedKeys){
   });
 
   return [
-    '📸 *KAONE MOTRET — DAFTAR JOB*',
+    ic('camera')+' *KAONE MOTRET — DAFTAR JOB*',
     '',
     blocks.join('\n\n'),
   ].join('\n');
@@ -4295,7 +4427,7 @@ function openCopyPerBulanModal(){
     return;
   }
   const checkboxesHtml = keys.slice().reverse().map(key=>{
-    const count = jobs.filter(j=>j.tanggalAcara && j.tanggalAcara.slice(0,7)===key).length;
+    const count = jobs.filter(j=> jobOverlapsMonth(j, key)).length;
     return `
       <label style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--line);font-weight:500;font-size:13.5px;">
         <input type="checkbox" class="cpb-month" value="${key}" style="width:16px;height:16px;">
@@ -4304,8 +4436,8 @@ function openCopyPerBulanModal(){
   }).join('');
 
   showModal(`
-    <button class="close-x" id="closeModal">✕</button>
-    <h3 style="margin-top:0;">📋 Salin Daftar Job per Bulan</h3>
+    <button class="close-x" id="closeModal">${ic('close')}</button>
+    <h3 style="margin-top:0;">${ic('clipboard')} Salin Daftar Job per Bulan</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">
       Pilih 1–4 bulan untuk disalin.
     </div>
@@ -4393,14 +4525,14 @@ function viewKalender(){
   return `
   <div class="card">
     <div class="cal-controls">
-      <h2 style="margin:0;">📆 Kalender Job</h2>
+      <h2 style="margin:0;">${ic('calendar')} Kalender Job</h2>
       <div class="cal-nav">
         <button id="calPrev">‹</button>
         <div class="cur">${MONTH_NAMES[calMonth]} ${calYear}</div>
         <button id="calNext">›</button>
       </div>
-      <button class="btn btn-primary" id="btnDownloadPoster">⬇️ Unduh Gambar (1080×1920)</button>
-      <button class="btn btn-outline" id="btnDownloadPosterKeterangan">⬇️ Unduh dengan Keterangan Tanggal</button>
+      <button class="btn btn-primary" id="btnDownloadPoster">${ic('download')} Unduh Gambar (1080×1920)</button>
+      <button class="btn btn-outline" id="btnDownloadPosterKeterangan">${ic('download')} Unduh dengan Keterangan Tanggal</button>
     </div>
     <div class="poster-wrap">
       <div class="poster-scale-inner" id="posterScaleInner">
@@ -4409,14 +4541,14 @@ function viewKalender(){
     </div>
 
     <div class="thanks-editor admin-only">
-      <div class="section-title" style="margin-top:0;">💌 Ucapan Terima Kasih di Poster — ${MONTH_NAMES[calMonth]} ${calYear}</div>
+      <div class="section-title" style="margin-top:0;">${ic('mail')} Ucapan Terima Kasih di Poster — ${MONTH_NAMES[calMonth]} ${calYear}</div>
       <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 10px;">
         Kosongkan untuk pakai ucapan otomatis.
       </p>
       <textarea id="thanksOverrideInput" rows="2" placeholder="Tulis ucapan terima kasih versimu sendiri di sini...">${escapeHtml(overrideVal)}</textarea>
       <div class="thanks-controls-row">
-        <button class="btn btn-outline" id="btnSaveThanksText">💾 Simpan Teks Ini</button>
-        <button class="btn btn-outline" id="btnResetThanksText">↺ Pakai Ucapan Otomatis</button>
+        <button class="btn btn-outline" id="btnSaveThanksText">${ic('save')} Simpan Teks Ini</button>
+        <button class="btn btn-outline" id="btnResetThanksText">${ic('undo')} Pakai Ucapan Otomatis</button>
         <div class="font-size-control">
           <span>Ukuran Font</span>
           <button type="button" id="btnFontMinus">−</button>
@@ -4427,7 +4559,7 @@ function viewKalender(){
     </div>
 
     <div class="layout-picker admin-only">
-      <div class="section-title" style="margin-top:0;">🖼️ Pilih Desain Keseluruhan — ${MONTH_NAMES[calMonth]} ${calYear}</div>
+      <div class="section-title" style="margin-top:0;">${ic('image')} Pilih Desain Keseluruhan — ${MONTH_NAMES[calMonth]} ${calYear}</div>
       <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 12px;">
         Ganti bebas, khusus bulan ini.
       </p>
@@ -4442,7 +4574,7 @@ function viewKalender(){
     </div>
 
     <div class="theme-picker admin-only">
-      <div class="section-title" style="margin-top:0;">🎨 Pilih Warna Poster — ${MONTH_NAMES[calMonth]} ${calYear}</div>
+      <div class="section-title" style="margin-top:0;">${ic('palette')} Pilih Warna Poster — ${MONTH_NAMES[calMonth]} ${calYear}</div>
       <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 12px;">
         Pilih bebas, terpisah dari desain.
       </p>
@@ -4455,7 +4587,7 @@ function viewKalender(){
     </div>
 
     <div class="info-box">
-      💡 Klik tanggal untuk lihat detail job.
+      ${ic('bulb')} Klik tanggal untuk lihat detail job.
     </div>
   </div>
   `;
@@ -4504,10 +4636,7 @@ function renderPosterHtml(){
   // job 2 hari (atau lebih) yang menyeberang ke bulan berikutnya tetap muncul di
   // kedua poster bulan yang bersangkutan.
   const monthPrefix = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
-  const jobsThisMonth = jobs.filter(j=>{
-    if(!j.tanggalAcara) return false;
-    return getJobDateRange(j).some(iso=> iso.slice(0,7)===monthPrefix);
-  });
+  const jobsThisMonth = jobs.filter(j=> jobOverlapsMonth(j, monthPrefix));
   // Tandai SEMUA tanggal yang dilewati job (bukan cuma hari pertamanya) supaya job
   // berdurasi 2 hari atau lebih ditandai di seluruh harinya di kalender poster.
   const jobDates = new Set();
@@ -4787,7 +4916,7 @@ function openDateModal(dateIso){
   if(list.length===0) return;
   modalDateJobs = list;
   showModal(`
-    <button class="close-x" id="closeModal">✕</button>
+    <button class="close-x" id="closeModal">${ic('close')}</button>
     <h3>${fmtTgl(dateIso)}</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);">${list.length} job pada tanggal ini</div>
     ${list.map(j=>`
@@ -4800,9 +4929,9 @@ function openDateModal(dateIso){
         <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
         <div class="mj-row"><span>Tim/Freelancer</span><span>${escapeHtml(j.timFreelancer||'-')}</span></div>
         <div class="modal-actions">
-          <button type="button" class="btn btn-outline" data-gcal="${j.id}">🗓️ Tambah ke Google Calendar</button>
-          <button type="button" class="btn btn-outline" data-ics="${j.id}">⬇️ Unduh .ics</button>
-          <button type="button" class="btn btn-outline admin-only" data-edit="${j.id}">✏️ Edit Job</button>
+          <button type="button" class="btn btn-outline" data-gcal="${j.id}">${ic('calendar')} Tambah ke Google Calendar</button>
+          <button type="button" class="btn btn-outline" data-ics="${j.id}">${ic('download')} Unduh .ics</button>
+          <button type="button" class="btn btn-outline admin-only" data-edit="${j.id}">${ic('edit')} Edit Job</button>
         </div>
       </div>
     `).join('')}
@@ -4814,25 +4943,25 @@ function openDateModal(dateIso){
 const STATUS_LIST_CONFIG = {
   prosesEdit: {
     label: 'Proses Edit',
-    icon: '✏️',
+    icon: ic('edit'),
     options: ['Belum Selesai','Selesai'],
     isPending: j => j.prosesEdit!=='Selesai',
   },
   prosesCetak: {
     label: 'Proses Cetak',
-    icon: '🖨️',
+    icon: ic('printer'),
     options: ['Belum Selesai','Selesai'],
     isPending: j => j.prosesCetak!=='Selesai',
   },
   pengiriman: {
     label: 'Pengiriman',
-    icon: '🚚',
+    icon: ic('truck'),
     options: PENGIRIMAN_LIST,
     isPending: j => !(j.pengiriman||'').startsWith('Sudah'),
   },
   sedekahStatus: {
     label: 'Sedekah',
-    icon: '🤲',
+    icon: ic('hands'),
     options: ['Belum','Sudah'],
     isPending: j => j.sedekahStatus!=='Sudah',
     // Nominal sedekah tiap job dipakai untuk menghitung total di kartu Beranda & modal ini.
@@ -4845,20 +4974,20 @@ function renderStatusListModalHtml(field){
   const list = sortedJobsWithNo().filter(cfg.isPending);
   const totalAmount = cfg.getAmount ? list.reduce((s,j)=>s+cfg.getAmount(j),0) : null;
   return `
-    <button type="button" class="close-x" id="closeModal">✕</button>
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
     <h3>${cfg.icon} ${cfg.label} Belum Tuntas</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job dengan status ${cfg.label.toLowerCase()} yang belum tuntas${totalAmount!==null ? ` · Total: <b>${fmtRp(totalAmount)}</b>` : ''}</div>
-    ${list.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">✅</div>Semua ${cfg.label.toLowerCase()} sudah tuntas.</div>` :
+    ${list.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">${ic('check-circle')}</div>Semua ${cfg.label.toLowerCase()} sudah tuntas.</div>` :
       list.map(j=>`
         <div class="modal-job">
           <div style="font-weight:700;margin-bottom:4px;">#${j.noUrut} — ${escapeHtml(j.namaKlien||'Tanpa Nama')} <span class="pill">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara||'-')}</span></div>
-          <div class="mj-row"><span>Tanggal Acara</span><span>${fmtTgl(j.tanggalAcara)}</span></div>
+          <div class="mj-row"><span>Tanggal Acara</span><span>${fmtTglJob(j)}</span></div>
           <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</span></div>
           ${cfg.getAmount ? `<div class="mj-row"><span>Nominal Sedekah</span><span>${fmtRp(cfg.getAmount(j))}</span></div>` : ''}
           <div class="mj-row"><span>Status ${cfg.label}</span><span>${badgeSelect(j.id, field, cfg.options, j[field])}</span></div>
           <div class="modal-actions">
             <button type="button" class="btn btn-outline" data-view-job="${j.id}">Lihat Detail</button>
-            <button type="button" class="btn btn-outline admin-only" data-edit="${j.id}">✏️ Edit Job</button>
+            <button type="button" class="btn btn-outline admin-only" data-edit="${j.id}">${ic('edit')} Edit Job</button>
           </div>
         </div>
       `).join('')}
@@ -4948,7 +5077,7 @@ function openEditJobModal(jobId){
   const j = jobId ? jobs.find(x=>x.id===jobId) : null;
   editingId = j ? j.id : null;
   showModal(`
-    <button type="button" class="close-x" id="closeModal">✕</button>
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
     ${buildJobFormHtml(j)}
   `);
   pullTeamAccountsPublic();
@@ -4979,7 +5108,7 @@ function openJobDetailModal(jobId){
   const sections = [
     {title:'Data Acara', rows:[
       ['Nama Klien', j.namaKlien||'-'],
-      ['Tanggal Acara', fmtTgl(j.tanggalAcara)],
+      ['Tanggal Acara', fmtTglJob(j)],
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
@@ -5018,7 +5147,7 @@ function openJobDetailModal(jobId){
   const cardStyle = `--jd-hdr1:${col.hdr1};--jd-hdr2:${col.hdr2};--jd-accent:${col.accent};--jd-soft:${col.soft};`;
 
   showModal(`
-    <button type="button" class="close-x" id="closeModal">✕</button>
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
     <h3 style="margin-bottom:2px;">Detail Job</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">#${getJobNo(j.id)} — ${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
     <div class="job-detail-card" id="jobDetailCard" style="${cardStyle}">
@@ -5046,12 +5175,12 @@ function openJobDetailModal(jobId){
       <div class="jd-bottom-bar"></div>
     </div>
     <div class="modal-actions">
-      <button type="button" class="btn btn-outline" data-detail-download="${j.id}">🖼️ Unduh Gambar</button>
-      <button type="button" class="btn btn-outline" data-detail-story="${j.id}">📱 Unduh Gambar Story</button>
-      <button type="button" class="btn btn-outline" data-detail-copy="${j.id}">📋 Salin Detail</button>
-      <button type="button" class="btn btn-outline" data-ics="${j.id}">⬇️ Unduh .ics</button>
-      <button type="button" class="btn btn-outline" data-gcal="${j.id}">🗓️ Tambah ke Google Calendar</button>
-      <button type="button" class="btn btn-primary admin-only" data-edit="${j.id}">✏️ Edit Job</button>
+      <button type="button" class="btn btn-outline" data-detail-download="${j.id}">${ic('image')} Unduh Gambar</button>
+      <button type="button" class="btn btn-outline" data-detail-story="${j.id}">${ic('phone')} Unduh Gambar Story</button>
+      <button type="button" class="btn btn-outline" data-detail-copy="${j.id}">${ic('clipboard')} Salin Detail</button>
+      <button type="button" class="btn btn-outline" data-ics="${j.id}">${ic('download')} Unduh .ics</button>
+      <button type="button" class="btn btn-outline" data-gcal="${j.id}">${ic('calendar')} Tambah ke Google Calendar</button>
+      <button type="button" class="btn btn-primary admin-only" data-edit="${j.id}">${ic('edit')} Edit Job</button>
     </div>
   `);
 
@@ -5144,7 +5273,7 @@ function buildJobPosterHtml(j){
       <div class="jp-title-block">
         <div class="jp-kicker">Detail Job &middot; #${getJobNo(j.id)}</div>
         <div class="jp-client-name">${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
-        <div class="jp-date-row"><span>${fmtTgl(j.tanggalAcara)}</span><span class="sep"></span><span>${escapeHtml(jenis)}</span></div>
+        <div class="jp-date-row"><span>${fmtTglJob(j)}</span><span class="sep"></span><span>${escapeHtml(jenis)}</span></div>
       </div>
       <div class="jp-rule"></div>
       <div class="jp-body">
@@ -5234,7 +5363,7 @@ function buildJobStoryHtml(j){
   const jarakJalanStory = getCachedJarakJalanKm(j); // kartu Story dirender sinkron saat diunduh — pakai cache saja
 
   const infoRows = [
-    ['Tanggal', fmtTgl(j.tanggalAcara)],
+    ['Tanggal', fmtTglJob(j)],
     ...(lokasiUmum ? [['Lokasi', lokasiUmum]] : []),
     ...(j.paket ? [['Paket', truncateText(j.paket, 46)]] : []),
     ...(jarakJalanStory!==null ? [['Jarak (Real)', fmtJarakJalan(jarakJalanStory)]] : []),
@@ -5333,9 +5462,9 @@ function copyJobDetails(jobId){
   const jarakJalanCopy = getCachedJarakJalanKm(j); // teks Salin Detail dibuat sinkron saat tombolnya diklik — pakai cache saja
 
   const groups = [
-    {title:'📅 Data Acara', rows:[
+    {title:ic('calendar')+' Data Acara', rows:[
       ['Nama Klien', j.namaKlien||'-'],
-      ['Tanggal Acara', fmtTgl(j.tanggalAcara)],
+      ['Tanggal Acara', fmtTglJob(j)],
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
@@ -5346,7 +5475,7 @@ function copyJobDetails(jobId){
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
     ]},
-    {title:'⚙️ Status & Proses', rows:[
+    {title:ic('settings')+' Status & Proses', rows:[
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
@@ -5354,7 +5483,7 @@ function copyJobDetails(jobId){
       ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
     ]},
-    {title:'💰 Keuangan', rows:[
+    {title:ic('money')+' Keuangan', rows:[
       ['DP', fmtRp(j.dp)],
       ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
       ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
@@ -5367,13 +5496,13 @@ function copyJobDetails(jobId){
     ]},
   ];
   if((j.catatan||'').trim()){
-    groups.push({title:'📝 Catatan', rows:[[null, j.catatan.trim()]]});
+    groups.push({title:ic('note')+' Catatan', rows:[[null, j.catatan.trim()]]});
   }
 
   const line = (label,val)=> label ? `${label}: ${val}` : val;
 
   const text = [
-    `📸 Kaone Motret — Detail Job #${getJobNo(j.id)}`,
+    `${ic('camera')} Kaone Motret — Detail Job #${getJobNo(j.id)}`,
     `${j.namaKlien||'Tanpa Nama'}`,
     '',
     ...groups.flatMap(g=>[
@@ -5408,7 +5537,7 @@ function nextDayCompact(iso){
 function jobEventDetails(j){
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Acara') : (j.jenisAcara||'Acara');
   const lokasiSingkat = j.desa || '-'; // cukup nama desa saja
-  const title = `📸 ${lokasiSingkat} - ${jenis}`;
+  const title = `${ic('camera')} ${lokasiSingkat} - ${jenis}`;
   const location = lokasiSingkat;
   // Gabungkan nama paket & deskripsi paket menjadi catatan acara di Google Calendar / ICS
   const detailLines = [];
@@ -5461,11 +5590,13 @@ function openGoogleCalendar(jobId){
   if(!j) return;
   const {title, location, details} = jobEventDetails(j);
   // Google Calendar quick-add link ternyata SAMA dengan aturan ICS: tanggal akhir bersifat
-  // "eksklusif" (harus H+1 untuk event 1 hari). Kalau start & end dibuat sama (H saja),
+  // "eksklusif" (harus H+1 dari hari TERAKHIR acara). Kalau start & end dibuat sama (H saja),
   // Google malah menghitungnya mundur (menampilkan H sampai H-1) karena tetap dianggap eksklusif
-  // di balik layar. Jadi end HARUS pakai nextDayCompact, persis seperti file .ics.
+  // di balik layar. Jadi end HARUS pakai nextDayCompact dari hari terakhir job (getJobFinishDate),
+  // bukan dari tanggalAcara saja — supaya job berdurasi 2 hari atau lebih ikut tertandai penuh
+  // rentang harinya di Google Calendar, persis seperti file .ics.
   const start = isoDateCompact(j.tanggalAcara);
-  const end = nextDayCompact(j.tanggalAcara);
+  const end = nextDayCompact(getJobFinishDate(j) || j.tanggalAcara);
   const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
   window.open(url,'_blank');
 }
@@ -5474,7 +5605,10 @@ function downloadIcs(jobId){
   if(!j) return;
   const {title, location, details} = jobEventDetails(j);
   const start = j.tanggalAcara.replace(/-/g,'');
-  const end = nextDayCompact(j.tanggalAcara);
+  // DTEND wajib H+1 dari hari TERAKHIR job (bukan dari tanggalAcara saja), supaya job
+  // berdurasi 2 hari atau lebih ikut ditandai penuh rentang harinya di aplikasi kalender
+  // (Google Calendar, Apple Calendar, Outlook, dll), bukan cuma 1 hari.
+  const end = nextDayCompact(getJobFinishDate(j) || j.tanggalAcara);
 
   // Pengingat: sehari sebelum tanggal acara, pukul 09.00
   const reminderDate = new Date(j.tanggalAcara+'T00:00:00');
@@ -5580,37 +5714,37 @@ function viewTugas(){
     const nextClaimInfo = userNextClaimInfo(a.id);
     return `<div class="task-person-card">
       <div class="task-person-head">
-        <div><div class="task-person-name">👤 ${escapeHtml(a.username)}</div>
+        <div><div class="task-person-name">${ic('user')} ${escapeHtml(a.username)}</div>
         <div class="task-person-meta">Akun Tim · ${list.length} tugas</div></div>
         <span class="pill">${fmtTaskHours(hrs)} total</span>
       </div>
       <div class="task-person-stats">
-        <span class="task-mini-stat">📋 ${list.length} tugas</span>
-        <span class="task-mini-stat">✅ ${list.filter(t=>t.status==='Selesai').length} selesai</span>
-        <span class="task-mini-stat">⏳ ${list.filter(t=>(t.status||'Belum')!=='Selesai').length} belum selesai</span>
-        <span class="task-mini-stat">📷 ${list.filter(t=>t.role==='Fotografer').length} fotografer</span>
-        <span class="task-mini-stat">🎥 ${list.filter(t=>t.role==='Videografer').length} videografer</span>
-        <span class="task-mini-stat">💵 ${fmtRp(totalHonorTimAkun(a.id, jobs))} honor job</span>
+        <span class="task-mini-stat">${ic('clipboard')} ${list.length} tugas</span>
+        <span class="task-mini-stat">${ic('check-circle')} ${list.filter(t=>t.status==='Selesai').length} selesai</span>
+        <span class="task-mini-stat">${ic('hourglass')} ${list.filter(t=>(t.status||'Belum')!=='Selesai').length} belum selesai</span>
+        <span class="task-mini-stat">${ic('camera')} ${list.filter(t=>t.role==='Fotografer').length} fotografer</span>
+        <span class="task-mini-stat">${ic('video')} ${list.filter(t=>t.role==='Videografer').length} videografer</span>
+        <span class="task-mini-stat">${ic('money')} ${fmtRp(totalHonorTimAkun(a.id, jobs))} honor job</span>
       </div>
       <div class="task-bonus-box">
         <div class="task-bonus-row">
           <div>
-            <div class="task-bonus-label">💰 Bonus Tim (${fmtRp(BONUS_PER_JAM)}/jam)</div>
+            <div class="task-bonus-label">${ic('money')} Bonus Tim (${fmtRp(BONUS_PER_JAM)}/jam)</div>
             <div class="task-bonus-amount">${fmtRp(bonusRp)}</div>
           </div>
-          <button type="button" class="bonus-adjust-btn" data-bonus-adjust="${escapeHtml(a.id)}">⚙️ Atur Bonus</button>
+          <button type="button" class="bonus-adjust-btn" data-bonus-adjust="${escapeHtml(a.id)}">${ic('settings')} Atur Bonus</button>
         </div>
         <div class="task-bonus-detail">
           Jam kerja: <b>${fmtTaskHours(hrs)}</b>
           ${adjustHrs ? ` &nbsp;${adjustHrs>0?'+':'−'} penyesuaian: <b>${fmtTaskHours(Math.abs(adjustHrs))}</b>` : ''}
-          &nbsp;→ Total: <b>${fmtTaskHours(Math.max(0,totalBonusHrs))}</b>
+          &nbsp;${ic('arrow-right')} Total: <b>${fmtTaskHours(Math.max(0,totalBonusHrs))}</b>
         </div>
         <div class="task-bonus-detail" style="margin-top:4px;">
           ${claimableRp>0
-            ? `✅ Sudah bisa diklaim: <b>${fmtRp(claimableRp)}</b> <span style="color:var(--ink-soft);">(bulan: ${claimableBulan.map(fmtBulanLabel).join(', ')})</span>`
+            ? `${ic('check-circle')} Sudah bisa diklaim: <b>${fmtRp(claimableRp)}</b> <span style="color:var(--ink-soft);">(bulan: ${claimableBulan.map(fmtBulanLabel).join(', ')})</span>`
             : (nextClaimInfo
-              ? `⏳ Belum bisa diklaim — bonus bulan ${fmtBulanLabel(nextClaimInfo.bulan)} baru bisa diklaim mulai ${nextClaimInfo.tanggalMulai}.`
-              : `⏳ Belum ada bonus yang bisa diklaim.`)}
+              ? `${ic('hourglass')} Belum bisa diklaim — bonus bulan ${fmtBulanLabel(nextClaimInfo.bulan)} baru bisa diklaim mulai ${nextClaimInfo.tanggalMulai}.`
+              : `${ic('hourglass')} Belum ada bonus yang bisa diklaim.`)}
         </div>
       </div>
     </div>`;
@@ -5620,13 +5754,13 @@ function viewTugas(){
   <div class="card">
     <div class="toolbar">
       <div>
-        <h2 style="margin:0;">🗂️ ${mine ? 'Tugas Saya' : 'Pembagian Tugas Tim'}</h2>
+        <h2 style="margin:0;">${ic('folder')} ${mine ? 'Tugas Saya' : 'Pembagian Tugas Tim'}</h2>
         <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">
           ${mine ? 'Tugas untukmu dari Admin.' : 'Bagi tugas per akun & jam kerja.'}
         </div>
       </div>
       ${isAdmin()?`<button class="btn btn-primary" id="btnOpenTaskForm">＋ Bagi Tugas</button>`:''}
-      <button type="button" class="btn btn-outline" id="btnRefreshTugas">🔄 Refresh</button>
+      <button type="button" class="btn btn-outline" id="btnRefreshTugas">${ic('refresh')} Refresh</button>
     </div>
 
     <div class="task-summary-grid">
@@ -5642,24 +5776,24 @@ function viewTugas(){
     <div class="task-bonus-box" style="margin:0 0 18px;">
       <div class="task-bonus-row">
         <div>
-          <div class="task-bonus-label">💰 Bonus Saya (${fmtRp(BONUS_PER_JAM)}/jam)</div>
+          <div class="task-bonus-label">${ic('money')} Bonus Saya (${fmtRp(BONUS_PER_JAM)}/jam)</div>
           <div class="task-bonus-amount">${fmtRp(userBonusRupiah(currentUserId))}</div>
         </div>
         ${myPendingClaim
-          ? `<span class="bonus-claim-pending">⏳ Menunggu Dicairkan</span>`
-          : `<button type="button" class="bonus-claim-btn" id="btnClaimBonus" ${myClaimableRp>0?'':'disabled'} title="${myClaimableRp>0?'Ajukan klaim bonus':escapeHtml(myNextClaim?`Belum bisa diklaim — bonus bulan ${myNextClaim.label} baru bisa diklaim mulai ${myNextClaim.tanggalMulai}`:'Belum ada bonus yang bisa diklaim')}">📲 Klaim Bonus</button>`}
+          ? `<span class="bonus-claim-pending">${ic('hourglass')} Menunggu Dicairkan</span>`
+          : `<button type="button" class="bonus-claim-btn" id="btnClaimBonus" ${myClaimableRp>0?'':'disabled'} title="${myClaimableRp>0?'Ajukan klaim bonus':escapeHtml(myNextClaim?`Belum bisa diklaim — bonus bulan ${myNextClaim.label} baru bisa diklaim mulai ${myNextClaim.tanggalMulai}`:'Belum ada bonus yang bisa diklaim')}">${ic('phone')} Klaim Bonus</button>`}
       </div>
       <div class="task-bonus-detail">
         Jam kerja dari tugas: <b>${fmtTaskHours(userTaskHours(currentUserId))}</b>
         ${userBonusAdjustHours(currentUserId) ? ` &nbsp;${userBonusAdjustHours(currentUserId)>0?'+':'−'} penyesuaian Admin: <b>${fmtTaskHours(Math.abs(userBonusAdjustHours(currentUserId)))}</b>` : ''}
-        &nbsp;→ Total jam bonus: <b>${fmtTaskHours(Math.max(0,userTotalBonusHours(currentUserId)))}</b>
+        &nbsp;${ic('arrow-right')} Total jam bonus: <b>${fmtTaskHours(Math.max(0,userTotalBonusHours(currentUserId)))}</b>
       </div>
       ${myPendingClaim ? `
       <div class="bonus-claim-alert">
         <span>Klaim sebesar <b>${fmtRp(myPendingClaim.jumlah)}</b> diajukan ${escapeHtml(formatCommentTime(myPendingClaim.createdAt))} — sudah dikirim ke WhatsApp Admin, menunggu dicairkan.</span>
       </div>` : (!myPendingClaim && myNextClaim ? `
       <div class="task-bonus-detail" style="margin-top:4px;">
-        ⏳ Bonus bulan <b>${escapeHtml(myNextClaim.label)}</b> baru bisa mulai diklaim tanggal <b>${escapeHtml(myNextClaim.tanggalMulai)}</b>.
+        ${ic('hourglass')} Bonus bulan <b>${escapeHtml(myNextClaim.label)}</b> baru bisa mulai diklaim tanggal <b>${escapeHtml(myNextClaim.tanggalMulai)}</b>.
       </div>` : '')}
       ${userBonusAdjustments(currentUserId).length ? `
       <div class="bonus-adjust-list">
@@ -5678,7 +5812,7 @@ function viewTugas(){
     <div class="task-bonus-box" style="margin:0 0 18px;">
       <div class="task-bonus-row">
         <div>
-          <div class="task-bonus-label">💵 Penghasilan Job Saya</div>
+          <div class="task-bonus-label">${ic('money')} Penghasilan Job Saya</div>
           <div class="task-bonus-amount">${fmtRp(totalHonorSaya)}</div>
         </div>
       </div>
@@ -5703,10 +5837,10 @@ function viewTugas(){
     <div class="task-bonus-box" style="margin:0 0 18px;">
       <div class="task-bonus-row">
         <div>
-          <div class="task-bonus-label">⚙️ Tarif Bonus per Jam</div>
+          <div class="task-bonus-label">${ic('settings')} Tarif Bonus per Jam</div>
           <div class="task-bonus-amount">${fmtRp(BONUS_PER_JAM)} / jam</div>
         </div>
-        <button type="button" class="bonus-adjust-btn" id="btnEditBonusRate">✏️ Ubah Tarif</button>
+        <button type="button" class="bonus-adjust-btn" id="btnEditBonusRate">${ic('edit')} Ubah Tarif</button>
       </div>
       <div class="task-bonus-detail">
         Bonus dihitung otomatis dari jam kerja.
@@ -5716,7 +5850,7 @@ function viewTugas(){
     <div class="task-bonus-box" style="margin:0 0 18px;">
       <div class="task-bonus-row">
         <div>
-          <div class="task-bonus-label">📉 Bonus Sudah Diklaim (Bulan Ini)</div>
+          <div class="task-bonus-label">${ic('trend-down')} Bonus Sudah Diklaim (Bulan Ini)</div>
           <div class="task-bonus-amount">${fmtRp(totalBonusDiklaimBulanIni())}</div>
         </div>
       </div>
@@ -5727,7 +5861,7 @@ function viewTugas(){
 
     ${pendingClaimsList.length ? `
     <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;border:1.5px solid var(--gold-light);">
-      <div class="section-title" style="margin-top:0;">📲 Klaim Bonus Menunggu Dicairkan (${pendingClaimsList.length})</div>
+      <div class="section-title" style="margin-top:0;">${ic('phone')} Klaim Bonus Menunggu Dicairkan (${pendingClaimsList.length})</div>
       <div class="bonus-adjust-list">
         ${pendingClaimsList.map(c=>`
           <div class="bonus-adjust-item">
@@ -5737,7 +5871,7 @@ function viewTugas(){
             </div>
             <div style="display:flex;align-items:center;gap:10px;">
               <div class="bonus-adjust-jam plus">${fmtRp(c.jumlah)}</div>
-              <button type="button" class="bonus-cair-btn" data-cairkan-bonus="${escapeHtml(c.id)}">✅ Cairkan</button>
+              <button type="button" class="bonus-cair-btn" data-cairkan-bonus="${escapeHtml(c.id)}">${ic('check-circle')} Cairkan</button>
             </div>
           </div>
         `).join('')}
@@ -5745,21 +5879,21 @@ function viewTugas(){
     </div>` : ''}
 
     <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;">
-      <div class="section-title" style="margin-top:0;">📊 Rekap Per Akun Tim</div>
+      <div class="section-title" style="margin-top:0;">${ic('chart')} Rekap Per Akun Tim</div>
       ${personRows || `<div class="empty-state" style="padding:25px;">Belum ada akun Tim.</div>`}
     </div>`:''}
 
     <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;">
       <div class="toolbar" style="margin-bottom:12px;">
         <div>
-          <div class="section-title" style="margin:0;">🔎 Rekap Tugas Detail</div>
+          <div class="section-title" style="margin:0;">${ic('search')} Rekap Tugas Detail</div>
           <div style="font-size:11.5px;color:var(--ink-soft);margin-top:3px;">${isAdmin()?'Filter semua tugas tim.':'Filter tugas akun ini.'}</div>
         </div>
         <button type="button" class="btn btn-outline" id="btnResetTaskFilter">Reset Filter</button>
       </div>
       <div class="form-grid" style="gap:10px 14px;">
         ${isAdmin()?`<div><label>Akun Tim</label><select id="taskFilterUser"><option value="">Semua Akun Tim</option>${people.map(a=>`<option value="${escapeHtml(a.id)}" ${String(filterUser)===String(a.id)?'selected':''}>${escapeHtml(a.username)}</option>`).join('')}</select></div>`:''}
-        <div><label>Role</label><select id="taskFilterRole"><option value="">Semua Role</option><option value="Fotografer" ${filterRole==='Fotografer'?'selected':''}>📷 Fotografer</option><option value="Videografer" ${filterRole==='Videografer'?'selected':''}>🎥 Videografer</option></select></div>
+        <div><label>Role</label><select id="taskFilterRole"><option value="">Semua Role</option><option value="Fotografer" ${filterRole==='Fotografer'?'selected':''}>${ic('camera')} Fotografer</option><option value="Videografer" ${filterRole==='Videografer'?'selected':''}>${ic('video')} Videografer</option></select></div>
         <div><label>Status</label><select id="taskFilterStatus"><option value="">Semua Status</option><option value="Belum" ${filterStatus==='Belum'?'selected':''}>Belum</option><option value="Selesai" ${filterStatus==='Selesai'?'selected':''}>Selesai</option></select></div>
         <div><label>Dari Tanggal</label><input type="date" id="taskFilterFrom" value="${escapeHtml(filterFrom)}"></div>
         <div><label>Sampai Tanggal</label><input type="date" id="taskFilterTo" value="${escapeHtml(filterTo)}"></div>
@@ -5775,20 +5909,20 @@ function viewTugas(){
           return `<tr>
             <td class="task-date">${escapeHtml(formatTaskDate(getTaskDate(t)))}${(job && getJobDurasiHari(job)>1)?`<div style="font-size:10px;color:var(--ink-soft);font-weight:400;">s/d ${escapeHtml(formatTaskDate(getJobFinishDate(job)))} (${getJobDurasiHari(job)} hari)</div>`:''}</td>
             <td><b>${escapeHtml(getTaskPerson(t))}</b></td>
-            <td><span class="task-role-badge">${t.role==='Fotografer'?'📷':'🎥'} ${escapeHtml(t.role||'-')}</span></td>
+            <td><span class="task-role-badge">${t.role==='Fotografer'?ic('camera'):ic('video')} ${escapeHtml(t.role||'-')}</span></td>
             <td><b>${escapeHtml(getTaskJobLabel(t))}</b>${job?.jenisAcara?`<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(job.jenisAcara)}</div>`:''}</td>
             <td class="task-time">${getTaskSlots(t).map(s=>`${escapeHtml(s.mulai||'-')} – ${escapeHtml(s.selesai||'-')}`).join('<br>')||'-'}<div style="font-size:10.5px;color:var(--ink-soft);font-weight:400;">${fmtTaskHours(taskHours(t))}</div></td>
             <td><div class="task-ket">${escapeHtml(t.keterangan||'-')}</div></td>
-            <td><span class="task-status-badge ${status==='Selesai'?'task-status-selesai':'task-status-belum'}" ${t.autoCompleted?'title="Selesai otomatis"':''}>${status==='Selesai'?(t.autoCompleted?'✓ Selesai (Otomatis)':'✓ Selesai'):'⏳ Belum'}</span></td>
+            <td><span class="task-status-badge ${status==='Selesai'?'task-status-selesai':'task-status-belum'}" ${t.autoCompleted?'title="Selesai otomatis"':''}>${status==='Selesai'?(t.autoCompleted?ic('check')+' Selesai (Otomatis)':ic('check')+' Selesai'):ic('hourglass')+' Belum'}</span></td>
             <td><div class="row-actions">
-              ${(isAdmin() || String(t.userId)===String(currentUserId))?`<button type="button" class="icon-btn" data-task-toggle="${escapeHtml(t.id)}" title="Ubah status">${status==='Selesai'?'↩️':'✓'}</button>`:''}
-              ${(isAdmin() || String(t.userId)===String(currentUserId))?`<button type="button" class="icon-btn task-comment-btn" data-task-comment="${escapeHtml(t.id)}" title="Komentar tugas">💬${taskComments(t).length?`<span class="task-comment-count">${taskComments(t).length}</span>`:''}${taskHasUnreadComment(t)?'<span class="task-comment-dot"></span>':''}</button>`:''}
-              ${isAdmin()?`<button type="button" class="icon-btn" data-task-edit="${escapeHtml(t.id)}" title="Edit tugas">✏️</button>`:''}
-              ${isAdmin()?`<button type="button" class="icon-btn icon-btn-danger" data-task-delete="${escapeHtml(t.id)}" title="Hapus tugas">🗑️</button>`:''}
+              ${(isAdmin() || String(t.userId)===String(currentUserId))?`<button type="button" class="icon-btn" data-task-toggle="${escapeHtml(t.id)}" title="Ubah status">${status==='Selesai'?ic('undo'):ic('check')}</button>`:''}
+              ${(isAdmin() || String(t.userId)===String(currentUserId))?`<button type="button" class="icon-btn task-comment-btn" data-task-comment="${escapeHtml(t.id)}" title="Komentar tugas">${ic('chat')}${taskComments(t).length?`<span class="task-comment-count">${taskComments(t).length}</span>`:''}${taskHasUnreadComment(t)?'<span class="task-comment-dot"></span>':''}</button>`:''}
+              ${isAdmin()?`<button type="button" class="icon-btn" data-task-edit="${escapeHtml(t.id)}" title="Edit tugas">${ic('edit')}</button>`:''}
+              ${isAdmin()?`<button type="button" class="icon-btn icon-btn-danger" data-task-delete="${escapeHtml(t.id)}" title="Hapus tugas">${ic('trash')}</button>`:''}
             </div></td>
           </tr>`;
         }).join('')}</tbody>
-      </table>` : `<div class="empty-state"><div class="em">🗂️</div>Belum ada tugas yang sesuai filter.</div>`}
+      </table>` : `<div class="empty-state"><div class="em">${ic('folder')}</div>Belum ada tugas yang sesuai filter.</div>`}
     </div>
   </div>
   `;
@@ -5811,7 +5945,7 @@ function renderTaskAkunListHtml(){
     <div class="task-akun-block">
       <label class="honor-tim-check" style="cursor:pointer;">
         <input type="checkbox" data-task-akun="${escapeHtml(a.id)}" data-task-akun-nama="${escapeHtml(a.username)}" ${sel?'checked':''} onchange="toggleTaskAkun(this)">
-        <span>👤 ${escapeHtml(a.username)}</span>
+        <span>${ic('user')} ${escapeHtml(a.username)}</span>
       </label>
       ${sel ? `
       <div class="task-akun-detail">
@@ -5819,8 +5953,8 @@ function renderTaskAkunListHtml(){
           <label>Role Tugas *</label>
           <select data-task-akun-role="${escapeHtml(a.id)}" onchange="onTaskAkunRoleChange(this)" required>
             <option value="">Pilih role...</option>
-            <option value="Fotografer" ${sel.role==='Fotografer'?'selected':''}>📷 Fotografer</option>
-            <option value="Videografer" ${sel.role==='Videografer'?'selected':''}>🎥 Videografer</option>
+            <option value="Fotografer" ${sel.role==='Fotografer'?'selected':''}>${ic('camera')} Fotografer</option>
+            <option value="Videografer" ${sel.role==='Videografer'?'selected':''}>${ic('video')} Videografer</option>
           </select>
         </div>
         <div>
@@ -5831,10 +5965,10 @@ function renderTaskAkunListHtml(){
               <input type="time" required value="${escapeHtml(s.mulai||'08:00')}" onchange="onTaskAkunSlotChange(this,'${escapeHtml(a.id)}',${idx},'mulai')">
               <span class="task-slot-sep">–</span>
               <input type="time" required value="${escapeHtml(s.selesai||'10:00')}" onchange="onTaskAkunSlotChange(this,'${escapeHtml(a.id)}',${idx},'selesai')">
-              <button type="button" class="icon-btn icon-btn-danger" title="Hapus sesi jam ini" onclick="removeTaskAkunSlot('${escapeHtml(a.id)}',${idx})">🗑️</button>
+              <button type="button" class="icon-btn icon-btn-danger" title="Hapus sesi jam ini" onclick="removeTaskAkunSlot('${escapeHtml(a.id)}',${idx})">${ic('trash')}</button>
             </div>`).join('')}
           </div>
-          <button type="button" class="btn btn-outline" style="margin-top:2px;" onclick="addTaskAkunSlot('${escapeHtml(a.id)}')">➕ Tambah Jam</button>
+          <button type="button" class="btn btn-outline" style="margin-top:2px;" onclick="addTaskAkunSlot('${escapeHtml(a.id)}')">${ic('plus')} Tambah Jam</button>
         </div>
       </div>` : ''}
     </div>`;
@@ -5920,7 +6054,7 @@ function renderTaskJobDropdownPanelHtml(){
     ? upcomingJobOpts.map(renderTaskJobOptionHtml).join('')
     : `<div class="task-job-option-empty">Belum ada job yang akan datang.</div>`;
   if(pastJobOptsAvailable.length){
-    html += `<div class="task-job-option-toggle" onclick="event.stopPropagation(); toggleTaskFormPastJobsInline()">${taskFormShowPastJobs ? '🙈 Sembunyikan job yang sudah lewat' : `🕒 Tampilkan job yang sudah lewat (${pastJobOptsAvailable.length}, 2 bulan terakhir)`}</div>`;
+    html += `<div class="task-job-option-toggle" onclick="event.stopPropagation(); toggleTaskFormPastJobsInline()">${taskFormShowPastJobs ? ic('eye-off')+' Sembunyikan job yang sudah lewat' : `${ic('clock')} Tampilkan job yang sudah lewat (${pastJobOptsAvailable.length}, 2 bulan terakhir)`}</div>`;
     if(taskFormShowPastJobs) html += pastJobOptsAvailable.map(renderTaskJobOptionHtml).join('');
   }
   return html;
@@ -5983,9 +6117,9 @@ function buildTaskFormHtml(editTask){
   // (bukan malah hilang saat form dibuka).
   taskFormShowPastJobs = editTask ? isJobPastWithinTwoMonths(jobs.find(j=>String(j.id)===String(editTask.jobId)) || {}) : false;
   return `
-    <h2 style="margin-top:0;">${editTask?'✏️ Edit Pembagian Tugas':'➕ Bagi Tugas Baru'}</h2>
+    <h2 style="margin-top:0;">${editTask?ic('edit')+' Edit Pembagian Tugas':ic('plus')+' Bagi Tugas Baru'}</h2>
     <div style="font-size:12px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">Terhubung ke job tercatat.</div>
-    ${!people.length?`<div class="task-form-note">⚠️ Belum ada akun dengan peran <b>Tim</b>. Buat/daftarkan akun Tim terlebih dahulu.</div>`:''}
+    ${!people.length?`<div class="task-form-note">${ic('warning')} Belum ada akun dengan peran <b>Tim</b>. Buat/daftarkan akun Tim terlebih dahulu.</div>`:''}
     <form id="taskForm" class="form-grid">
       ${editTask ? `
       <div>
@@ -5997,7 +6131,7 @@ function buildTaskFormHtml(editTask){
       </div>
       <div>
         <label>Role Tugas *</label>
-        <select id="taskRole" required><option value="">Pilih role...</option><option value="Fotografer" ${editTask?.role==='Fotografer'?'selected':''}>📷 Fotografer</option><option value="Videografer" ${editTask?.role==='Videografer'?'selected':''}>🎥 Videografer</option></select>
+        <select id="taskRole" required><option value="">Pilih role...</option><option value="Fotografer" ${editTask?.role==='Fotografer'?'selected':''}>${ic('camera')} Fotografer</option><option value="Videografer" ${editTask?.role==='Videografer'?'selected':''}>${ic('video')} Videografer</option></select>
       </div>` : `
       <div class="full">
         <label>Akun Tim, Role &amp; Jam Kerja *</label>
@@ -6017,21 +6151,21 @@ function buildTaskFormHtml(editTask){
             <input type="time" class="task-slot-start" required value="${escapeHtml(s.mulai||'08:00')}">
             <span class="task-slot-sep">–</span>
             <input type="time" class="task-slot-end" required value="${escapeHtml(s.selesai||'10:00')}">
-            <button type="button" class="icon-btn icon-btn-danger task-slot-remove" title="Hapus sesi jam ini">🗑️</button>
+            <button type="button" class="icon-btn icon-btn-danger task-slot-remove" title="Hapus sesi jam ini">${ic('trash')}</button>
           </div>`).join('')}
         </div>
-        <button type="button" class="btn btn-outline" id="btnAddTaskSlot" style="margin-top:8px;">➕ Tambah Jam</button>
+        <button type="button" class="btn btn-outline" id="btnAddTaskSlot" style="margin-top:8px;">${ic('plus')} Tambah Jam</button>
       </div>` : ''}
       <div class="full">
         <label>Keterangan</label>
         <textarea id="taskNote" rows="4" placeholder="Contoh: Foto akad, ambil detail dekorasi, backup file setelah acara...">${escapeHtml(editTask?.keterangan||'')}</textarea>
       </div>
       <div class="full">
-        <div class="task-form-note">📌 Tim hanya lihat tugas sendiri.</div>
+        <div class="task-form-note">${ic('pin')} Tim hanya lihat tugas sendiri.</div>
       </div>
       <div class="form-actions full">
         <button type="button" class="btn btn-outline" id="btnCancelTask">Batal</button>
-        <button type="submit" class="btn btn-primary" ${people.length&&taskJobOptions().length?'':'disabled'}>${editTask?'💾 Simpan Perubahan':'💾 Simpan Pembagian Tugas'}</button>
+        <button type="submit" class="btn btn-primary" ${people.length&&taskJobOptions().length?'':'disabled'}>${editTask?ic('save')+' Simpan Perubahan':ic('save')+' Simpan Pembagian Tugas'}</button>
       </div>
     </form>
   `;
@@ -6047,7 +6181,7 @@ function openTaskFormModal(taskId){
   const editTask = editingTaskId ? tasks.find(x=>String(x.id)===String(editingTaskId)) : null;
   if(taskId && !editTask){ alert('Tugas tidak ditemukan (mungkin sudah dihapus).'); editingTaskId=null; return; }
   showModal(`
-    <button type="button" class="close-x" id="closeModal">✕</button>
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
     ${buildTaskFormHtml(editTask)}
   `);
   const ov = document.getElementById('modalOverlay');
@@ -6079,7 +6213,7 @@ function bindTaskFormEvents(scopeEl, onDone){
       <input type="time" class="task-slot-start" required>
       <span class="task-slot-sep">–</span>
       <input type="time" class="task-slot-end" required>
-      <button type="button" class="icon-btn icon-btn-danger task-slot-remove" title="Hapus sesi jam ini">🗑️</button>
+      <button type="button" class="icon-btn icon-btn-danger task-slot-remove" title="Hapus sesi jam ini">${ic('trash')}</button>
     `;
     container.appendChild(row);
     row.querySelector('.task-slot-start')?.focus();
@@ -6229,7 +6363,7 @@ function taskCommentModalHtml(task){
     ? comments.map(c=>`
         <div class="comment-bubble ${c.byRole==='admin'?'from-admin':''}">
           <div class="cb-head">
-            <span class="cb-author">${c.byRole==='admin'?'👑 ':'👤 '}${escapeHtml(c.by||'-')}</span>
+            <span class="cb-author">${c.byRole==='admin'?ic('crown')+' ':ic('user')+' '}${escapeHtml(c.by||'-')}</span>
             <span class="cb-time">${escapeHtml(formatCommentTime(c.createdAt))}</span>
           </div>
           <div class="cb-text">${escapeHtml(c.text)}</div>
@@ -6237,8 +6371,8 @@ function taskCommentModalHtml(task){
     : `<div class="comment-empty">Belum ada komentar pada tugas ini.</div>`;
 
   return `
-    <button type="button" class="close-x" id="closeModal">✕</button>
-    <h3>💬 Komentar Tugas</h3>
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('chat')} Komentar Tugas</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">
       ${escapeHtml(getTaskPerson(task))} · ${escapeHtml(getTaskJobLabel(task))}
     </div>
@@ -6248,9 +6382,9 @@ function taskCommentModalHtml(task){
       <label for="taskCommentInput">Kirim komentar ke ${escapeHtml(getTaskPerson(task))}</label>
       <textarea id="taskCommentInput" placeholder="Contoh: Tolong datang 30 menit lebih awal, dan pastikan bawa lensa cadangan." required></textarea>
       <div class="form-actions" style="margin-top:10px;">
-        <button type="submit" class="btn btn-primary">📨 Kirim Komentar</button>
+        <button type="submit" class="btn btn-primary">${ic('mail')} Kirim Komentar</button>
       </div>
-    </form>` : `<div class="task-form-note">📌 Komentar dari Admin.</div>`}
+    </form>` : `<div class="task-form-note">${ic('pin')} Komentar dari Admin.</div>`}
   `;
 }
 function openTaskCommentModal(taskId){
@@ -6314,14 +6448,14 @@ function bonusAdjustModalHtml(akun){
           </div>
           <div style="display:flex;align-items:center;gap:8px;">
             <div class="bonus-adjust-jam ${b.jam>=0?'plus':'minus'}">${b.jam>=0?'+':'−'}${fmtTaskHours(Math.abs(b.jam))}</div>
-            <button type="button" class="icon-btn icon-btn-danger" data-bonus-delete="${escapeHtml(b.id)}" title="Hapus penyesuaian ini">🗑️</button>
+            <button type="button" class="icon-btn icon-btn-danger" data-bonus-delete="${escapeHtml(b.id)}" title="Hapus penyesuaian ini">${ic('trash')}</button>
           </div>
         </div>`).join('')
     : `<div class="comment-empty">Belum ada penyesuaian bonus.</div>`;
 
   return `
-    <button type="button" class="close-x" id="closeModal">✕</button>
-    <h3>⚙️ Atur Bonus — ${escapeHtml(akun.username)}</h3>
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('settings')} Atur Bonus — ${escapeHtml(akun.username)}</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">
       Bonus dihitung otomatis dari jam kerja tugas (${fmtRp(BONUS_PER_JAM)}/jam). Admin bisa menambah atau memotong bonus ini dalam sistem jam, misalnya sebagai reward atau pemotongan karena keterlambatan.
     </div>
@@ -6337,8 +6471,8 @@ function bonusAdjustModalHtml(akun){
       <div class="full">
         <label>Jenis Penyesuaian</label>
         <div class="bonus-type-toggle">
-          <button type="button" id="btnBonusTypeAdd" class="active-add">➕ Tambah Jam</button>
-          <button type="button" id="btnBonusTypeSub">➖ Potong Jam</button>
+          <button type="button" id="btnBonusTypeAdd" class="active-add">${ic('plus')} Tambah Jam</button>
+          <button type="button" id="btnBonusTypeSub">${ic('minus')} Potong Jam</button>
         </div>
         <input type="hidden" id="bonusAdjustType" value="add">
       </div>
@@ -6351,11 +6485,11 @@ function bonusAdjustModalHtml(akun){
         <input type="text" id="bonusAdjustNote" placeholder="Contoh: Bonus datang lebih awal / Potongan karena terlambat 1 jam">
       </div>
       <div class="form-actions full">
-        <button type="submit" class="btn btn-primary">💾 Simpan Penyesuaian</button>
+        <button type="submit" class="btn btn-primary">${ic('save')} Simpan Penyesuaian</button>
       </div>
     </form>
 
-    <div class="section-title" style="margin-top:18px;">🧾 Riwayat Penyesuaian</div>
+    <div class="section-title" style="margin-top:18px;">${ic('receipt')} Riwayat Penyesuaian</div>
     <div class="bonus-adjust-list">${listHtml}</div>
   `;
 }
@@ -6416,8 +6550,8 @@ function openBonusAdjustModal(userId){
 /* ---------- Modal Atur Tarif Bonus (Admin mengubah Rp/jam yang dipakai untuk seluruh akun Tim) ---------- */
 function bonusRateModalHtml(){
   return `
-    <button type="button" class="close-x" id="closeModal">✕</button>
-    <h3>⚙️ Atur Tarif Bonus</h3>
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('settings')} Atur Tarif Bonus</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">
       Tarif saat ini: <b>${fmtRp(BONUS_PER_JAM)}/jam</b>.
     </div>
@@ -6427,7 +6561,7 @@ function bonusRateModalHtml(){
         <input type="number" id="bonusRateInput" min="0" step="1" value="${BONUS_PER_JAM}" required>
       </div>
       <div class="form-actions full">
-        <button type="submit" class="btn btn-primary">💾 Simpan Tarif</button>
+        <button type="submit" class="btn btn-primary">${ic('save')} Simpan Tarif</button>
       </div>
     </form>
   `;
@@ -6457,7 +6591,7 @@ function openBonusRateModal(){
    laporan hanya bisa melihat riwayat laporan miliknya SENDIRI (untuk memantau
    status tindak lanjut) — tidak bisa melihat laporan akun Tim lain sama sekali.
 ========================================================= */
-const REPORT_STATUS_LABELS = { 'Baru':'🆕 Baru', 'Diproses':'⏳ Diproses', 'Selesai':'✅ Selesai' };
+const REPORT_STATUS_LABELS = { 'Baru':ic('new-badge')+' Baru', 'Diproses':ic('hourglass')+' Diproses', 'Selesai':ic('check-circle')+' Selesai' };
 function reportStatusBadgeClass(status){
   if(status==='Diproses') return 'report-status-proses';
   if(status==='Selesai') return 'report-status-selesai';
@@ -6484,7 +6618,7 @@ function viewLaporanAdmin(){
   <div class="card">
     <div class="toolbar">
       <div>
-        <h2 style="margin:0;">🚨 Laporan Tim</h2>
+        <h2 style="margin:0;">${ic('alert')} Laporan Tim</h2>
         <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">
           Laporan antar akun Tim.
         </div>
@@ -6503,16 +6637,16 @@ function viewLaporanAdmin(){
         <div><label style="margin:0 0 5px;">Filter Status</label>
           <select id="reportFilterStatus">
             <option value="">Semua Status</option>
-            <option value="Baru" ${reportsFilterStatus==='Baru'?'selected':''}>🆕 Baru</option>
-            <option value="Diproses" ${reportsFilterStatus==='Diproses'?'selected':''}>⏳ Diproses</option>
-            <option value="Selesai" ${reportsFilterStatus==='Selesai'?'selected':''}>✅ Selesai</option>
+            <option value="Baru" ${reportsFilterStatus==='Baru'?'selected':''}>${ic('new-badge')} Baru</option>
+            <option value="Diproses" ${reportsFilterStatus==='Diproses'?'selected':''}>${ic('hourglass')} Diproses</option>
+            <option value="Selesai" ${reportsFilterStatus==='Selesai'?'selected':''}>${ic('check-circle')} Selesai</option>
           </select>
         </div>
       </div>
     </div>
 
     ${filtered.length ? `<div class="report-list">${filtered.map(r=>reportCardHtml(r, true)).join('')}</div>`
-      : `<div class="empty-state"><div class="em">🚨</div>Belum ada laporan${reportsFilterStatus?' dengan status ini':''}.</div>`}
+      : `<div class="empty-state"><div class="em">${ic('alert')}</div>Belum ada laporan${reportsFilterStatus?' dengan status ini':''}.</div>`}
   </div>
   `;
 }
@@ -6526,14 +6660,14 @@ function viewLaporanTim(){
   <div class="card">
     <div class="toolbar">
       <div>
-        <h2 style="margin:0;">🚨 Laporkan Akun Tim</h2>
+        <h2 style="margin:0;">${ic('alert')} Laporkan Akun Tim</h2>
         <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">
           Laporkan masalah ke Admin.
         </div>
       </div>
     </div>
 
-    ${!cloudSyncEnabled ? `<div class="info-box">⚠️ Sinkronisasi cloud belum aktif.</div>` : ''}
+    ${!cloudSyncEnabled ? `<div class="info-box">${ic('warning')} Sinkronisasi cloud belum aktif.</div>` : ''}
 
     <form id="reportForm" class="form-grid" style="margin-top:16px;">
       <div class="full">
@@ -6549,16 +6683,16 @@ function viewLaporanTim(){
         <textarea id="reportIsi" rows="5" placeholder="Jelaskan kejadian atau masalahnya secara singkat dan jelas..." required></textarea>
       </div>
       <div class="form-actions full">
-        <button type="submit" class="btn btn-primary" ${targets.length?'':'disabled'}>📨 Kirim Laporan ke Admin</button>
+        <button type="submit" class="btn btn-primary" ${targets.length?'':'disabled'}>${ic('mail')} Kirim Laporan ke Admin</button>
       </div>
     </form>
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0;">🧾 Laporan Saya</h2>
+    <h2 style="margin-top:0;">${ic('receipt')} Laporan Saya</h2>
     <div style="font-size:12px;color:var(--ink-soft);margin:-6px 0 4px;">Riwayat laporanmu.</div>
     ${myReports.length ? `<div class="report-list">${myReports.map(r=>reportCardHtml(r, false)).join('')}</div>`
-      : `<div class="empty-state"><div class="em">🧾</div>Anda belum pernah mengirim laporan.</div>`}
+      : `<div class="empty-state"><div class="em">${ic('receipt')}</div>Anda belum pernah mengirim laporan.</div>`}
   </div>
   `;
 }
@@ -6568,22 +6702,22 @@ function reportCardHtml(r, adminView){
   return `
   <div class="report-card">
     <div class="report-card-top">
-      <div class="report-parties">${escapeHtml(r.reporterName||'-')}<span class="arrow">➜</span>${escapeHtml(r.targetName||'-')}</div>
+      <div class="report-parties">${escapeHtml(r.reporterName||'-')}<span class="arrow">${ic('arrow-right')}</span>${escapeHtml(r.targetName||'-')}</div>
       <div class="report-date">${escapeHtml(formatReportTime(r.createdAt))}</div>
     </div>
     <span class="report-status-badge ${reportStatusBadgeClass(status)}">${REPORT_STATUS_LABELS[status]||status}</span>
     <div class="report-text">${escapeHtml(r.isi||'-')}</div>
-    ${r.catatanAdmin ? `<div class="report-admin-note">📌 Catatan Admin: ${escapeHtml(r.catatanAdmin)}</div>` : ''}
+    ${r.catatanAdmin ? `<div class="report-admin-note">${ic('pin')} Catatan Admin: ${escapeHtml(r.catatanAdmin)}</div>` : ''}
     ${adminView ? `
     <div class="report-actions">
-      ${status!=='Baru'?`<button type="button" class="btn btn-outline" data-report-status="${escapeHtml(r.id)}" data-status-to="Baru">🆕 Tandai Baru</button>`:''}
-      ${status!=='Diproses'?`<button type="button" class="btn btn-outline" data-report-status="${escapeHtml(r.id)}" data-status-to="Diproses">⏳ Tandai Diproses</button>`:''}
-      ${status!=='Selesai'?`<button type="button" class="btn btn-primary" data-report-status="${escapeHtml(r.id)}" data-status-to="Selesai">✅ Tandai Selesai</button>`:''}
-      <button type="button" class="icon-btn icon-btn-danger" data-report-delete="${escapeHtml(r.id)}" title="Hapus laporan">🗑️ Hapus</button>
+      ${status!=='Baru'?`<button type="button" class="btn btn-outline" data-report-status="${escapeHtml(r.id)}" data-status-to="Baru">${ic('new-badge')} Tandai Baru</button>`:''}
+      ${status!=='Diproses'?`<button type="button" class="btn btn-outline" data-report-status="${escapeHtml(r.id)}" data-status-to="Diproses">${ic('hourglass')} Tandai Diproses</button>`:''}
+      ${status!=='Selesai'?`<button type="button" class="btn btn-primary" data-report-status="${escapeHtml(r.id)}" data-status-to="Selesai">${ic('check-circle')} Tandai Selesai</button>`:''}
+      <button type="button" class="icon-btn icon-btn-danger" data-report-delete="${escapeHtml(r.id)}" title="Hapus laporan">${ic('trash')} Hapus</button>
     </div>
     <form class="report-note-form" data-report-note-form="${escapeHtml(r.id)}">
       <textarea rows="2" placeholder="Tulis/ubah catatan tindak lanjut untuk laporan ini...">${escapeHtml(r.catatanAdmin||'')}</textarea>
-      <button type="submit" class="btn btn-outline">💾 Simpan Catatan</button>
+      <button type="submit" class="btn btn-outline">${ic('save')} Simpan Catatan</button>
     </form>
     ` : ''}
   </div>`;
@@ -6673,8 +6807,8 @@ function viewRekap(){
   return `
   <div class="card">
     <div class="toolbar">
-      <h2 style="margin:0;">📊 Rekap Job</h2>
-      <button class="btn btn-primary" id="btnDownloadRekap">⬇️ Unduh Rekap sebagai Gambar</button>
+      <h2 style="margin:0;">${ic('chart')} Rekap Job</h2>
+      <button class="btn btn-primary" id="btnDownloadRekap">${ic('download')} Unduh Rekap sebagai Gambar</button>
     </div>
     <div class="rekap-tabs" id="rekapTabs">
       ${[['bulan','Per Bulan'],['tahun','Per Tahun'],['jenis','Per Jenis Acara'],['desa','Per Desa'],['kecamatan','Per Kecamatan'],['kabupaten','Per Kabupaten'],['provinsi','Per Provinsi']]
@@ -6806,7 +6940,7 @@ function renderRekapTable(){
   else keys.sort((a,b)=> grouped[b].length - grouped[a].length);
 
   if(keys.length===0){
-    return `<div class="empty-state"><div class="em">📭</div>Belum ada data untuk direkap.</div>`;
+    return `<div class="empty-state"><div class="em">${ic('mailbox-empty')}</div>Belum ada data untuk direkap.</div>`;
   }
 
   let totalJob=0, totalPenghasilan=0, totalBersih=0;
@@ -6844,7 +6978,7 @@ function renderRekapTable(){
 function starsHtml(rating){
   const r = Math.max(0, Math.min(5, Math.round(Number(rating)||0)));
   let out = '';
-  for(let i=1;i<=5;i++){ out += `<span class="${i<=r?'on':''}">★</span>`; }
+  for(let i=1;i<=5;i++){ out += `<span class="${i<=r?'on':''}">${ic('star')}</span>`; }
   return out;
 }
 function fmtUlasanDate(iso){
@@ -6859,14 +6993,14 @@ function viewUlasan(){
   return `
   <div class="card">
     <div class="cal-controls">
-      <h2 style="margin:0;">⭐ Saran &amp; Penilaian Klien</h2>
-      <button type="button" class="btn btn-outline" id="btnRefreshUlasan">${ulasanLoading?'⏳ Memuat...':'🔄 Muat Ulang'}</button>
+      <h2 style="margin:0;">${ic('star')} Saran &amp; Penilaian Klien</h2>
+      <button type="button" class="btn btn-outline" id="btnRefreshUlasan">${ulasanLoading?ic('hourglass')+' Memuat...':ic('refresh')+' Muat Ulang'}</button>
     </div>
     <p style="color:var(--ink-soft); font-size:12.5px; margin:-6px 0 18px;">
       Ulasan klien dari halaman pricelist.
     </p>
     ${!cloudSyncEnabled ? `
-      <div class="info-box">⚠️ Sinkronisasi cloud belum aktif.</div>
+      <div class="info-box">${ic('warning')} Sinkronisasi cloud belum aktif.</div>
     ` : ''}
     <div class="stat-grid" style="margin-top:0;">
       <div class="stat gold">
@@ -6875,13 +7009,13 @@ function viewUlasan(){
       </div>
       <div class="stat">
         <div class="label">Rata-rata Bintang</div>
-        <div class="value">${total ? avg.toFixed(1)+' ⭐' : '-'}</div>
+        <div class="value">${total ? avg.toFixed(1)+' '+ic('star') : '-'}</div>
       </div>
     </div>
 
     ${(!ulasanLoading && total===0) ? `
       <div class="empty-state">
-        <div class="em">💬</div>
+        <div class="em">${ic('chat')}</div>
         Belum ada penilaian klien.
       </div>
     ` : `
@@ -6903,9 +7037,9 @@ function viewUlasan(){
           </div>
           <div class="ulasan-comment">${escapeHtml(u.komentar || '(Tidak ada komentar tertulis)')}</div>
           <div class="ulasan-actions">
-            <button type="button" class="btn btn-primary admin-only" data-ulasan-publish-manage="${u.id}">📢 Kelola Publikasi</button>
-            <button type="button" class="btn btn-outline" data-ulasan-image="${u.id}">🖼️ Buat Gambar</button>
-            <button type="button" class="icon-btn icon-btn-danger admin-only" data-ulasan-delete="${u.id}">🗑️ Hapus</button>
+            <button type="button" class="btn btn-primary admin-only" data-ulasan-publish-manage="${u.id}">${ic('megaphone')} Kelola Publikasi</button>
+            <button type="button" class="btn btn-outline" data-ulasan-image="${u.id}">${ic('image')} Buat Gambar</button>
+            <button type="button" class="icon-btn icon-btn-danger admin-only" data-ulasan-delete="${u.id}">${ic('trash')} Hapus</button>
           </div>
         </div>
       `;}).join('')}
@@ -6924,7 +7058,7 @@ function buildUlasanPosterHtml(u){
   let quoteSize = 44;
   if(komentar.length>170) quoteSize = 32;
   else if(komentar.length>110) quoteSize = 37;
-  const starsMarkup = Array.from({length:5}).map((_,i)=>`<span class="${i<rating?'on':''}">★</span>`).join('');
+  const starsMarkup = Array.from({length:5}).map((_,i)=>`<span class="${i<rating?'on':''}">${ic('star')}</span>`).join('');
 
   return `
     <div id="ulasanPosterExport" class="ulasan-poster">
@@ -7003,7 +7137,7 @@ function viewPengaturan(){
   const lastBackupText = backupDays===null ? 'Belum pernah dicadangkan' : (backupDays===0 ? 'Hari ini' : `${backupDays} hari yang lalu`);
   return `
   <div class="card">
-    <h2 style="margin-top:0;">🔐 Akun Saya</h2>
+    <h2 style="margin-top:0;">${ic('lock')} Akun Saya</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">
       Kamu login sebagai <b>${escapeHtml(currentUsername||'')}</b> (peran: <b>${isAdmin()?'Admin':'Tim'}</b>). Hanya kamu bisa ubah ini.
     </p>
@@ -7020,21 +7154,21 @@ function viewPengaturan(){
         <label>Password Baru</label>
         <div class="pw-wrap">
           <input type="password" id="akunPassword" autocomplete="new-password" minlength="4" placeholder="••••••••">
-          <button type="button" class="pw-toggle" data-pw-target="akunPassword" aria-label="Lihat/sembunyikan password">👁️</button>
+          <button type="button" class="pw-toggle" data-pw-target="akunPassword" aria-label="Lihat/sembunyikan password">${ic('eye')}</button>
         </div>
       </div>
       <div class="full">
-        <button type="submit" class="btn btn-primary">💾 Simpan Perubahan Akun</button>
+        <button type="submit" class="btn btn-primary">${ic('save')} Simpan Perubahan Akun</button>
       </div>
     </form>
   </div>
 
   <div class="card admin-only">
-    <h2 style="margin-top:0;">🗂️ Kelola Akun (Admin)</h2>
+    <h2 style="margin-top:0;">${ic('folder')} Kelola Akun (Admin)</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">
       Admin hanya bisa melihat.
     </p>
-    ${akunLoading ? `<div class="info-box">⏳ Memuat daftar akun...</div>` : `
+    ${akunLoading ? `<div class="info-box">${ic('hourglass')} Memuat daftar akun...</div>` : `
     <div style="overflow-x:auto;">
       <table class="rekaptable akun-table">
         <thead><tr><th>Nama Lengkap</th><th>Username</th><th>Password</th><th>Peran</th><th>Terdaftar</th></tr></thead>
@@ -7051,12 +7185,12 @@ function viewPengaturan(){
         </tbody>
       </table>
     </div>
-    <button type="button" class="btn btn-outline" id="btnRefreshAkun" style="margin-top:12px;">🔄 Muat Ulang Daftar Akun</button>
+    <button type="button" class="btn btn-outline" id="btnRefreshAkun" style="margin-top:12px;">${ic('refresh')} Muat Ulang Daftar Akun</button>
     `}
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0;">⚙️ Pengaturan &amp; Cadangan Data</h2>
+    <h2 style="margin-top:0;">${ic('settings')} Pengaturan &amp; Cadangan Data</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">
       Data tersinkron otomatis ke cloud.
     </p>
@@ -7064,22 +7198,22 @@ function viewPengaturan(){
       Disarankan cadangkan data rutin. Status cadangan terakhir: <b>${lastBackupText}</b>.
     </p>
     <div class="backup-row">
-      <button class="btn btn-primary" id="btnExportBackup">⬇️ Cadangkan Data (.json)</button>
+      <button class="btn btn-primary" id="btnExportBackup">${ic('download')} Cadangkan Data (.json)</button>
       <label class="btn btn-outline admin-only" style="display:inline-flex;align-items:center;gap:8px;">
-        ⬆️ Pulihkan Data (.json)
+        ${ic('arrow-up')} Pulihkan Data (.json)
         <input type="file" id="importFile" accept=".json" style="display:none;">
       </label>
-      <button class="btn btn-danger admin-only" id="btnResetAll">🗑️ Hapus Semua Data</button>
+      <button class="btn btn-danger admin-only" id="btnResetAll">${ic('trash')} Hapus Semua Data</button>
     </div>
 
-    <div class="section-title">📥 Import Job dari Excel</div>
+    <div class="section-title">${ic('inbox')} Import Job dari Excel</div>
     <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">
       Unduh template, isi, lalu unggah.
     </p>
     <div class="backup-row">
-      <button class="btn btn-outline" id="btnDownloadTemplate">⬇️ Unduh Template Excel</button>
+      <button class="btn btn-outline" id="btnDownloadTemplate">${ic('download')} Unduh Template Excel</button>
       <label class="btn btn-primary admin-only" style="display:inline-flex;align-items:center;gap:8px;">
-        ⬆️ Import Job dari Excel
+        ${ic('arrow-up')} Import Job dari Excel
         <input type="file" id="importExcelInput" accept=".xlsx,.xls" style="display:none;">
       </label>
     </div>
@@ -7087,7 +7221,7 @@ function viewPengaturan(){
       ℹ️ Jangan ubah judul kolom pertama.
     </div>
 
-    <div class="section-title">📅 Google Calendar</div>
+    <div class="section-title">${ic('calendar')} Google Calendar</div>
     <div class="info-box">
       Tambah manual ke Google Calendar.
     </div>
@@ -7560,12 +7694,19 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.5.1'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.6.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.6.0',
+    tanggal: '17 September 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Seluruh ikon emoji di aplikasi (tombol Edit/Hapus/Simpan, kalender, notifikasi, badge status, dsb) diganti dengan ikon SVG bergaya garis minimalis buatan sendiri, supaya tampilannya konsisten di semua perangkat/browser (emoji sering tampil beda-beda tiap HP). Teks di kotak dialog (peringatan, konfirmasi) dan status singkronisasi cloud tetap memakai teks biasa karena tempat itu memang tidak bisa menampilkan ikon.' },
+    ]
+  },
   {
     version: '1.5.1',
     tanggal: '16 September 2026',
@@ -7573,6 +7714,8 @@ const CHANGELOG = [
       { kategori: 'Perbaikan', teks: 'Job yang acaranya berlangsung 2 hari atau lebih sekarang ditandai di SEMUA harinya di Kalender Job (sebelumnya hanya hari pertama yang ditandai). Keterangan Tanggal di bawah kalender juga menampilkan setiap tanggalnya, dan mengklik tanggal hari kedua/ketiga dst kini tetap membuka detail job tersebut.' },
       { kategori: 'Perbaikan', teks: 'Keterangan Tanggal untuk job berdurasi lebih dari 1 hari disederhanakan menjadi satu baris saja (misalnya "5-6 - Desa"), bukan lagi dipecah jadi satu baris per tanggal — karena tetap acara yang sama.' },
       { kategori: 'Fitur', teks: 'Jenis Acara baru "Patuaekkon" ditambahkan ke pilihan Jenis Acara di form Input/Edit Job.' },
+      { kategori: 'Perbaikan', teks: 'Tombol "Tambahkan ke Google Calendar" dan "Unduh File .ics" sekarang menandai SELURUH rentang hari untuk job berdurasi 2 hari atau lebih (sebelumnya cuma menandai 1 hari, walau job-nya berlangsung beberapa hari).' },
+      { kategori: 'Perbaikan', teks: 'Semua tempat yang menampilkan/menyalin tanggal acara job berdurasi 2 hari atau lebih sekarang konsisten menulis rentangnya (misalnya "22-23 September 2026") — termasuk Daftar Job, Detail Job, tombol Salin Detail Job, gambar Detail Job & Story IG yang diunduh, "Salin Daftar Job per Bulan" (juga otomatis mengelompokkan job yang menyeberang bulan ke kedua bulan terkait), dan notifikasi lonceng (notifikasi "sudah lewat" kini menunggu sampai HARI TERAKHIR acara selesai, bukan langsung sejak hari pertama).' },
     ]
   },
   {
@@ -7690,12 +7833,12 @@ const LAST_SEEN_VERSION_KEY = 'kaoneMotret_lastSeenVersion_v1';
 ========================================================= */
 const WELCOME_POPUP_SEEN_KEY = 'kaoneMotret_welcomeFiturSeen_v1';
 const WELCOME_FEATURES = [
-  {icon:'📋', title:'Kelola Job Lengkap', desc:'Data & status job lengkap.'},
-  {icon:'🗓️', title:'Kalender & Rentang Tanggal', desc:'Jadwal bulanan & rentang tanggal.'},
-  {icon:'🗂️', title:'Pembagian Tugas Tim', desc:'Bagi tugas & jam kerja tim.'},
-  {icon:'💰', title:'Hitung Keuangan Otomatis', desc:'Keuangan & sedekah otomatis.'},
-  {icon:'🛣️', title:'Jarak & Transport Otomatis', desc:'Jarak & biaya transport otomatis.'},
-  {icon:'📊', title:'Rekap & Ekspor', desc:'Rekap, cadangkan, ekspor Excel.'},
+  {icon:ic('clipboard'), title:'Kelola Job Lengkap', desc:'Data & status job lengkap.'},
+  {icon:ic('calendar'), title:'Kalender & Rentang Tanggal', desc:'Jadwal bulanan & rentang tanggal.'},
+  {icon:ic('folder'), title:'Pembagian Tugas Tim', desc:'Bagi tugas & jam kerja tim.'},
+  {icon:ic('money'), title:'Hitung Keuangan Otomatis', desc:'Keuangan & sedekah otomatis.'},
+  {icon:ic('road'), title:'Jarak & Transport Otomatis', desc:'Jarak & biaya transport otomatis.'},
+  {icon:ic('chart'), title:'Rekap & Ekspor', desc:'Rekap, cadangkan, ekspor Excel.'},
 ];
 function hasSeenWelcomePopup(){
   try{ return !!localStorage.getItem(WELCOME_POPUP_SEEN_KEY); }
@@ -7707,9 +7850,9 @@ function markWelcomePopupSeen(){
 function showWelcomePopup(){
   showModal(`
     <div class="welcome-modal">
-      <button type="button" class="close-x" id="closeModal">✕</button>
+      <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
       <div class="welcome-hero">
-        <div class="welcome-badge-icon">📸</div>
+        <div class="welcome-badge-icon">${ic('camera')}</div>
         <h3>Selamat Datang</h3>
         <p>Buku Job digital fotografer/videografer.</p>
       </div>
@@ -7720,7 +7863,7 @@ function showWelcomePopup(){
         </li>`).join('')}
       </ul>
       <div class="modal-actions" style="justify-content:flex-end; margin-top:18px;">
-        <button type="button" class="btn btn-primary" id="btnWelcomeOk">Mulai Pakai 🚀</button>
+        <button type="button" class="btn btn-primary" id="btnWelcomeOk">Mulai Pakai ${ic('rocket')}</button>
       </div>
     </div>
   `);
@@ -7766,7 +7909,7 @@ function changelogCatClass(kategori){
 // modal riwayat lengkap) — setiap item menampilkan badge kategori kecil lalu teksnya.
 function renderChangelogItemsHtml(items){
   return items.map(it=>`<li>
-    <span class="ul-dot">✓</span>
+    <span class="ul-dot">${ic('check')}</span>
     <span class="ul-body">
       <span class="ul-cat ${changelogCatClass(it.kategori)}">${escapeHtml(it.kategori || 'Lainnya')}</span>
       <span>${escapeHtml(it.teks)}</span>
@@ -7777,15 +7920,15 @@ function showUpdatePopup(){
   const latest = CHANGELOG[0];
   showModal(`
     <div class="update-modal">
-      <button type="button" class="close-x" id="closeModal">✕</button>
+      <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
       <div class="update-badge-row">
-        <div class="update-icon-badge">🎉</div>
+        <div class="update-icon-badge">${ic('party')}</div>
         <div>
           <div class="update-badge">Versi ${escapeHtml(latest.version)}</div>
           <div style="font-size:11.5px; color:var(--ink-soft); margin-top:4px;">${escapeHtml(latest.tanggal)}</div>
         </div>
       </div>
-      <h3 style="margin-top:14px;">Ada Pembaruan Terbaru ✨</h3>
+      <h3 style="margin-top:14px;">Ada Pembaruan Terbaru ${ic('sparkle')}</h3>
       <div style="font-size:13px; color:var(--ink-soft);">Berikut yang baru di Kaone Motret:</div>
       <ul class="update-list">
         ${renderChangelogItemsHtml(latest.items)}
@@ -7816,8 +7959,8 @@ function showUpdatePopup(){
 function showChangelogHistoryModal(){
   showModal(`
     <div class="changelog-modal">
-      <button type="button" class="close-x" id="closeModal">✕</button>
-      <h3 style="margin-top:0;">📜 Riwayat Pembaruan</h3>
+      <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+      <h3 style="margin-top:0;">${ic('scroll')} Riwayat Pembaruan</h3>
       <div style="font-size:13px; color:var(--ink-soft); margin-bottom:4px;">
         Riwayat perubahan aplikasi.
       </div>
@@ -7884,7 +8027,7 @@ function buildNotifications(){
   if(latest){
     list.push({
       id: 'update_v' + latest.version,
-      icon: '🎉',
+      icon: ic('party'),
       title: `Pembaruan v${latest.version} tersedia`,
       desc: (latest.items[0] && latest.items[0].teks) || 'Ada pembaruan pada aplikasi.',
       onClick: ()=>{ closeNotifPanel(); showUpdatePopup(); }
@@ -7901,7 +8044,7 @@ function buildNotifications(){
   if(isAdmin() && backupDays===null){
     list.push({
       id: 'backup_never',
-      icon: '💾',
+      icon: ic('save'),
       title: 'Anda belum pernah mencadangkan data',
       desc: 'Simpan salinan .json secara berkala supaya data tetap aman.',
       onClick: ()=>{ closeNotifPanel(); navigate('pengaturan'); }
@@ -7910,7 +8053,7 @@ function buildNotifications(){
     const bucket = Math.floor(backupDays/BACKUP_REMINDER_DAYS);
     list.push({
       id: 'backup_bucket_' + bucket,
-      icon: '💾',
+      icon: ic('save'),
       title: `Sudah ${backupDays} hari sejak cadangan terakhir`,
       desc: 'Waktunya cadangkan data (.json) lagi — sebagai jaga-jaga di luar sinkron cloud.',
       onClick: ()=>{ closeNotifPanel(); navigate('pengaturan'); }
@@ -7921,7 +8064,7 @@ function buildNotifications(){
   ulasanList.forEach(u=>{
     list.push({
       id: 'ulasan_' + u.id,
-      icon: '⭐',
+      icon: ic('star'),
       title: `Ulasan baru dari ${u.nama_klien || 'klien'}`,
       desc: truncateText(u.komentar, 70) || `Memberi ${u.rating||0} bintang`,
       onClick: ()=>{ closeNotifPanel(); navigate('ulasan'); }
@@ -7936,7 +8079,7 @@ function buildNotifications(){
         if(c.byRole!=='admin') return;
         list.push({
           id: taskCommentNotifId(t.id, c.id),
-          icon: '💬',
+          icon: ic('chat'),
           title: `Komentar baru dari Admin di tugas ${getTaskJobLabel(t)}`,
           desc: truncateText(c.text, 70) || 'Admin mengirim komentar pada tugas Anda.',
           onClick: ()=>{ closeNotifPanel(); navigate('tugas'); openTaskCommentModal(t.id); }
@@ -7950,7 +8093,7 @@ function buildNotifications(){
     reports.filter(r=>(r.status||'Baru')==='Baru').forEach(r=>{
       list.push({
         id: 'laporan_' + r.id,
-        icon: '🚨',
+        icon: ic('alert'),
         title: `Laporan baru: ${r.reporterName} melaporkan ${r.targetName}`,
         desc: truncateText(r.isi, 70) || 'Ada laporan baru dari akun Tim.',
         onClick: ()=>{ closeNotifPanel(); navigate('laporan'); }
@@ -7963,7 +8106,7 @@ function buildNotifications(){
     pendingBonusClaims().forEach(c=>{
       list.push({
         id: 'bonusclaim_' + c.id,
-        icon: '💰',
+        icon: ic('money'),
         title: `Klaim bonus dari ${c.username}`,
         desc: `Mengajukan klaim sebesar ${fmtRp(c.jumlah)} — menunggu dicairkan.`,
         onClick: ()=>{ closeNotifPanel(); navigate('tugas'); }
@@ -7973,42 +8116,56 @@ function buildNotifications(){
 
   jobs.forEach(j=>{
     if(!j.tanggalAcara) return;
-    const diff = daysBetween(j.tanggalAcara);
+    const diff = daysBetween(j.tanggalAcara); // hari sampai MULAI acara
+    // Untuk job berdurasi >1 hari, "sudah lewat" harus dihitung dari hari TERAKHIR
+    // acara (bukan hari mulai) — supaya job 2 hari yang baru masuk hari pertama
+    // tidak langsung dianggap "sudah lewat" padahal acaranya masih berlangsung.
+    const diffAkhir = daysBetween(getJobFinishDate(j) || j.tanggalAcara);
     const nama = j.namaKlien || 'Tanpa Nama';
 
-    // 2) Pengingat job mendekat (H-3 sampai hari-H)
+    // 2) Pengingat job mendekat (H-3 sampai hari-H mulai), atau job berdurasi
+    // >1 hari yang sedang BERLANGSUNG (hari mulainya sudah lewat tapi hari
+    // terakhirnya belum).
     if(diff>=0 && diff<=3){
       const kapan = diff===0 ? 'HARI INI' : `${diff} hari lagi`;
       list.push({
         id: 'h3_' + j.id + '_' + j.tanggalAcara,
-        icon: '📅',
+        icon: ic('calendar'),
         title: `Job "${nama}" ${kapan}`,
-        desc: `Jadwal acara: ${fmtTgl(j.tanggalAcara)}`,
+        desc: `Jadwal acara: ${fmtTglJob(j)}`,
+        onClick: ()=>{ closeNotifPanel(); openJobDetailModal(j.id); }
+      });
+    } else if(diff<0 && diffAkhir>=0){
+      list.push({
+        id: 'h3_' + j.id + '_' + j.tanggalAcara,
+        icon: ic('calendar'),
+        title: `Job "${nama}" SEDANG BERLANGSUNG`,
+        desc: `Jadwal acara: ${fmtTglJob(j)}`,
         onClick: ()=>{ closeNotifPanel(); openJobDetailModal(j.id); }
       });
     }
 
-    // 3) Job lewat tapi belum lunas
-    if(diff<0 && j.statusPembayaran!=='Lunas'){
+    // 3) Job (sudah selesai semua harinya) tapi belum lunas
+    if(diffAkhir<0 && j.statusPembayaran!=='Lunas'){
       list.push({
         id: 'bayar_' + j.id,
-        icon: '💰',
+        icon: ic('money'),
         title: `Pembayaran "${nama}" belum lunas`,
         desc: `Status saat ini: ${j.statusPembayaran || 'Belum Bayar'}`,
         onClick: ()=>{ closeNotifPanel(); openJobDetailModal(j.id); }
       });
     }
 
-    // 4) Job lewat tapi proses edit/cetak belum selesai
-    if(diff<0 && (j.prosesEdit!=='Selesai' || j.prosesCetak!=='Selesai')){
+    // 4) Job (sudah selesai semua harinya) tapi proses edit/cetak belum selesai
+    if(diffAkhir<0 && (j.prosesEdit!=='Selesai' || j.prosesCetak!=='Selesai')){
       const bagian = [];
       if(j.prosesEdit!=='Selesai') bagian.push('edit');
       if(j.prosesCetak!=='Selesai') bagian.push('cetak');
       list.push({
         id: 'proses_' + j.id,
-        icon: '🖨️',
+        icon: ic('printer'),
         title: `Proses ${bagian.join(' & ')} "${nama}" belum selesai`,
-        desc: `Acara sudah lewat (${fmtTgl(j.tanggalAcara)})`,
+        desc: `Acara sudah lewat (${fmtTglJob(j)})`,
         onClick: ()=>{ closeNotifPanel(); openJobDetailModal(j.id); }
       });
     }
@@ -8070,9 +8227,9 @@ function openNotifPanel(){
   panel.id = 'notifPanel';
   panel.innerHTML = `
     <div class="notif-panel-head">
-      <span>🔔 Notifikasi</span>
+      <span>${ic('bell')} Notifikasi</span>
       <div class="head-right">
-        ${unreadCount>0 ? `<button type="button" id="btnMarkAllRead" class="notif-markall-btn">✓ Tandai semua dibaca</button>` : ''}
+        ${unreadCount>0 ? `<button type="button" id="btnMarkAllRead" class="notif-markall-btn">${ic('check')} Tandai semua dibaca</button>` : ''}
         <span class="cnt">${list.length} info</span>
       </div>
     </div>
@@ -8088,13 +8245,13 @@ function openNotifPanel(){
         </div>
       `).join('') : `
         <div class="notif-empty">
-          <div class="em">✅</div>
+          <div class="em">${ic('check-circle')}</div>
           Tidak ada notifikasi saat ini.<br>Semua job aman terkendali.
         </div>
       `}
     </div>
     <div class="notif-panel-foot">
-      <button type="button" id="btnNotifChangelog" class="notif-changelog-btn">📜 Lihat Riwayat Pembaruan (Changelog)</button>
+      <button type="button" id="btnNotifChangelog" class="notif-changelog-btn">${ic('scroll')} Lihat Riwayat Pembaruan (Changelog)</button>
     </div>
   `;
   wrap.appendChild(panel);

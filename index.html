@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#1c1a12">
+<meta name="application-name" content="Kaone Motret">
+<meta name="apple-mobile-web-app-title" content="Kaone Motret">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="format-detection" content="telephone=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1507,6 +1512,124 @@
    currentColor supaya otomatis kebagian warna teks/tombol tempat ia dipasang. */
 .ic{width:1.1em;height:1.1em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.18em;display:inline-block;}
 .ic-fw{stroke-width:1.6;}
+
+  /* ---------- NOTIFIKASI REAL-TIME (kotak pemberitahuan + pengaturan) ---------- */
+  .rt-stack{
+    position:fixed; z-index:1500; right:16px; width:min(380px, calc(100vw - 24px));
+    top:calc(env(safe-area-inset-top, 0px) + 62px);
+    display:flex; flex-direction:column; gap:8px; pointer-events:none;
+  }
+  @media(max-width:640px){
+    .rt-stack{left:12px; right:12px; width:auto; top:calc(env(safe-area-inset-top, 0px) + 58px);}
+  }
+  .rt-toast{
+    pointer-events:auto; display:flex; align-items:flex-start; gap:10px; cursor:pointer;
+    background:#1c1a12; color:#f4ecd0; border:1px solid rgba(244,217,62,.38); border-left:4px solid var(--gold-light);
+    border-radius:14px; padding:11px 4px 11px 12px; box-shadow:0 12px 32px rgba(0,0,0,.38);
+    animation:rtIn .28s ease-out both; touch-action:pan-y; transition:transform .2s ease, opacity .2s ease;
+  }
+  .rt-toast.out{opacity:0; transform:translateX(28px);}
+  .rt-ic{
+    flex-shrink:0; width:30px; height:30px; border-radius:50%; margin-top:1px;
+    background:rgba(244,217,62,.16); color:var(--gold-light);
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .rt-body{flex:1; min-width:0;}
+  .rt-title{font-size:13px; font-weight:700; line-height:1.35; color:#fff; overflow-wrap:anywhere;}
+  .rt-desc{
+    font-size:12px; color:#d8c98a; margin-top:2px; line-height:1.4; overflow-wrap:anywhere;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .rt-actions{margin-top:8px;}
+  .rt-act{
+    border:0; border-radius:999px; padding:0 16px; min-height:36px; cursor:pointer;
+    background:linear-gradient(135deg,#F4D93E,#D4AF00); color:#231f0f; font:600 12.5px 'Poppins',sans-serif;
+  }
+  .rt-x{
+    flex-shrink:0; width:40px; height:40px; margin-top:-4px; border:0; background:transparent; cursor:pointer;
+    color:#a89a68; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px;
+  }
+  .rt-x:hover{color:#f4ecd0; background:rgba(255,255,255,.08);}
+  @keyframes rtIn{from{opacity:0; transform:translateY(-10px) scale(.98);} to{opacity:1; transform:none;}}
+  .notif-btn.rt-ring{animation:rtRing .9s ease-in-out;}
+  @keyframes rtRing{
+    0%,100%{transform:rotate(0);} 15%{transform:rotate(14deg);} 30%{transform:rotate(-12deg);}
+    45%{transform:rotate(9deg);} 60%{transform:rotate(-6deg);} 75%{transform:rotate(3deg);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .rt-toast{animation:none; transition:none;}
+    .notif-btn.rt-ring{animation:none;}
+  }
+  .rt-set-status{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); margin:6px 0 14px;}
+  .rt-dot{width:9px; height:9px; border-radius:50%; background:#b9b39a; flex-shrink:0;}
+  .rt-dot.live{background:#2e9d3a; box-shadow:0 0 0 3px rgba(46,157,58,.18);}
+  .rt-dot.wait{background:#d4a800;}
+  .rt-dot.off{background:#c0392b;}
+  .rt-set-row{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:13px 2px; border-top:1px solid var(--line); min-height:56px;
+  }
+  label.rt-set-row{cursor:pointer;}
+  .rt-set-row b{display:block; font-size:13.5px; color:var(--ink);}
+  .rt-set-row small{display:block; font-size:12px; color:var(--ink-soft); line-height:1.45; margin-top:2px;}
+  .rt-sw{
+    -webkit-appearance:none; appearance:none; flex-shrink:0; position:relative; cursor:pointer;
+    width:46px !important; height:28px !important; min-height:0 !important; padding:0 !important; margin:0 !important;
+    border:0 !important; border-radius:999px !important; background:#d9d2b0 !important; transition:background .15s;
+  }
+  .rt-sw::after{
+    content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:left .15s;
+  }
+  .rt-sw:checked{background:var(--gold) !important;}
+  .rt-sw:checked::after{left:21px;}
+  .rt-sw:disabled{opacity:.45; cursor:not-allowed;}
+
+  /* ---------- KLAIM BONUS: dua jenis (Tunai / WDP) ---------- */
+  .claim-modal-summary{
+    background:var(--gold-pale); border:1px dashed var(--gold-light); border-radius:12px;
+    padding:14px 16px; text-align:center;
+  }
+  .claim-modal-summary .cms-label{font-size:11.5px; color:#7a6400; font-weight:600; letter-spacing:.2px;}
+  .claim-modal-summary .cms-value{font-family:'Fraunces',serif; font-weight:700; font-size:26px; color:var(--ink); margin-top:2px;}
+  .claim-modal-summary .cms-meta{font-size:11.5px; color:var(--ink-soft); margin-top:4px;}
+
+  .claim-type-toggle{display:flex; gap:10px; flex-wrap:wrap;}
+  .claim-type-toggle button{
+    flex:1 1 150px; min-width:150px; padding:12px 10px; border-radius:12px;
+    border:1.5px solid #e5ddc0; background:#fff; text-align:left; cursor:pointer; transition:.15s;
+  }
+  .claim-type-toggle button .ctt-title{display:block; font-weight:700; font-size:13.5px; color:var(--ink);}
+  .claim-type-toggle button small{display:block; margin-top:3px; font-size:11px; color:var(--ink-soft); font-weight:500;}
+  .claim-type-toggle button:disabled{opacity:.5; cursor:not-allowed; background:#f5f2e6;}
+  .claim-type-toggle button:disabled small{color:var(--danger);}
+  .claim-type-toggle button.active-tunai{border-color:var(--ok); background:#e5f5e6;}
+  .claim-type-toggle button.active-tunai .ctt-title{color:var(--ok);}
+  .claim-type-toggle button.active-wdp{border-color:#7c4fd1; background:#f1eafc;}
+  .claim-type-toggle button.active-wdp .ctt-title{color:#6a3fc0;}
+  .claim-wdp-fields{grid-template-columns:1fr 1fr; gap:16px 20px;}
+  @media(max-width:520px){ .claim-wdp-fields{grid-template-columns:1fr;} }
+
+  .claim-type-badge{
+    display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px;
+    font-size:10.5px; font-weight:700; vertical-align:middle; white-space:nowrap;
+  }
+  .claim-type-badge .ic{width:11px; height:11px;}
+  .claim-type-badge.tunai{background:#e5f5e6; color:var(--ok);}
+  .claim-type-badge.wdp{background:#f1eafc; color:#6a3fc0;}
+  .claim-ml-info{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:5px;
+    font-size:11.5px; color:var(--ink-soft);
+  }
+  .claim-copy-btn{
+    background:#f1eafc; color:#6a3fc0; border:1px solid #ddd0f7; border-radius:999px;
+    padding:3px 10px; font-size:10.5px; font-weight:700; white-space:nowrap;
+  }
+  .claim-copy-btn:hover{background:#e6d9fa;}
+  @media(max-width:640px){
+    .claim-type-toggle{flex-direction:column;}
+    .claim-type-toggle button{min-width:0;}
+  }
 </style>
 </head>
 <body>
@@ -1764,6 +1887,15 @@ const BONUS_CLAIM_STORAGE_KEY = 'kaoneMotret_bonusClaims_v1';
 const BONUS_CLAIM_WA_NUMBER = '6285117071704'; // nomor WhatsApp Admin tujuan pesan klaim bonus (format internasional, tanpa +)
 const DEFAULT_BONUS_PER_JAM = 500; // Rp per jam kerja — nilai AWAL saja; Admin bisa mengubahnya kapan saja lewat menu Pembagian Tugas (lihat variabel BONUS_PER_JAM di bawah)
 const REPORTS_STORAGE_KEY = 'kaoneMotret_reports_v1';
+/* ---------- Klaim Bonus: dua jenis (Tunai & WDP) ----------
+   WDP = Weekly Diamond Pass, paket mingguan pembelian diamond Mobile Legends yang
+   dibelikan Admin ke akun Tim sebagai bentuk lain dari bonus, selain uang tunai.
+   Kedua ambang batas ini nilai AWAL saja — Admin bisa mengubahnya kapan saja lewat
+   menu Pembagian Tugas > Pengaturan Bonus (lihat MIN_KLAIM_TUNAI/MIN_KLAIM_WDP di bawah). */
+const MIN_KLAIM_TUNAI_STORAGE_KEY = 'kaoneMotret_minKlaimTunai_v1';
+const MIN_KLAIM_WDP_STORAGE_KEY = 'kaoneMotret_minKlaimWdp_v1';
+const DEFAULT_MIN_KLAIM_TUNAI = 50000;
+const DEFAULT_MIN_KLAIM_WDP = 32000;
 const START_NO_URUT = 180;
 
 /* =========================================================
@@ -2200,7 +2332,7 @@ function setSyncStatus(status){
 }
 
 function collectAllData(){
-  return { jobs, tasks, bonusAdjustments, bonusClaims, bonusRate: BONUS_PER_JAM, reports, thanksOverrides, thanksFontSize, posterThemeOverrides, layoutOverrides };
+  return { jobs, tasks, bonusAdjustments, bonusClaims, bonusRate: BONUS_PER_JAM, minKlaimTunai: MIN_KLAIM_TUNAI, minKlaimWdp: MIN_KLAIM_WDP, reports, thanksOverrides, thanksFontSize, posterThemeOverrides, layoutOverrides };
 }
 function applyAllData(data){
   if(!data) return;
@@ -2209,6 +2341,8 @@ function applyAllData(data){
   if(Array.isArray(data.bonusAdjustments)) bonusAdjustments = data.bonusAdjustments;
   if(Array.isArray(data.bonusClaims)) bonusClaims = data.bonusClaims;
   if(typeof data.bonusRate==='number' && Number.isFinite(data.bonusRate) && data.bonusRate>=0) BONUS_PER_JAM = data.bonusRate;
+  if(typeof data.minKlaimTunai==='number' && Number.isFinite(data.minKlaimTunai) && data.minKlaimTunai>=0) MIN_KLAIM_TUNAI = data.minKlaimTunai;
+  if(typeof data.minKlaimWdp==='number' && Number.isFinite(data.minKlaimWdp) && data.minKlaimWdp>=0) MIN_KLAIM_WDP = data.minKlaimWdp;
   if(Array.isArray(data.reports)) reports = data.reports;
   if(data.thanksOverrides) thanksOverrides = data.thanksOverrides;
   if(data.thanksFontSize) thanksFontSize = data.thanksFontSize;
@@ -2216,23 +2350,53 @@ function applyAllData(data){
   if(data.layoutOverrides) layoutOverrides = data.layoutOverrides;
 }
 
+/* Penunjang notifikasi real-time (lihat bagian "NOTIFIKASI REAL-TIME" di bawah).
+   Dideklarasikan di sini karena pushToCloud() memakainya. */
+let rtPushPending = false;            // true selama ada perubahan lokal yang belum sempat terkirim ke cloud
+const rtOwnStamps = new Set();        // penanda waktu simpan milik device ini, untuk mengenali "gema" perubahan sendiri
+function rtRememberOwnPush(iso){
+  rtOwnStamps.add(Date.parse(iso));
+  if(rtOwnStamps.size > 30) rtOwnStamps.delete(rtOwnStamps.values().next().value);
+}
+
 let cloudPushTimer = null;
 function pushToCloud(){
   if(!cloudSyncEnabled){ setSyncStatus('offline'); return; }
   setSyncStatus('saving');
+  rtPushPending = true;
   clearTimeout(cloudPushTimer);
-  cloudPushTimer = setTimeout(async ()=>{
+  const myTimer = cloudPushTimer = setTimeout(async ()=>{
     try{
+      const stamp = new Date().toISOString();
+      rtRememberOwnPush(stamp);
       const { error } = await supabaseClient
         .from(SYNC_TABLE)
-        .upsert({ id: SYNC_ROW_ID, payload: collectAllData(), updated_at: new Date().toISOString() });
+        .upsert({ id: SYNC_ROW_ID, payload: collectAllData(), updated_at: stamp });
       if(error) throw error;
       setSyncStatus('synced');
     }catch(e){
       console.error('Gagal sinkron ke cloud', e);
       setSyncStatus('offline');
+    }finally{
+      if(cloudPushTimer === myTimer) rtPushPending = false;
     }
   }, 600);
+}
+
+// Simpan seluruh data yang ada di memori ke cache lokal (localStorage).
+function persistAllLocal(){
+  saveJobsLocal();
+  saveTasksLocal();
+  saveBonusAdjustmentsLocal();
+  saveBonusClaimsLocal();
+  saveBonusRateLocal();
+  saveMinKlaimTunaiLocal();
+  saveMinKlaimWdpLocal();
+  saveReportsLocal();
+  saveThanksOverridesLocal();
+  saveThanksFontSizeLocal();
+  savePosterThemeOverridesLocal();
+  saveLayoutOverridesLocal();
 }
 
 async function pullFromCloud(){
@@ -2247,16 +2411,7 @@ async function pullFromCloud(){
     if(error) throw error;
     if(data && data.payload){
       applyAllData(data.payload);
-      saveJobsLocal();
-      saveTasksLocal();
-      saveBonusAdjustmentsLocal();
-      saveBonusClaimsLocal();
-      saveBonusRateLocal();
-      saveReportsLocal();
-      saveThanksOverridesLocal();
-      saveThanksFontSizeLocal();
-      savePosterThemeOverridesLocal();
-      saveLayoutOverridesLocal();
+      persistAllLocal();
       setSyncStatus('synced');
       return true;
     }else{
@@ -2711,6 +2866,8 @@ let taskRekapFilter = {userId:'', role:'', status:'', from:'', to:''};
 let bonusAdjustments = loadBonusAdjustmentsLocal();
 let bonusClaims = loadBonusClaimsLocal();
 let BONUS_PER_JAM = loadBonusRateLocal(); // tarif bonus per jam kerja — awalnya Rp500, tapi bisa diubah Admin lewat menu Pembagian Tugas
+let MIN_KLAIM_TUNAI = loadMinKlaimTunaiLocal(); // syarat minimal klaim bonus berupa uang Tunai
+let MIN_KLAIM_WDP = loadMinKlaimWdpLocal();     // syarat minimal klaim bonus berupa WDP (Weekly Diamond Pass)
 let reports = loadReportsLocal();
 let reportsFilterStatus = '';
 let teamAccountsPublic = []; // daftar akun Tim (id+username saja, tanpa password) — dipakai akun Tim untuk memilih target laporan
@@ -2776,6 +2933,44 @@ function saveBonusRateLocal(){
   catch(e){ console.error('Gagal menyimpan tarif bonus', e); }
 }
 // Admin mengubah tarif bonus per jam (berlaku untuk seluruh akun Tim, dihitung ulang otomatis).
+function loadMinKlaimTunaiLocal(){
+  try{
+    const raw = localStorage.getItem(MIN_KLAIM_TUNAI_STORAGE_KEY);
+    const n = raw!=null ? Number(raw) : NaN;
+    return (Number.isFinite(n) && n>=0) ? n : DEFAULT_MIN_KLAIM_TUNAI;
+  }catch(e){ console.error('Gagal memuat syarat minimal klaim tunai', e); return DEFAULT_MIN_KLAIM_TUNAI; }
+}
+function saveMinKlaimTunaiLocal(){
+  try{ localStorage.setItem(MIN_KLAIM_TUNAI_STORAGE_KEY, String(MIN_KLAIM_TUNAI)); }
+  catch(e){ console.error('Gagal menyimpan syarat minimal klaim tunai', e); }
+}
+function setMinKlaimTunai(val){
+  const n = Number(val);
+  if(!Number.isFinite(n) || n<0) return false;
+  MIN_KLAIM_TUNAI = Math.round(n);
+  saveMinKlaimTunaiLocal();
+  pushToCloud();
+  return true;
+}
+function loadMinKlaimWdpLocal(){
+  try{
+    const raw = localStorage.getItem(MIN_KLAIM_WDP_STORAGE_KEY);
+    const n = raw!=null ? Number(raw) : NaN;
+    return (Number.isFinite(n) && n>=0) ? n : DEFAULT_MIN_KLAIM_WDP;
+  }catch(e){ console.error('Gagal memuat syarat minimal klaim WDP', e); return DEFAULT_MIN_KLAIM_WDP; }
+}
+function saveMinKlaimWdpLocal(){
+  try{ localStorage.setItem(MIN_KLAIM_WDP_STORAGE_KEY, String(MIN_KLAIM_WDP)); }
+  catch(e){ console.error('Gagal menyimpan syarat minimal klaim WDP', e); }
+}
+function setMinKlaimWdp(val){
+  const n = Number(val);
+  if(!Number.isFinite(n) || n<0) return false;
+  MIN_KLAIM_WDP = Math.round(n);
+  saveMinKlaimWdpLocal();
+  pushToCloud();
+  return true;
+}
 function setBonusRate(newRate){
   const n = Number(newRate);
   if(!Number.isFinite(n) || n<0) return false;
@@ -3142,12 +3337,19 @@ function totalBonusDiklaimBulanIni(){
     return d.getMonth()===today.getMonth() && d.getFullYear()===today.getFullYear();
   }).reduce((s,c)=>s+(Number(c.jumlah)||0),0);
 }
+// Label & kata kerja tampilan untuk satu klaim, tergantung jenisnya (Tunai/WDP) — dipakai
+// di berbagai tempat (kartu status, riwayat, daftar Admin) supaya konsisten satu sama lain.
+function claimJenisLabel(c){ return c && c.jenis==='WDP' ? 'WDP' : 'Tunai'; }
+function claimVerbSelesai(c){ return c && c.jenis==='WDP' ? 'dikirim' : 'dicairkan'; }
+function claimVerbMenunggu(c){ return c && c.jenis==='WDP' ? 'diproses' : 'dicairkan'; }
+
 // Akun Tim mengajukan klaim atas bonus yang sudah terkumpul: dicatat sebagai "Menunggu",
 // lalu diarahkan ke WhatsApp Admin berisi pesan siap kirim agar Admin bisa memprosesnya.
+// Langkah pemilihan jenis (Tunai/WDP) ditangani lewat modal, lihat openClaimBonusModal().
 function claimBonus(){
   if(isAdmin()){ alert('Fitur klaim bonus hanya untuk akun Tim.'); return; }
   if(!currentUserId){ alert('Sesi login tidak ditemukan, silakan login ulang.'); return; }
-  if(userPendingBonusClaim(currentUserId)){ alert('Klaim bonus Anda sebelumnya masih menunggu dicairkan oleh Admin.'); return; }
+  if(userPendingBonusClaim(currentUserId)){ alert('Klaim bonus Anda sebelumnya masih menunggu diproses oleh Admin.'); return; }
   // Hanya bulan yang sudah lewat masa tunggu & belum pernah diklaim yang boleh
   // diajukan — bonus bulan yang masih dalam masa tunggu sengaja belum bisa diklaim
   // supaya tidak diklaim berkali-kali secara tergesa-gesa (lihat KLAIM_BUFFER_BULAN).
@@ -3163,38 +3365,137 @@ function claimBonus(){
   const jam = Math.max(0, bulanList.reduce((s,b)=>s+userTotalBonusHoursBulan(currentUserId,b), 0));
   const jumlah = Math.round(jam * BONUS_PER_JAM);
   if(jumlah<=0){ alert('Belum ada bonus yang bisa diklaim.'); return; }
-  const labelBulan = bulanList.map(fmtBulanLabel).join(', ');
-  if(!confirm(`Ajukan klaim bonus sebesar ${fmtRp(jumlah)} untuk bulan ${labelBulan}? Anda akan diarahkan ke WhatsApp Admin untuk konfirmasi.`)) return;
-
-  bonusClaims.push({
-    id: 'clm_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
-    userId: currentUserId, username: currentUsername,
-    jumlah, jam, bulanList,
-    status: 'Menunggu',
-    createdAt: Date.now(),
-    cairAt: null, cairBy: null
-  });
-  saveBonusClaims();
-
-  const pesan = `Halo Admin, saya *${currentUsername}* ingin mengklaim bonus tim bulan *${labelBulan}* sebesar *${fmtRp(jumlah)}* (${fmtTaskHours(jam)} jam kerja). Mohon dicairkan. Terima kasih ${ic('hands')}`;
-  window.open(`https://wa.me/${BONUS_CLAIM_WA_NUMBER}?text=${encodeURIComponent(pesan)}`, '_blank');
-
-  toast('Klaim bonus diajukan — mengarahkan ke WhatsApp Admin');
-  renderNotifBadge();
-  render();
+  const ambangTerendah = Math.min(MIN_KLAIM_TUNAI, MIN_KLAIM_WDP);
+  if(jumlah < ambangTerendah){
+    alert(`Bonus terkumpul ${fmtRp(jumlah)}, belum mencapai syarat minimal klaim (Tunai min. ${fmtRp(MIN_KLAIM_TUNAI)}, WDP min. ${fmtRp(MIN_KLAIM_WDP)}).`);
+    return;
+  }
+  openClaimBonusModal(bulanList, jam, jumlah);
 }
-// Admin menandai satu klaim bonus sebagai sudah dicairkan (dibayarkan) ke akun Tim terkait.
+
+// Isi pop-up pengajuan klaim: ringkasan bonus, pilihan jenis (Tunai/WDP — yang belum
+// memenuhi syarat minimal otomatis dinonaktifkan), dan untuk WDP field ID Game & Server.
+function claimBonusModalHtml(ctx){
+  const tunaiOk = ctx.jumlah >= MIN_KLAIM_TUNAI;
+  const wdpOk = ctx.jumlah >= MIN_KLAIM_WDP;
+  const defaultJenis = tunaiOk ? 'Tunai' : 'WDP';
+  // ID Game & Server WDP terakhir dipakai akun ini — supaya tidak perlu diketik ulang tiap klaim.
+  const lastWdp = (bonusClaims||[])
+    .filter(c=>String(c.userId)===String(currentUserId) && c.jenis==='WDP' && c.mlId)
+    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
+  return `
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('phone')} Ajukan Klaim Bonus</h3>
+    <div class="claim-modal-summary">
+      <div class="cms-label">Bonus siap diklaim</div>
+      <div class="cms-value">${fmtRp(ctx.jumlah)}</div>
+      <div class="cms-meta">${fmtTaskHours(ctx.jam)} jam kerja &middot; bulan ${ctx.bulanList.map(fmtBulanLabel).join(', ')}</div>
+    </div>
+    <form id="claimBonusForm" class="form-grid" style="margin-top:14px;">
+      <div class="full">
+        <label>Pilih Jenis Klaim</label>
+        <div class="claim-type-toggle">
+          <button type="button" id="btnClaimTunai" ${tunaiOk?'':'disabled'}>
+            <span class="ctt-title">${ic('money')} Uang Tunai</span>
+            <small>${tunaiOk ? 'Min. '+fmtRp(MIN_KLAIM_TUNAI) : 'Kurang '+fmtRp(MIN_KLAIM_TUNAI-ctx.jumlah)+' lagi'}</small>
+          </button>
+          <button type="button" id="btnClaimWdp" ${wdpOk?'':'disabled'}>
+            <span class="ctt-title">${ic('sparkle')} WDP Mobile Legends</span>
+            <small>${wdpOk ? 'Min. '+fmtRp(MIN_KLAIM_WDP) : 'Kurang '+fmtRp(MIN_KLAIM_WDP-ctx.jumlah)+' lagi'}</small>
+          </button>
+        </div>
+        <input type="hidden" id="claimJenis" value="${defaultJenis}">
+      </div>
+      <div class="full claim-wdp-fields" id="claimWdpFields" style="display:${defaultJenis==='WDP'?'grid':'none'};">
+        <div>
+          <label>ID Game Mobile Legends *</label>
+          <input type="text" id="claimMlId" inputmode="numeric" autocomplete="off" placeholder="Contoh: 123456789" value="${escapeHtml(lastWdp&&lastWdp.mlId||'')}">
+        </div>
+        <div>
+          <label>Server (Zone ID) *</label>
+          <input type="text" id="claimMlZone" inputmode="numeric" autocomplete="off" placeholder="Contoh: 1234" value="${escapeHtml(lastWdp&&lastWdp.mlZone||'')}">
+        </div>
+        <div class="full field-hint">${ic('bulb')} ID Game & Server bisa dilihat lewat menu profil dalam game Mobile Legends.</div>
+      </div>
+      <div class="form-actions full">
+        <button type="submit" class="btn btn-primary">${ic('save')} Ajukan Klaim</button>
+      </div>
+    </form>
+  `;
+}
+function openClaimBonusModal(bulanList, jam, jumlah){
+  showModal(claimBonusModalHtml({jumlah, jam, bulanList}));
+  const ov = document.getElementById('modalOverlay');
+  const jenisInput = ov?.querySelector('#claimJenis');
+  const btnTunai = ov?.querySelector('#btnClaimTunai');
+  const btnWdp = ov?.querySelector('#btnClaimWdp');
+  const wdpFields = ov?.querySelector('#claimWdpFields');
+  function setJenis(j){
+    if(jenisInput) jenisInput.value = j;
+    btnTunai?.classList.toggle('active-tunai', j==='Tunai');
+    btnWdp?.classList.toggle('active-wdp', j==='WDP');
+    if(wdpFields) wdpFields.style.display = j==='WDP' ? 'grid' : 'none';
+  }
+  setJenis(jenisInput?.value || 'Tunai');
+  btnTunai?.addEventListener('click', ()=>{ if(!btnTunai.disabled) setJenis('Tunai'); });
+  btnWdp?.addEventListener('click', ()=>{ if(!btnWdp.disabled) setJenis('WDP'); });
+
+  ov?.querySelector('#claimBonusForm')?.addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const jenis = jenisInput?.value === 'WDP' ? 'WDP' : 'Tunai';
+    if(jenis==='Tunai' && jumlah < MIN_KLAIM_TUNAI){ alert(`Belum mencapai syarat minimal klaim tunai (${fmtRp(MIN_KLAIM_TUNAI)}).`); return; }
+    if(jenis==='WDP' && jumlah < MIN_KLAIM_WDP){ alert(`Belum mencapai syarat minimal klaim WDP (${fmtRp(MIN_KLAIM_WDP)}).`); return; }
+    let mlId = '', mlZone = '';
+    if(jenis==='WDP'){
+      mlId = (document.getElementById('claimMlId')?.value||'').trim();
+      mlZone = (document.getElementById('claimMlZone')?.value||'').trim();
+      if(!mlId || !mlZone){ alert('ID Game dan Server wajib diisi untuk klaim WDP.'); return; }
+    }
+    const labelBulan = bulanList.map(fmtBulanLabel).join(', ');
+    const confirmMsg = jenis==='WDP'
+      ? `Ajukan klaim WDP senilai ${fmtRp(jumlah)} untuk bulan ${labelBulan}?\nID Game: ${mlId} (Server ${mlZone})\nAnda akan diarahkan ke WhatsApp Admin.`
+      : `Ajukan klaim tunai sebesar ${fmtRp(jumlah)} untuk bulan ${labelBulan}? Anda akan diarahkan ke WhatsApp Admin untuk konfirmasi.`;
+    if(!confirm(confirmMsg)) return;
+
+    const claim = {
+      id: 'clm_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+      userId: currentUserId, username: currentUsername,
+      jumlah, jam, bulanList, jenis,
+      status: 'Menunggu',
+      createdAt: Date.now(),
+      cairAt: null, cairBy: null
+    };
+    if(jenis==='WDP'){ claim.mlId = mlId; claim.mlZone = mlZone; }
+    bonusClaims.push(claim);
+    saveBonusClaims();
+
+    const pesan = jenis==='WDP'
+      ? `Halo Admin, saya *${currentUsername}* ingin menukar bonus tim bulan *${labelBulan}* sebesar *${fmtRp(jumlah)}* dengan *WDP (Weekly Diamond Pass)* Mobile Legends.\nID Game: *${mlId}*\nServer: *${mlZone}*\nMohon diproses. Terima kasih 🙏`
+      : `Halo Admin, saya *${currentUsername}* ingin mengklaim bonus tim bulan *${labelBulan}* sebesar *${fmtRp(jumlah)}* (${fmtTaskHours(jam)} jam kerja) secara *tunai*. Mohon dicairkan. Terima kasih 🙏`;
+    window.open(`https://wa.me/${BONUS_CLAIM_WA_NUMBER}?text=${encodeURIComponent(pesan)}`, '_blank');
+
+    toast(jenis==='WDP' ? 'Klaim WDP diajukan — mengarahkan ke WhatsApp Admin' : 'Klaim bonus diajukan — mengarahkan ke WhatsApp Admin');
+    closeModal();
+    renderNotifBadge();
+    render();
+  });
+}
+// Admin menandai satu klaim bonus sebagai sudah diproses (dicairkan untuk Tunai, dikirim untuk WDP).
 function cairkanBonusClaim(claimId){
-  if(!isAdmin()){ alert('Hanya Admin yang bisa mencairkan bonus.'); return; }
+  if(!isAdmin()){ alert('Hanya Admin yang bisa memproses klaim bonus.'); return; }
   const claim = bonusClaims.find(c=>String(c.id)===String(claimId));
   if(!claim){ alert('Klaim bonus tidak ditemukan.'); return; }
-  if(claim.status==='Dicairkan'){ toast('Klaim ini sudah dicairkan sebelumnya'); return; }
-  if(!confirm(`Tandai bonus ${fmtRp(claim.jumlah)} untuk ${claim.username} sebagai sudah dicairkan?`)) return;
+  if(claim.status==='Dicairkan'){ toast('Klaim ini sudah diproses sebelumnya'); return; }
+  const isWdp = claim.jenis==='WDP';
+  const confirmMsg = isWdp
+    ? `Tandai WDP senilai ${fmtRp(claim.jumlah)} untuk ${claim.username} sebagai sudah dikirim?\nID Game: ${claim.mlId||'-'} (Server ${claim.mlZone||'-'})`
+    : `Tandai bonus ${fmtRp(claim.jumlah)} untuk ${claim.username} sebagai sudah dicairkan?`;
+  if(!confirm(confirmMsg)) return;
   claim.status = 'Dicairkan';
   claim.cairAt = Date.now();
   claim.cairBy = currentUsername;
   saveBonusClaims();
-  toast(`Bonus ${claim.username} ditandai sudah dicairkan`);
+  toast(`${isWdp?'WDP':'Bonus'} ${claim.username} ditandai sudah ${claimVerbSelesai(claim)}`);
   renderNotifBadge();
   render();
 }
@@ -5780,8 +6081,8 @@ function viewTugas(){
           <div class="task-bonus-amount">${fmtRp(userBonusRupiah(currentUserId))}</div>
         </div>
         ${myPendingClaim
-          ? `<span class="bonus-claim-pending">${ic('hourglass')} Menunggu Dicairkan</span>`
-          : `<button type="button" class="bonus-claim-btn" id="btnClaimBonus" ${myClaimableRp>0?'':'disabled'} title="${myClaimableRp>0?'Ajukan klaim bonus':escapeHtml(myNextClaim?`Belum bisa diklaim — bonus bulan ${myNextClaim.label} baru bisa diklaim mulai ${myNextClaim.tanggalMulai}`:'Belum ada bonus yang bisa diklaim')}">${ic('phone')} Klaim Bonus</button>`}
+          ? `<span class="bonus-claim-pending">${ic('hourglass')} Menunggu ${claimVerbMenunggu(myPendingClaim)==='diproses'?'Diproses':'Dicairkan'}</span>`
+          : `<button type="button" class="bonus-claim-btn" id="btnClaimBonus" ${myClaimableRp>=Math.min(MIN_KLAIM_TUNAI,MIN_KLAIM_WDP)?'':'disabled'} title="${myClaimableRp>=Math.min(MIN_KLAIM_TUNAI,MIN_KLAIM_WDP)?'Ajukan klaim bonus':escapeHtml(myNextClaim?`Belum bisa diklaim — bonus bulan ${myNextClaim.label} baru bisa diklaim mulai ${myNextClaim.tanggalMulai}`:(myClaimableRp>0?`Bonus terkumpul ${fmtRp(myClaimableRp)}, belum mencapai syarat minimal klaim (Tunai min. ${fmtRp(MIN_KLAIM_TUNAI)}, WDP min. ${fmtRp(MIN_KLAIM_WDP)})`:'Belum ada bonus yang bisa diklaim'))}">${ic('phone')} Klaim Bonus</button>`}
       </div>
       <div class="task-bonus-detail">
         Jam kerja dari tugas: <b>${fmtTaskHours(userTaskHours(currentUserId))}</b>
@@ -5790,7 +6091,7 @@ function viewTugas(){
       </div>
       ${myPendingClaim ? `
       <div class="bonus-claim-alert">
-        <span>Klaim sebesar <b>${fmtRp(myPendingClaim.jumlah)}</b> diajukan ${escapeHtml(formatCommentTime(myPendingClaim.createdAt))} — sudah dikirim ke WhatsApp Admin, menunggu dicairkan.</span>
+        <span><span class="claim-type-badge ${myPendingClaim.jenis==='WDP'?'wdp':'tunai'}">${myPendingClaim.jenis==='WDP'?ic('sparkle'):ic('money')} ${claimJenisLabel(myPendingClaim)}</span> klaim sebesar <b>${fmtRp(myPendingClaim.jumlah)}</b> diajukan ${escapeHtml(formatCommentTime(myPendingClaim.createdAt))} — sudah dikirim ke WhatsApp Admin, menunggu ${claimVerbMenunggu(myPendingClaim)}.${myPendingClaim.jenis==='WDP'?` (ID Game: ${escapeHtml(myPendingClaim.mlId||'-')}, Server: ${escapeHtml(myPendingClaim.mlZone||'-')})`:''}</span>
       </div>` : (!myPendingClaim && myNextClaim ? `
       <div class="task-bonus-detail" style="margin-top:4px;">
         ${ic('hourglass')} Bonus bulan <b>${escapeHtml(myNextClaim.label)}</b> baru bisa mulai diklaim tanggal <b>${escapeHtml(myNextClaim.tanggalMulai)}</b>.
@@ -5837,13 +6138,13 @@ function viewTugas(){
     <div class="task-bonus-box" style="margin:0 0 18px;">
       <div class="task-bonus-row">
         <div>
-          <div class="task-bonus-label">${ic('settings')} Tarif Bonus per Jam</div>
+          <div class="task-bonus-label">${ic('settings')} Pengaturan Bonus</div>
           <div class="task-bonus-amount">${fmtRp(BONUS_PER_JAM)} / jam</div>
         </div>
-        <button type="button" class="bonus-adjust-btn" id="btnEditBonusRate">${ic('edit')} Ubah Tarif</button>
+        <button type="button" class="bonus-adjust-btn" id="btnEditBonusRate">${ic('edit')} Atur</button>
       </div>
       <div class="task-bonus-detail">
-        Bonus dihitung otomatis dari jam kerja.
+        Bonus dihitung otomatis dari jam kerja. Syarat minimal klaim: Tunai <b>${fmtRp(MIN_KLAIM_TUNAI)}</b>, WDP <b>${fmtRp(MIN_KLAIM_WDP)}</b>.
       </div>
     </div>
 
@@ -5861,20 +6162,22 @@ function viewTugas(){
 
     ${pendingClaimsList.length ? `
     <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;border:1.5px solid var(--gold-light);">
-      <div class="section-title" style="margin-top:0;">${ic('phone')} Klaim Bonus Menunggu Dicairkan (${pendingClaimsList.length})</div>
+      <div class="section-title" style="margin-top:0;">${ic('phone')} Klaim Bonus Menunggu Diproses (${pendingClaimsList.length})</div>
       <div class="bonus-adjust-list">
-        ${pendingClaimsList.map(c=>`
+        ${pendingClaimsList.map(c=>{ const isWdp = c.jenis==='WDP'; return `
           <div class="bonus-adjust-item">
             <div>
-              <div class="bonus-adjust-note"><b>${escapeHtml(c.username)}</b> mengajukan klaim bonus</div>
+              <div class="bonus-adjust-note"><b>${escapeHtml(c.username)}</b> mengajukan klaim <span class="claim-type-badge ${isWdp?'wdp':'tunai'}">${isWdp?ic('sparkle'):ic('money')} ${claimJenisLabel(c)}</span></div>
               <div class="bonus-adjust-meta">${escapeHtml(formatCommentTime(c.createdAt))} · ${fmtTaskHours(c.jam||0)} jam kerja</div>
+              ${isWdp ? `<div class="claim-ml-info">${ic('user')} ID Game: <b>${escapeHtml(c.mlId||'-')}</b> &middot; Server: <b>${escapeHtml(c.mlZone||'-')}</b>
+                <button type="button" class="claim-copy-btn" data-copy-ml="${escapeHtml((c.mlId||'-')+' (Server '+(c.mlZone||'-')+')')}">${ic('clipboard')} Salin</button></div>` : ''}
             </div>
             <div style="display:flex;align-items:center;gap:10px;">
               <div class="bonus-adjust-jam plus">${fmtRp(c.jumlah)}</div>
-              <button type="button" class="bonus-cair-btn" data-cairkan-bonus="${escapeHtml(c.id)}">${ic('check-circle')} Cairkan</button>
+              <button type="button" class="bonus-cair-btn" data-cairkan-bonus="${escapeHtml(c.id)}">${ic('check-circle')} ${isWdp?'Tandai Terkirim':'Cairkan'}</button>
             </div>
           </div>
-        `).join('')}
+        `; }).join('')}
       </div>
     </div>` : ''}
 
@@ -6351,6 +6654,20 @@ function bindTaskHandlers(){
   document.getElementById('btnEditBonusRate')?.addEventListener('click', openBonusRateModal);
   document.getElementById('btnClaimBonus')?.addEventListener('click', claimBonus);
   document.querySelectorAll('[data-cairkan-bonus]').forEach(btn=>btn.addEventListener('click',()=>cairkanBonusClaim(btn.dataset.cairkanBonus)));
+  document.querySelectorAll('[data-copy-ml]').forEach(btn=>btn.addEventListener('click', async ()=>{
+    const val = btn.dataset.copyMl || '';
+    try{
+      await navigator.clipboard.writeText(val);
+    }catch(e){
+      // Fallback untuk browser/HP yang tidak dukung Clipboard API langsung
+      const ta = document.createElement('textarea');
+      ta.value = val; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); }catch(e2){}
+      ta.remove();
+    }
+    toast('ID Game & Server disalin');
+  }));
 }
 function openEditTaskForm(id){
   openTaskFormModal(id);
@@ -6547,35 +6864,48 @@ function openBonusAdjustModal(userId){
   });
 }
 
-/* ---------- Modal Atur Tarif Bonus (Admin mengubah Rp/jam yang dipakai untuk seluruh akun Tim) ---------- */
+/* ---------- Modal Pengaturan Bonus (Admin mengubah tarif/jam & syarat minimal kedua jenis klaim) ---------- */
 function bonusRateModalHtml(){
   return `
     <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
-    <h3>${ic('settings')} Atur Tarif Bonus</h3>
+    <h3>${ic('settings')} Pengaturan Bonus</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">
-      Tarif saat ini: <b>${fmtRp(BONUS_PER_JAM)}/jam</b>.
+      Berlaku untuk seluruh akun Tim. Tarif saat ini: <b>${fmtRp(BONUS_PER_JAM)}/jam</b>.
     </div>
     <form id="bonusRateForm" class="form-grid">
       <div class="full">
         <label>Tarif Bonus/Jam *</label>
         <input type="number" id="bonusRateInput" min="0" step="1" value="${BONUS_PER_JAM}" required>
       </div>
+      <div>
+        <label>${ic('money')} Syarat Minimal Klaim Tunai *</label>
+        <input type="number" id="minKlaimTunaiInput" min="0" step="1000" value="${MIN_KLAIM_TUNAI}" required>
+      </div>
+      <div>
+        <label>${ic('sparkle')} Syarat Minimal Klaim WDP *</label>
+        <input type="number" id="minKlaimWdpInput" min="0" step="1000" value="${MIN_KLAIM_WDP}" required>
+      </div>
+      <div class="full field-hint">${ic('bulb')} Akun Tim baru bisa mengajukan klaim jenis tersebut kalau bonus terkumpulnya sudah mencapai angka ini.</div>
       <div class="form-actions full">
-        <button type="submit" class="btn btn-primary">${ic('save')} Simpan Tarif</button>
+        <button type="submit" class="btn btn-primary">${ic('save')} Simpan Pengaturan</button>
       </div>
     </form>
   `;
 }
 function openBonusRateModal(){
-  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah tarif bonus.'); return; }
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah pengaturan bonus.'); return; }
   showModal(bonusRateModalHtml());
   const ov = document.getElementById('modalOverlay');
   ov?.querySelector('#bonusRateForm')?.addEventListener('submit',(e)=>{
     e.preventDefault();
     if(!isAdmin()) return;
-    const val = document.getElementById('bonusRateInput')?.value;
-    if(!setBonusRate(val)){ alert('Tarif harus berupa angka 0 atau lebih.'); return; }
-    toast(`Tarif bonus diperbarui menjadi ${fmtRp(BONUS_PER_JAM)}/jam`);
+    const rateVal = document.getElementById('bonusRateInput')?.value;
+    const tunaiVal = document.getElementById('minKlaimTunaiInput')?.value;
+    const wdpVal = document.getElementById('minKlaimWdpInput')?.value;
+    if(!setBonusRate(rateVal)){ alert('Tarif harus berupa angka 0 atau lebih.'); return; }
+    if(!setMinKlaimTunai(tunaiVal)){ alert('Syarat minimal klaim Tunai harus berupa angka 0 atau lebih.'); return; }
+    if(!setMinKlaimWdp(wdpVal)){ alert('Syarat minimal klaim WDP harus berupa angka 0 atau lebih.'); return; }
+    toast('Pengaturan bonus berhasil diperbarui');
     closeModal();
     render();
   });
@@ -7235,7 +7565,10 @@ function exportBackup(){
     jobs,
     tasks,
     bonusAdjustments,
+    bonusClaims,
     bonusRate: BONUS_PER_JAM,
+    minKlaimTunai: MIN_KLAIM_TUNAI,
+    minKlaimWdp: MIN_KLAIM_WDP,
     reports,
     thanksOverrides,
     thanksFontSize,
@@ -7271,6 +7604,8 @@ function importBackup(file){
         if(Array.isArray(data.bonusAdjustments)) bonusAdjustments = data.bonusAdjustments;
         if(Array.isArray(data.bonusClaims)) bonusClaims = data.bonusClaims;
         if(typeof data.bonusRate==='number' && Number.isFinite(data.bonusRate) && data.bonusRate>=0) BONUS_PER_JAM = data.bonusRate;
+        if(typeof data.minKlaimTunai==='number' && Number.isFinite(data.minKlaimTunai) && data.minKlaimTunai>=0) MIN_KLAIM_TUNAI = data.minKlaimTunai;
+        if(typeof data.minKlaimWdp==='number' && Number.isFinite(data.minKlaimWdp) && data.minKlaimWdp>=0) MIN_KLAIM_WDP = data.minKlaimWdp;
         if(Array.isArray(data.reports)) reports = data.reports;
         if(data.thanksOverrides) thanksOverrides = data.thanksOverrides;
         if(data.thanksFontSize) thanksFontSize = data.thanksFontSize;
@@ -7694,12 +8029,34 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.6.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.8.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.8.0',
+    tanggal: '22 September 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Klaim bonus sekarang ada dua jenis: Uang Tunai (minimal Rp50.000, bisa diatur Admin) dan WDP — Weekly Diamond Pass Mobile Legends (minimal Rp32.000, bisa diatur Admin). Kedua syarat minimal ini diatur lewat menu Pembagian Tugas > Pengaturan Bonus.' },
+      { kategori: 'Fitur', teks: 'Saat mengajukan klaim, akun Tim memilih salah satu jenis lewat kotak pilihan; jenis yang belum memenuhi syarat minimal otomatis dinonaktifkan beserta keterangan kurang berapa lagi. Untuk klaim WDP, ID Game dan Server Mobile Legends diminta sekali dan otomatis diingat untuk klaim berikutnya.' },
+      { kategori: 'Fitur', teks: 'Admin melihat jenis klaim (Tunai/WDP) pada daftar klaim menunggu, lengkap dengan ID Game & Server untuk klaim WDP beserta tombol salin, dan tombol prosesnya menyesuaikan ("Cairkan" atau "Tandai Terkirim").' },
+      { kategori: 'Peningkatan', teks: 'Notifikasi klaim bonus (baik ke Admin maupun ke akun Tim saat sudah diproses) kini menyebutkan jenis klaimnya.' },
+    ]
+  },
+  {
+    version: '1.7.0',
+    tanggal: '22 September 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Notifikasi sekarang muncul secara langsung (real-time). Begitu ada ulasan baru dari klien, laporan baru, klaim bonus baru, tugas baru, komentar dari Admin, atau bonus yang dicairkan, kotak pemberitahuan langsung tampil di layar tanpa perlu menutup dan membuka ulang aplikasi. Halaman yang sedang dibuka ikut diperbarui otomatis, kecuali saat Anda sedang mengetik atau membuka jendela pop-up supaya isian Anda tidak hilang.' },
+      { kategori: 'Fitur', teks: 'Dua notifikasi baru untuk akun Tim: "Tugas baru" saat Admin membagikan tugas kepada Anda, dan "Bonus Anda sudah dicairkan" saat Admin menandai klaim bonus Anda selesai dibayar.' },
+      { kategori: 'Fitur', teks: 'Menu baru "Pengaturan Notifikasi" di bagian bawah panel lonceng: atur suara dan getar, aktifkan notifikasi perangkat (tetap muncul saat aplikasi sedang di latar belakang), lihat status sambungan, dan kirim notifikasi percobaan.' },
+      { kategori: 'Peningkatan', teks: 'Kotak pemberitahuan bisa digeser ke samping untuk ditutup, hilang sendiri setelah beberapa detik, dan kalau ada banyak notifikasi sekaligus akan dirangkum jadi satu supaya layar tidak penuh.' },
+      { kategori: 'Peningkatan', teks: 'Jumlah notifikasi yang belum dibaca kini juga tampil sebagai angka pada ikon aplikasi di layar utama (pada perangkat yang mendukung).' },
+      { kategori: 'Fitur', teks: 'Aplikasi sekarang bisa dipasang ke Layar Utama HP seperti aplikasi biasa, tetap bisa dibuka saat sinyal lemah, dan akan memberi tahu kalau ada versi baru.' },
+    ]
+  },
   {
     version: '1.6.0',
     tanggal: '17 September 2026',
@@ -8064,6 +8421,7 @@ function buildNotifications(){
   ulasanList.forEach(u=>{
     list.push({
       id: 'ulasan_' + u.id,
+      view: 'ulasan',
       icon: ic('star'),
       title: `Ulasan baru dari ${u.nama_klien || 'klien'}`,
       desc: truncateText(u.komentar, 70) || `Memberi ${u.rating||0} bintang`,
@@ -8079,6 +8437,7 @@ function buildNotifications(){
         if(c.byRole!=='admin') return;
         list.push({
           id: taskCommentNotifId(t.id, c.id),
+          view: 'tugas',
           icon: ic('chat'),
           title: `Komentar baru dari Admin di tugas ${getTaskJobLabel(t)}`,
           desc: truncateText(c.text, 70) || 'Admin mengirim komentar pada tugas Anda.',
@@ -8093,6 +8452,7 @@ function buildNotifications(){
     reports.filter(r=>(r.status||'Baru')==='Baru').forEach(r=>{
       list.push({
         id: 'laporan_' + r.id,
+        view: 'laporan',
         icon: ic('alert'),
         title: `Laporan baru: ${r.reporterName} melaporkan ${r.targetName}`,
         desc: truncateText(r.isi, 70) || 'Ada laporan baru dari akun Tim.',
@@ -8101,14 +8461,52 @@ function buildNotifications(){
     });
   }
 
-  // 1f) Klaim bonus baru dari akun Tim yang masih menunggu dicairkan (khusus Admin)
+  // 1f) Klaim bonus baru dari akun Tim yang masih menunggu diproses (khusus Admin)
   if(isAdmin()){
     pendingBonusClaims().forEach(c=>{
+      const isWdp = c.jenis==='WDP';
       list.push({
         id: 'bonusclaim_' + c.id,
-        icon: ic('money'),
-        title: `Klaim bonus dari ${c.username}`,
-        desc: `Mengajukan klaim sebesar ${fmtRp(c.jumlah)} — menunggu dicairkan.`,
+        view: 'tugas',
+        icon: isWdp ? ic('sparkle') : ic('money'),
+        title: `Klaim ${claimJenisLabel(c)} dari ${c.username}`,
+        desc: isWdp
+          ? `Mengajukan WDP senilai ${fmtRp(c.jumlah)} (ID Game: ${c.mlId||'-'}) — menunggu diproses.`
+          : `Mengajukan klaim sebesar ${fmtRp(c.jumlah)} — menunggu dicairkan.`,
+        onClick: ()=>{ closeNotifPanel(); navigate('tugas'); }
+      });
+    });
+  }
+
+  // 1g) Tugas baru yang dibagikan kepada akun ini (bukan dibuat sendiri) — tampil 7 hari
+  const RT_NEW_WINDOW_MS = 7*24*60*60*1000;
+  tasks.forEach(t=>{
+    if(String(t.userId)!==String(currentUserId) && t.username!==currentUsername) return;
+    if(String(t.createdBy)===String(currentUserId)) return;
+    if(!t.createdAt || (Date.now()-t.createdAt) > RT_NEW_WINDOW_MS) return;
+    const s0 = Array.isArray(t.slots) && t.slots[0] ? t.slots[0] : null;
+    list.push({
+      id: 'tasknew_' + t.id,
+      view: 'tugas',
+      icon: ic('clipboard'),
+      title: `Tugas baru: ${getTaskJobLabel(t)}`,
+      desc: [formatTaskDate(t.tanggal), s0 ? `${s0.mulai}–${s0.selesai}` : '', t.role || ''].filter(Boolean).join(' • '),
+      onClick: ()=>{ closeNotifPanel(); navigate('tugas'); }
+    });
+  });
+
+  // 1h) Klaim bonus milik akun Tim ini yang baru saja dicairkan Admin — tampil 7 hari
+  if(!isAdmin()){
+    (bonusClaims||[]).forEach(c=>{
+      if(String(c.userId)!==String(currentUserId)) return;
+      if(c.status!=='Dicairkan' || !c.cairAt || (Date.now()-c.cairAt) > RT_NEW_WINDOW_MS) return;
+      const isWdp = c.jenis==='WDP';
+      list.push({
+        id: 'claimpaid_' + c.id,
+        view: 'tugas',
+        icon: isWdp ? ic('sparkle') : ic('money'),
+        title: isWdp ? 'WDP Anda sudah dikirim' : 'Bonus Anda sudah dicairkan',
+        desc: `${fmtRp(c.jumlah)}${(c.bulanList&&c.bulanList.length) ? ' untuk bulan ' + c.bulanList.map(fmtBulanLabel).join(', ') : ''}`,
         onClick: ()=>{ closeNotifPanel(); navigate('tugas'); }
       });
     });
@@ -8180,6 +8578,12 @@ function renderNotifBadge(){
   const read = loadNotifRead();
   const list = buildNotifications();
   const unread = list.filter(n=>!read.has(n.id)).length;
+  // Angka juga ditampilkan pada ikon aplikasi di layar utama (PWA), kalau perangkat mendukung
+  try{
+    if(navigator.setAppBadge){
+      (unread>0 ? navigator.setAppBadge(unread) : navigator.clearAppBadge()).catch(()=>{});
+    }
+  }catch(e){}
   if(unread>0){
     badge.style.display='flex';
     badge.textContent = unread>99 ? '99+' : String(unread);
@@ -8251,6 +8655,7 @@ function openNotifPanel(){
       `}
     </div>
     <div class="notif-panel-foot">
+      <button type="button" id="btnNotifSettings" class="notif-changelog-btn">${ic('settings')} Pengaturan Notifikasi</button>
       <button type="button" id="btnNotifChangelog" class="notif-changelog-btn">${ic('scroll')} Lihat Riwayat Pembaruan (Changelog)</button>
     </div>
   `;
@@ -8281,6 +8686,13 @@ function openNotifPanel(){
     e.stopPropagation();
     markAllNotifRead(list);
     refreshNotifPanel();
+  });
+
+  // Tombol pengaturan notifikasi (suara, getar, notifikasi perangkat)
+  panel.querySelector('#btnNotifSettings')?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    closeNotifPanel();
+    rtOpenSettings();
   });
 
   // Tombol riwayat changelog lengkap
@@ -8392,6 +8804,489 @@ if(copyrightYearEl) copyrightYearEl.textContent = new Date().getFullYear();
 const appVersionTagEl = document.getElementById('appVersionTag');
 if(appVersionTagEl) appVersionTagEl.textContent = 'v' + APP_VERSION;
 
+/* =========================================================
+   NOTIFIKASI REAL-TIME (Supabase Realtime)
+   Cara kerja singkat:
+   - Aplikasi "mendengarkan" perubahan pada tabel data utama (SYNC_TABLE) dan tabel ulasan
+     (ULASAN_TABLE) lewat Supabase Realtime. Begitu ada perubahan dari device/orang lain,
+     datanya langsung dimasukkan ke aplikasi ini.
+   - Notifikasi yang muncul memakai daftar notifikasi lonceng yang sudah ada (buildNotifications):
+     yang dianggap "baru" = ID notifikasi yang sebelumnya belum ada, belum dibaca, dan termasuk
+     jenis kejadian (ulasan, komentar, laporan, klaim bonus, tugas baru, bonus dicairkan) — bukan
+     pengingat berbasis tanggal (H-3, belum lunas, dst) supaya tidak berbunyi tiap pergantian hari.
+   - Perubahan milik device sendiri diabaikan (dikenali lewat rtOwnStamps). Halaman aktif hanya
+     digambar ulang kalau datanya benar-benar berubah, dan DITUNDA selama pengguna sedang
+     mengetik / membuka pop-up supaya isian tidak hilang.
+   - Kalau koneksi putus atau aplikasi kembali dibuka dari latar belakang (HP sering mematikan
+     koneksi di latar belakang), data dikejar ulang (rtCatchUp) dan notifikasi yang terlewat
+     tetap ditampilkan.
+   ⚠️ Perubahan di bagian ini juga wajib dicatat di CHANGELOG + APP_VERSION (lihat aturan di atas).
+========================================================= */
+const RT_PREFS_KEY  = 'kaoneMotret_rtPrefs_v1';
+const RT_PROMPT_KEY = 'kaoneMotret_rtPromptDismissed_v1';
+const RT_EVENT_PREFIXES = ['ulasan_','taskcomment_','laporan_','bonusclaim_','tasknew_','claimpaid_'];
+const RT_LAUNCH_VIEWS = ['beranda','daftar','kalender','rekap','tugas','laporan','ulasan','pengaturan','notif'];
+// Bagian data yang dipakai tiap halaman → halaman hanya digambar ulang kalau bagian ini berubah
+const RT_VIEW_DEPS = {
+  beranda:  ['jobs','tasks','bonusAdjustments','bonusClaims','bonusRate','minKlaimTunai','minKlaimWdp'],
+  daftar:   ['jobs'],
+  kalender: ['jobs','thanksOverrides','thanksFontSize','posterThemeOverrides','layoutOverrides'],
+  rekap:    ['jobs','tasks','bonusAdjustments','bonusClaims','bonusRate','minKlaimTunai','minKlaimWdp'],
+  tugas:    ['jobs','tasks','bonusAdjustments','bonusClaims','bonusRate','minKlaimTunai','minKlaimWdp'],
+  laporan:  ['reports']
+};
+
+let rtPrefs = { sound:false, vibrate:true, system:true };
+try{ Object.assign(rtPrefs, JSON.parse(localStorage.getItem(RT_PREFS_KEY) || '{}')); }catch(e){}
+function rtSavePrefs(){ try{ localStorage.setItem(RT_PREFS_KEY, JSON.stringify(rtPrefs)); }catch(e){} }
+
+let rtChannel = null, rtStarted = false, rtState = 'idle', rtStateSince = Date.now();
+let rtPendingRender = false, rtHiddenCount = 0, rtCatchUpBusy = false, rtCatchUpTimer = null;
+
+/* ---------- status koneksi ---------- */
+function rtSetState(st){
+  rtState = st; rtStateSince = Date.now(); rtPaintStatus();
+}
+function rtPaintStatus(){
+  const dot = document.getElementById('rtDot'), tx = document.getElementById('rtStatusText');
+  if(!dot || !tx) return;
+  const map = {
+    live:         ['live', 'Tersambung — notifikasi masuk secara langsung'],
+    connecting:   ['wait', 'Menyambungkan…'],
+    reconnecting: ['wait', 'Menyambung ulang…'],
+    offline:      ['off',  'Tidak tersambung — notifikasi menyusul saat koneksi kembali'],
+    idle:         ['off',  'Belum aktif']
+  };
+  const m = map[rtState] || map.idle;
+  dot.className = 'rt-dot ' + m[0];
+  tx.textContent = m[1];
+}
+
+/* ---------- membandingkan data lama vs baru ---------- */
+function rtSlices(){
+  return {
+    jobs: JSON.stringify(jobs), tasks: JSON.stringify(tasks),
+    bonusAdjustments: JSON.stringify(bonusAdjustments), bonusClaims: JSON.stringify(bonusClaims),
+    bonusRate: String(BONUS_PER_JAM), minKlaimTunai: String(MIN_KLAIM_TUNAI), minKlaimWdp: String(MIN_KLAIM_WDP),
+    reports: JSON.stringify(reports),
+    thanksOverrides: JSON.stringify(thanksOverrides), thanksFontSize: JSON.stringify(thanksFontSize),
+    posterThemeOverrides: JSON.stringify(posterThemeOverrides), layoutOverrides: JSON.stringify(layoutOverrides)
+  };
+}
+function rtIsEvent(id){ return RT_EVENT_PREFIXES.some(p => String(id).startsWith(p)); }
+function rtEventIds(){
+  return new Set(buildNotifications().filter(n => rtIsEvent(n.id)).map(n => n.id));
+}
+function rtFreshEvents(beforeIds){
+  const read = loadNotifRead();
+  return buildNotifications().filter(n => rtIsEvent(n.id) && !beforeIds.has(n.id) && !read.has(n.id));
+}
+
+/* ---------- menggambar ulang dengan sopan ---------- */
+function rtUserBusy(){
+  if(document.getElementById('modalOverlay')) return true;   // pop-up sedang terbuka
+  if(currentView === 'form') return true;                     // sedang di form input job
+  const a = document.activeElement;
+  return !!(a && a.closest && a.closest('#app') && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+}
+function rtRequestRender(){
+  if(rtUserBusy()){ rtPendingRender = true; return; }
+  rtPendingRender = false;
+  refreshView();
+}
+function rtAfterNotifChange(){
+  renderNotifBadge();
+  if(document.getElementById('notifPanel')) refreshNotifPanel();
+}
+
+/* ---------- menerima data utama dari cloud ---------- */
+function rtIngest(remote){
+  if(!remote || typeof remote !== 'object') return false;
+  // Ada perubahan lokal yang belum terkirim → jangan ditimpa; kejar ulang sesudah terkirim.
+  if(rtPushPending){ rtScheduleCatchUp(1500); return false; }
+  const beforeIds = rtEventIds();
+  const before = rtSlices();
+  applyAllData(remote);
+  const after = rtSlices();
+  const changed = Object.keys(after).filter(k => after[k] !== before[k]);
+  if(!changed.length) return false;
+  persistAllLocal();
+  rtAfterNotifChange();
+  const deps = RT_VIEW_DEPS[currentView];
+  if(deps && changed.some(k => deps.includes(k))) rtRequestRender();
+  rtAlert(rtFreshEvents(beforeIds));
+  return true;
+}
+function rtOnDataEvent(p){
+  const rec = p && p.new;
+  if(!rec) return;
+  if(rtOwnStamps.has(Date.parse(rec.updated_at))) return;     // gema dari simpanan device ini sendiri
+  if(rec.payload && typeof rec.payload === 'object') rtIngest(rec.payload);
+  else rtCatchUp('tanpa-payload');
+}
+
+/* ---------- menerima ulasan klien ---------- */
+function rtCommitUlasan(beforeIds, alertNew){
+  saveUlasanLocalCache();
+  rtAfterNotifChange();
+  if(currentView === 'ulasan') rtRequestRender();
+  if(alertNew) rtAlert(rtFreshEvents(beforeIds));
+}
+function rtOnUlasan(p){
+  const ev = p && p.eventType;
+  if(ev === 'INSERT' && p.new){
+    if(ulasanList.some(x => String(x.id) === String(p.new.id))) return;
+    const beforeIds = rtEventIds();
+    ulasanList.unshift(p.new);
+    ulasanList.sort((a,b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+    rtCommitUlasan(beforeIds, true);
+  }else if(ev === 'UPDATE' && p.new){
+    const i = ulasanList.findIndex(x => String(x.id) === String(p.new.id));
+    if(i === -1) return;
+    const merged = { ...ulasanList[i], ...p.new };
+    if(JSON.stringify(merged) === JSON.stringify(ulasanList[i])) return;
+    ulasanList[i] = merged;
+    rtCommitUlasan(null, false);
+  }else if(ev === 'DELETE' && p.old){
+    if(!ulasanList.some(x => String(x.id) === String(p.old.id))) return;
+    ulasanList = ulasanList.filter(x => String(x.id) !== String(p.old.id));
+    rtCommitUlasan(null, false);
+  }
+}
+function rtMergeUlasan(remoteList){
+  if(JSON.stringify(remoteList) === JSON.stringify(ulasanList)) return;
+  const beforeIds = rtEventIds();
+  ulasanList = remoteList;
+  rtCommitUlasan(beforeIds, true);
+}
+
+/* ---------- mengejar data yang terlewat ---------- */
+function rtScheduleCatchUp(ms){
+  clearTimeout(rtCatchUpTimer);
+  rtCatchUpTimer = setTimeout(()=>rtCatchUp('terjadwal'), ms);
+}
+async function rtCatchUp(reason){
+  if(!supabaseClient || rtCatchUpBusy || !navigator.onLine) return;
+  if(rtPushPending){ rtScheduleCatchUp(1500); return; }
+  rtCatchUpBusy = true;
+  try{
+    const { data, error } = await supabaseClient.from(SYNC_TABLE).select('payload').eq('id', SYNC_ROW_ID).maybeSingle();
+    if(!error && data && data.payload) rtIngest(data.payload);
+    const r2 = await supabaseClient.from(ULASAN_TABLE).select('*').order('created_at', { ascending:false });
+    if(!r2.error && Array.isArray(r2.data)) rtMergeUlasan(r2.data);
+  }catch(e){
+    console.warn('Gagal mengejar data terbaru (' + reason + ')', e);
+  }finally{
+    rtCatchUpBusy = false;
+  }
+}
+
+/* ---------- tampilan: kotak pemberitahuan ---------- */
+function rtToast(o){
+  let stack = document.getElementById('rtStack');
+  if(!stack){
+    stack = document.createElement('div');
+    stack.id = 'rtStack'; stack.className = 'rt-stack';
+    stack.setAttribute('aria-live', 'polite');
+    document.body.appendChild(stack);
+  }
+  const el = document.createElement('div');
+  el.className = 'rt-toast';
+  el.setAttribute('role', 'status');
+  el.innerHTML =
+    `<span class="rt-ic">${o.icon || ic('bell')}</span>` +
+    `<div class="rt-body"><div class="rt-title"></div>${o.desc ? '<div class="rt-desc"></div>' : ''}` +
+    `${o.actionLabel ? '<div class="rt-actions"><button type="button" class="rt-act"></button></div>' : ''}</div>` +
+    `<button type="button" class="rt-x" aria-label="Tutup">${ic('close')}</button>`;
+  el.querySelector('.rt-title').textContent = o.title || '';
+  if(o.desc) el.querySelector('.rt-desc').textContent = o.desc;
+  if(o.actionLabel) el.querySelector('.rt-act').textContent = o.actionLabel;
+
+  let timer = null, moved = false, sx = null, dx = 0;
+  const dismiss = ()=>{ clearTimeout(timer); el.classList.add('out'); setTimeout(()=>el.remove(), 220); };
+  const arm = ()=>{ clearTimeout(timer); if(!o.sticky) timer = setTimeout(dismiss, o.duration || 7000); };
+
+  el.addEventListener('pointerenter', ()=>clearTimeout(timer));
+  el.addEventListener('pointerleave', arm);
+  el.querySelector('.rt-x').addEventListener('click', (e)=>{ e.stopPropagation(); if(o.onDismiss) o.onDismiss(); dismiss(); });
+  el.querySelector('.rt-act')?.addEventListener('click', (e)=>{ e.stopPropagation(); dismiss(); if(o.onAction) o.onAction(); });
+  el.addEventListener('click', ()=>{ if(moved) return; dismiss(); if(o.onClick) o.onClick(); });
+  // geser ke samping untuk menutup (HP)
+  el.addEventListener('touchstart', (e)=>{ sx = e.touches[0].clientX; dx = 0; moved = false; clearTimeout(timer); el.style.transition = 'none'; }, {passive:true});
+  el.addEventListener('touchmove', (e)=>{
+    if(sx === null) return;
+    dx = e.touches[0].clientX - sx;
+    if(Math.abs(dx) > 8) moved = true;
+    el.style.transform = `translateX(${dx}px)`;
+    el.style.opacity = String(Math.max(.2, 1 - Math.abs(dx)/240));
+  }, {passive:true});
+  el.addEventListener('touchend', ()=>{
+    if(sx === null) return;
+    el.style.transition = '';
+    if(Math.abs(dx) > 70){ if(o.onDismiss) o.onDismiss(); dismiss(); }
+    else{ el.style.transform = ''; el.style.opacity = ''; arm(); }
+    sx = null;
+    setTimeout(()=>{ moved = false; }, 60);
+  });
+
+  stack.prepend(el);
+  while(stack.children.length > 3) stack.lastElementChild.remove();
+  arm();
+}
+function rtShowToasts(items){
+  if(items.length > 2){
+    rtToast({
+      icon: ic('bell'),
+      title: `${items.length} notifikasi baru`,
+      desc: items.slice(0, 2).map(n => n.title).join(' • ') + ' …',
+      onClick: ()=>{ if(!document.getElementById('notifPanel')) openNotifPanel(); }
+    });
+    return;
+  }
+  items.forEach(n => rtToast({
+    icon: n.icon, title: n.title, desc: n.desc,
+    onClick: ()=>{ markNotifRead(n.id); if(typeof n.onClick === 'function') n.onClick(); }
+  }));
+}
+
+/* ---------- suara, getar, lonceng bergoyang ---------- */
+let rtAudio = null;
+function rtUnlockAudio(){
+  if(rtAudio) return;
+  try{ rtAudio = new (window.AudioContext || window.webkitAudioContext)(); if(rtAudio.state === 'suspended') rtAudio.resume(); }catch(e){}
+}
+function rtChime(){
+  if(!rtPrefs.sound || !rtAudio) return;
+  try{
+    if(rtAudio.state === 'suspended') rtAudio.resume();
+    const t0 = rtAudio.currentTime;
+    [[880, 0], [1318.5, 0.14]].forEach(([freq, off])=>{
+      const o = rtAudio.createOscillator(), g = rtAudio.createGain();
+      o.type = 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t0 + off);
+      g.gain.exponentialRampToValueAtTime(0.13, t0 + off + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + off + 0.24);
+      o.connect(g); g.connect(rtAudio.destination);
+      o.start(t0 + off); o.stop(t0 + off + 0.26);
+    });
+  }catch(e){}
+}
+function rtRingBell(){
+  const b = document.getElementById('notifBtn');
+  if(!b) return;
+  b.classList.remove('rt-ring'); void b.offsetWidth; b.classList.add('rt-ring');
+  setTimeout(()=>b.classList.remove('rt-ring'), 1000);
+}
+
+/* ---------- notifikasi perangkat (saat aplikasi di latar belakang) ---------- */
+async function rtSystemNotify(items){
+  if(!rtPrefs.system || !('Notification' in window) || Notification.permission !== 'granted') return;
+  const one = items.length === 1 ? items[0] : null;
+  const title = one ? one.title : `${items.length} notifikasi baru`;
+  const opts = {
+    body: one ? (one.desc || '') : items.slice(0, 3).map(n => n.title).join('\n'),
+    icon: 'icons/icon-192.png',
+    tag: one ? one.id : 'kaone-batch',
+    lang: 'id',
+    data: { id: one ? one.id : null, view: one ? (one.view || null) : 'notif' }
+  };
+  try{
+    const reg = await navigator.serviceWorker?.ready;
+    if(reg && reg.showNotification){ await reg.showNotification(title, opts); return; }
+  }catch(e){}
+  try{ new Notification(title, opts); }catch(e){}
+}
+async function rtRequestPermission(){
+  try{
+    const r = await Notification.requestPermission();
+    if(r === 'granted'){ rtPrefs.system = true; rtSavePrefs(); toast('Notifikasi perangkat diaktifkan'); }
+    else toast('Notifikasi perangkat tidak diaktifkan');
+    return r;
+  }catch(e){ return 'default'; }
+}
+function rtMaybePromptPermission(){
+  if(!('Notification' in window) || Notification.permission !== 'default') return;
+  if(document.visibilityState !== 'visible' || document.getElementById('modalOverlay')) return;
+  let last = 0;
+  try{ last = Number(localStorage.getItem(RT_PROMPT_KEY) || 0); }catch(e){}
+  if(last && (Date.now() - last) < 14*24*60*60*1000) return;
+  const mark = ()=>{ try{ localStorage.setItem(RT_PROMPT_KEY, String(Date.now())); }catch(e){} };
+  rtToast({
+    icon: ic('bell'),
+    title: 'Aktifkan notifikasi perangkat?',
+    desc: 'Supaya tugas baru dan info penting tetap muncul walau aplikasi sedang di latar belakang.',
+    actionLabel: 'Aktifkan', sticky: true,
+    onAction: async ()=>{ mark(); await rtRequestPermission(); },
+    onDismiss: mark, onClick: mark
+  });
+}
+
+/* ---------- satu pintu untuk semua peringatan ---------- */
+function rtAlert(items){
+  if(!items || !items.length) return;
+  if(document.visibilityState === 'hidden'){
+    rtHiddenCount += items.length;
+    rtSystemNotify(items);
+    return;
+  }
+  if(rtPrefs.vibrate && navigator.vibrate){ try{ navigator.vibrate([70, 40, 70]); }catch(e){} }
+  rtChime();
+  rtRingBell();
+  rtShowToasts(items);
+}
+
+/* ---------- membuka tujuan dari notifikasi perangkat ---------- */
+function rtOpenById(id){
+  const n = buildNotifications().find(x => x.id === id);
+  if(!n) return false;
+  markNotifRead(n.id);
+  if(typeof n.onClick === 'function') n.onClick();
+  return true;
+}
+function rtGoTo(view){
+  if(view === 'notif'){ if(!document.getElementById('notifPanel')) openNotifPanel(); return; }
+  if(RT_LAUNCH_VIEWS.includes(view)) navigate(view);
+}
+function rtHandleLaunchParam(){
+  try{
+    const u = new URL(location.href);
+    const v = u.searchParams.get('v');
+    if(!v) return;
+    u.searchParams.delete('v');
+    history.replaceState(null, '', u.pathname + u.search + u.hash);
+    setTimeout(()=>rtGoTo(v), 350);
+  }catch(e){}
+}
+
+/* ---------- pengaturan notifikasi (pop-up) ---------- */
+function rtOpenSettings(){
+  const supported = ('Notification' in window);
+  const perm = supported ? Notification.permission : 'unsupported';
+  const canVibrate = !!navigator.vibrate;
+  let sysHint, sysCtl = '';
+  if(perm === 'unsupported'){
+    sysHint = 'Belum didukung di sini. Di iPhone, pasang dulu aplikasi ke Layar Utama (Bagikan → Tambah ke Layar Utama).';
+  }else if(perm === 'denied'){
+    sysHint = 'Sedang diblokir. Izinkan notifikasi untuk situs/aplikasi ini lewat pengaturan browser atau HP Anda.';
+  }else if(perm === 'default'){
+    sysHint = 'Supaya info penting tetap muncul saat aplikasi ada di latar belakang.';
+    sysCtl = '<button type="button" class="btn btn-primary" id="rtBtnPerm">Aktifkan</button>';
+  }else{
+    sysHint = 'Aktif — tampil saat aplikasi tidak sedang Anda lihat.';
+    sysCtl = `<input type="checkbox" class="rt-sw" id="rtSwSystem" aria-label="Notifikasi perangkat" ${rtPrefs.system ? 'checked' : ''}>`;
+  }
+  showModal(`
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('bell')} Pengaturan Notifikasi</h3>
+    <div class="rt-set-status"><span class="rt-dot" id="rtDot"></span><span id="rtStatusText"></span></div>
+    <label class="rt-set-row">
+      <span><b>Suara</b><small>Bunyi singkat saat notifikasi baru masuk.</small></span>
+      <input type="checkbox" class="rt-sw" id="rtSwSound" ${rtPrefs.sound ? 'checked' : ''}>
+    </label>
+    <label class="rt-set-row">
+      <span><b>Getar</b><small>${canVibrate ? 'Getaran singkat saat notifikasi baru masuk.' : 'Tidak didukung oleh perangkat/browser ini.'}</small></span>
+      <input type="checkbox" class="rt-sw" id="rtSwVibrate" ${rtPrefs.vibrate && canVibrate ? 'checked' : ''} ${canVibrate ? '' : 'disabled'}>
+    </label>
+    <div class="rt-set-row">
+      <span><b>Notifikasi perangkat</b><small>${sysHint}</small></span>
+      <span>${sysCtl}</span>
+    </div>
+    <div class="modal-actions" style="justify-content:flex-end; margin-top:14px;">
+      <button type="button" class="btn" id="rtBtnTest">Kirim notifikasi percobaan</button>
+    </div>
+  `);
+  rtPaintStatus();
+  const ov = document.getElementById('modalOverlay');
+  ov?.querySelector('#rtSwSound')?.addEventListener('change', (e)=>{
+    rtPrefs.sound = e.target.checked; rtSavePrefs();
+    if(rtPrefs.sound){ rtUnlockAudio(); rtChime(); }
+  });
+  ov?.querySelector('#rtSwVibrate')?.addEventListener('change', (e)=>{
+    rtPrefs.vibrate = e.target.checked; rtSavePrefs();
+    if(rtPrefs.vibrate && navigator.vibrate){ try{ navigator.vibrate(60); }catch(err){} }
+  });
+  ov?.querySelector('#rtSwSystem')?.addEventListener('change', (e)=>{ rtPrefs.system = e.target.checked; rtSavePrefs(); });
+  ov?.querySelector('#rtBtnPerm')?.addEventListener('click', async ()=>{ await rtRequestPermission(); rtOpenSettings(); });
+  ov?.querySelector('#rtBtnTest')?.addEventListener('click', ()=>{
+    toast('Notifikasi percobaan muncul dalam 4 detik. Anda boleh berpindah aplikasi untuk mencobanya.');
+    closeModal();
+    setTimeout(()=>rtAlert([{
+      id: 'rt_test', view: 'beranda', icon: ic('bell'),
+      title: 'Notifikasi percobaan',
+      desc: 'Jika Anda melihat ini, notifikasi real-time berfungsi.',
+      onClick: ()=>{}
+    }]), 4000);
+  });
+}
+
+/* ---------- menyalakan semuanya ---------- */
+function rtConnect(){
+  try{
+    const ch = supabaseClient.channel('kaone-live-' + Math.random().toString(36).slice(2, 8));
+    rtChannel = ch;
+    ch.on('postgres_changes', { event:'*', schema:'public', table:SYNC_TABLE, filter:'id=eq.' + SYNC_ROW_ID }, rtOnDataEvent)
+      .on('postgres_changes', { event:'*', schema:'public', table:ULASAN_TABLE }, rtOnUlasan)
+      .subscribe((status, err)=>{
+        if(ch !== rtChannel) return;                        // abaikan callback dari channel lama
+        if(status === 'SUBSCRIBED'){ rtSetState('live'); rtCatchUp('tersambung'); }
+        else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){ rtSetState('reconnecting'); if(err) console.warn('Realtime:', err.message || err); }
+        else if(status === 'CLOSED'){ rtSetState(navigator.onLine ? 'reconnecting' : 'offline'); }
+      });
+  }catch(e){
+    console.warn('Gagal memulai notifikasi real-time', e);
+    rtSetState('offline');
+  }
+}
+function rtReconnect(){
+  try{ if(rtChannel) supabaseClient.removeChannel(rtChannel); }catch(e){}
+  rtChannel = null;
+  rtSetState('connecting');
+  rtConnect();
+}
+function rtStart(){
+  if(rtStarted) return;
+  rtStarted = true;
+  rtHandleLaunchParam();
+  if(!cloudSyncEnabled || !supabaseClient){ rtSetState('offline'); return; }
+
+  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, rtUnlockAudio, { once:true, passive:true }));
+  rtSetState('connecting');
+  rtConnect();
+
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState !== 'visible') return;
+    if(rtHiddenCount > 0){
+      const n = rtHiddenCount; rtHiddenCount = 0;
+      rtToast({ icon: ic('bell'), title: `${n} notifikasi baru`, desc: 'Masuk saat Anda tidak sedang melihat layar.',
+                onClick: ()=>{ if(!document.getElementById('notifPanel')) openNotifPanel(); } });
+    }
+    rtCatchUp('kembali-dibuka');
+    if(rtState !== 'live' && (Date.now() - rtStateSince) > 5000) rtReconnect();
+  });
+  window.addEventListener('online',  ()=>{ rtCatchUp('online'); if(rtState !== 'live') rtReconnect(); });
+  window.addEventListener('offline', ()=>rtSetState('offline'));
+
+  // klik notifikasi perangkat saat aplikasi sudah terbuka
+  navigator.serviceWorker?.addEventListener('message', (e)=>{
+    const d = e.data || {};
+    if(d.type !== 'notif-click') return;
+    if(d.id && rtOpenById(d.id)) return;
+    if(d.view) rtGoTo(d.view);
+  });
+
+  // jaring pengaman: kalau koneksi tak kunjung pulih, coba lagi; tunda gambar-ulang yang tertahan
+  setInterval(()=>{
+    if(rtPendingRender && !rtUserBusy()) rtRequestRender();
+    if(document.visibilityState !== 'visible' || !navigator.onLine) return;
+    if(rtState !== 'live'){
+      if((Date.now() - rtStateSince) > 45000) rtReconnect();
+      else rtCatchUp('pengaman');
+    }
+  }, 10000);
+
+  setTimeout(rtMaybePromptPermission, 10000);
+}
+
 // Semua pemanggilan di bawah ini (render tampilan awal, tarik data cloud, dst) baru
 // dijalankan SETELAH login berhasil — lihat pemanggilan initAppAfterAuth() di paling
 // bawah file (dipanggil langsung kalau sesi login tersimpan masih valid, atau dari
@@ -8442,6 +9337,9 @@ function initAppAfterAuth(){
   // Tarik juga daftar Saran & Penilaian dari klien (tabel Supabase terpisah) supaya
   // badge notifikasi & menu "Saran & Penilaian" langsung menampilkan data terbaru.
   pullUlasanFromCloud();
+
+  // Nyalakan notifikasi real-time (Supabase Realtime) — lihat bagian "NOTIFIKASI REAL-TIME".
+  rtStart();
 }
 
 // Kalau sesi login sebelumnya masih tersimpan & valid, langsung masuk tanpa perlu
@@ -8452,5 +9350,110 @@ if(checkAuthSession()){
   initAppAfterAuth();
 }
 </script>
+<!-- ========================= PWA (bisa dihapus tanpa mengganggu aplikasi) ========================= -->
+<script>
+(function(){
+  'use strict';
+
+  /* 1) Daftarkan service worker (hanya jalan di HTTPS / localhost) */
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js', {scope:'./'}).catch(function(err){
+        console.warn('Service worker gagal didaftarkan:', err);
+      });
+    });
+  }
+
+  /* 2) Bar kecil di bawah layar (dipakai untuk ajakan pasang & info versi baru) */
+  var css = document.createElement('style');
+  css.textContent =
+    '.pwa-bar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:1000;' +
+    'max-width:520px;margin:0 auto;background:#1c1a12;color:#f4ecd0;border:1px solid rgba(244,217,62,.45);' +
+    'border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;' +
+    'font:500 13px/1.4 Poppins,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.35)}' +
+    '.pwa-bar .pwa-msg{flex:1 1 200px}' +
+    '.pwa-bar button{border:0;border-radius:999px;padding:8px 14px;font:600 12.5px Poppins,sans-serif;cursor:pointer}' +
+    '.pwa-bar .pwa-go{background:linear-gradient(135deg,#F4D93E,#D4AF00);color:#231f0f}' +
+    '.pwa-bar .pwa-no{background:transparent;color:#d8c98a;border:1px solid rgba(255,255,255,.18)}';
+  document.head.appendChild(css);
+
+  function showBar(message, goLabel, onGo, noLabel, onNo){
+    var bar = document.createElement('div');
+    bar.className = 'pwa-bar';
+    bar.setAttribute('role', 'status');
+    var msg = document.createElement('div'); msg.className = 'pwa-msg'; msg.textContent = message;
+    bar.appendChild(msg);
+    if(goLabel){
+      var go = document.createElement('button'); go.type = 'button'; go.className = 'pwa-go'; go.textContent = goLabel;
+      go.addEventListener('click', function(){ bar.remove(); onGo && onGo(); });
+      bar.appendChild(go);
+    }
+    var no = document.createElement('button'); no.type = 'button'; no.className = 'pwa-no'; no.textContent = noLabel || 'Nanti';
+    no.addEventListener('click', function(){ bar.remove(); onNo && onNo(); });
+    bar.appendChild(no);
+    document.body.appendChild(bar);
+    return bar;
+  }
+
+  /* 3) Ajakan "Tambahkan ke Layar Utama" */
+  var DISMISS_KEY = 'kaoneMotret_pwaInstallDismissed_v1';
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  function recentlyDismissed(){
+    try{ var t = Number(localStorage.getItem(DISMISS_KEY)||0); return t && (Date.now()-t) < 14*24*60*60*1000; }
+    catch(e){ return false; }
+  }
+  function markDismissed(){ try{ localStorage.setItem(DISMISS_KEY, String(Date.now())); }catch(e){} }
+
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferredPrompt = e;
+    if(isStandalone || recentlyDismissed()) return;
+    setTimeout(function(){
+      if(!deferredPrompt) return;
+      showBar('Pasang Kaone Motret di layar utama supaya bisa dibuka seperti aplikasi.', 'Pasang', function(){
+        var p = deferredPrompt; deferredPrompt = null;
+        p.prompt();
+        p.userChoice.finally(markDismissed);
+      }, 'Nanti', markDismissed);
+    }, 4000);
+  });
+  window.addEventListener('appinstalled', function(){ deferredPrompt = null; });
+
+  // iPhone/iPad (Safari) tidak punya prompt otomatis → beri petunjuk manual
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if(isIOS && !isStandalone && !recentlyDismissed()){
+    setTimeout(function(){
+      showBar('Untuk memasang: ketuk tombol Bagikan (kotak dengan panah ke atas), lalu pilih "Tambah ke Layar Utama".',
+              null, null, 'Mengerti', markDismissed);
+    }, 5000);
+  }
+
+  /* 4) Info versi baru — membandingkan APP_VERSION di index.html terbaru dengan yang sedang berjalan.
+        Jadi tetap ikuti kebiasaan: naikkan APP_VERSION setiap update. */
+  var lastCheck = 0, updateShown = false;
+  function checkForNewVersion(){
+    if(updateShown || !navigator.onLine || Date.now() - lastCheck < 60*1000) return;
+    lastCheck = Date.now();
+    fetch('index.html?v=' + Date.now(), {cache:'no-store'})
+      .then(function(r){ return r.ok ? r.text() : ''; })
+      .then(function(txt){
+        var m = txt.match(/const\s+APP_VERSION\s*=\s*'([^']+)'/);
+        var current; try{ current = APP_VERSION; }catch(e){ return; }
+        if(m && m[1] !== current){
+          updateShown = true;
+          showBar('Versi baru tersedia (' + m[1] + '). Muat ulang untuk memakainya.', 'Muat Ulang',
+                  function(){ location.reload(); }, 'Nanti');
+        }
+      })
+      .catch(function(){});
+  }
+  setTimeout(checkForNewVersion, 6000);
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible') checkForNewVersion(); });
+  setInterval(checkForNewVersion, 15*60*1000);
+})();
+</script>
+
 </body>
 </html>

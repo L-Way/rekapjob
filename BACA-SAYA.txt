@@ -1,0 +1,26 @@
+KAONE MOTRET - PWA + NOTIFIKASI REAL-TIME + KLAIM BONUS 2 JENIS
+
+Isi zip (semua file taruh dalam SATU folder yang sama di hosting HTTPS):
+  index.html            <- aplikasi Anda. Inilah satu-satunya file yang diganti saat update biasa
+  manifest.webmanifest  <- identitas aplikasi (nama, ikon, warna)
+  sw.js                 <- service worker (offline, update otomatis, klik notifikasi perangkat)
+  icons/                <- ikon aplikasi
+
+Cara update aplikasi: ganti index.html saja (naikkan APP_VERSION seperti biasa). sw.js tidak perlu diubah.
+
+BARU: Klaim Bonus 2 Jenis (Tunai & WDP)
+- Akun Tim memilih Tunai (syarat minimal Rp50.000) atau WDP/Weekly Diamond Pass Mobile Legends
+  (syarat minimal Rp32.000) saat mengajukan klaim. Opsi yang belum memenuhi syarat otomatis nonaktif.
+- Klaim WDP meminta ID Game & Server ML sekali, lalu diingat otomatis untuk klaim berikutnya.
+- Admin mengatur kedua syarat minimal (dan tarif bonus/jam) lewat menu Pembagian Tugas >
+  kartu "Pengaturan Bonus" > tombol "Atur".
+- Daftar klaim menunggu di sisi Admin menampilkan jenis klaim, ID Game & Server (untuk WDP,
+  dengan tombol Salin), dan tombol prosesnya menyesuaikan ("Cairkan" atau "Tandai Terkirim").
+
+Notifikasi Real-Time (dari update sebelumnya)
+- Memakai Supabase Realtime pada tabel kaone_motret_data & kaone_motret_ulasan.
+- Pengaturan suara/getar/notifikasi perangkat: buka lonceng > Pengaturan Notifikasi.
+
+Pasang di HP:
+  Android (Chrome)  : muncul tombol "Pasang", atau menu titik tiga > Instal aplikasi / Tambahkan ke layar utama
+  iPhone (Safari)   : tombol Bagikan > Tambah ke Layar Utama

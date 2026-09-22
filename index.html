@@ -1170,8 +1170,14 @@
     .modal-actions .btn{width:100%;}
 
     .rekap-tabs button{padding:7px 12px; font-size:12px;}
+    #rekapPoster{padding:16px;}
+    #rekapPoster .rp-head{margin-bottom:12px;}
+    #rekapPoster .rp-head .b{font-size:11px; letter-spacing:1.2px;}
+    #rekapPoster .rp-head h2{font-size:18px;}
     .donut-wrap{padding:14px; gap:16px;}
-    .donut-wrap svg{width:170px; height:170px;}
+    .donut-wrap svg{width:150px; height:150px;}
+    .donut-legend-title{font-size:12.5px;}
+    .donut-legend-item{font-size:12px;}
 
     .toolbar{flex-direction:column; align-items:stretch;}
     .search-box{flex-direction:column;}
@@ -1188,6 +1194,9 @@
     .task-stat .ts-value{font-size:16px;}
     .task-bonus-row{flex-direction:column; align-items:stretch;}
     .task-bonus-row .bonus-adjust-btn, .task-bonus-row .bonus-claim-btn{width:100%; text-align:center;}
+    #rekapPoster{padding:12px;}
+    #rekapPoster .rp-head h2{font-size:16px;}
+    .donut-wrap svg{width:130px; height:130px;}
   }
 
   /* =========================================================
@@ -4044,7 +4053,7 @@ function viewBeranda(){
     <p>Kelola job fotografermu di sini.</p>
   </div>
 
-  <div class="center-btn-wrap">
+  <div class="center-btn-wrap admin-only">
     <button class="big-add-btn" id="btnInputJob">
       <span class="plus">+</span> Input Job Baru
     </button>
@@ -8029,22 +8038,12 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.8.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.7.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
-  {
-    version: '1.8.0',
-    tanggal: '22 September 2026',
-    items: [
-      { kategori: 'Fitur', teks: 'Klaim bonus sekarang ada dua jenis: Uang Tunai (minimal Rp50.000, bisa diatur Admin) dan WDP — Weekly Diamond Pass Mobile Legends (minimal Rp32.000, bisa diatur Admin). Kedua syarat minimal ini diatur lewat menu Pembagian Tugas > Pengaturan Bonus.' },
-      { kategori: 'Fitur', teks: 'Saat mengajukan klaim, akun Tim memilih salah satu jenis lewat kotak pilihan; jenis yang belum memenuhi syarat minimal otomatis dinonaktifkan beserta keterangan kurang berapa lagi. Untuk klaim WDP, ID Game dan Server Mobile Legends diminta sekali dan otomatis diingat untuk klaim berikutnya.' },
-      { kategori: 'Fitur', teks: 'Admin melihat jenis klaim (Tunai/WDP) pada daftar klaim menunggu, lengkap dengan ID Game & Server untuk klaim WDP beserta tombol salin, dan tombol prosesnya menyesuaikan ("Cairkan" atau "Tandai Terkirim").' },
-      { kategori: 'Peningkatan', teks: 'Notifikasi klaim bonus (baik ke Admin maupun ke akun Tim saat sudah diproses) kini menyebutkan jenis klaimnya.' },
-    ]
-  },
   {
     version: '1.7.0',
     tanggal: '22 September 2026',
@@ -8055,6 +8054,10 @@ const CHANGELOG = [
       { kategori: 'Peningkatan', teks: 'Kotak pemberitahuan bisa digeser ke samping untuk ditutup, hilang sendiri setelah beberapa detik, dan kalau ada banyak notifikasi sekaligus akan dirangkum jadi satu supaya layar tidak penuh.' },
       { kategori: 'Peningkatan', teks: 'Jumlah notifikasi yang belum dibaca kini juga tampil sebagai angka pada ikon aplikasi di layar utama (pada perangkat yang mendukung).' },
       { kategori: 'Fitur', teks: 'Aplikasi sekarang bisa dipasang ke Layar Utama HP seperti aplikasi biasa, tetap bisa dibuka saat sinyal lemah, dan akan memberi tahu kalau ada versi baru.' },
+      { kategori: 'Fitur', teks: 'Klaim bonus sekarang ada dua jenis: Uang Tunai (minimal Rp50.000, bisa diatur Admin) dan WDP — Weekly Diamond Pass Mobile Legends (minimal Rp32.000, bisa diatur Admin). Kedua syarat minimal ini diatur lewat menu Pembagian Tugas > Pengaturan Bonus.' },
+      { kategori: 'Fitur', teks: 'Saat mengajukan klaim, akun Tim memilih salah satu jenis lewat kotak pilihan; jenis yang belum memenuhi syarat minimal otomatis dinonaktifkan beserta keterangan kurang berapa lagi. Untuk klaim WDP, ID Game dan Server Mobile Legends diminta sekali dan otomatis diingat untuk klaim berikutnya.' },
+      { kategori: 'Fitur', teks: 'Admin melihat jenis klaim (Tunai/WDP) pada daftar klaim menunggu, lengkap dengan ID Game & Server untuk klaim WDP beserta tombol salin, dan tombol prosesnya menyesuaikan ("Cairkan" atau "Tandai Terkirim").' },
+      { kategori: 'Peningkatan', teks: 'Notifikasi klaim bonus (baik ke Admin maupun ke akun Tim saat sudah diproses) kini menyebutkan jenis klaimnya.' },
     ]
   },
   {
@@ -8131,38 +8134,16 @@ const CHANGELOG = [
     ]
   },
   {
-    version: '1.2.1',
-    tanggal: '02 September 2026',
-    items: [
-      { kategori: 'Perbaikan', teks: 'Jeda klaim bonus tim disesuaikan kembali: bonus satu bulan sekarang bisa mulai diklaim begitu bulan itu selesai (mis. bonus bulan September baru bisa diklaim mulai 1 Oktober), bukan lagi menunggu 2 bulan.' },
-      { kategori: 'Peningkatan', teks: 'Tombol "Klaim Bonus" di halaman Tugas Saya sekarang selalu tampil, tapi otomatis nonaktif (tidak bisa ditekan) selama belum ada bonus yang bisa dicairkan.' },
-    ]
-  },
-  {
-    version: '1.2.0',
-    tanggal: '02 September 2026',
-    items: [
-      { kategori: 'Peningkatan', teks: 'Jeda klaim bonus tim diperpanjang: bonus satu bulan sekarang baru bisa mulai diklaim 2 bulan setelah bulan tersebut berjalan (mis. bonus bulan September baru bisa diklaim mulai 1 November), supaya ada waktu verifikasi sebelum bonus dicairkan.' },
-      { kategori: 'Peningkatan', teks: 'Tombol "Klaim Bonus" di halaman Tugas Saya sekarang hanya muncul kalau memang sudah ada bonus yang boleh diklaim, lengkap dengan info kapan bonus yang masih menunggu akan mulai bisa diajukan.' },
-      { kategori: 'Peningkatan', teks: 'Admin sekarang juga melihat tanggal pasti kapan bonus tiap akun Tim yang belum bisa diklaim akan mulai bisa diajukan, di kartu per-akun menu Pembagian Tugas.' },
-      { kategori: 'Fitur', teks: 'Riwayat pembaruan (changelog) sekarang menampilkan label kategori tiap perubahan — Fitur, Perbaikan, atau Peningkatan — supaya lebih mudah dipahami sekilas.' },
-    ]
-  },
-  {
     version: '1.1.1',
     tanggal: '02 September 2026',
     items: [
       { kategori: 'Perbaikan', teks: 'Tampilan di HP: teks dan angka di Beranda serta menu Pembagian Tugas Tim (kartu ringkasan, kartu per-akun, dan kotak bonus) tidak lagi keluar/mepet dari kolom di layar sempit.' },
-    ]
-  },
-  {
-    version: '1.1.0',
-    tanggal: '01 September 2026',
-    items: [
-      { kategori: 'Fitur', teks: 'Admin sekarang bisa mengedit pembagian tugas yang sudah dibuat (tombol ✏️ di tabel Pembagian Tugas), tidak hanya menambah dan menghapus.' },
-      { kategori: 'Fitur', teks: 'Tarif bonus tim (awalnya Rp500/jam) sekarang bisa diatur sendiri oleh Admin lewat tombol "Ubah Tarif" di menu Pembagian Tugas.' },
-      { kategori: 'Perbaikan', teks: 'Menerapkan filter atau menghapus pembagian tugas tidak lagi otomatis menggulung halaman ke atas.' },
-      { kategori: 'Fitur', teks: 'Akun Tim sekarang bisa mengklaim bonus lewat tombol "Klaim Bonus" — otomatis diarahkan ke WhatsApp Admin, dan Admin akan mendapat notifikasi serta tombol "Cairkan" di menu Pembagian Tugas.' },
+      { kategori: 'Peningkatan', teks: 'Jeda klaim bonus tim diperpanjang: bonus satu bulan sekarang baru bisa mulai diklaim 2 bulan setelah bulan tersebut berjalan (mis. bonus bulan September baru bisa diklaim mulai 1 November), supaya ada waktu verifikasi sebelum bonus dicairkan.' },
+      { kategori: 'Peningkatan', teks: 'Tombol "Klaim Bonus" di halaman Tugas Saya sekarang hanya muncul kalau memang sudah ada bonus yang boleh diklaim, lengkap dengan info kapan bonus yang masih menunggu akan mulai bisa diajukan.' },
+      { kategori: 'Peningkatan', teks: 'Admin sekarang juga melihat tanggal pasti kapan bonus tiap akun Tim yang belum bisa diklaim akan mulai bisa diajukan, di kartu per-akun menu Pembagian Tugas.' },
+      { kategori: 'Fitur', teks: 'Riwayat pembaruan (changelog) sekarang menampilkan label kategori tiap perubahan — Fitur, Perbaikan, atau Peningkatan — supaya lebih mudah dipahami sekilas.' },
+      { kategori: 'Perbaikan', teks: 'Jeda klaim bonus tim disesuaikan kembali: bonus satu bulan sekarang bisa mulai diklaim begitu bulan itu selesai (mis. bonus bulan September baru bisa diklaim mulai 1 Oktober), bukan lagi menunggu 2 bulan.' },
+      { kategori: 'Peningkatan', teks: 'Tombol "Klaim Bonus" di halaman Tugas Saya sekarang selalu tampil, tapi otomatis nonaktif (tidak bisa ditekan) selama belum ada bonus yang bisa dicairkan.' },
     ]
   },
   // ⚠️ Ini adalah rilis resmi PERTAMA aplikasi — seluruh riwayat versi/beta
@@ -8174,6 +8155,10 @@ const CHANGELOG = [
     tanggal: '01 September 2026',
     items: [
       { kategori: 'Fitur', teks: 'Rilis resmi pertama Kaone Motret Rekap Job.' },
+      { kategori: 'Fitur', teks: 'Admin sekarang bisa mengedit pembagian tugas yang sudah dibuat (tombol ✏️ di tabel Pembagian Tugas), tidak hanya menambah dan menghapus.' },
+      { kategori: 'Fitur', teks: 'Tarif bonus tim (awalnya Rp500/jam) sekarang bisa diatur sendiri oleh Admin lewat tombol "Ubah Tarif" di menu Pembagian Tugas.' },
+      { kategori: 'Perbaikan', teks: 'Menerapkan filter atau menghapus pembagian tugas tidak lagi otomatis menggulung halaman ke atas.' },
+      { kategori: 'Fitur', teks: 'Akun Tim sekarang bisa mengklaim bonus lewat tombol "Klaim Bonus" — otomatis diarahkan ke WhatsApp Admin, dan Admin akan mendapat notifikasi serta tombol "Cairkan" di menu Pembagian Tugas.' },
     ]
   }
 ];

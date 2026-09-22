@@ -18,6 +18,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Italiana&family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -210,6 +211,7 @@
   .btn-primary{background:linear-gradient(135deg,var(--gold-light),var(--gold)); color:#231f0f;}
   .btn-outline{background:#fff; border:1.5px solid #e5ddc0; color:#4a4530;}
   .btn-danger{background:#fdeceb; color:var(--danger); border:1.5px solid #f4c9c4;}
+  .btn-warning{background:#fdf1de; color:#95560c; border:1.5px solid #f2c98a;}
   .btn:hover{transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.14);}
   .btn:active{transform:translateY(0) scale(.96); transition-duration:.08s;}
   .btn-outline:hover{background:#faf6e5;}
@@ -708,6 +710,59 @@
   .job-poster.jp-compact2 .jp-row .jp-label{font-size:13px;}
   .job-poster.jp-compact2 .jp-row .jp-value{font-size:16px; line-height:1.3;}
 
+  /* ---------- POSTER UNDUHAN KWITANSI (GAMBAR, 1080x1350) ----------
+     Desain resi/invoice yang proper untuk dikirim ke klien lewat WA/gambar —
+     terpisah dari versi PDF (yang dibuat teks vektor lewat jsPDF). Sengaja HANYA
+     memuat info yang relevan buat klien (sama seperti versi PDF): harga paket,
+     diskon, total tagihan, DP, sisa, status bayar — tanpa biaya/keuntungan internal. */
+  .kwitansi-poster{
+    width:1080px; height:1350px; position:relative; overflow:hidden;
+    background:linear-gradient(165deg,#fffdf6 0%,#fffaeb 55%,#fdf6e0 100%);
+    font-family:'Poppins',sans-serif; color:#1c1a12; box-sizing:border-box;
+  }
+  .kwitansi-poster .kw-watermark{
+    position:absolute; inset:0; opacity:.05; pointer-events:none;
+    background:
+      radial-gradient(circle at 12% 8%, var(--jp-accent,#d4af00) 0%, transparent 40%),
+      radial-gradient(circle at 92% 96%, var(--jp-accent,#d4af00) 0%, transparent 42%);
+  }
+  .kwitansi-poster .kw-topbar{position:relative; display:flex; align-items:center; gap:26px; padding:64px 72px 0; box-sizing:border-box;}
+  .kwitansi-poster .kw-badge{
+    width:92px; height:92px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--jp-hdr2,#332750),var(--jp-hdr1,#1c1530));
+    color:var(--jp-accent,#d4af00);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; font-size:34px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.12);
+  }
+  .kwitansi-poster .kw-brand-name{font-family:'Fraunces',serif; font-weight:700; font-size:30px; color:#241f0f; line-height:1.25;}
+  .kwitansi-poster .kw-brand-tag{font-size:14px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-soft); margin-top:4px;}
+  .kwitansi-poster .kw-doc-badge{margin-left:auto; text-align:right;}
+  .kwitansi-poster .kw-doc-title{font-family:'Fraunces',serif; font-weight:700; font-size:30px; letter-spacing:3px; color:var(--jp-hdr2,#332750);}
+  .kwitansi-poster .kw-doc-no{font-size:15px; color:var(--ink-soft); margin-top:6px; letter-spacing:.5px;}
+  .kwitansi-poster .kw-rule{height:2px; margin:40px 72px 0; background:linear-gradient(90deg,var(--jp-accent,#d4af00),transparent);}
+  .kwitansi-poster .kw-client-block{position:relative; padding:36px 72px 0; box-sizing:border-box;}
+  .kwitansi-poster .kw-kicker{font-size:15px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--jp-accent,#b8860b);}
+  .kwitansi-poster .kw-client-name{font-family:'Fraunces',serif; font-weight:700; font-size:52px; line-height:1.2; color:#201c0d; margin-top:10px; word-break:break-word;}
+  .kwitansi-poster .kw-meta-row{display:flex; align-items:center; gap:14px; margin-top:14px; font-size:19px; color:var(--ink-soft); flex-wrap:wrap;}
+  .kwitansi-poster .kw-meta-row .sep{width:6px; height:6px; border-radius:50%; background:var(--jp-accent,#d4af00); flex-shrink:0;}
+  .kwitansi-poster .kw-body{position:relative; padding:40px 72px 0; box-sizing:border-box;}
+  .kwitansi-poster .kw-row{display:flex; justify-content:space-between; align-items:baseline; gap:20px; padding:16px 0; border-bottom:1px solid var(--line);}
+  .kwitansi-poster .kw-row .kw-label{font-size:19px; color:var(--ink-soft); font-weight:600;}
+  .kwitansi-poster .kw-row .kw-value{font-size:23px; font-weight:600; color:#241f0f; text-align:right;}
+  .kwitansi-poster .kw-row.kw-highlight{border-bottom:2px solid var(--jp-accent,#d4af00); padding:20px 0;}
+  .kwitansi-poster .kw-row.kw-highlight .kw-label,
+  .kwitansi-poster .kw-row.kw-highlight .kw-value{font-size:27px; font-weight:700; color:var(--jp-hdr2,#332750);}
+  .kwitansi-poster .kw-status-row{display:flex; justify-content:space-between; align-items:center; margin-top:26px;}
+  .kwitansi-poster .kw-status-label{font-size:17px; color:var(--ink-soft); font-weight:600;}
+  .kwitansi-poster .kw-status-badge{background:var(--jp-accent,#d4af00); color:#241f0f; font-weight:700; font-size:16px; padding:8px 22px; border-radius:999px; white-space:nowrap;}
+  .kwitansi-poster .kw-note{margin-top:22px; font-size:16px; font-style:italic; color:var(--ink-soft); line-height:1.5; word-break:break-word;}
+  .kwitansi-poster .kw-footer{position:absolute; left:0; right:0; bottom:52px; text-align:center; padding:0 72px; box-sizing:border-box;}
+  .kwitansi-poster .kw-footer-line{height:1px; margin-bottom:16px; background:linear-gradient(90deg,transparent,var(--jp-accent,#d4af00),transparent); opacity:.6;}
+  .kwitansi-poster .kw-footer-brand{font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:#241f0f; margin-bottom:6px;}
+  .kwitansi-poster .kw-footer-text{font-size:14px; color:var(--ink-soft); letter-spacing:.3px;}
+  .kwitansi-poster .kw-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:14px; background:linear-gradient(90deg,var(--jp-hdr1,#1c1530),var(--jp-accent,#d4af00),var(--jp-hdr2,#332750));}
+
   /* ---------- Gambar Story Instagram (ringkas & nama disensor, untuk diunggah publik) ---------- */
   .job-story{
     width:1080px; height:1920px; position:relative; overflow:hidden;
@@ -883,15 +938,19 @@
   .ulasan-poster .up-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:16px; background:linear-gradient(90deg,#8a6a10,#f4d93e,#8a6a10);}
 
   /* REKAP */
-  .rekap-tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
+  .rekap-tabs{display:flex; gap:8px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:18px; padding-bottom:4px; scrollbar-width:none;}
+  .rekap-tabs::-webkit-scrollbar{display:none;}
   .rekap-tabs button{
     background:#fff; border:1.5px solid var(--line); padding:8px 16px; border-radius:999px; font-size:13px; font-weight:600;
+    flex:0 0 auto; white-space:nowrap;
   }
   .rekap-tabs button.active{background:linear-gradient(135deg,var(--gold-light),var(--gold)); border-color:transparent; color:#231f0f;}
   #rekapPoster{background:#fffef9; padding:30px; border-radius:14px; overflow-x:hidden;}
   #rekapPoster .rp-head{text-align:center; margin-bottom:18px;}
   #rekapPoster .rp-head .b{font-family:'Fraunces',serif; font-weight:700; font-size:15px; letter-spacing:2px; color:var(--warn); text-transform:uppercase;}
   #rekapPoster .rp-head h2{font-size:28px; margin:4px 0 0;}
+  #rekapPoster .stat{border-radius:14px;}
+  .rekap-block{background:#fffdf6; border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:16px;}
   .rekap-table-wrap{width:100%; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:10px; border:1px solid var(--line);}
   table.rekaptable{width:100%; min-width:520px; border-collapse:collapse; font-size:13.5px; margin-top:0;}
   table.rekaptable th{background:#241f0f; color:#f4ecd0; padding:9px 10px; text-align:left; font-size:12px; text-transform:uppercase; white-space:nowrap;}
@@ -908,6 +967,31 @@
   .donut-legend-item .lbl{flex:1; font-weight:600; color:#241f0f;}
   .donut-legend-item .pct{font-weight:700; color:#8a6d16; min-width:48px; text-align:right;}
   .donut-legend-item .cnt{color:var(--ink-soft); font-size:11.5px; min-width:52px; text-align:right;}
+
+  .month-compare-card{background:linear-gradient(135deg,#fffef9,#fbf3d6); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-bottom:16px;}
+  .mcc-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  .mcc-label{font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.8px;}
+  .mcc-val{font-family:'Fraunces',serif; font-weight:700; font-size:26px; color:#241f0f; margin-top:2px;}
+  .mcc-diff{font-size:12.5px; font-weight:700; padding:5px 10px; border-radius:999px; background:#efe8cf; color:#5c4a12; white-space:nowrap;}
+  .mcc-diff.up{background:#e3f3e2; color:#2f7d32;}
+  .mcc-diff.down{background:#fbe6e2; color:#b3401f;}
+  .mcc-sub{margin-top:8px; font-size:12.5px; color:var(--ink-soft);}
+
+  .monthly-chart-wrap{background:#fffdf6; border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:20px;}
+  .monthly-chart-legend{display:flex; gap:16px; font-size:12px; color:var(--ink-soft); margin-bottom:10px; flex-wrap:wrap;}
+  .monthly-chart-legend .dot{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:middle;}
+  .monthly-chart-scroll{width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .monthly-chart-scroll svg{display:block;}
+
+  .op-bar-row{margin-bottom:14px;}
+  .op-bar-row:last-of-type{margin-bottom:0;}
+  .op-bar-label{display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12.5px; color:#241f0f; margin-bottom:7px; font-weight:600;}
+  .op-bar-label svg{width:15px; height:15px; vertical-align:-3px; margin-right:4px;}
+  .op-bar-track{height:10px; background:#f0e6c0; border-radius:999px; overflow:hidden;}
+  .op-bar-fill{height:100%; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:999px;}
+  .op-pengiriman-list{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+  .op-peng-item{display:flex; align-items:center; gap:7px; background:#fff; border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:12px; color:#241f0f;}
+  .op-peng-cnt{background:var(--gold); color:#231f0f; font-weight:700; border-radius:999px; padding:1px 8px; font-size:11px;}
 
   .footer-note{text-align:center; color:var(--ink-soft); font-size:12px; margin-top:40px; line-height:1.7; padding:0 20px;}
   .copyright-bar{
@@ -930,6 +1014,10 @@
 
   .backup-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
   .info-box{background:#fff8e6; border:1px solid #f0e0a0; border-radius:10px; padding:12px 16px; font-size:12.5px; color:#5b4e10; line-height:1.6; margin-top:14px;}
+  .kwitansi-status-box{display:flex; align-items:flex-start; gap:8px; border-radius:10px; padding:11px 14px; font-size:12.5px; line-height:1.55; margin:14px 0 0;
+    background:#f0f6ee; border:1px solid #cfe6c6; color:#2f5a2a;}
+  .kwitansi-status-box svg{width:16px; height:16px; flex-shrink:0; margin-top:1px;}
+  .kwitansi-status-box.outdated{background:#fdf1de; border:1px solid #f2c98a; color:#7a4a06;}
 
   /* ---------- NOTIFIKASI (lonceng) ----------
      Dibuat position:fixed supaya tombol notifikasi selalu berada di
@@ -1183,6 +1271,12 @@
     .donut-wrap svg{width:150px; height:150px;}
     .donut-legend-title{font-size:12.5px;}
     .donut-legend-item{font-size:12px;}
+    .mcc-val{font-size:20px;}
+    .mcc-label,.mcc-sub{font-size:11.5px;}
+    .monthly-chart-legend{font-size:11px;}
+    .rekap-block{padding:12px;}
+    .op-bar-label{font-size:11.5px;}
+    .op-peng-item{font-size:11px; padding:5px 10px;}
 
     .toolbar{flex-direction:column; align-items:stretch;}
     .search-box{flex-direction:column;}
@@ -4592,7 +4686,7 @@ function viewDaftar(){
     <div class="toolbar">
       <h2 style="margin:0;">${ic('clipboard')} Daftar Semua Job</h2>
       <div class="search-box">
-        <input type="text" id="searchBox" placeholder="Cari nama, desa, jenis acara...">
+        <input type="text" id="searchBox" placeholder="Cari nama klien, No WA, desa, jenis acara...">
         <select id="filterJenis">
           <option value="">Semua Jenis Acara</option>
           ${JENIS_ACARA_LIST.map(j=>`<option value="${j}">${j}</option>`).join('')}
@@ -4617,8 +4711,14 @@ function renderDaftarTable(){
   const fb = document.getElementById('filterBulan')?.value||'';
   let list = sortedJobsWithNo();
   if(q){
-    list = list.filter(j=>[j.namaKlien,j.desa,j.dusun,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket]
-      .join(' ').toLowerCase().includes(q));
+    const qDigits = q.replace(/[^0-9]/g,'');
+    list = list.filter(j=>{
+      const hay = [j.namaKlien,j.desa,j.dusun,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket]
+        .join(' ').toLowerCase();
+      if(hay.includes(q)) return true;
+      if(qDigits && String(j.noWhatsapp||'').replace(/[^0-9]/g,'').includes(qDigits)) return true;
+      return false;
+    });
   }
   if(fj) list = list.filter(j=>j.jenisAcara===fj);
   if(fb) list = list.filter(j=>jobOverlapsMonth(j, fb));
@@ -5376,6 +5476,12 @@ function showModal(innerHtml){
   ov.querySelectorAll('[data-detail-copy]').forEach(b=>{
     b.addEventListener('click', (e)=>{ e.stopPropagation(); copyJobDetails(b.dataset.detailCopy); });
   });
+  ov.querySelectorAll('[data-kwitansi]').forEach(b=>{
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); downloadKwitansiPdf(b.dataset.kwitansi); });
+  });
+  ov.querySelectorAll('[data-kwitansi-img]').forEach(b=>{
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); downloadKwitansiImage(b.dataset.kwitansiImg); });
+  });
 }
 function escCloseModal(e){
   if(e.key==='Escape') closeModal();
@@ -5489,10 +5595,13 @@ function openJobDetailModal(jobId){
       </div>
       <div class="jd-bottom-bar"></div>
     </div>
+    ${kwitansiStatusHtml(j)}
     <div class="modal-actions">
       <button type="button" class="btn btn-outline" data-detail-download="${j.id}">${ic('image')} Unduh Gambar</button>
       <button type="button" class="btn btn-outline" data-detail-story="${j.id}">${ic('phone')} Unduh Gambar Story</button>
       <button type="button" class="btn btn-outline" data-detail-copy="${j.id}">${ic('clipboard')} Salin Detail</button>
+      <button type="button" class="btn ${isKwitansiOutdated(j)?'btn-warning':'btn-outline'}" data-kwitansi="${j.id}">${ic('receipt')} ${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (PDF)':'Cetak Kwitansi (PDF)'}</button>
+      <button type="button" class="btn ${isKwitansiOutdated(j)?'btn-warning':'btn-outline'}" data-kwitansi-img="${j.id}">${ic('image')} ${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (Gambar)':'Cetak Kwitansi (Gambar)'}</button>
       <button type="button" class="btn btn-outline" data-ics="${j.id}">${ic('download')} Unduh .ics</button>
       <button type="button" class="btn btn-outline" data-gcal="${j.id}">${ic('calendar')} Tambah ke Google Calendar</button>
       <button type="button" class="btn btn-primary admin-only" data-edit="${j.id}">${ic('edit')} Edit Job</button>
@@ -5831,7 +5940,256 @@ function copyJobDetails(jobId){
   copyToClipboard(text, 'Detail job disalin ke clipboard');
 }
 
-/* ---------- Google Calendar & ICS ---------- */
+/* ---------- JEJAK KWITANSI USANG ----------
+   Setiap kali kwitansi (PDF atau Gambar) dicetak, disimpan "snapshot" nilai
+   Harga Paket/Diskon/DP saat itu (j.kwitansiPrinted). Kalau salah satu nilai itu
+   diedit lagi setelahnya, snapshot lama jadi tidak cocok dengan data job
+   sekarang — itu tandanya kwitansi yang sudah dicetak sebelumnya sudah USANG
+   (klien mungkin pegang kwitansi dengan angka yang sudah tidak berlaku). Status
+   ini ditampilkan di modal Detail Job supaya Admin sadar perlu cetak ulang. */
+function markKwitansiPrinted(j){
+  j.kwitansiPrinted = {
+    at: Date.now(),
+    penghasilan: Number(j.penghasilan)||0,
+    diskon: Number(j.diskon)||0,
+    dp: Number(j.dp)||0,
+  };
+  saveJobs();
+}
+function isKwitansiOutdated(j){
+  const kp = j.kwitansiPrinted;
+  if(!kp) return false;
+  return (Number(j.penghasilan)||0)!==kp.penghasilan
+    || (Number(j.diskon)||0)!==kp.diskon
+    || (Number(j.dp)||0)!==kp.dp;
+}
+function fmtKwitansiPrintedAt(j){
+  const kp = j.kwitansiPrinted;
+  if(!kp || !kp.at) return '-';
+  try{
+    return new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'}).format(new Date(kp.at)) + ' WIB';
+  }catch(e){ return '-'; }
+}
+function kwitansiStatusHtml(j){
+  const kp = j.kwitansiPrinted;
+  if(!kp) return '';
+  if(isKwitansiOutdated(j)){
+    return `<div class="kwitansi-status-box outdated">${ic('warning')} Kwitansi terakhir dicetak ${fmtKwitansiPrintedAt(j)} sudah <b>usang</b> — Harga Paket/Diskon/DP berubah sejak itu. Cetak ulang sebelum dikirim ke klien.</div>`;
+  }
+  return `<div class="kwitansi-status-box">${ic('check-circle')} Kwitansi terakhir dicetak ${fmtKwitansiPrintedAt(j)} &middot; masih sesuai data terbaru.</div>`;
+}
+
+/* ---------- KWITANSI / INVOICE PDF ----------
+   Berbeda dari Detail Job / Salin Detail (yang untuk catatan internal Admin & Tim),
+   kwitansi ini dibuat untuk diberikan ke KLIEN — jadi sengaja HANYA memuat info yang
+   relevan buat klien (harga paket, diskon, DP, sisa, status bayar) dan TIDAK memuat
+   biaya/keuntungan internal (Biaya Cetak, Honor Tim, Sedekah, Penghasilan Bersih). */
+function downloadKwitansiPdf(jobId){
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  if(typeof window.jspdf === 'undefined'){
+    alert('Pustaka pembuat PDF belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a5'});
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginX = 14;
+  let y = 16;
+
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
+  const hargaPaket = Number(j.penghasilan)||0;
+  const diskon = Number(j.diskon)||0;
+  const totalTagihan = hargaPaket - diskon;
+  const dp = Number(j.dp)||0;
+  const sisa = hitungSisaPembayaran(j);
+  const noKwitansi = `KWT-${String(getJobNo(j.id)).padStart(3,'0')}-${(j.tanggalAcara||'').replace(/-/g,'')}`;
+  const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(20);
+  doc.text('KAONE MOTRET', marginX, y);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110);
+  doc.text('Buku Job Fotografer', marginX, y+5);
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(20);
+  doc.text('KWITANSI', pageW-marginX, y, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(110);
+  doc.text(noKwitansi, pageW-marginX, y+5, {align:'right'});
+  y += 11;
+  doc.setDrawColor(190); doc.setLineWidth(0.4);
+  doc.line(marginX, y, pageW-marginX, y);
+  y += 8;
+
+  const infoRows = [
+    ['Diterima dari', j.namaKlien||'-'],
+    ['No. WhatsApp', j.noWhatsapp||'-'],
+    ['Tanggal Acara', fmtTglJob(j)],
+    ['Jenis Acara', jenis],
+    ['Paket', j.paket||'-'],
+  ];
+  doc.setFontSize(10);
+  infoRows.forEach(([label,val])=>{
+    doc.setFont('helvetica','normal'); doc.setTextColor(110);
+    doc.text(label, marginX, y);
+    doc.setFont('helvetica','bold'); doc.setTextColor(25);
+    const valLines = doc.splitTextToSize(String(val), pageW-marginX-38-marginX);
+    doc.text(valLines, marginX+38, y);
+    y += 6*valLines.length;
+  });
+  y += 3;
+  doc.setDrawColor(225); doc.line(marginX, y, pageW-marginX, y);
+  y += 8;
+
+  const rincian = [
+    ['Harga Paket', fmtRp(hargaPaket), false],
+    ...(diskon>0 ? [['Diskon', '- ' + fmtRp(diskon), false]] : []),
+    ['Total Tagihan', fmtRp(totalTagihan), true],
+    ['DP / Sudah Dibayar', fmtRp(dp), false],
+    ['Sisa Pembayaran', fmtRp(sisa), true],
+  ];
+  rincian.forEach(([label,val,bold])=>{
+    doc.setFont('helvetica', bold?'bold':'normal');
+    doc.setFontSize(bold?11:10);
+    doc.setTextColor(bold?20:70);
+    doc.text(label, marginX, y);
+    doc.text(String(val), pageW-marginX, y, {align:'right'});
+    y += bold ? 8 : 6.5;
+    if(label==='Total Tagihan'){ doc.setDrawColor(225); doc.line(marginX,y-3,pageW-marginX,y-3); }
+  });
+
+  y += 5;
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(20);
+  doc.text('Status Pembayaran', marginX, y);
+  doc.text(String(j.statusPembayaran||'-'), pageW-marginX, y, {align:'right'});
+  y += 11;
+
+  if((j.catatan||'').trim()){
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(110);
+    const catatanLines = doc.splitTextToSize(`Catatan: ${j.catatan.trim()}`, pageW-marginX*2);
+    doc.text(catatanLines, marginX, y);
+    y += catatanLines.length*4.3 + 6;
+  }
+
+  const footY = Math.max(y+10, pageH-22);
+  doc.setDrawColor(225); doc.line(marginX, footY-8, pageW-marginX, footY-8);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(130);
+  doc.text(`Dicetak ${printedAt} · Kaone Motret`, marginX, footY);
+  doc.setFont('helvetica','italic');
+  doc.text('Terima kasih atas kepercayaannya', pageW-marginX, footY, {align:'right'});
+
+  markKwitansiPrinted(j);
+  doc.save(`Kwitansi-${(j.namaKlien||'kaonemotret').replace(/\s+/g,'_')}-${j.tanggalAcara}.pdf`);
+  if(document.getElementById('jobDetailCard')) openJobDetailModal(j.id);
+}
+/* ---------- KWITANSI (GAMBAR PNG, didesain seperti poster resmi) ----------
+   Isinya sengaja SAMA dengan versi PDF di atas (hanya info relevan buat klien,
+   tanpa data keuangan internal) — cuma bentuk file & tampilannya berbeda, supaya
+   Admin bisa pilih mau kirim sebagai PDF atau sebagai gambar (lebih mudah dibuka
+   & dikirim ulang lewat WhatsApp). */
+function buildKwitansiPosterHtml(j){
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
+  const col = jenisAcaraColor(j.jenisAcara);
+  const hargaPaket = Number(j.penghasilan)||0;
+  const diskon = Number(j.diskon)||0;
+  const totalTagihan = hargaPaket - diskon;
+  const dp = Number(j.dp)||0;
+  const sisa = hitungSisaPembayaran(j);
+  const noKwitansi = `KWT-${String(getJobNo(j.id)).padStart(3,'0')}-${(j.tanggalAcara||'').replace(/-/g,'')}`;
+  const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
+
+  const rows = [
+    ['Harga Paket', fmtRp(hargaPaket), false],
+    ...(diskon>0 ? [['Diskon', '- '+fmtRp(diskon), false]] : []),
+    ['Total Tagihan', fmtRp(totalTagihan), true],
+    ['DP / Sudah Dibayar', fmtRp(dp), false],
+    ['Sisa Pembayaran', fmtRp(sisa), true],
+  ];
+
+  return `
+    <div id="kwitansiPosterExport" class="kwitansi-poster" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
+      <div class="kw-watermark"></div>
+      <div class="kw-topbar">
+        <div class="kw-badge">KM</div>
+        <div>
+          <div class="kw-brand-name">Kaone Motret</div>
+          <div class="kw-brand-tag">Buku Job Fotografer</div>
+        </div>
+        <div class="kw-doc-badge">
+          <div class="kw-doc-title">KWITANSI</div>
+          <div class="kw-doc-no">${escapeHtml(noKwitansi)}</div>
+        </div>
+      </div>
+      <div class="kw-rule"></div>
+      <div class="kw-client-block">
+        <div class="kw-kicker">Diterima dari</div>
+        <div class="kw-client-name">${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
+        <div class="kw-meta-row">
+          <span>${escapeHtml(fmtTglJob(j))}</span>
+          <span class="sep"></span><span>${escapeHtml(jenis)}</span>
+          ${j.paket?`<span class="sep"></span><span>${escapeHtml(j.paket)}</span>`:''}
+        </div>
+      </div>
+      <div class="kw-body">
+        ${rows.map(([label,val,highlight])=>`
+          <div class="kw-row${highlight?' kw-highlight':''}">
+            <span class="kw-label">${escapeHtml(label)}</span>
+            <span class="kw-value">${escapeHtml(val)}</span>
+          </div>
+        `).join('')}
+        <div class="kw-status-row">
+          <span class="kw-status-label">Status Pembayaran</span>
+          <span class="kw-status-badge">${escapeHtml(j.statusPembayaran||'-')}</span>
+        </div>
+        ${(j.catatan||'').trim() ? `<div class="kw-note">Catatan: ${escapeHtml(truncateText(j.catatan,140))}</div>` : ''}
+      </div>
+      <div class="kw-footer">
+        <div class="kw-footer-line"></div>
+        <div class="kw-footer-brand">Kaone Motret</div>
+        <div class="kw-footer-text">Dicetak ${printedAt} &middot; Terima kasih atas kepercayaannya</div>
+      </div>
+      <div class="kw-bottom-bar"></div>
+    </div>
+  `;
+}
+function downloadKwitansiImage(jobId){
+  if(typeof html2canvas === 'undefined'){
+    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  toast('Menyiapkan gambar kwitansi...');
+
+  // Sama seperti poster Detail Job/Story: dirender di luar tampilan (opacity:0) hanya
+  // untuk keperluan pengambilan gambar, lalu dihapus lagi begitu selesai diunduh.
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;z-index:-1;';
+  holder.innerHTML = buildKwitansiPosterHtml(j);
+  document.body.appendChild(holder);
+  const posterEl = holder.querySelector('#kwitansiPosterExport');
+
+  const capture = ()=>{
+    html2canvas(posterEl, {width:1080, height:1350, scale:1, backgroundColor:'#fffdf6'}).then(canvas=>{
+      holder.remove();
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `Kwitansi-${(j.namaKlien||'kaonemotret').replace(/\s+/g,'_')}-${j.tanggalAcara}.png`;
+      markKwitansiPrinted(j);
+      a.click();
+      if(document.getElementById('jobDetailCard')) openJobDetailModal(j.id);
+    }).catch(()=>{
+      holder.remove();
+      alert('Gagal membuat gambar kwitansi. Coba lagi.');
+    });
+  };
+  // Tunggu font kustom (Fraunces/Poppins) selesai dimuat dulu, supaya teks di gambar
+  // tidak sempat ter-capture memakai font fallback sistem.
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(capture).catch(capture);
+  } else {
+    setTimeout(capture, 60);
+  }
+}
 function isoDateCompact(iso){ return (iso||'').replace(/-/g,''); }
 // PENTING: jangan pakai toISOString() untuk mengambil tanggal dari objek Date di sini.
 // toISOString() selalu mengonversi ke UTC, jadi untuk pengguna di zona waktu +N (mis. WIB/WITA/WIT),
@@ -7148,6 +7506,8 @@ function bindLaporanHandlers(){
    REKAP
 ========================================================= */
 function viewRekap(){
+  const admin = isAdmin();
+  const aggs = admin ? monthlyAggregates() : [];
   return `
   <div class="card">
     <div class="toolbar">
@@ -7161,12 +7521,277 @@ function viewRekap(){
     <div id="rekapPoster">
       <div class="rp-head">
         <div class="b">Kaone Motret</div>
-        <h2>${rekapTitle()}</h2>
+        <h2>Rekap Job${admin?' &amp; Analisis Bisnis':''}</h2>
       </div>
+
+      <div class="rekap-block">
+        <div class="section-title" style="margin-top:0;">${ic('clipboard')} Ringkasan Keseluruhan</div>
+        ${buildRekapSummaryHtml()}
+      </div>
+
+      <div class="rekap-block">
+        <div class="section-title" style="margin-top:0;">${ic('check-circle')} Status Operasional</div>
+        ${buildOperationalStatusHtml()}
+      </div>
+
+      ${admin ? `
+      <div class="section-title">${ic('chart')} Analisis Bulanan &amp; Tahunan</div>
+      ${buildMonthComparisonHtml(aggs)}
+      ${buildMonthlyBarChart(aggs)}
+      ${buildYearComparisonHtml()}
+
+      ${buildTopClientsHtml()}
+      ${buildPaymentStatusHtml()}
+      ${buildVendorBreakdownHtml()}
+      ` : ''}
+
+      <div class="section-title">${ic('folder')} ${rekapTitle()}</div>
       ${renderRekapTable()}
     </div>
   </div>
   `;
+}
+
+/* =========================================================
+   ANALISIS BULANAN & RINGKASAN BISNIS (bagian tambahan di Rekap Job)
+   Terpisah dari per-tab table di atas (yang dikelompokkan sesuai tab aktif) —
+   bagian ini SELALU menghitung dari SELURUH data job, apa pun tab yang aktif,
+   supaya "gambaran besar" bisnis selalu terlihat begitu halaman Rekap dibuka.
+========================================================= */
+function monthlyAggregates(){
+  const map = {};
+  jobs.forEach(j=>{
+    if(!j.tanggalAcara) return;
+    const d = new Date(j.tanggalAcara+'T00:00:00');
+    if(isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(!map[key]) map[key] = {key, jobs:[], omzet:0, bersih:0};
+    map[key].jobs.push(j);
+    map[key].omzet += Number(j.penghasilan)||0;
+    map[key].bersih += hitungBersih(j);
+  });
+  return Object.values(map).sort((a,b)=> a.key.localeCompare(b.key));
+}
+function monthKeyLabelShort(key){
+  const [y,m] = key.split('-').map(Number);
+  return `${MONTH_NAMES[m-1].slice(0,3)} '${String(y).slice(2)}`;
+}
+/* Ringkasan Keseluruhan — kartu Total Job/Klien Unik/dst selalu tampil untuk semua
+   role, tapi kartu yang berkaitan dengan OMSET/keuangan (Total Omzet, Total Laba
+   Bersih, Rata-rata Omzet, Belum Lunas) HANYA ditampilkan untuk Admin. Akun Tim
+   sengaja tidak diberi akses ke data omset/keuangan internal vendor. */
+function buildRekapSummaryHtml(){
+  if(jobs.length===0) return '';
+  const admin = isAdmin();
+  const total = jobs.length;
+  const klienUnik = new Set(jobs.map(j=>(j.namaKlien||'').trim().toLowerCase()).filter(Boolean)).size;
+  const bulanAktif = new Set(jobs.filter(j=>j.tanggalAcara).map(j=>j.tanggalAcara.slice(0,7))).size;
+  const rataJobBulan = bulanAktif ? (total/bulanAktif) : 0;
+
+  const cards = [
+    ['Total Job', total, false],
+    ['Klien Unik', klienUnik, false],
+    ['Rata-rata Job / Bulan', rataJobBulan.toFixed(1), false],
+  ];
+  if(admin){
+    const totalOmzet = jobs.reduce((s,j)=>s+(Number(j.penghasilan)||0),0);
+    const totalBersih = jobs.reduce((s,j)=>s+hitungBersih(j),0);
+    const rataRata = total ? totalOmzet/total : 0;
+    const belumLunas = jobs.filter(j=>j.statusPembayaran!=='Lunas');
+    const totalBelumLunas = belumLunas.reduce((s,j)=>s+Math.max(0,hitungSisaPembayaran(j)),0);
+    cards.push(
+      ['Total Omzet', fmtRp(totalOmzet), true],
+      ['Total Laba Bersih', fmtRp(totalBersih), true],
+      ['Rata-rata Omzet / Job', fmtRp(rataRata), false],
+      ['Belum Lunas', `${belumLunas.length} job · ${fmtRp(totalBelumLunas)}`, false],
+    );
+  }
+  return `
+  <div class="stat-grid" style="margin-top:0;">
+    ${cards.map(([label,val,gold])=>`
+      <div class="stat${gold?' gold':''}">
+        <div class="label">${escapeHtml(label)}</div>
+        <div class="value">${typeof val==='number'?val.toLocaleString('id-ID'):escapeHtml(String(val))}</div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+/* Status Operasional — progres Edit/Cetak & distribusi status Pengiriman. Sengaja
+   TIDAK memuat apa pun soal uang, jadi aman ditampilkan ke Admin maupun Tim. */
+function buildOperationalStatusHtml(){
+  if(jobs.length===0) return '';
+  const total = jobs.length;
+  const editSelesai = jobs.filter(j=>j.prosesEdit==='Selesai').length;
+  const cetakSelesai = jobs.filter(j=>j.prosesCetak==='Selesai').length;
+  const pctEdit = total ? (editSelesai/total*100) : 0;
+  const pctCetak = total ? (cetakSelesai/total*100) : 0;
+  const pengGroup = groupBy(jobs, j=>j.pengiriman);
+  const pengKeys = Object.keys(pengGroup).sort((a,b)=>pengGroup[b].length-pengGroup[a].length);
+
+  return `
+  <div class="op-bar-row">
+    <div class="op-bar-label"><span>${ic('edit')} Proses Edit Selesai</span><span>${editSelesai}/${total} · ${pctEdit.toFixed(0)}%</span></div>
+    <div class="op-bar-track"><div class="op-bar-fill" style="width:${pctEdit.toFixed(1)}%"></div></div>
+  </div>
+  <div class="op-bar-row">
+    <div class="op-bar-label"><span>${ic('image')} Proses Cetak Selesai</span><span>${cetakSelesai}/${total} · ${pctCetak.toFixed(0)}%</span></div>
+    <div class="op-bar-track"><div class="op-bar-fill" style="width:${pctCetak.toFixed(1)}%"></div></div>
+  </div>
+  <div class="op-bar-label" style="margin-bottom:8px;"><span>${ic('truck')} Status Pengiriman</span><span></span></div>
+  <div class="op-pengiriman-list">
+    ${pengKeys.map(k=>`<div class="op-peng-item"><span class="op-peng-lbl">${escapeHtml(k)}</span><span class="op-peng-cnt">${pengGroup[k].length}</span></div>`).join('')}
+  </div>`;
+}
+/* Rekap tahunan (Analisis Bulanan versi tahun) — ADMIN SAJA, karena membandingkan Omzet. */
+function yearlyAggregates(){
+  const map = {};
+  jobs.forEach(j=>{
+    if(!j.tanggalAcara) return;
+    const d = new Date(j.tanggalAcara+'T00:00:00');
+    if(isNaN(d)) return;
+    const y = d.getFullYear();
+    if(!map[y]) map[y] = {year:y, jobs:[], omzet:0, bersih:0};
+    map[y].jobs.push(j);
+    map[y].omzet += Number(j.penghasilan)||0;
+    map[y].bersih += hitungBersih(j);
+  });
+  return Object.values(map).sort((a,b)=>a.year-b.year);
+}
+function buildYearComparisonHtml(){
+  if(!isAdmin()) return '';
+  const yrs = yearlyAggregates();
+  if(yrs.length===0) return '';
+  const latest = yrs[yrs.length-1];
+  const before = yrs.length>1 ? yrs[yrs.length-2] : null;
+  const diffPct = (before && before.omzet>0) ? ((latest.omzet-before.omzet)/before.omzet*100) : null;
+  const naik = diffPct!==null && diffPct>=0;
+  const diffTxt = diffPct===null
+    ? 'Belum ada data tahun sebelumnya untuk dibandingkan'
+    : `${naik?'▲':'▼'} ${Math.abs(diffPct).toFixed(1)}% dibanding tahun ${before.year}`;
+  return `
+  <div class="month-compare-card" style="margin-top:12px;">
+    <div class="mcc-top">
+      <div>
+        <div class="mcc-label">Tahun Ini — ${latest.year}</div>
+        <div class="mcc-val">${fmtRp(latest.omzet)}</div>
+      </div>
+      <div class="mcc-diff${diffPct===null?'':(naik?' up':' down')}">${diffTxt}</div>
+    </div>
+    <div class="mcc-sub">${latest.jobs.length} job &middot; Laba Bersih ${fmtRp(latest.bersih)}</div>
+  </div>`;
+}
+/* Rincian Status Pembayaran & per Vendor — ADMIN SAJA (data keuangan internal). */
+function buildPaymentStatusHtml(){
+  if(!isAdmin() || jobs.length===0) return '';
+  const grouped = groupBy(jobs, j=>j.statusPembayaran);
+  const keys = Object.keys(grouped).sort((a,b)=>grouped[b].length-grouped[a].length);
+  return `
+  <div class="section-title">${ic('money')} Status Pembayaran</div>
+  <div class="rekap-table-wrap">
+  <table class="rekaptable">
+    <thead><tr><th>Status</th><th>Jumlah Job</th><th>Total Sisa Tertahan</th></tr></thead>
+    <tbody>${keys.map(k=>{
+      const list = grouped[k];
+      const sisa = list.reduce((s,j)=>s+Math.max(0,hitungSisaPembayaran(j)),0);
+      return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${fmtRp(sisa)}</td></tr>`;
+    }).join('')}</tbody>
+  </table>
+  </div>`;
+}
+function buildVendorBreakdownHtml(){
+  if(!isAdmin() || jobs.length===0) return '';
+  const grouped = groupBy(jobs, j=> vendorDisplay(j) || 'Kaone Motret');
+  const keys = Object.keys(grouped).sort((a,b)=>grouped[b].length-grouped[a].length);
+  if(keys.length<=1) return ''; // tidak berguna kalau semua job cuma 1 vendor
+  return `
+  <div class="section-title">${ic('folder')} Rekap per Vendor</div>
+  <div class="rekap-table-wrap">
+  <table class="rekaptable">
+    <thead><tr><th>Vendor</th><th>Jumlah Job</th><th>Total Omzet</th><th>Total Laba Bersih</th></tr></thead>
+    <tbody>${keys.map(k=>{
+      const list = grouped[k];
+      const omzet = list.reduce((s,j)=>s+(Number(j.penghasilan)||0),0);
+      const bersih = list.reduce((s,j)=>s+hitungBersih(j),0);
+      return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${fmtRp(omzet)}</td><td>${fmtRp(bersih)}</td></tr>`;
+    }).join('')}</tbody>
+  </table>
+  </div>`;
+}
+function buildMonthComparisonHtml(aggs){
+  if(aggs.length===0) return '';
+  const latest = aggs[aggs.length-1];
+  const before = aggs.length>1 ? aggs[aggs.length-2] : null;
+  const diffPct = (before && before.omzet>0) ? ((latest.omzet-before.omzet)/before.omzet*100) : null;
+  const naik = diffPct!==null && diffPct>=0;
+  const diffTxt = diffPct===null
+    ? 'Belum ada data bulan sebelumnya untuk dibandingkan'
+    : `${naik?'▲':'▼'} ${Math.abs(diffPct).toFixed(1)}% dibanding ${monthKeyLabelShort(before.key)}`;
+  return `
+  <div class="month-compare-card">
+    <div class="mcc-top">
+      <div>
+        <div class="mcc-label">Bulan Terbaru — ${escapeHtml(monthKeyLabel(latest.key))}</div>
+        <div class="mcc-val">${fmtRp(latest.omzet)}</div>
+      </div>
+      <div class="mcc-diff${diffPct===null?'':(naik?' up':' down')}">${diffTxt}</div>
+    </div>
+    <div class="mcc-sub">${latest.jobs.length} job &middot; Laba Bersih ${fmtRp(latest.bersih)}</div>
+  </div>`;
+}
+function buildMonthlyBarChart(aggs){
+  if(aggs.length===0) return '';
+  const show = aggs.slice(-12); // 12 bulan terbaru yang ada datanya, biar grafik tetap enak dibaca
+  const maxVal = Math.max(1, ...show.map(a=>Math.max(a.omzet,a.bersih)));
+  const chartH = 130, barW = 20, barGap = 5, groupGap = 16, leftPad = 4, topPad = 8, botPad = 22;
+  const groupW = barW*2+barGap;
+  const svgW = leftPad + show.length*(groupW+groupGap);
+  const svgH = topPad+chartH+botPad;
+  const bars = show.map((a,i)=>{
+    const x = leftPad + i*(groupW+groupGap);
+    const hOmzet = a.omzet>0 ? Math.max(3, (a.omzet/maxVal)*chartH) : 0;
+    const hBersih = a.bersih>0 ? Math.max(3, (a.bersih/maxVal)*chartH) : 0;
+    const yOmzet = topPad+chartH-hOmzet;
+    const yBersih = topPad+chartH-hBersih;
+    return `
+      <g>
+        <rect x="${x}" y="${yOmzet.toFixed(1)}" width="${barW}" height="${hOmzet.toFixed(1)}" rx="3" fill="#D4AF00"/>
+        <rect x="${x+barW+barGap}" y="${yBersih.toFixed(1)}" width="${barW}" height="${hBersih.toFixed(1)}" rx="3" fill="#8B6F1F"/>
+        <text x="${x+groupW/2}" y="${topPad+chartH+16}" text-anchor="middle" font-family="'Poppins',sans-serif" font-size="10.5" fill="#8a7c40">${escapeHtml(monthKeyLabelShort(a.key))}</text>
+      </g>`;
+  }).join('');
+  return `
+  <div class="monthly-chart-wrap">
+    <div class="monthly-chart-legend">
+      <span><span class="dot" style="background:#D4AF00"></span> Omzet</span>
+      <span><span class="dot" style="background:#8B6F1F"></span> Laba Bersih</span>
+    </div>
+    <div class="monthly-chart-scroll">
+      <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">
+        <line x1="0" y1="${topPad+chartH}" x2="${svgW}" y2="${topPad+chartH}" stroke="#e4d9b0" stroke-width="1"/>
+        ${bars}
+      </svg>
+    </div>
+  </div>`;
+}
+function buildTopClientsHtml(){
+  const map = {};
+  jobs.forEach(j=>{
+    const nama = (j.namaKlien||'').trim();
+    if(!nama) return;
+    if(!map[nama]) map[nama] = {nama, count:0, omzet:0};
+    map[nama].count++;
+    map[nama].omzet += Number(j.penghasilan)||0;
+  });
+  const list = Object.values(map).sort((a,b)=>b.omzet-a.omzet).slice(0,5);
+  if(list.length===0) return '';
+  return `
+  <div class="section-title">${ic('star')} Top ${list.length} Klien (berdasarkan Omzet)</div>
+  <div class="rekap-table-wrap">
+  <table class="rekaptable">
+    <thead><tr><th>#</th><th>Klien</th><th>Jumlah Job</th><th>Total Omzet</th></tr></thead>
+    <tbody>${list.map((c,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(c.nama)}</td><td>${c.count}</td><td>${fmtRp(c.omzet)}</td></tr>`).join('')}</tbody>
+  </table>
+  </div>`;
 }
 function rekapTitle(){
   return {
@@ -7297,20 +7922,22 @@ function renderRekapTable(){
 
   const PIE_TABS = ['jenis','desa','kecamatan','kabupaten','provinsi'];
   const chartHtml = PIE_TABS.includes(rekapTab) ? buildDonutChart(keys, grouped, totalJob, keyLabel) : '';
+  const admin = isAdmin();
 
   return `
   ${chartHtml}
   <div class="rekap-table-wrap">
   <table class="rekaptable">
-    <thead><tr><th>${keyLabel}</th><th>Jumlah Job</th><th>%</th><th>Total Penghasilan</th><th>Total Bersih</th></tr></thead>
+    <thead><tr><th>${keyLabel}</th><th>Jumlah Job</th><th>%</th>${admin?'<th>Total Penghasilan</th><th>Total Bersih</th>':''}</tr></thead>
     <tbody>${keys.map(k=>{
       const list = grouped[k];
+      const pct = totalJob ? (list.length/totalJob*100).toFixed(1) : '0.0';
+      if(!admin) return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${pct}%</td></tr>`;
       const penghasilan = list.reduce((s,j)=>s+(Number(j.penghasilan)||0),0);
       const bersih = list.reduce((s,j)=>s+hitungBersih(j),0);
-      const pct = totalJob ? (list.length/totalJob*100).toFixed(1) : '0.0';
       return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${pct}%</td><td>${fmtRp(penghasilan)}</td><td>${fmtRp(bersih)}</td></tr>`;
     }).join('')}</tbody>
-    <tfoot><tr><td>TOTAL</td><td>${totalJob}</td><td>100%</td><td>${fmtRp(totalPenghasilan)}</td><td>${fmtRp(totalBersih)}</td></tr></tfoot>
+    <tfoot><tr><td>TOTAL</td><td>${totalJob}</td><td>100%</td>${admin?`<td>${fmtRp(totalPenghasilan)}</td><td>${fmtRp(totalBersih)}</td>`:''}</tr></tfoot>
   </table>
   </div>
   `;
@@ -8063,6 +8690,14 @@ const CHANGELOG = [
       { kategori: 'Fitur', teks: 'Saat mengajukan klaim, akun Tim memilih salah satu jenis lewat kotak pilihan; jenis yang belum memenuhi syarat minimal otomatis dinonaktifkan beserta keterangan kurang berapa lagi. Untuk klaim WDP, ID Game dan Server Mobile Legends diminta sekali dan otomatis diingat untuk klaim berikutnya.' },
       { kategori: 'Fitur', teks: 'Admin melihat jenis klaim (Tunai/WDP) pada daftar klaim menunggu, lengkap dengan ID Game & Server untuk klaim WDP beserta tombol salin, dan tombol prosesnya menyesuaikan ("Cairkan" atau "Tandai Terkirim").' },
       { kategori: 'Peningkatan', teks: 'Notifikasi klaim bonus (baik ke Admin maupun ke akun Tim saat sudah diproses) kini menyebutkan jenis klaimnya.' },
+      { kategori: 'Peningkatan', teks: 'Kolom pencarian di Daftar Semua Job sekarang juga bisa mencari berdasarkan No. WhatsApp klien (sebagian nomor pun cocok), tidak hanya nama/desa/jenis acara.' },
+      { kategori: 'Fitur', teks: 'Kwitansi klien: tombol baru "Cetak Kwitansi (PDF)" dan "Cetak Kwitansi (Gambar)" di modal Detail Job. Isinya sengaja hanya info yang relevan untuk klien (harga paket, diskon, total tagihan, DP, sisa pembayaran, status bayar) — tanpa data biaya/keuntungan internal (Biaya Cetak, Honor Tim, Sedekah, Penghasilan Bersih).' },
+      { kategori: 'Fitur', teks: 'Jejak kwitansi usang: begitu kwitansi dicetak, aplikasi menyimpan angka Harga Paket/Diskon/DP saat itu. Kalau angka itu diedit lagi setelahnya, modal Detail Job otomatis menampilkan peringatan "kwitansi sudah usang" dan tombol cetaknya berubah jadi "Cetak Ulang Kwitansi", supaya Admin tidak lupa kalau klien mungkin masih pegang kwitansi dengan angka lama.' },
+      { kategori: 'Fitur', teks: 'Rekap Job diperluas jadi jauh lebih detail: Ringkasan Keseluruhan (Total Job, Klien Unik, Rata-rata Job/Bulan, dan untuk Admin ditambah Total Omzet, Total Laba Bersih, Rata-rata Omzet/Job, Belum Lunas), Status Operasional (progres Edit/Cetak selesai & distribusi status Pengiriman), Analisis Bulanan & Tahunan (perbandingan omzet vs bulan/tahun sebelumnya beserta grafik batang 12 bulan terakhir), Top 5 Klien berdasarkan omzet, rincian Status Pembayaran, dan Rekap per Vendor.' },
+      { kategori: 'Peningkatan', teks: 'Akun Tim sekarang TIDAK bisa melihat data omset/keuangan apa pun di Rekap Job (Total Omzet, Total Laba Bersih, Analisis Bulanan & Tahunan, Top Klien, Status Pembayaran, Rekap per Vendor, kolom Total Penghasilan/Total Bersih di tabel per-kategori). Tim hanya melihat data non-keuangan seperti jumlah job dan status operasional.' },
+      { kategori: 'Peningkatan', teks: 'Tampilan halaman Rekap Job dirancang ulang: setiap bagian dikelompokkan jadi kartu-kartu terpisah yang lebih rapi, dan tab kategori (Per Bulan/Jenis/Desa/dst) sekarang jadi baris pil yang bisa digeser ke samping supaya lebih nyaman dilihat di layar HP.' },
+      { kategori: 'Perbaikan', teks: 'Tombol "Input Job Baru" di Beranda sekarang otomatis tersembunyi untuk akun Tim (hanya tampil untuk Admin).' },
+      { kategori: 'Perbaikan', teks: 'Berbagai ukuran teks dan padding (terutama di halaman Rekap Job) dirapikan agar tidak terasa "zoom" atau kebesaran saat dibuka di layar HP, termasuk saat aplikasi dipasang ke Layar Utama sebagai PWA.' },
     ]
   },
   {

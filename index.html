@@ -354,7 +354,7 @@
   .layout-card-preview{font-size:20px; color:#241f0f; line-height:1;}
   .layout-card-name{font-size:9.5px; font-weight:600; color:#5c4a12; text-align:center; line-height:1.25;}
 
-  #calendarPoster{
+  .cp-poster{
     --poster-bg1:#fffdf5; --poster-bg2:#fdf6e0; --poster-bg3:#f8ecc6;
     --poster-accent:#b8901f; --poster-accent-light:#cbb15a; --poster-accent-pale:#efe3bd;
     --poster-ink:#1c1a12; --poster-ink2:#2c2712; --poster-ink-soft:#a4914f; --poster-quote:#7a6d47;
@@ -365,8 +365,14 @@
     font-family:'Poppins',sans-serif;
   }
   .poster-wrap{ width:100%; overflow:hidden; border-radius:18px; padding:26px;
-    background:linear-gradient(160deg,#211d10,#161307); box-shadow:0 16px 40px rgba(0,0,0,.28);}
+    background:linear-gradient(160deg,#211d10,#161307); box-shadow:0 16px 40px rgba(0,0,0,.28);
+    position:relative; touch-action:pan-y; -webkit-user-select:none; user-select:none;}
   .poster-scale-inner{ display:block; }
+  /* ---- Swipe kalender: jalur berisi 3 poster (sebelumnya, sekarang, berikutnya)
+     yang digeser sejajar mengikuti jari. Lebar & posisi persisnya dihitung lewat
+     JS (lihat layoutSwipeTrack) supaya selalu pas dengan ukuran layar berapa pun. ---- */
+  .cal-swipe-track{ display:flex; }
+  .cal-swipe-slide{ flex:0 0 auto; overflow:hidden; }
 
   /* Bingkai / ornamen — tampil/sembunyi tergantung data-frame-style */
   .cp-frame{position:absolute; inset:56px; border:1px solid var(--poster-accent-light); pointer-events:none;}
@@ -381,12 +387,12 @@
     display:none; align-items:center; justify-content:center; letter-spacing:6px; font-size:13px; font-weight:600;
     font-family:'Poppins',sans-serif;
   }
-  #calendarPoster[data-frame-style="double"] .cp-frame-inner{display:block;}
-  #calendarPoster[data-frame-style="corners"] .cp-frame{display:none;}
-  #calendarPoster[data-frame-style="corners"] .cp-corner-mark{display:block;}
-  #calendarPoster[data-frame-style="ribbon"] .cp-frame{display:none;}
-  #calendarPoster[data-frame-style="ribbon"] .cp-ribbon{display:flex;}
-  #calendarPoster[data-frame-style="ribbon"] .cp-brandbadge{display:none;}
+  .cp-poster[data-frame-style="double"] .cp-frame-inner{display:block;}
+  .cp-poster[data-frame-style="corners"] .cp-frame{display:none;}
+  .cp-poster[data-frame-style="corners"] .cp-corner-mark{display:block;}
+  .cp-poster[data-frame-style="ribbon"] .cp-frame{display:none;}
+  .cp-poster[data-frame-style="ribbon"] .cp-ribbon{display:flex;}
+  .cp-poster[data-frame-style="ribbon"] .cp-brandbadge{display:none;}
 
   .cp-kicker{position:absolute; top:120px; width:100%; text-align:center; font-family:'Poppins',sans-serif; font-weight:500; font-size:15px; letter-spacing:9px; color:var(--poster-ink-soft); text-transform:uppercase;}
   .cp-rule{position:absolute; top:160px; width:100%; display:flex; align-items:center; justify-content:center;}
@@ -396,9 +402,9 @@
   .cp-year{font-family:var(--poster-font-title); font-weight:300; font-size:64px; line-height:1; margin-top:6px; color:var(--poster-accent); letter-spacing:2px;}
   .cp-quote{font-family:var(--poster-font-quote); font-style:italic; font-weight:400; font-size:21px; color:var(--poster-quote); margin-top:26px; letter-spacing:.2px;}
   /* Perataan kiri — tergantung data-title-align */
-  #calendarPoster[data-title-align="left"] .cp-kicker{text-align:left; padding-left:90px; padding-right:90px;}
-  #calendarPoster[data-title-align="left"] .cp-rule{justify-content:flex-start; padding-left:90px;}
-  #calendarPoster[data-title-align="left"] .cp-title-wrap{text-align:left; padding-left:90px; padding-right:90px;}
+  .cp-poster[data-title-align="left"] .cp-kicker{text-align:left; padding-left:90px; padding-right:90px;}
+  .cp-poster[data-title-align="left"] .cp-rule{justify-content:flex-start; padding-left:90px;}
+  .cp-poster[data-title-align="left"] .cp-title-wrap{text-align:left; padding-left:90px; padding-right:90px;}
 
   .cp-brandbadge{position:absolute; left:0; right:0; top:560px; margin:auto; width:fit-content; text-align:center;
     color:var(--poster-ink-soft); font-weight:600; font-family:'Poppins',sans-serif;
@@ -414,15 +420,15 @@
     cursor:pointer;
   }
   /* Bentuk penanda tanggal — tergantung data-date-shape */
-  #calendarPoster[data-date-shape="square"] .cp-daynum.has-job{ border-radius:9px; }
-  #calendarPoster[data-date-shape="underline"] .cp-daynum.has-job{
+  .cp-poster[data-date-shape="square"] .cp-daynum.has-job{ border-radius:9px; }
+  .cp-poster[data-date-shape="underline"] .cp-daynum.has-job{
     background:transparent; color:var(--poster-ink2); border-radius:0; width:auto; height:auto;
     border-bottom:3px solid var(--poster-accent); padding:0 3px 3px;
   }
-  #calendarPoster[data-date-shape="dot"] .cp-daynum.has-job{
+  .cp-poster[data-date-shape="dot"] .cp-daynum.has-job{
     background:transparent; color:var(--poster-ink2); border-radius:0; width:auto; height:auto; position:relative;
   }
-  #calendarPoster[data-date-shape="dot"] .cp-daynum.has-job::after{
+  .cp-poster[data-date-shape="dot"] .cp-daynum.has-job::after{
     content:''; position:absolute; bottom:-9px; left:50%; transform:translateX(-50%);
     width:6px; height:6px; border-radius:50%; background:var(--poster-accent);
   }
@@ -1641,7 +1647,7 @@
     opacity:0; transition:opacity .28s ease;
   }
   .poster-scale-inner.is-ready{opacity:1;}
-  #calendarPoster{
+  .cp-poster{
     transform-origin:top left !important;
     zoom:1;
     position:absolute; top:0; left:0;
@@ -1779,6 +1785,78 @@
     .claim-type-toggle{flex-direction:column;}
     .claim-type-toggle button{min-width:0;}
   }
+
+  /* ===== Form Input/Edit Job — desain panel per bagian + bar total di bawah ===== */
+  .jf{container-type:inline-size; display:flex; flex-direction:column; gap:16px;}
+  .jf-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid var(--line);}
+  .jf-head h2{margin:0;}
+  .jf-head p{margin:4px 0 0; font-size:13px; color:var(--ink-soft);}
+  .jf-no{font-size:12px; font-weight:600; color:#7a6400; background:var(--gold-pale); border:1px solid #efe2a0; border-radius:999px; padding:5px 12px; white-space:nowrap;}
+  .jf-sec{border:1px solid var(--line); border-radius:16px; background:#fff;}
+  .jf-sec-h{display:flex; align-items:center; gap:12px; padding:14px 18px; background:#fff9e6; border-bottom:1px solid var(--line); border-radius:15px 15px 0 0;}
+  .jf-ico{width:36px; height:36px; border-radius:10px; background:var(--ink); color:var(--gold-light); display:grid; place-items:center; flex-shrink:0;}
+  .jf-ico .ic{width:18px; height:18px;}
+  .jf-sec-h h3{margin:0; font-size:16px;}
+  .jf-sec-h p{margin:2px 0 0; font-size:12px; color:var(--ink-soft); line-height:1.4;}
+  .jf-body{padding:18px;}
+  .jf label{color:#3f3a29; margin-bottom:6px;}
+  .jf input:not([type=checkbox]),.jf select,.jf textarea{background:#fffdf7;}
+  .jf input:focus,.jf select:focus,.jf textarea:focus{background:#fff;}
+  .jf-check{padding:10px 12px; border:1.5px dashed #e6dcae; border-radius:11px; background:#fffdf3;}
+  .jf #durasiHariHintWrap{background:#fff9e6; border-left:3px solid var(--gold); border-radius:8px; padding:8px 12px;}
+  .jf #durasiHariHintWrap .field-hint{margin:0; font-size:12px; color:#5c4a12;}
+  .jf .jarak-box{background:#fff9e6; border:1px solid #f0e4a6;}
+  .jf .jarak-box .jr-group-label{text-transform:none; letter-spacing:0; font-size:12px; display:flex; align-items:center; gap:6px;}
+  .jf-bar{position:sticky; bottom:calc(8px + env(safe-area-inset-bottom,0px)); z-index:5; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; padding:12px 16px; background:rgba(28,26,18,.97); color:#fff; border-radius:16px; box-shadow:0 14px 30px -12px rgba(28,26,18,.55);}
+  .jf-totals{display:flex; gap:24px; flex-wrap:wrap;}
+  .jf-totals span{display:block; font-size:11.5px; color:#cbbf8f;}
+  .jf-totals b{font-family:'Fraunces',serif; font-size:18px; color:var(--gold-light); white-space:nowrap;}
+  .jf-bar .form-actions{margin:0;}
+  .jf-bar .btn-outline{background:transparent; color:#efe6c0; border-color:rgba(255,255,255,.3);}
+  .jf-bar .btn-outline:hover{background:rgba(255,255,255,.08);}
+  @container (max-width:560px){
+    .jf .form-grid{grid-template-columns:1fr;}
+    .jf-body{padding:14px;}
+    .jf-totals{width:100%; justify-content:space-between;}
+    .jf-bar .form-actions{width:100%;}
+  }
+
+  /* Hasil Cetak */
+  .cx{display:flex; flex-direction:column; gap:8px;}
+  .cx-row{display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.3fr); gap:10px; align-items:center; padding:8px 12px; border:1.5px solid var(--line); border-radius:11px; background:#fffdf7;}
+  .cx-row:has(input[data-cx]:checked){border-color:var(--gold); background:#fff9e6;}
+  .cx-n{display:flex; align-items:center; gap:9px; margin:0; font-size:13.5px; cursor:pointer;}
+  .cx-n input,.cx-b input{width:18px; height:18px; accent-color:var(--gold);}
+  .cx-p{font-size:12px; color:var(--ink-soft);}
+  .cx-c{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .cx-b{display:flex; align-items:center; gap:6px; margin:0; font-size:12.5px; white-space:nowrap;}
+  .jf .cx-q{width:76px;}
+  .jf .cx-s{width:auto; flex:1; min-width:0; padding:8px 10px;}
+  @container (max-width:560px){ .cx-row{grid-template-columns:1fr; gap:6px;} }
+
+  /* Kolom Rp / +62: prefix menyatu dengan isian, satu bingkai */
+  .jf .rp-input-wrap,.hc .rp-input-wrap{display:flex; align-items:stretch; border:1.5px solid #e8e0c6; border-radius:11px; background:#fffdf7; overflow:hidden; transition:border-color .15s, box-shadow .15s;}
+  .jf .rp-input-wrap:focus-within,.hc .rp-input-wrap:focus-within{border-color:var(--gold); box-shadow:0 0 0 3.5px rgba(212,175,0,.16); background:#fff;}
+  .jf .rp-input-wrap:has(input:read-only),.hc .rp-input-wrap:has(input:read-only){background:#faf6e6;}
+  .jf .rp-input-wrap .rp-prefix,.hc .rp-input-wrap .rp-prefix{position:static; transform:none; display:flex; align-items:center; padding:0 13px; background:var(--gold-pale); color:#7a6400; font-size:13px; font-weight:700; border-right:1.5px solid #efe2a0; flex-shrink:0;}
+  .jf .rp-input-wrap input.money-input,.jf .rp-input-wrap input[type=tel],.hc .rp-input-wrap input.money-input{flex:1; min-width:0; width:auto; min-height:41px; border:0; border-radius:0; background:transparent; box-shadow:none; padding-left:12px; font-variant-numeric:tabular-nums;}
+  /* Kerapian umum */
+  .jf .form-grid{align-items:start;}
+  .jf input:not([type=checkbox]):not([type=hidden]):not(.money-input):not([type=tel]),.jf select{min-height:44px;}
+  .jf textarea{resize:vertical; min-height:84px;}
+  .jf .honor-tim-row .rp-input-wrap{min-width:0;}
+
+  /* Kabari klien via WhatsApp */
+  .wa-box{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:14px 0 4px; padding:12px 14px; border:1.5px solid #bfe8b5; background:#f1fbef; border-radius:14px;}
+  .wa-box-ic{width:38px; height:38px; border-radius:50%; background:#25D366; color:#fff; display:grid; place-items:center; flex-shrink:0;}
+  .wa-box-ic .ic{width:20px; height:20px;}
+  .wa-box-tx{flex:1; min-width:170px; display:flex; flex-direction:column; gap:2px;}
+  .wa-box-tx b{font-size:14px; color:#14532d;}
+  .wa-box-tx span{font-size:12.5px; color:#3f6b4b;}
+  .btn-wa{background:#25D366; color:#062e14; border:1.5px solid #25D366; font-weight:700;}
+  .btn-wa:hover{background:#1fbd5b; border-color:#1fbd5b;}
+  .wa-preview{background:#efeae2; border-radius:14px; padding:14px;}
+  .wa-preview textarea{width:100%; background:#d9fdd3; border:1.5px solid #bfe8b5; border-radius:14px 14px 3px 14px; line-height:1.55; resize:vertical;}
 </style>
 </head>
 <body>
@@ -2482,8 +2560,186 @@ function setSyncStatus(status){
   el.style.color = s.color;
 }
 
+
+/* ---------- Kabari klien via WhatsApp: foto sudah selesai ---------- */
+const PESAN_SELESAI_KEY='kaoneMotret_pesanSelesai_v1';
+const PESAN_SELESAI_DEFAULT_LAMA='Halo Kak {nama},\n\nKabar baik dari Kaone Motret! 🎉 Foto {acara} Kakak ({tanggal}) sudah selesai diedit dan dicetak.\n\n{tagihan}{ajakan}\n\nTerima kasih sudah mempercayakan momen berharga Kakak kepada Kaone Motret 🙏📸';
+const PESAN_SELESAI_DEFAULT='Halo Kak {nama},\n\nKabar baik dari Kaone Motret! 🎉 Foto {acara} Kakak ({tanggal}) sudah selesai diedit dan dicetak.\n\n{tagihan}{ajakan}\n\n📍 Lokasi Kaone Motret:\n{maps}\n\nTerima kasih sudah mempercayakan momen berharga Kakak kepada Kaone Motret 🙏📸';
+function normPesanSelesai(t){ return (!t || t===PESAN_SELESAI_DEFAULT_LAMA) ? PESAN_SELESAI_DEFAULT : t; }
+let PESAN_SELESAI_TPL=(()=>{try{return localStorage.getItem(PESAN_SELESAI_KEY)||PESAN_SELESAI_DEFAULT;}catch(e){return PESAN_SELESAI_DEFAULT;}})();
+PESAN_SELESAI_TPL=normPesanSelesai(PESAN_SELESAI_TPL);
+function pesanSelesaiCardHtml(){
+  return `<div class="card"><h2 style="margin-top:0;">${ic('phone')} Pesan WhatsApp: Foto Selesai</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai tombol "Kabari Klien" di Detail Job saat Proses Edit dan Proses Cetak sudah Selesai. Isinya masih bisa diedit sebelum dikirim.</p>
+    <textarea id="pesanSelesaiTpl" rows="11" style="width:100%">${escapeHtml(PESAN_SELESAI_TPL)}</textarea>
+    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {acara} {tanggal} {paket} {sisa} {tagihan} {ajakan} {maps}. {tagihan} hanya muncul kalau belum lunas — berisi pengingat sisa pembayaran, bukan info tempat bayar (pelunasan biasanya sudah dilakukan di hari H acara). {ajakan} berisi ajakan menjemput foto. {maps} berisi link Google Maps lokasi Kaone Motret, dari titik yang sama dengan acuan hitung jarak.</div>
+    <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
+      <button type="button" class="btn btn-primary" onclick="simpanPesanSelesai()">Simpan pesan</button>
+      <button type="button" class="btn btn-outline" onclick="resetPesanSelesai()">Kembalikan bawaan</button>
+    </div></div>`;
+}
+function simpanPesanSelesai(){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah pesan ini.'); return; }
+  PESAN_SELESAI_TPL=(document.getElementById('pesanSelesaiTpl').value||'').trim()||PESAN_SELESAI_DEFAULT;
+  try{ localStorage.setItem(PESAN_SELESAI_KEY,PESAN_SELESAI_TPL); }catch(_){}
+  pushToCloud();
+  toast('Pesan WhatsApp disimpan');
+}
+function resetPesanSelesai(){ document.getElementById('pesanSelesaiTpl').value=PESAN_SELESAI_DEFAULT; }
+function mapsStudioLink(){ return 'https://www.google.com/maps?q='+ORIGIN_COORD.lat+','+ORIGIN_COORD.lng; }
+function bangunPesanSelesai(j){
+  const jenis=j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'acara') : (j.jenisAcara||'acara');
+  const sisa=Math.max(0,hitungSisaPembayaran(j));
+  const tagihan=(j.statusPembayaran==='Lunas'||sisa<=0) ? '' : `Sebagai pengingat, masih ada sisa pembayaran sebesar ${fmtRp(sisa)} ya, Kak.\n\n`;
+  const ajakan='Silakan datang ke Kaone Motret untuk menjemput fotonya. Kabari kami dulu ya, Kak, supaya kami pastikan ada yang menyambut saat Kakak datang.';
+  const map={nama:(j.namaKlien||'').trim(), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'', sisa:fmtRp(sisa), tagihan, ajakan, maps:mapsStudioLink()};
+  return PESAN_SELESAI_TPL.replace(/\{(\w+)\}/g,(m,k)=>k in map?map[k]:m).replace(/Kak\s+,/g,'Kak,').replace(/\n{3,}/g,'\n\n').trim();
+}
+function waLinkKlien(no,text){
+  let d=String(no||'').replace(/\D/g,'');
+  if(d.startsWith('0')) d='62'+d.slice(1); else if(!d.startsWith('62')) d='62'+d;
+  return 'https://wa.me/'+d+'?text='+encodeURIComponent(text);
+}
+function waSelesaiBoxHtml(j){
+  if(j.prosesEdit!=='Selesai' || j.prosesCetak!=='Selesai') return '';
+  if((j.pengiriman||'').startsWith('Sudah')) return '';
+  const adaNo=!!waDigits(j.noWhatsapp);
+  const kapan=j.waSelesaiAt ? new Date(j.waSelesaiAt).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+  const sub=!adaNo ? 'Isi nomor WhatsApp di Edit Job untuk mengabari klien.' : kapan ? `✓ Sudah dikabari ${kapan}` : 'Kabari klien lewat WhatsApp supaya fotonya segera diambil.';
+  return `<div class="wa-box"><div class="wa-box-ic">${ic('phone')}</div>
+    <div class="wa-box-tx"><b>Foto sudah selesai</b><span>${escapeHtml(sub)}</span></div>
+    ${adaNo?`<button type="button" class="btn btn-wa" onclick="openWaSelesaiModal('${j.id}')">${kapan?'Kirim Ulang':'Kabari Klien'}</button>`:''}</div>`;
+}
+function openWaSelesaiModal(jobId){
+  const j=jobs.find(x=>x.id===jobId); if(!j) return;
+  if(!waDigits(j.noWhatsapp)){ alert('Nomor WhatsApp klien belum diisi. Isi dulu lewat Edit Job.'); return; }
+  showModal(`
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('phone')} Kabari Klien: Foto Sudah Selesai</h3>
+    <div class="field-hint" style="margin-bottom:10px;">Kepada <b>${escapeHtml(j.namaKlien||'Klien')}</b> · +62 ${escapeHtml(waDigits(j.noWhatsapp))}</div>
+    <div class="wa-preview"><textarea id="waSelesaiText" rows="12">${escapeHtml(bangunPesanSelesai(j))}</textarea></div>
+    <div class="field-hint" style="margin-top:8px;">Pesan masih bisa diedit. WhatsApp akan terbuka dengan pesan ini, tinggal tekan kirim.</div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" onclick="openJobDetailModal('${j.id}')">Kembali</button>
+      <button type="button" class="btn btn-outline" onclick="waSelesaiSalin()">${ic('clipboard')} Salin Pesan</button>
+      <button type="button" class="btn btn-wa" onclick="waSelesaiKirim('${j.id}')">${ic('phone')} Buka WhatsApp</button>
+    </div>`);
+}
+function waSelesaiSalin(){
+  const ta=document.getElementById('waSelesaiText'); if(!ta) return;
+  const ok=()=>toast('Pesan disalin');
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(ta.value).then(ok,()=>{ta.select(); document.execCommand('copy'); ok();}); }
+  else { ta.select(); document.execCommand('copy'); ok(); }
+}
+function waSelesaiKirim(jobId){
+  const j=jobs.find(x=>x.id===jobId), ta=document.getElementById('waSelesaiText'); if(!j||!ta) return;
+  window.open(waLinkKlien(j.noWhatsapp,ta.value.trim()),'_blank','noopener');
+  j.waSelesaiAt=Date.now();
+  saveJobs();
+  openJobDetailModal(jobId);
+}
+
+/* ---------- Kolom Rp & +62 (prefix menyatu, keyboard angka) ---------- */
+function rpInput(name,val,attrs,plain){
+  return `<div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" enterkeyhint="next" class="money-input" name="${name}" value="${fmtRibuan(val)}" ${attrs||''} ${plain?'':'oninput="handleMoneyInput(this); updateCalc();"'}></div>`;
+}
+function rpField(label,name,val){ return `<div><label>${label}</label>${rpInput(name,val)}</div>`; }
+function waDigits(v){ let d=String(v||'').replace(/\D/g,''); if(d.startsWith('62')&&d.length>=11) d=d.slice(2); return d.replace(/^0+/,''); }
+function waFieldHtml(v){
+  const d=waDigits(v);
+  return `<div class="rp-input-wrap"><span class="rp-prefix">+62</span><input type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="tel-national" maxlength="13" placeholder="812 3456 7890" value="${d}" oninput="onWaInput(this)"><input type="hidden" name="noWhatsapp" id="waHidden" value="${d?'0'+d:''}"></div>`;
+}
+function onWaInput(el){
+  const d=waDigits(el.value); if(d!==el.value) el.value=d;
+  const h=document.getElementById('waHidden'); if(h) h.value=d?'0'+d:'';
+}
+
+/* ---------- Harga & hitung Hasil Cetak (Input Job) ---------- */
+const HARGA_CETAK_KEY='kaoneMotret_hargaCetak_v1';
+const HARGA_CETAK_DEFAULT={f16:110000,f12:9500,f12b:25000,f10:0,f6:1500,album1:0,album2:0,album3:0,album4:0,fd16:0,fd32:0,fd64:0,shia350:350000,shia400:400000};
+const ROLL_FOTO={1:40,2:80,3:120,4:180};
+let HARGA_CETAK=(()=>{try{return {...HARGA_CETAK_DEFAULT,...JSON.parse(localStorage.getItem(HARGA_CETAK_KEY)||'{}')};}catch(e){return {...HARGA_CETAK_DEFAULT};}})();
+const HARGA_CETAK_FIELDS=[['f16','Foto 16" + Bingkai (per foto)'],['f12','Foto 12" (per foto)'],['f12b','Bingkai 12" (per foto)'],['f10','Foto 10" (per foto)'],['f6','Foto 6" (per lembar)'],['album1','Album 1 roll'],['album2','Album 2 roll'],['album3','Album 3 roll'],['album4','Album 4 roll'],['fd16','Flashdisk 16 GB'],['fd32','Flashdisk 32 GB'],['fd64','Flashdisk 64 GB'],['shia350','Modal Shia Makeup (paket standar)'],['shia400','Modal Shia Makeup (12" pakai bingkai)']];
+function hargaCetakCardHtml(){
+  return `<div class="card"><h2 style="margin-top:0;">${ic('money')} Harga Cetak</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai di form Input Job untuk menghitung Biaya Cetak dan Harga Paket Shia Makeup secara otomatis.</p>
+    <form class="form-grid hc" onsubmit="simpanHargaCetak(event)">
+      ${HARGA_CETAK_FIELDS.map(([k,l])=>`<div><label>${l}</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-hk="${k}" value="${fmtRibuan(HARGA_CETAK[k])}" oninput="handleMoneyInput(this)"></div></div>`).join('')}
+      <div class="full form-actions"><button type="submit" class="btn btn-primary">Simpan harga</button></div>
+    </form></div>`;
+}
+function simpanHargaCetak(e){
+  e.preventDefault();
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah harga cetak.'); return; }
+  document.querySelectorAll('[data-hk]').forEach(i=>{ HARGA_CETAK[i.dataset.hk]=parseRibuan(i.value)||0; });
+  try{ localStorage.setItem(HARGA_CETAK_KEY,JSON.stringify(HARGA_CETAK)); }catch(_){}
+  pushToCloud();
+  toast('Harga cetak disimpan');
+}
+function bacaCetak(){
+  const $=(a,k)=>document.querySelector('[data-cx'+a+'="'+k+'"]');
+  const on=k=>!!$('',k)?.checked, qty=k=>$('-qty',k)?.value||1, sel=k=>$('-sel',k)?.value;
+  return {f16:{on:on('f16'),qty:qty('f16')}, f12:{on:on('f12'),qty:qty('f12'),bingkai:!!$('-b','f12')?.checked}, f10:{on:on('f10'),qty:qty('f10')}, f6:{on:on('f6'),roll:sel('f6')}, album:{on:on('album'),roll:sel('album')}, fd:{on:on('fd'),gb:sel('fd')}};
+}
+function hitungCetak(s){
+  const H=HARGA_CETAK, L=[]; let total=0;
+  const q=x=>Math.min(99,Math.max(1,parseInt(x)||1));
+  if(s.f16.on){ const n=q(s.f16.qty); total+=n*H.f16; L.push(`Foto 16" + Bingkai ×${n}`); }
+  if(s.f12.on){ const n=q(s.f12.qty); total+=n*(H.f12+(s.f12.bingkai?H.f12b:0)); L.push(`Foto 12"${s.f12.bingkai?' + Bingkai':''} ×${n}`); }
+  if(s.f10.on){ const n=q(s.f10.qty); total+=n*H.f10; L.push(`Foto 10" ×${n}`); }
+  if(s.f6.on){ const r=Number(s.f6.roll)||1, n=ROLL_FOTO[r]; total+=n*H.f6; L.push(`Foto 6" ${r} roll (${n} foto)`); }
+  if(s.album.on){ const r=Number(s.album.roll)||1; total+=H['album'+r]||0; L.push(`Album ${r} roll`); }
+  if(s.fd.on){ const g=Number(s.fd.gb)||16; total+=H['fd'+g]||0; L.push(`Flashdisk ${g} GB`); }
+  return {total,lines:L};
+}
+// Modal/biaya cetak selalu dibulatkan KE ATAS ke kelipatan Rp50.000 (mis. 60rb -> 100rb, 110rb -> 150rb).
+const KELIPATAN_MODAL=50000;
+function bulatModal(n){ n=Number(n)||0; return n<=0 ? 0 : Math.ceil(n/KELIPATAN_MODAL)*KELIPATAN_MODAL; }
+// Vendor Shia Makeup (paket: Foto 16" + Bingkai, Album, dan Foto 12"/10"/6"): hitungan akurat <= 350rb dicatat 350rb,
+// <= 400rb dicatat 400rb, lebih dari itu dihitung akurat lalu dibulatkan ke atas. Foto 12" pakai bingkai minimal 400rb.
+function modalShiaCetak(s,total){
+  const H=HARGA_CETAK;
+  if(!(s.f16.on && s.album.on && (s.f12.on || s.f10.on || s.f6.on))) return null;
+  const lantai=(s.f12.on && s.f12.bingkai) ? H.shia400 : H.shia350;
+  const m = total<=H.shia350 ? H.shia350 : total<=H.shia400 ? H.shia400 : bulatModal(total);
+  return Math.max(m,lantai);
+}
+function cetakRecalc(fromVendor){
+  const f=document.getElementById('jobForm'); if(!f) return;
+  const sel=bacaCetak(), {total,lines}=hitungCetak(sel);
+  if(fromVendor && !lines.length) return;
+  const shia=(f.elements['vendor']?.value==='Shia Makeup') ? modalShiaCetak(sel,total) : null;
+  const modal=shia||0;
+  const biaya=modal?0:bulatModal(total);
+  f.elements['biayaCetak'].value=fmtRibuan(biaya);
+  if(modal && f.elements['setoranShia']) f.elements['setoranShia'].value=fmtRibuan(modal);
+  const ta=f.elements['deskripsiPaket'];
+  const base=ta.value.replace(/\n?Hasil cetak: [^\n]*/,'').replace(/\s+$/,'');
+  ta.value=lines.length ? (base?base+'\n':'')+'Hasil cetak: '+lines.join(', ') : base;
+  const h=document.getElementById('cetakHint');
+  if(h) h.textContent = !lines.length ? '' : modal ? `Paket Shia Makeup terdeteksi: Harga Paket Vendor terisi ${fmtRp(modal)} (hitungan ${fmtRp(total)}), Biaya Cetak ${fmtRp(0)}.` : `Biaya Cetak terisi ${fmtRp(biaya)} (hitungan ${fmtRp(total)}, dibulatkan ke atas per ${fmtRp(KELIPATAN_MODAL)}).`;
+  updateCalc();
+}
+function cetakSectionHtml(d){
+  const c=d.cetak||{}, H=HARGA_CETAK, cur=(k,a,def)=>(c[k]&&c[k][a]!=null)?c[k][a]:def;
+  const chk=k=>`<input type="checkbox" data-cx="${k}" ${c[k]&&c[k].on?'checked':''}>`;
+  const qty=k=>`<input type="number" min="1" max="99" class="cx-q" data-cx-qty="${k}" value="${cur(k,'qty',1)}" aria-label="Jumlah">`;
+  const so=(k,arr,v,fmt)=>`<select class="cx-s" data-cx-sel="${k}">${arr.map(x=>`<option value="${x}" ${String(x)===String(v)?'selected':''}>${fmt(x)}</option>`).join('')}</select>`;
+  const row=(k,name,price,ctrl)=>`<div class="cx-row"><label class="cx-n">${chk(k)}<b>${name}</b></label><span class="cx-p">${price}</span><span class="cx-c">${ctrl}</span></div>`;
+  return `<section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('camera')}</span><div><h3>Hasil Cetak</h3><p>Centang yang dipesan. Otomatis masuk ke Deskripsi Paket dan Biaya Cetak.</p></div></div>
+    <div class="jf-body cx" id="cetakSection" oninput="cetakRecalc()" onchange="cetakRecalc()">
+      ${row('f16','Foto 16" + Bingkai',fmtRp(H.f16)+' / foto',qty('f16'))}
+      ${row('f12','Foto 12"',fmtRp(H.f12)+' / foto',qty('f12')+`<label class="cx-b"><input type="checkbox" data-cx-b="f12" ${c.f12&&c.f12.bingkai?'checked':''}> Bingkai +${fmtRp(H.f12b)}</label>`)}
+      ${row('f10','Foto 10"',fmtRp(H.f10)+' / foto',qty('f10'))}
+      ${row('f6','Foto 6"',fmtRp(H.f6)+' / foto',so('f6',[1,2,3,4],cur('f6','roll',1),r=>`${r} roll (${ROLL_FOTO[r]} foto)`))}
+      ${row('album','Album','',so('album',[1,2,3,4],cur('album','roll',1),r=>`${r} roll — ${fmtRp(H['album'+r])}`))}
+      ${row('fd','Flashdisk','',so('fd',[16,32,64],cur('fd','gb',16),g=>`${g} GB — ${fmtRp(H['fd'+g])}`))}
+      <div class="field-hint" id="cetakHint"></div>
+    </div></section>`;
+}
+
 function collectAllData(){
-  return { jobs, tasks, bonusAdjustments, bonusClaims, bonusRate: BONUS_PER_JAM, minKlaimTunai: MIN_KLAIM_TUNAI, minKlaimWdp: MIN_KLAIM_WDP, reports, thanksOverrides, thanksFontSize, posterThemeOverrides, layoutOverrides };
+  return { jobs, tasks, bonusAdjustments, bonusClaims, hargaCetak: HARGA_CETAK, pesanSelesai: PESAN_SELESAI_TPL, bonusRate: BONUS_PER_JAM, minKlaimTunai: MIN_KLAIM_TUNAI, minKlaimWdp: MIN_KLAIM_WDP, reports, thanksOverrides, thanksFontSize, posterThemeOverrides, layoutOverrides };
 }
 function applyAllData(data){
   if(!data) return;
@@ -2491,6 +2747,8 @@ function applyAllData(data){
   if(Array.isArray(data.tasks)) tasks = data.tasks;
   if(Array.isArray(data.bonusAdjustments)) bonusAdjustments = data.bonusAdjustments;
   if(Array.isArray(data.bonusClaims)) bonusClaims = data.bonusClaims;
+  if(data.hargaCetak && typeof data.hargaCetak==='object'){ HARGA_CETAK={...HARGA_CETAK_DEFAULT,...data.hargaCetak}; try{ localStorage.setItem(HARGA_CETAK_KEY,JSON.stringify(HARGA_CETAK)); }catch(e){} }
+  if(typeof data.pesanSelesai==='string' && data.pesanSelesai.trim()){ PESAN_SELESAI_TPL=normPesanSelesai(data.pesanSelesai); try{ localStorage.setItem(PESAN_SELESAI_KEY,PESAN_SELESAI_TPL); }catch(e){} }
   if(typeof data.bonusRate==='number' && Number.isFinite(data.bonusRate) && data.bonusRate>=0) BONUS_PER_JAM = data.bonusRate;
   if(typeof data.minKlaimTunai==='number' && Number.isFinite(data.minKlaimTunai) && data.minKlaimTunai>=0) MIN_KLAIM_TUNAI = data.minKlaimTunai;
   if(typeof data.minKlaimWdp==='number' && Number.isFinite(data.minKlaimWdp) && data.minKlaimWdp>=0) MIN_KLAIM_WDP = data.minKlaimWdp;
@@ -4341,30 +4599,20 @@ function buildJobFormHtml(j){
   const koordAwalValid = !!parseCoordString(d.koordinat);
 
   return `
-    <h2 style="margin-top:0;">${j?ic('edit')+' Edit Job':ic('note')+' Input Job Baru'}</h2>
-    ${j ? `<div style="font-size:13px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">No. Urut otomatis: <b>#${getJobNo(j.id)}</b></div>` : `<div style="font-size:13px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">No. Urut otomatis.</div>`}
-
-    <form id="jobForm">
-      <div class="section-title">${ic('user')} Data Klien &amp; Acara</div>
-      <div class="form-grid">
+    <form id="jobForm" class="jf">
+      <div class="jf-head">
         <div>
-          <label>Nama Klien / Pemesan</label>
-          <input type="text" name="namaKlien" value="${escapeHtml(d.namaKlien)}" placeholder="Nama klien">
+          <h2>${j?ic('edit')+' Edit Job':ic('note')+' Input Job Baru'}</h2>
+          <p>Lengkapi data acara, lokasi, dan keuangan. Kolom bertanda * wajib diisi.</p>
         </div>
-        <div>
-          <label>Tanggal Acara (Mulai) *</label>
-          <input type="date" name="tanggalAcara" id="tanggalAcaraInput" value="${d.tanggalAcara}" required
-                 oninput="onTanggalAcaraChange()">
-        </div>
-        <div>
-          <label>Tanggal Acara (Selesai) *</label>
-          <input type="date" name="tanggalSelesai" id="tanggalSelesaiInput" value="${escapeHtml(getJobFinishDate(d)||d.tanggalAcara||'')}" required
-                 oninput="updateDurasiHariHint()">
-          <div class="field-hint">Isi tanggal hari terakhir acara.</div>
-        </div>
-        <div class="full" id="durasiHariHintWrap">
-          <div class="field-hint" id="durasiHariHint">Job 1 hari — tugas tim otomatis ditandai selesai pukul 23.59 pada Tanggal Acara.</div>
-        </div>
+        <span class="jf-no">${j ? `No. urut <b>#${getJobNo(j.id)}</b>` : 'No. urut otomatis'}</span>
+      </div>
+      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('user')}</span><div><h3>Data Klien &amp; Acara</h3><p>Siapa yang memesan dan kapan acaranya.</p></div></div><div class="form-grid jf-body">
+        <div><label>Nama Klien / Pemesan</label><input type="text" name="namaKlien" value="${escapeHtml(d.namaKlien)}" placeholder="Nama klien" autocomplete="off"></div>
+        <div><label>No. WhatsApp</label>${waFieldHtml(d.noWhatsapp)}</div>
+        <div><label>Tanggal Acara (Mulai) *</label><input type="date" name="tanggalAcara" id="tanggalAcaraInput" value="${d.tanggalAcara}" required oninput="onTanggalAcaraChange()"></div>
+        <div><label>Tanggal Acara (Selesai) *</label><input type="date" name="tanggalSelesai" id="tanggalSelesaiInput" value="${escapeHtml(getJobFinishDate(d)||d.tanggalAcara||'')}" required oninput="updateDurasiHariHint()"></div>
+        <div class="full" id="durasiHariHintWrap"><div class="field-hint" id="durasiHariHint">Job 1 hari — tugas tim otomatis ditandai selesai pukul 23.59 pada Tanggal Acara.</div></div>
         <div>
           <label>Jenis Acara *</label>
           <select name="jenisAcara" required onchange="document.getElementById('jenisLainWrap').style.display=this.value==='Lainnya'?'block':'none'">
@@ -4372,27 +4620,18 @@ function buildJobFormHtml(j){
             ${opt(JENIS_ACARA_LIST, d.jenisAcara)}
           </select>
         </div>
-        <div id="jenisLainWrap" style="display:${d.jenisAcara==='Lainnya'?'block':'none'}">
-          <label>Sebutkan Jenis Acara Lainnya</label>
-          <input type="text" name="jenisAcaraLain" value="${escapeHtml(d.jenisAcaraLain||'')}">
-        </div>
-        <div>
-          <label>No. WhatsApp</label>
-          <input type="tel" name="noWhatsapp" value="${escapeHtml(d.noWhatsapp)}" placeholder="0812xxxxxxxx">
-        </div>
-        <div>
-          <label>Paket</label>
-          <input type="text" name="paket" value="${escapeHtml(d.paket)}" placeholder="Nama / isi paket">
-        </div>
+        <div><label>Paket</label><input type="text" name="paket" value="${escapeHtml(d.paket)}" placeholder="Nama / isi paket"></div>
+        <div class="full" id="jenisLainWrap" style="display:${d.jenisAcara==='Lainnya'?'block':'none'}"><label>Sebutkan Jenis Acara Lainnya</label><input type="text" name="jenisAcaraLain" value="${escapeHtml(d.jenisAcaraLain||'')}"></div>
         <div class="full">
           <label>Deskripsi Paket</label>
-          <textarea name="deskripsiPaket" rows="2" placeholder="Rincian isi paket, misal: 1 album 20R, cetak 4R 50 lembar, softfile semua foto, dll.">${escapeHtml(d.deskripsiPaket||'')}</textarea>
+          <textarea name="deskripsiPaket" rows="3" placeholder="Rincian isi paket, misal: 1 album 20R, cetak 4R 50 lembar, softfile semua foto, dll.">${escapeHtml(d.deskripsiPaket||'')}</textarea>
         </div>
-      </div>
+        </div>
 
-      <div class="section-title">${ic('map-pin')} Lokasi Acara</div>
-      <div class="form-grid">
-        <div class="full" style="display:flex;align-items:center;gap:8px;">
+      </section>
+      ${cetakSectionHtml(d)}
+      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('map-pin')}</span><div><h3>Lokasi Acara</h3><p>Alamat dan titik peta, dipakai untuk menghitung jarak dan saran transport.</p></div></div><div class="form-grid jf-body">
+        <div class="full jf-check" style="display:flex;align-items:center;gap:8px;">
           <input type="checkbox" id="adaDusunInput" name="adaDusun" style="width:18px;height:18px;" ${(d.adaDusun || d.dusun)?'checked':''} onchange="document.getElementById('dusunWrap').style.display=this.checked?'block':'none'">
           <label for="adaDusunInput" style="margin:0;">Alamat ini punya Dusun</label>
         </div>
@@ -4423,24 +4662,12 @@ function buildJobFormHtml(j){
         </div>
       </div>
 
-      <div class="section-title">${ic('settings')} Status Proses</div>
-      <div class="form-grid">
-        <div>
-          <label>Proses Edit</label>
-          <select name="prosesEdit">${opt(['Belum Selesai','Selesai'], d.prosesEdit)}</select>
-        </div>
-        <div>
-          <label>Proses Cetak</label>
-          <select name="prosesCetak">${opt(['Belum Selesai','Selesai'], d.prosesCetak)}</select>
-        </div>
-        <div>
-          <label>Pengiriman</label>
-          <select name="pengiriman">${opt(PENGIRIMAN_LIST, d.pengiriman)}</select>
-        </div>
-        <div>
-          <label>Status Pembayaran</label>
-          <select name="statusPembayaran">${opt(STATUS_BAYAR_LIST, d.statusPembayaran)}</select>
-        </div>
+      </section>
+      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('settings')}</span><div><h3>Status Proses</h3><p>Progres pengerjaan, pembayaran, dan siapa yang mengerjakan.</p></div></div><div class="form-grid jf-body">
+        <div><label>Proses Edit</label><select name="prosesEdit">${opt(['Belum Selesai','Selesai'], d.prosesEdit)}</select></div>
+        <div><label>Proses Cetak</label><select name="prosesCetak">${opt(['Belum Selesai','Selesai'], d.prosesCetak)}</select></div>
+        <div><label>Pengiriman</label><select name="pengiriman">${opt(PENGIRIMAN_LIST, d.pengiriman)}</select></div>
+        <div><label>Status Pembayaran</label><select name="statusPembayaran">${opt(STATUS_BAYAR_LIST, d.statusPembayaran)}</select></div>
         <div>
           <label>Vendor Asal Job</label>
           <select name="vendor" onchange="onVendorChange(this)">
@@ -4448,83 +4675,41 @@ function buildJobFormHtml(j){
             ${opt(VENDOR_LIST, d.vendor)}
           </select>
         </div>
-        <div id="vendorLainWrap" style="display:${d.vendor==='Lainnya'?'block':'none'}">
-          <label>Sebutkan Vendor Lainnya</label>
-          <input type="text" name="vendorLain" value="${escapeHtml(d.vendorLain||'')}" placeholder="Nama vendor / relasi">
+        <div><label>Tim / Freelancer</label><input type="text" name="timFreelancer" value="${escapeHtml(d.timFreelancer||'')}" placeholder="Nama tim / freelancer" autocomplete="off"></div>
+        <div class="full" id="vendorLainWrap" style="display:${d.vendor==='Lainnya'?'block':'none'}"><label>Sebutkan Vendor Lainnya</label><input type="text" name="vendorLain" value="${escapeHtml(d.vendorLain||'')}" placeholder="Nama vendor / relasi"></div>
         </div>
-        <div>
-          <label>Tim / Freelancer</label>
-          <input type="text" name="timFreelancer" value="${escapeHtml(d.timFreelancer||'')}" placeholder="Nama tim / freelancer yang mengerjakan">
-        </div>
-      </div>
 
-      <div class="section-title">${ic('money')} Keuangan</div>
-      <div class="form-grid">
-        <div>
-          <label>DP</label>
-          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
-            <input type="text" inputmode="numeric" class="money-input" name="dp" value="${fmtRibuan(d.dp)}" oninput="handleMoneyInput(this); updateCalc();">
-          </div>
+      </section>
+      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('money')}</span><div><h3>Keuangan</h3><p>Uang masuk dan keluar. Sisa bayar dan laba dihitung otomatis.</p></div></div><div class="form-grid jf-body">
+        ${rpField('Penghasilan Dari Klien/Mitra','penghasilan',d.penghasilan)}
+        ${rpField('Diskon','diskon',d.diskon)}
+        ${rpField('DP','dp',d.dp)}
+        ${rpField('Biaya Cetak','biayaCetak',d.biayaCetak)}
+        <div id="shiaSetoranWrap" class="full" style="display:${d.vendor && d.vendor!=='Kaone Motret'?'block':'none'}"><label>Harga Paket Vendor</label>${rpInput('setoranShia',d.setoranShia)}</div>
+        <div class="full" id="honorTimSection">${renderHonorTimSectionHtml()}</div>
+        <div><label>Sedekah (otomatis)</label>${rpInput('sedekahNominal',d.sedekahNominal||hitungSedekah(d),'id="sedekahNominalInput" readonly',true)}</div>
+        <div><label>Status Sedekah</label><select name="sedekahStatus" onchange="updateCalc()">${opt(['Belum','Sudah'], d.sedekahStatus)}</select></div>
         </div>
-        <div>
-          <label>Penghasilan Dari Klien/Mitra</label>
-          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
-            <input type="text" inputmode="numeric" class="money-input" name="penghasilan" value="${fmtRibuan(d.penghasilan)}" oninput="handleMoneyInput(this); updateCalc();">
-          </div>
-        </div>
-        <div>
-          <label>Biaya Cetak</label>
-          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
-            <input type="text" inputmode="numeric" class="money-input" name="biayaCetak" value="${fmtRibuan(d.biayaCetak)}" oninput="handleMoneyInput(this); updateCalc();">
-          </div>
-        </div>
-        <div class="full" id="honorTimSection">
-          ${renderHonorTimSectionHtml()}
-        </div>
-        <div>
-          <label>Diskon</label>
-          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
-            <input type="text" inputmode="numeric" class="money-input" name="diskon" value="${fmtRibuan(d.diskon)}" oninput="handleMoneyInput(this); updateCalc();">
-          </div>
-        </div>
-        <div>
-          <label>Sedekah (otomatis)</label>
-          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
-            <input type="text" inputmode="numeric" class="money-input" name="sedekahNominal" id="sedekahNominalInput" value="${fmtRibuan(d.sedekahNominal||hitungSedekah(d))}" readonly>
-          </div>
-        </div>
-        <div>
-          <label>Status Sedekah</label>
-          <select name="sedekahStatus" onchange="updateCalc()">${opt(['Belum','Sudah'], d.sedekahStatus)}</select>
-        </div>
-        <div id="shiaSetoranWrap" class="full" style="display:${d.vendor && d.vendor!=='Kaone Motret'?'block':'none'}">
-          <label>Harga Paket Vendor</label>
-          <div class="rp-input-wrap"><span class="rp-prefix">Rp</span>
-            <input type="text" inputmode="numeric" class="money-input" name="setoranShia" value="${fmtRibuan(d.setoranShia)}" oninput="handleMoneyInput(this); updateCalc();">
-          </div>
-        </div>
-      </div>
-      <div class="calc-box" style="background:#eef3fb;">
-        <span>Sisa Pembayaran (otomatis)</span>
-        <span id="calcSisa">${fmtRp(hitungSisaPembayaran(d))}</span>
-      </div>
-      <div class="calc-box">
-        <span>Penghasilan Bersih (otomatis)</span>
-        <span id="calcBersih">${fmtRp(hitungBersih({...d, sedekahNominal: d.sedekahNominal||hitungSedekah(d)}))}</span>
-      </div>
 
-      <div class="section-title">${ic('note')} Catatan Tambahan</div>
-      <div class="form-grid">
+      </section>
+      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('note')}</span><div><h3>Catatan Tambahan</h3><p>Permintaan khusus atau hal yang perlu diingat.</p></div></div><div class="form-grid jf-body">
         <div class="full">
           <label>Catatan</label>
           <textarea name="catatan" rows="3" placeholder="Catatan lain seputar job ini...">${escapeHtml(d.catatan||'')}</textarea>
         </div>
       </div>
 
+      </section>
+      <div class="jf-bar">
+        <div class="jf-totals">
+          <div><span>Sisa pembayaran</span><b id="calcSisa">${fmtRp(hitungSisaPembayaran(d))}</b></div>
+          <div><span>Penghasilan bersih</span><b id="calcBersih">${fmtRp(hitungBersih({...d, sedekahNominal: d.sedekahNominal||hitungSedekah(d)}))}</b></div>
+        </div>
       <div class="form-actions">
         ${j?`<button type="button" class="btn btn-danger" id="btnDeleteJob">${ic('trash')} Hapus Job</button>`:''}
         <button type="button" class="btn btn-outline" id="btnCancelForm">Batal</button>
         <button type="submit" class="btn btn-primary">${j?'Simpan Perubahan':'Simpan Job'}</button>
+      </div>
       </div>
     </form>
   `;
@@ -4650,6 +4835,7 @@ function bindJobFormEvents(scopeEl, onDone){
     // Rincian Honor Tim per anggota (hasil pilihan checkbox + nominal di section Honor Tim).
     // Kalau tidak ada anggota yang dipilih (mis. job lama belum pernah dibagi), honorTimList
     // dikosongkan saja — nilai total honorTim di atas tetap tersimpan apa adanya.
+    data.cetak = bacaCetak();
     data.honorTimList = jobFormHonorTim.map(x=>({userId:x.userId, nama:x.nama, nominal:Number(x.nominal)||0}));
     // Sedekah selalu dihitung ulang otomatis di titik penyimpanan, supaya konsisten
     // walau kolom lain sempat diubah tanpa memicu event input.
@@ -4682,6 +4868,7 @@ function bindJobFormEvents(scopeEl, onDone){
 function onVendorChange(sel){
   document.getElementById('vendorLainWrap').style.display = sel.value==='Lainnya' ? 'block' : 'none';
   document.getElementById('shiaSetoranWrap').style.display = (sel.value && sel.value!=='Kaone Motret') ? 'block' : 'none';
+  cetakRecalc(true);
   updateCalc();
 }
 // Dipanggil saat Tanggal Acara (Mulai) diubah: pastikan Tanggal Acara (Selesai) tidak
@@ -5009,9 +5196,15 @@ function viewKalender(){
       <button class="btn btn-primary" id="btnDownloadPoster">${ic('download')} Unduh Gambar (1080×1920)</button>
       <button class="btn btn-outline" id="btnDownloadPosterKeterangan">${ic('download')} Unduh dengan Keterangan Tanggal</button>
     </div>
-    <div class="poster-wrap">
-      <div class="poster-scale-inner" id="posterScaleInner">
-        ${renderPosterHtml()}
+    <div class="poster-wrap" id="calSwipeViewport">
+      <div class="cal-swipe-track" id="calSwipeTrack">
+        <div class="cal-swipe-slide" data-role="prev"></div>
+        <div class="cal-swipe-slide" data-role="current">
+          <div class="poster-scale-inner" id="posterScaleInner">
+            ${renderPosterHtml()}
+          </div>
+        </div>
+        <div class="cal-swipe-slide" data-role="next"></div>
       </div>
     </div>
 
@@ -5209,7 +5402,7 @@ function renderPosterHtml(){
   else if(kickerText.length > 18){ kickerFontSize = 13.5; kickerLetterSpacing = 5; }
 
   return `
-  <div id="calendarPoster" style="${themeStyle}" data-title-align="${layout.titleAlign}" data-date-shape="${layout.dateShape}" data-frame-style="${layout.frameStyle}">
+  <div id="calendarPoster" class="cp-poster" style="${themeStyle}" data-title-align="${layout.titleAlign}" data-date-shape="${layout.dateShape}" data-frame-style="${layout.frameStyle}">
     <div class="cp-ribbon">KAONE MOTRET</div>
     <div class="cp-frame"></div>
     <div class="cp-frame-inner"></div>
@@ -5299,26 +5492,36 @@ function positionPosterStats(poster, showKeterangan){
      ruang kosong berlebih maupun konten yang saling menimpa.
    - Cara ini berperilaku persis sama di Safari iPhone, Chrome Android,
      dan browser desktop. */
+// Inti perhitungan skala satu poster (dipakai untuk poster yang sedang aktif
+// MAUPUN pratinjau bulan sebelumnya/berikutnya saat swipe) — supaya logikanya
+// hanya ditulis sekali dan selalu identik di mana pun dipakai.
+function scalePosterElement(poster, inner, containerWidth){
+  if(!poster || !inner || !containerWidth) return; // hindari skala 0 saat elemen belum sempat ter-layout
+  // Ukur & posisikan blok keterangan + statistik dulu. Pengukuran ini memakai
+  // ukuran tata letak asli, jadi aman dilakukan kapan pun.
+  positionPosterStats(poster, true);
+  const scale = Math.min(1, containerWidth / 1080);
+  poster.style.zoom = '';            // pastikan sisa nilai 'zoom' lama dibersihkan
+  poster.style.transformOrigin = 'top left';
+  poster.style.transform = `scale(${scale})`;
+  inner.style.height = Math.ceil(1920 * scale) + 'px';
+}
 function scalePoster(){
   const inner = document.getElementById('posterScaleInner');
   const wrap = inner?.parentElement;
   const poster = document.getElementById('calendarPoster');
   if(!inner || !wrap || !poster) return;
 
-  // Ukur & posisikan blok keterangan + statistik dulu. Pengukuran ini memakai
-  // ukuran tata letak asli, jadi aman dilakukan kapan pun.
-  positionPosterStats(poster, true);
-
   const containerWidth = inner.clientWidth || wrap.clientWidth;
-  if(!containerWidth) return; // hindari skala 0 saat elemen belum sempat ter-layout
+  if(!containerWidth) return;
 
-  const scale = Math.min(1, containerWidth / 1080);
-  poster.style.zoom = '';            // pastikan sisa nilai 'zoom' lama dibersihkan
-  poster.style.transformOrigin = 'top left';
-  poster.style.transform = `scale(${scale})`;
-  inner.style.height = Math.ceil(1920 * scale) + 'px';
+  scalePosterElement(poster, inner, containerWidth);
   wrap.style.height = 'auto';
   inner.classList.add('is-ready');
+
+  // Susun ulang jalur swipe (pratinjau bulan sebelum/sesudah) memakai lebar yang
+  // sama persis, supaya selalu pas dengan ukuran layar saat ini.
+  layoutSwipeTrack();
 }
 
 /* Jalankan ulang scalePoster dengan aman & tidak berlebihan.
@@ -5380,6 +5583,200 @@ function observePosterContainer(){
     _posterResizeObserver.disconnect();
     _posterResizeObserver.observe(inner);
   }catch(e){}
+}
+
+/* =========================================================
+   SWIPE KALENDER — geser jalur poster (sebelumnya|sekarang|berikutnya)
+   dengan jari untuk berpindah bulan.
+   ---------------------------------------------------------
+   Prinsip kerjanya: tiga poster (bulan sebelumnya, sekarang, berikutnya)
+   ditaruh berjajar dalam satu jalur ("track") yang lebih lebar dari layar.
+   Selagi jari menggeser, jalur itu ikut digeser persis sejauh gerakan jari
+   (1:1 — jadi kalender terasa "menempel" di jari). Saat jari dilepas:
+     - kalau geserannya cukup jauh → jalur diselesaikan dengan animasi halus
+       ke bulan tujuan, lalu bulan aktif (calMonth/calYear) benar-benar
+       dipindah & halaman dirender ulang seperti biasa (tombol ‹ ›).
+     - kalau kurang jauh → jalur "melenting" balik ke posisi semula.
+   Karena Desember selalu bersambung ke Januari (lihat shiftMonth), poster
+   tetangga selalu ada — jadi tidak perlu efek tahanan di ujung kalender. ========================================================= */
+let _calSwipe = {
+  active:false,      // sedang ada jari yang menekan & dipantau
+  decided:false,      // sudah diputuskan ini geser mendatar (bukan scroll biasa)
+  dragging:false,     // sedang menggeser jalur secara horizontal
+  animating:false,    // sedang animasi commit/snap-back (jangan diganggu)
+  pointerId:null,
+  startX:0, startY:0, currentX:0,
+  slideWidthCache:0,
+};
+// Menghitung bulan target maju/mundur sejauh `delta`, dengan pembungkusan
+// tahun otomatis (Januari-1 = Desember tahun sebelumnya, dst).
+function shiftMonth(month, year, delta){
+  let m = month + delta, y = year;
+  while(m < 0){ m += 12; y--; }
+  while(m > 11){ m -= 12; y++; }
+  return {month:m, year:y};
+}
+// Merender HTML poster untuk bulan & tahun TERTENTU (bukan bulan yang sedang
+// aktif). Triknya: pinjam sebentar variabel global calMonth/calYear (dibaca
+// oleh renderPosterHtml & seluruh helper temanya seperti tema/ucapan/layout
+// per-bulan), lalu kembalikan lagi seketika — aman karena JS berjalan
+// sebaris/synchronous, tak ada kode lain yang sempat "menyela" di antaranya.
+// Atribut id="calendarPoster" sengaja dibuang dari hasilnya (diganti tetap
+// memakai class .cp-poster untuk gaya visualnya) supaya tidak bentrok dengan
+// poster yang sedang aktif — id itu cuma boleh dipakai oleh SATU elemen.
+function renderPosterHtmlForMonth(month, year){
+  const savedMonth = calMonth, savedYear = calYear;
+  calMonth = month; calYear = year;
+  let html = '';
+  try{ html = renderPosterHtml(); }
+  finally{ calMonth = savedMonth; calYear = savedYear; }
+  return html.replace(' id="calendarPoster"', '');
+}
+// Mengisi slide pratinjau (sebelumnya/berikutnya) dengan poster bulan yang
+// sesuai, lalu langsung menyesuaikan skalanya dengan lebar layar saat ini.
+function fillSwipeNeighborSlide(slideEl, month, year, width){
+  if(!slideEl) return;
+  slideEl.innerHTML = `<div class="poster-scale-inner">${renderPosterHtmlForMonth(month, year)}</div>`;
+  const inner = slideEl.querySelector('.poster-scale-inner');
+  const poster = slideEl.querySelector('.cp-poster');
+  if(inner && poster){
+    scalePosterElement(poster, inner, width);
+    inner.classList.add('is-ready');
+  }
+}
+// Mengukur ulang lebar layar & menata ketiga slide (termasuk membangun ulang
+// isi pratinjau bulan sebelumnya/berikutnya kalau lebarnya berubah, misalnya
+// karena layar diputar). Dipanggil otomatis setiap kali scalePoster() jalan,
+// jadi ikut kebagian semua "pemicu" yang sudah ada (resize, orientasi, font
+// selesai dimuat, dsb) tanpa perlu pasang pemantau baru.
+function layoutSwipeTrack(){
+  if(_calSwipe.active || _calSwipe.animating) return; // jangan ganggu saat sedang digeser/dianimasikan
+  const viewport = document.getElementById('calSwipeViewport');
+  const track = document.getElementById('calSwipeTrack');
+  if(!viewport || !track) return;
+  const slidePrev = track.querySelector('.cal-swipe-slide[data-role="prev"]');
+  const slideNext = track.querySelector('.cal-swipe-slide[data-role="next"]');
+  if(!slidePrev || !slideNext) return;
+
+  const cs = getComputedStyle(viewport);
+  const padL = parseFloat(cs.paddingLeft) || 0, padR = parseFloat(cs.paddingRight) || 0;
+  const w = Math.round(viewport.clientWidth - padL - padR);
+  if(!w) return;
+
+  const sameWidth = (w === _calSwipe.slideWidthCache);
+  _calSwipe.slideWidthCache = w;
+
+  track.querySelectorAll('.cal-swipe-slide').forEach(s=>{ s.style.width = w + 'px'; });
+  track.style.width = (w * 3) + 'px';
+  track.style.transition = 'none';
+  track.style.transform = `translate3d(${-w}px,0,0)`;
+
+  if(sameWidth && slidePrev.dataset.built === '1' && slideNext.dataset.built === '1') return;
+
+  const prevYM = shiftMonth(calMonth, calYear, -1);
+  const nextYM = shiftMonth(calMonth, calYear, 1);
+  fillSwipeNeighborSlide(slidePrev, prevYM.month, prevYM.year, w);
+  fillSwipeNeighborSlide(slideNext, nextYM.month, nextYM.year, w);
+  slidePrev.dataset.built = '1';
+  slideNext.dataset.built = '1';
+}
+function endSwipeTracking(){
+  _calSwipe.active = false;
+  _calSwipe.dragging = false;
+  window.removeEventListener('pointermove', onCalSwipePointerMove);
+  window.removeEventListener('pointerup', onCalSwipePointerUp);
+  window.removeEventListener('pointercancel', onCalSwipePointerUp);
+}
+function onCalSwipePointerDown(e){
+  if(e.pointerType==='mouse' && e.button!==0) return;
+  if(_calSwipe.animating) return; // biarkan animasi commit/snap-back sebelumnya selesai dulu
+  const track = document.getElementById('calSwipeTrack');
+  if(!track || !_calSwipe.slideWidthCache) return;
+  _calSwipe.active = true;
+  _calSwipe.decided = false;
+  _calSwipe.dragging = false;
+  _calSwipe.pointerId = e.pointerId;
+  _calSwipe.startX = e.clientX;
+  _calSwipe.startY = e.clientY;
+  _calSwipe.currentX = e.clientX;
+  track.style.transition = 'none';
+  window.addEventListener('pointermove', onCalSwipePointerMove, {passive:false});
+  window.addEventListener('pointerup', onCalSwipePointerUp, {passive:true});
+  window.addEventListener('pointercancel', onCalSwipePointerUp, {passive:true});
+}
+function onCalSwipePointerMove(e){
+  if(!_calSwipe.active || e.pointerId !== _calSwipe.pointerId) return;
+  const dx = e.clientX - _calSwipe.startX;
+  const dy = e.clientY - _calSwipe.startY;
+
+  if(!_calSwipe.decided){
+    // Tunggu gerakan cukup jelas dulu sebelum memutuskan ini geser kalender
+    // (mendatar) atau sekadar menggulir halaman (tegak) — supaya jari yang
+    // baru sedikit bergetar saat menyentuh layar tidak langsung dianggap swipe.
+    if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    _calSwipe.decided = true;
+    _calSwipe.dragging = Math.abs(dx) > Math.abs(dy);
+    if(!_calSwipe.dragging){ endSwipeTracking(); return; } // serahkan ke scroll halaman biasa
+  }
+  if(!_calSwipe.dragging) return;
+
+  e.preventDefault(); // sudah pasti geser kalender — jangan sampai halaman ikut tergulir
+  _calSwipe.currentX = e.clientX;
+  const track = document.getElementById('calSwipeTrack');
+  const w = _calSwipe.slideWidthCache;
+  track.style.transform = `translate3d(${-w + dx}px,0,0)`;
+}
+function onCalSwipePointerUp(e){
+  const wasDragging = _calSwipe.dragging;
+  const dx = _calSwipe.currentX - _calSwipe.startX;
+  endSwipeTracking();
+  if(!wasDragging) return;
+
+  const track = document.getElementById('calSwipeTrack');
+  const w = _calSwipe.slideWidthCache || 1;
+  // Baru dianggap "sengaja pindah bulan" kalau sudah tergeser lumayan jauh
+  // (minimal 50px, atau sekitar seperlima lebar layar di layar besar).
+  const threshold = Math.max(50, w * 0.22);
+  if(dx <= -threshold) completeCalSwipe(track, w, 1);       // digeser ke kiri → bulan berikutnya
+  else if(dx >= threshold) completeCalSwipe(track, w, -1);  // digeser ke kanan → bulan sebelumnya
+  else snapBackCalSwipe(track, w);
+}
+function completeCalSwipe(track, w, dir){
+  if(!track) return;
+  _calSwipe.animating = true;
+  track.style.transition = 'transform .32s cubic-bezier(.22,.61,.36,1)';
+  void track.offsetWidth; // paksa reflow supaya transisi di bawah ini benar-benar teranimasi
+  track.style.transform = `translate3d(${-w - dir*w}px,0,0)`;
+  const finish = ()=>{
+    track.removeEventListener('transitionend', finish);
+    _calSwipe.animating = false;
+    calMonth += dir;
+    if(calMonth < 0){ calMonth = 11; calYear--; }
+    else if(calMonth > 11){ calMonth = 0; calYear++; }
+    navigate('kalender');
+  };
+  track.addEventListener('transitionend', finish, {once:true});
+}
+function snapBackCalSwipe(track, w){
+  if(!track) return;
+  _calSwipe.animating = true;
+  track.style.transition = 'transform .32s cubic-bezier(.22,1.15,.4,1)';
+  void track.offsetWidth; // paksa reflow supaya transisi di bawah ini benar-benar teranimasi
+  track.style.transform = `translate3d(${-w}px,0,0)`;
+  const finish = ()=>{
+    track.removeEventListener('transitionend', finish);
+    _calSwipe.animating = false;
+  };
+  track.addEventListener('transitionend', finish, {once:true});
+}
+// Dipanggil sekali setiap kali menu Kalender Job dibuka (elemen lamanya sudah
+// otomatis dibuang oleh navigate() lewat app.innerHTML, jadi aman pasang
+// listener baru di sini tanpa risiko menumpuk).
+function setupCalendarSwipe(){
+  const viewport = document.getElementById('calSwipeViewport');
+  if(!viewport) return;
+  layoutSwipeTrack();
+  viewport.addEventListener('pointerdown', onCalSwipePointerDown, {passive:true});
 }
 
 
@@ -5753,6 +6150,7 @@ function openJobDetailModal(jobId){
       <div class="jd-bottom-bar"></div>
     </div>
     ${kwitansiStatusHtml(j)}
+    ${waSelesaiBoxHtml(j)}
     <div class="modal-actions">
       <button type="button" class="btn btn-outline" data-detail-download="${j.id}">${ic('image')} Unduh Gambar</button>
       <button type="button" class="btn btn-outline" data-detail-story="${j.id}">${ic('phone')} Unduh Gambar Story</button>
@@ -8459,6 +8857,7 @@ function viewPengaturan(){
   const backupDays = daysSinceLastBackup();
   const lastBackupText = backupDays===null ? 'Belum pernah dicadangkan' : (backupDays===0 ? 'Hari ini' : `${backupDays} hari yang lalu`);
   return `
+  ${isAdmin()?hargaCetakCardHtml()+pesanSelesaiCardHtml():''}
   <div class="card">
     <h2 style="margin-top:0;">${ic('lock')} Akun Saya</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">
@@ -8797,6 +9196,7 @@ function attachHandlers(){
     setupPosterWatchers();
     observePosterContainer();
     schedulePosterRescale();
+    setupCalendarSwipe();
     document.getElementById('calPrev')?.addEventListener('click', ()=>{ calMonth--; if(calMonth<0){calMonth=11;calYear--;} navigate('kalender'); });
     document.getElementById('calNext')?.addEventListener('click', ()=>{ calMonth++; if(calMonth>11){calMonth=0;calYear++;} navigate('kalender'); });
     document.getElementById('btnDownloadPoster')?.addEventListener('click', ()=>downloadPosterImage(false));
@@ -8959,8 +9359,13 @@ function downloadPosterImage(includeKeterangan){
   }
   const poster = document.getElementById('calendarPoster');
   const inner = document.getElementById('posterScaleInner');
+  // Sejak ada jalur swipe, posterScaleInner dibungkus satu lapis tambahan
+  // (.cal-swipe-slide) yang juga overflow:hidden — ikut dilonggarkan sementara
+  // supaya poster ukuran penuh 1080×1920 tidak ikut terpotong saat di-capture.
+  const slide = inner?.closest('.cal-swipe-slide');
   const restore = ()=>{
     if(inner){ inner.style.overflow = ''; }
+    if(slide){ slide.style.overflow = ''; }
     scalePoster(); // scalePoster memasang kembali skala layar + blok keterangan
   };
   try{
@@ -8969,6 +9374,7 @@ function downloadPosterImage(includeKeterangan){
     poster.style.transform = 'none';
     poster.style.zoom = '';
     if(inner){ inner.style.overflow = 'visible'; }
+    if(slide){ slide.style.overflow = 'visible'; }
     // Kalau includeKeterangan=false: sembunyikan blok keterangan & kembalikan statistik
     // ke posisi tepat di bawah grid (perilaku tombol unduh biasa, sama seperti semula).
     // Kalau includeKeterangan=true: blok keterangan ikut ditampilkan & statistik
@@ -9046,12 +9452,30 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.8.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.9.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.9.0',
+    tanggal: '25 September 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Form Input/Edit Job didesain ulang: tiap bagian (Klien & Acara, Lokasi, Status, Keuangan, Catatan) kini punya kartu sendiri dengan judul dan keterangan singkat, supaya lebih rapi dan mudah diisi.' },
+      { kategori: 'Fitur', teks: 'Sisa Pembayaran dan Penghasilan Bersih kini tampil di bar bawah yang selalu terlihat saat mengisi form, sejajar dengan tombol Simpan.' },
+      { kategori: 'Peningkatan', teks: 'Form otomatis menyesuaikan lebar: jadi 1 kolom saat dibuka sebagai pop-up atau di HP.' },
+      { kategori: 'Fitur', teks: 'Form Input Job punya bagian baru "Hasil Cetak" berisi ceklis (Foto 16", 12", 10", 6", Album, Flashdisk). Pilihanmu otomatis masuk ke Deskripsi Paket dan menghitung Biaya Cetak.' },
+      { kategori: 'Fitur', teks: 'Vendor Shia Makeup: paket Foto 16" + Bingkai, Album 2 roll, dan Foto 12" (atau lebih kecil) otomatis mengisi Harga Paket Vendor Rp350.000 (Rp400.000 jika 12" pakai bingkai), dan otomatis naik mengikuti harga total kalau lebih dari Rp400.000 (dibulatkan ke atas kelipatan Rp50.000).' },
+      { kategori: 'Peningkatan', teks: 'Biaya Cetak otomatis sekarang dibulatkan ke atas kelipatan Rp50.000 (mis. Rp60.000 jadi Rp100.000, Rp110.000 jadi Rp150.000).' },
+      { kategori: 'Peningkatan', teks: 'Kolom No. WhatsApp kini otomatis angka dengan keyboard angka dan awalan +62 yang menyatu di dalam kolom. Semua kolom uang memakai awalan Rp yang menyatu dengan cara yang sama.' },
+      { kategori: 'Peningkatan', teks: 'Susunan kolom di form Input Job dirapikan: tidak ada lagi kolom yang menggantung sendirian di sebelah ruang kosong, dan urutan kolom Keuangan lebih runtut.' },
+      { kategori: 'Fitur', teks: 'Detail Job punya tombol "Kabari Klien" yang muncul saat Proses Edit dan Proses Cetak sudah Selesai (dan foto belum diserahkan). Pesan WhatsApp sudah tersusun (nama, acara, tanggal, sisa pembayaran, ajakan menjemput, link lokasi Kaone Motret di Google Maps), bisa diedit dulu, lalu WhatsApp klien terbuka. Job yang sudah dikabari diberi tanda waktu.' },
+      { kategori: 'Fitur', teks: 'Isi pesan "Foto Selesai" bisa diubah di Pengaturan (Admin).' },
+      { kategori: 'Fitur', teks: 'Menu Pengaturan (Admin) punya kartu "Harga Cetak" untuk mengatur semua harga cetak dan modal Shia Makeup.' },
+      { kategori: 'Fitur', teks: 'Kalender Job sekarang bisa digeser (swipe) dengan jari untuk berpindah bulan — kalender mengikuti gerakan jari secara langsung, lengkap dengan intip sekilas bulan sebelum/sesudahnya, lalu otomatis berpindah kalau geserannya cukup jauh atau kembali ke posisi semula kalau tidak.' },
+    ]
+  },
   {
     version: '1.8.0',
     tanggal: '23 September 2026',

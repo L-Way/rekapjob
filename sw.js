@@ -1,167 +1,10910 @@
-/* Service worker — Kaone Motret
- *
- * Prinsip: index.html SELALU diambil dari jaringan lebih dulu (network-first),
- * jadi kalau Anda mengganti index.html di hosting, versi baru langsung terpakai
- * di pembukaan aplikasi berikutnya. File ini TIDAK perlu diubah saat update aplikasi.
- * Cache hanya dipakai sebagai cadangan kalau sinyal jelek / offline.
- *
- * (Ubah CACHE_VERSION hanya jika suatu saat Anda mengganti ikon/manifest
- *  dan ingin memaksa semua perangkat membuang cache lama.)
- */
-'use strict';
-
-const CACHE_VERSION = 'v1';
-const SHELL_CACHE   = 'kaone-shell-' + CACHE_VERSION;
-const RUNTIME_CACHE = 'kaone-runtime-' + CACHE_VERSION;
-
-const SCOPE     = self.registration.scope;
-const SHELL_URL = new URL('index.html', SCOPE).href;
-const SCOPE_PATH = new URL(SCOPE).pathname;
-const SHELL_PATH = new URL(SHELL_URL).pathname;
-
-const PRECACHE_LOCAL = [
-  'manifest.webmanifest',
-  'icons/icon-192.png',
-  'icons/icon-512.png',
-  'icons/icon-maskable-512.png',
-  'icons/apple-touch-icon.png',
-  'icons/favicon-32.png'
-].map(p => new URL(p, SCOPE).href);
-
-// Library eksternal yang dipakai index.html — disimpan supaya aplikasi tetap bisa dibuka offline.
-const PRECACHE_CDN = [
-  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
-];
-// Host statis yang boleh di-cache (font + library). API data (Supabase, OSRM, dll) TIDAK disentuh.
-const CACHEABLE_HOSTS = ['cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
-
-const NETWORK_TIMEOUT_MS = 4000; // sinyal lambat → pakai cadangan cache setelah 4 detik
-
-// Respons hasil redirect tidak boleh dikembalikan ke navigasi; bersihkan dulu.
-async function cleanResponse(res) {
-  if (!res.redirected) return res;
-  const body = await res.blob();
-  return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });
-}
-
-function isShellRequest(req, url) {
-  return req.mode === 'navigate' || url.pathname === SHELL_PATH || url.pathname === SCOPE_PATH;
-}
-
-self.addEventListener('install', event => {
-  event.waitUntil((async () => {
-    const shell = await caches.open(SHELL_CACHE);
-    await Promise.allSettled([
-      (async () => {
-        const res = await cleanResponse(await fetch(new Request(SHELL_URL, { cache: 'reload' })));
-        if (res.ok) await shell.put(SHELL_URL, res);
-      })(),
-      ...PRECACHE_LOCAL.map(async u => {
-        const res = await fetch(new Request(u, { cache: 'reload' }));
-        if (res.ok) await shell.put(u, res);
-      })
-    ]);
-    const runtime = await caches.open(RUNTIME_CACHE);
-    await Promise.allSettled(PRECACHE_CDN.map(async u => {
-      const res = await fetch(new Request(u, { mode: 'no-cors' }));
-      await runtime.put(u, res);
-    }));
-    await self.skipWaiting();
-  })());
-});
-
-self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    const keep = [SHELL_CACHE, RUNTIME_CACHE];
-    const names = await caches.keys();
-    await Promise.all(names.filter(n => n.startsWith('kaone-') && !keep.includes(n)).map(n => caches.delete(n)));
-    await self.clients.claim();
-  })());
-});
-
-// index.html: jaringan dulu → cache hanya kalau gagal / terlalu lambat.
-async function shellNetworkFirst(event) {
-  const req = event.request;
-  const cache = await caches.open(SHELL_CACHE);
-  const cached = await cache.match(SHELL_URL, { ignoreSearch: true });
-
-  const networkTask = (async () => {
-    // cache:'no-cache' → selalu validasi ke server, abaikan cache HTTP bawaan hosting (mis. max-age GitHub Pages)
-    const res = await cleanResponse(await fetch(req, { cache: 'no-cache' }));
-    if (res.ok) await cache.put(SHELL_URL, res.clone());
-    return res;
-  })();
-
-  let result = null;
-  try {
-    if (cached) {
-      const timeout = new Promise(resolve => setTimeout(() => resolve(null), NETWORK_TIMEOUT_MS));
-      result = await Promise.race([networkTask, timeout]);
-    } else {
-      result = await networkTask;
-    }
-  } catch (e) { result = null; }
-
-  if (result && (result.ok || !cached)) return result;
-  if (cached) {
-    event.waitUntil(networkTask.catch(() => {})); // biarkan selesai di latar belakang, cache ikut diperbarui
-    return cached;
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1c1a12">
+<meta name="application-name" content="Kaone Motret">
+<meta name="apple-mobile-web-app-title" content="Kaone Motret">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="format-detection" content="telephone=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Kaone Motret — Buku Job Fotografer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Italiana&family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --gold:#D4AF00;
+    --gold-light:#F4D93E;
+    --gold-pale:#FCF3C7;
+    --ink:#1c1a12;
+    --ink-soft:#5b5646;
+    --line:#ece4c2;
+    --paper:#fffdf6;
+    --card:#ffffff;
+    --danger:#c0392b;
+    --ok:#2e7d32;
+    --warn:#b8860b;
+    --radius:14px;
+    --shadow:0 6px 24px rgba(180,150,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
   }
-  return new Response(
-    '<!DOCTYPE html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-    '<title>Offline</title><body style="font-family:sans-serif;background:#1c1a12;color:#f4ecd0;display:flex;' +
-    'min-height:100vh;align-items:center;justify-content:center;text-align:center;padding:24px">' +
-    '<div><h2>Kaone Motret</h2><p>Belum ada koneksi dan aplikasi belum tersimpan di perangkat ini.<br>' +
-    'Sambungkan internet lalu buka kembali.</p></div>',
-    { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
-  );
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:linear-gradient(180deg,#fffdf6 0%,#fffaeb 100%);
+    color:var(--ink);
+    font-family:'Poppins',sans-serif;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  h1,h2,h3,.serif{font-family:'Fraunces',serif;}
+  h2{font-size:21px; line-height:1.3;}
+  h3{font-size:16px; line-height:1.35;}
+  a{color:inherit;}
+  button{
+    font-family:inherit;cursor:pointer;
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, background-color .15s ease, border-color .15s ease, filter .15s ease;
+  }
+  button:hover{transform:translateY(-2px);}
+  button:active{transform:translateY(0) scale(.94); transition-duration:.08s;}
+  button:disabled{cursor:default; transform:none; filter:none;}
+  ::-webkit-scrollbar{height:8px;width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--gold-light);border-radius:8px;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important;}
+  }
+
+  /* HEADER */
+  header.topbar{
+    position:sticky; top:0; z-index:50;
+    background:linear-gradient(90deg,#1c1a12,#2c2712);
+    color:#fff;
+    padding:12px 22px 10px;
+    box-shadow:0 3px 14px rgba(0,0,0,.18);
+  }
+  .topbar-row{
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:10px;
+    padding-left:env(safe-area-inset-left, 0px);
+    padding-right:env(safe-area-inset-right, 0px);
+  }
+  .datetime-strip{
+    margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.09);
+    font-size:11.5px; letter-spacing:.6px; color:#d8c98a; text-align:right;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-badge{
+    width:40px;height:40px;border-radius:50%;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; color:#231f0f; font-size:18px;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.5);
+  }
+  .brand-text .name{font-family:'Fraunces',serif; font-weight:700; font-size:19px; letter-spacing:.5px;}
+  .brand-text .tag{font-size:10.5px; opacity:.75; letter-spacing:1.5px; text-transform:uppercase;}
+  nav.mainnav{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+  nav.mainnav button{
+    background:transparent; border:1px solid rgba(255,255,255,.18); color:#f4ecd0;
+    padding:9px 15px; border-radius:999px; font-size:13.5px; font-weight:500;
+    transition:.15s; white-space:nowrap; flex-shrink:0;
+  }
+  nav.mainnav button:focus{outline:none;}
+  nav.mainnav button:focus-visible{outline:2px solid var(--gold-light); outline-offset:2px;}
+  nav.mainnav button:hover{background:rgba(244,217,62,.18); border-color:rgba(244,217,62,.55); color:#fff;}
+  nav.mainnav button.active{
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    color:#231f0f; font-weight:700; border-color:transparent;
+  }
+  nav.mainnav button.active:hover{background:linear-gradient(135deg,var(--gold-light),var(--gold)); color:#231f0f;}
+
+  main{max-width:1180px; margin:0 auto; padding:28px 20px 10px;}
+
+  .card{
+    background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:22px; border:1px solid var(--line);
+  }
+  #app .card + .card{margin-top:18px;}
+
+  /* BERANDA */
+  .hero{
+    text-align:center; padding:30px 10px 10px;
+  }
+  .hero .kicker{letter-spacing:3px; font-size:12px; color:var(--warn); font-weight:600; text-transform:uppercase; overflow-wrap:break-word;}
+  .hero h1{font-size:38px; margin:6px 0 4px; color:#241f0f; overflow-wrap:break-word;}
+  .hero p{color:var(--ink-soft); font-size:14.5px; max-width:520px; margin:0 auto; overflow-wrap:break-word;}
+
+  .center-btn-wrap{display:flex; justify-content:center; margin:34px 0 8px;}
+  .big-add-btn{
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    border:none; color:#231f0f; font-weight:700; font-size:17px;
+    padding:20px 46px; border-radius:999px; box-shadow:0 10px 26px rgba(212,175,0,.35);
+    display:flex; align-items:center; gap:12px; transition:transform .15s;
+  }
+  .big-add-btn:hover{transform:translateY(-4px) scale(1.03); box-shadow:0 14px 32px rgba(212,175,0,.45);}
+  .big-add-btn:active{transform:translateY(-1px) scale(.98); transition-duration:.08s;}
+  .big-add-btn .plus{
+    width:34px;height:34px;border-radius:50%;background:#231f0f;color:var(--gold-light);
+    display:flex;align-items:center;justify-content:center; font-size:20px; font-weight:700;
+  }
+
+  /* Menu cepat di Beranda — supaya semua bagian utama terlihat tanpa banyak scroll */
+  .quick-menu{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:22px;}
+  .quick-menu-item{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px 6px; box-shadow:var(--shadow); text-align:center; cursor:pointer;
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, background-color .15s ease, border-color .15s ease;
+  }
+  .quick-menu-item .qm-icon{font-size:22px;}
+  .quick-menu-item .qm-label{font-size:11.5px; font-weight:600; color:#3a3423; line-height:1.25;}
+  .quick-menu-item:hover{transform:translateY(-3px); box-shadow:0 10px 22px rgba(180,150,0,.2); border-color:var(--gold-light);}
+  .quick-menu-item:active{background:var(--gold-pale); transform:translateY(0) scale(.96); transition-duration:.08s;}
+
+  .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,230px)); gap:12px; margin-top:26px;}
+  .stat{
+    background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px;
+    box-shadow:var(--shadow); min-width:0; overflow:hidden;
+  }
+  .stat .label{font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:1px; overflow-wrap:break-word;}
+  .stat .value{
+    font-family:'Fraunces',serif; font-size:22px; font-weight:700; margin-top:4px; color:#241f0f;
+    /* Sengaja TIDAK nowrap+ellipsis lagi — angka rupiah (apalagi nominal besar)
+       harus selalu utuh terbaca, bukan terpotong "...". Kalau kartunya sempit,
+       angka boleh turun ke baris ke-2 (word-break), bukan hilang sebagian. */
+    white-space:normal; overflow-wrap:break-word; word-break:break-word; max-width:100%; line-height:1.2;
+  }
+  .stat .sub{font-size:11px; color:var(--ink-soft); margin-top:3px; white-space:normal; overflow-wrap:break-word;}
+  .stat .value.long{font-size:16px; letter-spacing:-.2px;}
+  .stat .value.longer{font-size:13.5px; letter-spacing:-.3px;}
+  .stat.gold{background:linear-gradient(135deg,var(--gold-light),var(--gold)); border:none;}
+  .stat.gold .label,.stat.gold .value,.stat.gold .sub{color:#231f0f;}
+  .stat-clickable{
+    cursor:pointer;
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, border-color .15s ease;
+  }
+  .stat-clickable:hover{transform:translateY(-3px); box-shadow:0 10px 22px rgba(180,150,0,.2); border-color:var(--gold-light);}
+  .stat-clickable:active{transform:translateY(0) scale(.97); transition-duration:.08s;}
+  .stat-clickable .label::after{content:' 🔍'; font-size:10px; opacity:.6;}
+
+  .upcoming{margin-top:34px;}
+  .daily-box{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:38px;}
+  @media(max-width:720px){.daily-box{grid-template-columns:1fr;}}
+  .daily-card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px; box-shadow:var(--shadow);}
+  .dq-label{font-size:11.5px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--warn); margin-bottom:10px;}
+  .dq-text{font-family:'Fraunces',serif; font-style:italic; font-size:16.5px; line-height:1.6; color:#241f0f;}
+  .dq-loading{font-size:13px; color:var(--ink-soft);}
+  .ayat-arab{font-family:'Amiri',serif; direction:rtl; text-align:right; font-size:23px; line-height:2; color:#241f0f; margin-bottom:10px;}
+  .ayat-arti{font-family:'Fraunces',serif; font-style:italic; font-size:15px; line-height:1.6; color:#3a3423;}
+  .ayat-ref{margin-top:10px; font-size:11.5px; font-weight:600; letter-spacing:.5px; color:var(--warn);}
+  .upcoming h3{font-size:17px; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  .job-mini{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:12px 14px; border:1px solid var(--line); border-radius:10px; margin-bottom:8px;
+    background:#fffef9;
+  }
+  .job-mini .l{font-weight:600; font-size:14px; overflow-wrap:break-word; word-break:break-word;}
+  .job-mini .s{font-size:12px; color:var(--ink-soft); overflow-wrap:break-word; word-break:break-word;}
+  .job-mini > div{min-width:0;}
+  .pill{
+    display:inline-block; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:600;
+    background:var(--gold-pale); color:#7a6400; white-space:nowrap;
+  }
+
+  /* FORM */
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px 20px;}
+  .form-grid .full{grid-column:1/-1;}
+  @media(max-width:720px){.form-grid{grid-template-columns:1fr;}}
+  label{font-size:12.5px; font-weight:600; color:#4a4530; display:block; margin-bottom:5px; letter-spacing:.2px;}
+  input[type=text],input[type=url],input[type=date],input[type=number],input[type=tel],input[type=password],select,textarea{
+    width:100%; padding:10px 12px; border:1.5px solid #e5ddc0; border-radius:9px; font-size:14px;
+    font-family:inherit; background:#fffefb; color:var(--ink); transition:.15s;
+  }
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--gold);}
+  fieldset{border:1.5px dashed #e6dcae; border-radius:10px; padding:14px 16px 6px; margin:0;}
+  legend{font-weight:700; font-size:13px; color:var(--warn); padding:0 6px;}
+  .radio-row{display:flex; gap:16px; flex-wrap:wrap; padding:4px 0 8px;}
+  .radio-row label{display:flex; align-items:center; gap:6px; font-weight:500; margin:0; font-size:13.5px;}
+  .form-actions{display:flex; gap:10px; margin-top:22px; justify-content:flex-end; flex-wrap:wrap;}
+  .btn{
+    padding:11px 22px; border-radius:9px; font-size:14px; font-weight:600; border:none;
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, background-color .15s ease, filter .15s ease;
+  }
+  .btn-primary{background:linear-gradient(135deg,var(--gold-light),var(--gold)); color:#231f0f;}
+  .btn-outline{background:#fff; border:1.5px solid #e5ddc0; color:#4a4530;}
+  .btn-danger{background:#fdeceb; color:var(--danger); border:1.5px solid #f4c9c4;}
+  .btn-warning{background:#fdf1de; color:#95560c; border:1.5px solid #f2c98a;}
+  .btn:hover{transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.14);}
+  .btn:active{transform:translateY(0) scale(.96); transition-duration:.08s;}
+  .btn-outline:hover{background:#faf6e5;}
+  .calc-box{
+    background:var(--gold-pale); border-radius:10px; padding:14px 16px; margin-top:6px;
+    display:flex; justify-content:space-between; align-items:center; font-weight:700;
+  }
+  /* Kolom uang berformat "Rp" + otomatis titik ribuan */
+  .rp-input-wrap{position:relative;}
+  .rp-input-wrap .rp-prefix{
+    position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    font-size:13.5px; color:var(--ink-soft); font-weight:700; pointer-events:none;
+  }
+  .rp-input-wrap input.money-input{padding-left:32px;}
+  input.money-input:read-only{background:#faf6e6; color:#6b6448;}
+  .field-hint{font-size:11px; color:var(--ink-soft); margin-top:4px;}
+  /* Pemilihan anggota Tim + honor masing-masing di form Input/Edit Job */
+  .honor-tim-list{
+    display:flex; flex-direction:column; gap:8px; margin-bottom:10px;
+  }
+  .honor-tim-row{
+    display:flex; align-items:center; flex-wrap:wrap; gap:10px;
+    padding:10px 12px; border:1.5px solid #e5ddc0; border-radius:9px; background:#fffef9;
+  }
+  .honor-tim-check{
+    display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600;
+    color:#3a3423; cursor:pointer; margin:0; min-width:150px;
+  }
+  .honor-tim-check input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(--gold);}
+  .honor-tim-nominal-wrap{flex:1; min-width:160px;}
+  /* Kolom Link Maps: ikon peta di kiri + tombol "Buka" di kanan, senada dengan kolom Rp */
+  .maps-input-wrap{position:relative; display:flex; align-items:stretch; gap:8px; flex-wrap:wrap;}
+  .maps-input-wrap .maps-field{position:relative; flex:1 1 200px; min-width:0;}
+  .maps-input-wrap .maps-prefix{
+    position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    font-size:14px; pointer-events:none;
+  }
+  .maps-input-wrap input.maps-input{padding-left:34px; width:100%; box-sizing:border-box;}
+  .maps-input-wrap .maps-open-btn{
+    flex-shrink:0; white-space:nowrap; padding:0 20px;
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    color:#231f0f; border:none; font-weight:700; font-size:13.5px;
+    border-radius:10px; box-shadow:0 6px 16px rgba(212,175,0,.3);
+  }
+  .maps-input-wrap .maps-open-btn:hover{box-shadow:0 9px 20px rgba(212,175,0,.42);}
+  .maps-input-wrap .maps-open-btn:active{box-shadow:0 3px 10px rgba(212,175,0,.3);}
+  /* Kotak ringkasan jarak & saran transport (di bawah kolom Titik Koordinat) */
+  .jarak-box{
+    background:var(--gold-pale); border-radius:10px; padding:12px 16px; margin-top:10px;
+    display:flex; flex-direction:column; gap:7px;
+  }
+  .jarak-box .jr-row{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:12.5px; font-weight:600; color:#5c4a12;}
+  .jarak-box .jr-row b{font-weight:700; color:#241f0f; white-space:nowrap;}
+  .jarak-box .jr-group-label{font-size:10.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--warn); margin-top:2px;}
+  .jarak-box .jr-group-label:first-child{margin-top:0;}
+  .jarak-box .jr-divider{height:1px; background:rgba(180,150,0,.18); margin:2px 0;}
+  .section-title{font-size:15px; font-weight:700; margin:26px 0 10px; color:#241f0f; display:flex; align-items:center; gap:8px;}
+  .section-title:first-child{margin-top:0;}
+
+  /* TABLE / DAFTAR JOB */
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:center; justify-content:space-between;}
+  .search-box{display:flex; gap:8px; flex-wrap:wrap;}
+  .search-box input,.search-box select{min-width:150px;}
+  table.jobtable{width:100%; border-collapse:collapse; font-size:13px;}
+  table.jobtable th{
+    background:#2c2712; color:#f4ecd0; text-align:left; padding:10px 10px; font-size:11.5px;
+    text-transform:uppercase; letter-spacing:.5px;
+  }
+  table.jobtable td{padding:10px 10px; border-bottom:1px solid var(--line); vertical-align:top;}
+  table.jobtable tr:hover td{background:#fffbe9;}
+  .table-wrap{overflow-x:auto; border-radius:10px; border:1px solid var(--line);}
+  .badge{padding:3px 9px; border-radius:999px; font-size:11px; font-weight:600;}
+  .badge-ok{background:#e5f5e6; color:var(--ok);}
+  .badge-warn{background:#fdf0d5; color:var(--warn);}
+  .badge-bad{background:#fdeceb; color:var(--danger);}
+  .badge-select-wrap{position:relative; display:inline-flex; align-items:center; border-radius:999px; cursor:pointer;}
+  .badge-select-wrap::after{content:'▾'; position:absolute; right:7px; top:50%; transform:translateY(-50%); font-size:8px; pointer-events:none; opacity:.7;}
+  .badge-select-wrap select{
+    appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    border:none; background:transparent; color:inherit; font:inherit;
+    padding:3px 20px 3px 9px; font-size:11px; font-weight:600; border-radius:999px; cursor:pointer;
+    min-width:118px; width:auto;
+  }
+  .badge-select-wrap select:focus{outline:2px solid rgba(0,0,0,.15);}
+  .row-actions{display:flex; gap:6px;}
+  .icon-btn{
+    border:1px solid var(--line); background:#fff; padding:6px 9px; border-radius:7px; font-size:12px;
+  }
+  .icon-btn:hover{background:#faf6e5; box-shadow:0 3px 10px rgba(0,0,0,.08);}
+  .icon-btn-danger{border-color:#e7c3bb; color:var(--danger);}
+  .icon-btn-danger:hover{background:#fdecea;}
+  .empty-state{text-align:center; padding:50px 20px; color:var(--ink-soft);}
+  .empty-state .em{font-size:40px; margin-bottom:10px;}
+
+  /* KALENDER */
+  .cal-controls{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px;}
+  .cal-nav{display:flex; align-items:center; gap:10px;}
+  .cal-nav button{background:linear-gradient(135deg,var(--gold-light),var(--gold)); border:none; color:#231f0f; border-radius:8px; padding:8px 14px; font-size:15px; font-weight:700;}
+  .cal-nav .cur{font-family:'Fraunces',serif; font-weight:700; font-size:19px; min-width:170px; text-align:center;}
+
+  .thanks-editor{margin-top:20px; background:#fffdf6; border:1px solid var(--line); border-radius:14px; padding:18px 20px;}
+  .thanks-editor textarea{width:100%; resize:vertical; font-family:'Fraunces',serif; font-style:italic; font-size:14.5px; line-height:1.6;}
+  .thanks-controls-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;}
+  .font-size-control{display:flex; align-items:center; gap:8px; background:var(--gold-pale); border-radius:999px; padding:6px 8px 6px 14px; font-size:12.5px; font-weight:600; color:#5c4a12;}
+  .font-size-control button{
+    width:26px; height:26px; border-radius:50%; border:none; background:#241f0f; color:#f4ecd0;
+    font-size:15px; font-weight:700; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  .font-size-control span#fontSizeLabel{min-width:38px; text-align:center;}
+
+  .theme-picker{margin-top:16px; background:#fffdf6; border:1px solid var(--line); border-radius:14px; padding:18px 20px;}
+  .theme-swatches{display:flex; flex-wrap:wrap; gap:12px;}
+  .theme-swatch{
+    width:36px; height:36px; border-radius:50%; border:2px solid #fff; cursor:pointer;
+    background:linear-gradient(135deg, var(--sw1) 50%, var(--sw2) 50%);
+    box-shadow:0 0 0 1.5px var(--line); transition:.15s; flex-shrink:0;
+  }
+  .theme-swatch:hover{transform:translateY(-2px);}
+  .theme-swatch.active{box-shadow:0 0 0 2.5px #241f0f;}
+  .theme-current-name{margin-top:12px; font-family:'Fraunces',serif; font-size:14px; color:#5c4a12; font-weight:600;}
+
+  .layout-picker{margin-top:16px; background:#fffdf6; border:1px solid var(--line); border-radius:14px; padding:18px 20px;}
+  .layout-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:10px;}
+  .layout-card{
+    background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:10px 6px;
+    display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; transition:.15s;
+  }
+  .layout-card:hover{border-color:var(--gold);}
+  .layout-card.active{border-color:#241f0f; background:var(--gold-pale); box-shadow:0 0 0 1.5px #241f0f;}
+  .layout-card-preview{font-size:20px; color:#241f0f; line-height:1;}
+  .layout-card-name{font-size:9.5px; font-weight:600; color:#5c4a12; text-align:center; line-height:1.25;}
+
+  .cp-poster{
+    --poster-bg1:#fffdf5; --poster-bg2:#fdf6e0; --poster-bg3:#f8ecc6;
+    --poster-accent:#b8901f; --poster-accent-light:#cbb15a; --poster-accent-pale:#efe3bd;
+    --poster-ink:#1c1a12; --poster-ink2:#2c2712; --poster-ink-soft:#a4914f; --poster-quote:#7a6d47;
+    --poster-font-title:'Fraunces',serif; --poster-font-quote:'Fraunces',serif;
+    width:1080px; min-width:1080px; height:1920px; position:relative; overflow:hidden;
+    background:linear-gradient(165deg, var(--poster-bg1) 0%, var(--poster-bg2) 55%, var(--poster-bg3) 100%);
+    margin:0 auto; transform-origin:top center; flex-shrink:0;
+    font-family:'Poppins',sans-serif;
+  }
+  .poster-wrap{ width:100%; overflow:hidden; border-radius:18px; padding:26px;
+    background:linear-gradient(160deg,#211d10,#161307); box-shadow:0 16px 40px rgba(0,0,0,.28);
+    position:relative; touch-action:pan-y; -webkit-user-select:none; user-select:none;}
+  .poster-scale-inner{ display:block; }
+  /* ---- Swipe kalender: jalur berisi 3 poster (sebelumnya, sekarang, berikutnya)
+     yang digeser sejajar mengikuti jari. Lebar & posisi persisnya dihitung lewat
+     JS (lihat layoutSwipeTrack) supaya selalu pas dengan ukuran layar berapa pun. ---- */
+  .cal-swipe-track{ display:flex; }
+  .cal-swipe-slide{ flex:0 0 auto; overflow:hidden; }
+
+  /* Bingkai / ornamen — tampil/sembunyi tergantung data-frame-style */
+  .cp-frame{position:absolute; inset:56px; border:1px solid var(--poster-accent-light); pointer-events:none;}
+  .cp-frame-inner{position:absolute; inset:66px; border:1px solid var(--poster-accent-light); pointer-events:none; display:none;}
+  .cp-corner-mark{position:absolute; width:46px; height:46px; border-color:var(--poster-accent-light); pointer-events:none; display:none;}
+  .cp-corner-mark.tl{top:56px; left:56px; border-top:2px solid; border-left:2px solid;}
+  .cp-corner-mark.tr{top:56px; right:56px; border-top:2px solid; border-right:2px solid;}
+  .cp-corner-mark.bl{bottom:56px; left:56px; border-bottom:2px solid; border-left:2px solid;}
+  .cp-corner-mark.br{bottom:56px; right:56px; border-bottom:2px solid; border-right:2px solid;}
+  .cp-ribbon{
+    position:absolute; top:0; left:0; right:0; height:60px; background:var(--poster-accent); color:#fffef6;
+    display:none; align-items:center; justify-content:center; letter-spacing:6px; font-size:13px; font-weight:600;
+    font-family:'Poppins',sans-serif;
+  }
+  .cp-poster[data-frame-style="double"] .cp-frame-inner{display:block;}
+  .cp-poster[data-frame-style="corners"] .cp-frame{display:none;}
+  .cp-poster[data-frame-style="corners"] .cp-corner-mark{display:block;}
+  .cp-poster[data-frame-style="ribbon"] .cp-frame{display:none;}
+  .cp-poster[data-frame-style="ribbon"] .cp-ribbon{display:flex;}
+  .cp-poster[data-frame-style="ribbon"] .cp-brandbadge{display:none;}
+
+  .cp-kicker{position:absolute; top:120px; width:100%; text-align:center; font-family:'Poppins',sans-serif; font-weight:500; font-size:15px; letter-spacing:9px; color:var(--poster-ink-soft); text-transform:uppercase;}
+  .cp-rule{position:absolute; top:160px; width:100%; display:flex; align-items:center; justify-content:center;}
+  .cp-rule .ln{width:64px; height:1px; background:var(--poster-accent-light);}
+  .cp-title-wrap{position:absolute; top:300px; width:100%; text-align:center;}
+  .cp-title{font-family:var(--poster-font-title); font-weight:500; font-size:96px; color:var(--poster-ink); line-height:1; letter-spacing:1px;}
+  .cp-year{font-family:var(--poster-font-title); font-weight:300; font-size:64px; line-height:1; margin-top:6px; color:var(--poster-accent); letter-spacing:2px;}
+  .cp-quote{font-family:var(--poster-font-quote); font-style:italic; font-weight:400; font-size:21px; color:var(--poster-quote); margin-top:26px; letter-spacing:.2px;}
+  /* Perataan kiri — tergantung data-title-align */
+  .cp-poster[data-title-align="left"] .cp-kicker{text-align:left; padding-left:90px; padding-right:90px;}
+  .cp-poster[data-title-align="left"] .cp-rule{justify-content:flex-start; padding-left:90px;}
+  .cp-poster[data-title-align="left"] .cp-title-wrap{text-align:left; padding-left:90px; padding-right:90px;}
+
+  .cp-brandbadge{position:absolute; left:0; right:0; top:560px; margin:auto; width:fit-content; text-align:center;
+    color:var(--poster-ink-soft); font-weight:600; font-family:'Poppins',sans-serif;
+    font-size:12.5px; letter-spacing:5px;}
+  .cp-grid{position:absolute; top:700px; left:90px; right:90px;}
+  .cp-grid table{width:100%; border-collapse:collapse;}
+  .cp-grid th{font-size:12px; letter-spacing:2.5px; padding-bottom:16px; border-bottom:1px solid var(--poster-accent-pale); color:var(--poster-ink-soft); font-weight:600; font-family:'Poppins',sans-serif;}
+  .cp-grid tbody tr{border-bottom:1px solid var(--poster-accent-pale);}
+  .cp-grid td{padding:16px 4px; text-align:left; font-size:21px; color:var(--poster-ink2); position:relative; vertical-align:top; font-family:var(--poster-font-quote); font-weight:400;}
+  .cp-daynum{display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:50%; font-weight:400;}
+  .cp-daynum.has-job{
+    background:var(--poster-accent); color:#fffef6; font-weight:600; border-radius:50%;
+    cursor:pointer;
+  }
+  /* Bentuk penanda tanggal — tergantung data-date-shape */
+  .cp-poster[data-date-shape="square"] .cp-daynum.has-job{ border-radius:9px; }
+  .cp-poster[data-date-shape="underline"] .cp-daynum.has-job{
+    background:transparent; color:var(--poster-ink2); border-radius:0; width:auto; height:auto;
+    border-bottom:3px solid var(--poster-accent); padding:0 3px 3px;
+  }
+  .cp-poster[data-date-shape="dot"] .cp-daynum.has-job{
+    background:transparent; color:var(--poster-ink2); border-radius:0; width:auto; height:auto; position:relative;
+  }
+  .cp-poster[data-date-shape="dot"] .cp-daynum.has-job::after{
+    content:''; position:absolute; bottom:-9px; left:50%; transform:translateX(-50%);
+    width:6px; height:6px; border-radius:50%; background:var(--poster-accent);
+  }
+  /* Keterangan tanggal job — hanya tampil di layar (di bawah grid tanggal, sebelum
+     persentase/statistik), TIDAK ikut ter-capture pada gambar yang diunduh. Posisi
+     "top" diatur lewat JS (positionPosterStats) mengikuti tinggi grid & isinya. */
+  .cp-keterangan{position:absolute; left:90px; right:90px; display:flex; flex-wrap:wrap; gap:8px 12px;}
+  .cp-keterangan .cp-ket-title{width:100%; font-size:12px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--poster-ink-soft); margin-bottom:4px;}
+  .cp-ket-item{font-size:13.5px; font-family:'Poppins',sans-serif; color:var(--poster-ink2); background:rgba(0,0,0,.045); border:1px solid var(--poster-accent-pale); padding:4px 11px; border-radius:999px; white-space:nowrap;}
+  .cp-stats{position:absolute; top:1108px; left:90px; right:90px;}
+  .cp-stats-inner{display:flex; gap:56px;}
+  .cp-stats-col{flex:1; min-width:0;}
+  .cp-stats-title{font-family:'Poppins',sans-serif; font-weight:600; font-size:12px; letter-spacing:2.5px; text-transform:uppercase; color:var(--poster-ink-soft); margin-bottom:14px; border-bottom:1px solid var(--poster-accent-pale); padding-bottom:9px;}
+  .cp-stats-row{display:flex; align-items:flex-start; gap:10px; margin-bottom:13px;}
+  .cp-stats-label{font-family:var(--poster-font-quote); font-size:14.5px; line-height:1.3; color:var(--poster-ink2); width:132px; flex-shrink:0; white-space:normal; word-break:break-word; overflow-wrap:break-word;}
+  .cp-stats-bar{flex:1; height:5px; background:var(--poster-accent-pale); border-radius:3px; overflow:hidden; margin-top:7px;}
+  .cp-stats-fill{display:block; height:100%; background:var(--poster-accent);border-radius:3px;}
+  .cp-stats-pct{font-family:var(--poster-font-quote); font-weight:600; font-size:14px; color:var(--poster-accent); width:40px; text-align:right; flex-shrink:0; margin-top:1px;}
+  .cp-watermark{position:absolute; right:34px; bottom:520px; font-family:var(--poster-font-quote); font-weight:400; font-style:italic; font-size:220px; color:var(--poster-accent); opacity:.05; text-transform:lowercase;}
+  .cp-thanks{position:absolute; bottom:250px; width:100%; text-align:center; font-family:var(--poster-font-quote); font-weight:400; font-style:italic; font-size:30px; color:var(--poster-ink2); line-height:1.5; padding:0 130px; letter-spacing:.1px;}
+  .cp-sub{position:absolute; bottom:172px; width:100%; text-align:center; font-family:var(--poster-font-quote); font-style:italic; font-weight:400; font-size:16px; color:var(--poster-ink-soft); padding:0 170px; line-height:1.6; letter-spacing:1px;}
+  .cp-book{position:absolute; bottom:70px; left:0; right:0; margin:auto; width:fit-content; text-align:center; font-weight:600;
+    letter-spacing:6px; font-size:13px; color:var(--poster-ink-soft); border-top:1px solid var(--poster-accent-pale); border-bottom:1px solid var(--poster-accent-pale); padding:12px 40px; font-family:'Poppins',sans-serif;}
+
+
+  /* ---------- PEMBAGIAN TUGAS TIM ---------- */
+  .task-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:16px 0 20px;}
+  .task-stat{background:#fffef9;border:1px solid var(--line);border-radius:12px;padding:15px 16px;box-shadow:var(--shadow); min-width:0; overflow:hidden;}
+  .task-stat .ts-label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;}
+  .task-stat .ts-value{font-family:'Fraunces',serif;font-size:25px;font-weight:700;margin-top:3px;color:#241f0f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .task-stat.gold{background:linear-gradient(135deg,var(--gold-light),var(--gold));border:none;}
+  .task-stat.gold .ts-label,.task-stat.gold .ts-value{color:#231f0f;}
+  .task-form-note{background:var(--gold-pale);border-radius:10px;padding:11px 14px;font-size:12px;color:#5c4a12;margin-top:4px;}
+  .task-role-badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:10.5px;font-weight:700;background:#f5efd6;color:#6d5700;white-space:nowrap;}
+  .task-status-badge{display:inline-block;padding:4px 9px;border-radius:999px;font-size:10.5px;font-weight:700;white-space:nowrap;}
+  .task-status-belum{background:#fdf0d5;color:var(--warn);}
+  .task-status-selesai{background:#e5f5e6;color:var(--ok);}
+  .task-person-card{background:#fffef9;border:1px solid var(--line);border-radius:12px;padding:15px 16px;margin-top:12px; min-width:0;}
+  .task-person-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .task-person-head > div{min-width:0;}
+  .task-person-name{font-family:'Fraunces',serif;font-weight:700;font-size:17px;color:#241f0f; overflow-wrap:break-word; word-break:break-word;}
+  .task-person-meta{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .task-person-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .task-mini-stat{background:var(--gold-pale);padding:5px 9px;border-radius:999px;font-size:11px;font-weight:600;color:#5c4a12; overflow-wrap:break-word;}
+  .task-table .task-date{font-weight:700;white-space:nowrap;}
+  .task-table .task-time{font-weight:600;white-space:nowrap;color:#5c4a12;}
+  .task-stat.green{background:linear-gradient(135deg,#a9e6a0,#4caf50);border:none;}
+  .task-stat.green .ts-label,.task-stat.green .ts-value{color:#12300f;}
+  .task-bonus-box{margin-top:12px;padding:12px 14px;border:1px dashed var(--gold-light);border-radius:10px;background:var(--gold-pale); min-width:0;}
+  .task-bonus-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  .task-bonus-row > div{min-width:0; overflow:hidden;}
+  .task-bonus-label{font-size:11px;color:#5c4a12;text-transform:uppercase;letter-spacing:.6px;font-weight:700; overflow-wrap:break-word;}
+  .task-bonus-amount{font-family:'Fraunces',serif;font-weight:700;font-size:20px;color:#231f0f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .task-bonus-detail{font-size:11px;color:#5c4a12;margin-top:5px;line-height:1.6; overflow-wrap:break-word;}
+  .task-bonus-detail b{color:#231f0f;}
+  .bonus-adjust-btn{background:#231f0f;color:var(--gold-light);border:none;padding:8px 14px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;}
+  .bonus-modal-current{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0 18px;}
+  .bonus-modal-current .bmc-box{background:#fffdf6;border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+  .bonus-modal-current .bmc-label{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;}
+  .bonus-modal-current .bmc-value{font-family:'Fraunces',serif;font-weight:700;font-size:17px;margin-top:2px;color:#241f0f;}
+  .bonus-type-toggle{display:flex;gap:8px;}
+  .bonus-type-toggle button{flex:1;padding:10px;border-radius:9px;border:1.5px solid #e5ddc0;background:#fff;font-weight:600;font-size:13px;color:var(--ink-soft);}
+  .bonus-type-toggle button.active-add{background:#e5f5e6;border-color:var(--ok);color:var(--ok);}
+  .bonus-type-toggle button.active-sub{background:#fbe6e2;border-color:var(--danger);color:var(--danger);}
+  .bonus-adjust-list{margin-top:14px;max-height:240px;overflow-y:auto;}
+  .bonus-adjust-item{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);}
+  .bonus-adjust-item:last-child{border-bottom:none;}
+  .bonus-adjust-jam{font-weight:700;font-size:13.5px;white-space:nowrap;}
+  .bonus-adjust-jam.plus{color:var(--ok);}
+  .bonus-adjust-jam.minus{color:var(--danger);}
+  .bonus-adjust-note{color:#3a3423;font-size:12px;margin-top:2px;}
+  .bonus-adjust-meta{font-size:10.5px;color:var(--ink-soft);margin-top:3px;}
+  .bonus-claim-btn{background:linear-gradient(135deg,var(--gold-light),var(--gold));color:#231f0f;border:none;padding:9px 16px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 6px 16px rgba(212,175,0,.32);}
+  .bonus-claim-btn:disabled{background:#e7e2cf;color:#9a927a;box-shadow:none;cursor:not-allowed;opacity:.85;}
+  .bonus-claim-pending{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;font-size:11.5px;font-weight:700;background:var(--gold-pale);color:#7a6400;white-space:nowrap;}
+  .bonus-cair-btn{background:var(--ok);color:#fff;border:none;padding:7px 13px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap;flex-shrink:0;}
+  .bonus-claim-alert{margin-top:10px;padding:10px 12px;border-radius:9px;background:#fff6d8;border:1px dashed var(--gold-light);font-size:12px;color:#5c4a12;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+
+  /* LAPORAN TIM */
+  .report-list{margin-top:16px;}
+  .report-card{background:#fffef9;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px;}
+  .report-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+  .report-parties{font-size:14px;font-weight:700;color:#241f0f;}
+  .report-parties .arrow{color:var(--danger);margin:0 5px;font-weight:400;}
+  .report-date{font-size:11px;color:var(--ink-soft);white-space:nowrap;}
+  .report-text{margin-top:9px;font-size:13.5px;line-height:1.6;color:#3a3423;white-space:pre-wrap;}
+  .report-status-badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:10.5px;font-weight:700;white-space:nowrap;}
+  .report-status-baru{background:#fbe6e2;color:var(--danger);}
+  .report-status-proses{background:#fdf0d5;color:var(--warn);}
+  .report-status-selesai{background:#e5f5e6;color:var(--ok);}
+  .report-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .report-actions .btn{padding:7px 13px;font-size:12px;}
+  .report-admin-note{margin-top:10px;padding:10px 12px;background:var(--gold-pale);border-radius:9px;font-size:12.5px;color:#5c4a12;}
+  .report-note-form{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
+  .report-note-form textarea{flex:1;min-width:180px;}
+  .task-ket{white-space:pre-wrap;min-width:180px;max-width:320px;line-height:1.45;}
+  @media(max-width:720px){.task-ket{min-width:130px;max-width:220px;}}
+  .task-comment-btn{position:relative;}
+  .task-comment-count{
+    display:inline-block; min-width:15px; padding:0 4px; margin-left:3px; border-radius:999px;
+    background:var(--gold); color:#231f0f; font-size:10px; font-weight:700; line-height:15px; text-align:center;
+  }
+  .task-comment-dot{
+    position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%;
+    background:var(--danger); border:2px solid #fff;
+  }
+  .comment-thread{max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin:16px 0; padding-right:2px;}
+  .comment-bubble{border-radius:12px; padding:10px 13px; font-size:13.5px; line-height:1.5; border:1px solid var(--line); background:#fffef9;}
+  .comment-bubble.from-admin{background:var(--gold-pale); border-color:#ecdd9c;}
+  .comment-bubble .cb-head{display:flex; justify-content:space-between; gap:10px; margin-bottom:4px;}
+  .comment-bubble .cb-author{font-weight:700; font-size:12px; color:#5c4a12;}
+  .comment-bubble .cb-time{font-size:10.5px; color:var(--ink-soft); white-space:nowrap;}
+  .comment-bubble .cb-text{white-space:pre-wrap; color:#2c2712;}
+  .comment-empty{text-align:center; padding:22px 10px; color:var(--ink-soft); font-size:13px;}
+  .comment-form textarea{min-height:80px; resize:vertical;}
+  .task-slot-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .task-slot-row input[type="time"]{flex:1;min-width:0;}
+  .task-slot-sep{color:var(--ink-soft);font-weight:700;}
+  /* Blok per-akun di form "Bagi Tugas Baru": tiap akun Tim yang dicentang punya
+     panel Role + Jam Kerja sendiri-sendiri (lihat renderTaskAkunListHtml). */
+  .task-akun-block{border:1.5px solid #e5ddc0;border-radius:9px;background:#fffef9;padding:10px 12px;}
+  .task-akun-detail{margin-top:10px;padding-top:10px;border-top:1px dashed #e5ddc0;display:flex;flex-direction:column;gap:10px;}
+  .task-akun-detail label{font-size:12px;}
+  /* Dropdown kustom Job/Tanggal Acara — dipakai (bukan <select> bawaan) supaya opsi
+     "Tampilkan job yang sudah lewat" bisa menambah daftar tanpa menutup panel dulu. */
+  .task-job-picker{position:relative;}
+  .task-job-picker-btn{
+    width:100%; text-align:left; padding:10px 12px; border:1.5px solid #e5ddc0; border-radius:9px;
+    font-size:14px; font-family:inherit; background:#fffefb; color:var(--ink); cursor:pointer;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .task-job-picker-btn:focus{outline:none; border-color:var(--gold);}
+  .task-job-picker-btn.placeholder{color:#9a927a;}
+  .task-job-picker-caret{color:var(--ink-soft); font-size:11px; flex-shrink:0;}
+  .task-job-dropdown-panel{
+    position:absolute; z-index:60; top:calc(100% + 6px); left:0; right:0;
+    background:#fffefb; border:1.5px solid #e5ddc0; border-radius:10px;
+    box-shadow:0 10px 26px rgba(20,17,5,.18); max-height:280px; overflow-y:auto; padding:6px;
+  }
+  .task-job-option{padding:9px 10px; border-radius:7px; font-size:13.5px; cursor:pointer; line-height:1.4;}
+  .task-job-option:hover{background:var(--gold-pale);}
+  .task-job-option.selected{background:var(--gold-pale); font-weight:700;}
+  .task-job-option-sub{font-size:11px; color:var(--ink-soft); margin-top:1px;}
+  .task-job-option-toggle{
+    padding:9px 10px; border-radius:7px; font-size:12.5px; font-weight:700; cursor:pointer;
+    color:#7a6400; background:var(--gold-pale); text-align:center; margin-top:4px;
+  }
+  .task-job-option-toggle:hover{filter:brightness(.97);}
+  .task-job-option-empty{padding:10px; font-size:12.5px; color:var(--ink-soft); text-align:center;}
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(20,17,5,.55); display:flex; align-items:center; justify-content:center;
+    z-index:200; padding:16px;
+  }
+  .modal{background:#fff; border-radius:14px; max-width:520px; width:100%; max-height:88vh; overflow:auto; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.3);}
+  .modal h3{margin:0 0 4px; font-size:20px;}
+  .modal .close-x{float:right; background:none; border:none; font-size:20px; color:var(--ink-soft); cursor:pointer; padding:2px 6px; border-radius:6px; transition:transform .18s ease, color .15s ease, background-color .15s ease;}
+  .modal .close-x:hover{color:var(--danger); transform:rotate(90deg) scale(1.1); background:rgba(192,57,43,.08);}
+  .modal-job{border:1px solid var(--line); border-radius:10px; padding:14px; margin-top:14px;}
+  .modal-job .mj-row{display:flex; justify-content:space-between; font-size:13px; padding:3px 0; border-bottom:1px dashed #eee;}
+  .modal-job .mj-row:last-child{border-bottom:none;}
+  .modal-actions{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;}
+  .publish-target-list{display:flex; flex-direction:column; gap:2px;}
+  .publish-target-item{
+    display:flex; align-items:center; gap:10px; padding:11px 12px; border:1.5px solid #e5ddc0;
+    border-radius:10px; margin-bottom:8px; font-size:13.5px; font-weight:500; cursor:pointer;
+    background:#fffefb; transition:.15s;
+  }
+  .publish-target-item:hover{background:var(--gold-pale); border-color:var(--gold-light);}
+  .publish-target-item input[type=checkbox]{width:17px; height:17px; accent-color:var(--gold); flex-shrink:0; cursor:pointer;}
+
+  .job-detail-card{
+    --jd-hdr1:#1c1a12; --jd-hdr2:#2c2712; --jd-accent:#d4af00; --jd-soft:#f4d93e;
+    background:#fffdf6; border:1px solid var(--line); border-radius:14px; margin-top:4px; overflow:hidden;
+  }
+  .jd-header{background:linear-gradient(120deg,var(--jd-hdr1),var(--jd-hdr2)); padding:18px 20px 16px;}
+  .jd-header-top{display:flex; align-items:center; gap:12px;}
+  .jd-header-badge{
+    width:38px; height:38px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--jd-soft),var(--jd-accent));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; color:#231f0f; font-size:16px;
+  }
+  .jd-header-namewrap{min-width:0;}
+  .jd-header-name{font-family:'Fraunces',serif; font-weight:700; font-size:16px; color:#fff; line-height:1.3;}
+  .jd-header-tag{font-size:10px; color:rgba(255,255,255,.65); letter-spacing:1.5px; text-transform:uppercase;}
+  .jd-type-badge{
+    margin-left:auto; flex-shrink:0; background:rgba(255,255,255,.14); border:1px solid var(--jd-soft);
+    color:var(--jd-soft); font-size:10.5px; font-weight:700; padding:5px 12px; border-radius:999px;
+    white-space:nowrap; letter-spacing:.3px;
+  }
+  .jd-header-job{
+    margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,.16);
+    font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:var(--jd-soft);
+  }
+  .jd-body{padding:16px 20px 6px;}
+  .jd-section-title{
+    font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--jd-accent);
+    margin:16px 0 7px; padding-left:9px; border-left:3px solid var(--jd-accent);
+  }
+  .jd-section-title:first-child{margin-top:0;}
+  .job-detail-card .mj-row{display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:5px 0; border-bottom:1px dashed #eee;}
+  .job-detail-card .mj-row span:first-child{color:var(--ink-soft); flex-shrink:0;}
+  .job-detail-card .mj-row span:last-child{font-weight:600; text-align:right;}
+  .job-detail-card .mj-row:last-child{border-bottom:none;}
+  .jd-footer{padding:8px 20px 4px; text-align:center;}
+  .jd-footer-line{height:1px; background:linear-gradient(90deg,transparent,var(--jd-accent),transparent); margin-bottom:10px; opacity:.55;}
+  .jd-footer-text{font-size:10.5px; color:var(--ink-soft); letter-spacing:.3px;}
+  .jd-bottom-bar{height:7px; background:linear-gradient(90deg,var(--jd-hdr1),var(--jd-accent),var(--jd-hdr2));}
+
+  /* ---------- POSTER UNDUHAN DETAIL JOB (1080x1920) ----------
+     Ini adalah desain KHUSUS untuk file gambar yang diunduh — sengaja dibuat
+     terpisah dari .job-detail-card (preview di layar) supaya hasil unduhan
+     terlihat seperti dokumen/poster resmi, bukan sekadar cuplikan popup. */
+  .job-poster{
+    width:1080px; height:1920px; position:relative; overflow:hidden;
+    background:linear-gradient(165deg,#fffdf6 0%,#fffaeb 55%,#fdf6e0 100%);
+    font-family:'Poppins',sans-serif; color:var(--jp-ink,#1c1a12);
+    box-sizing:border-box;
+  }
+  .job-poster .jp-watermark{
+    position:absolute; inset:0; opacity:.05; pointer-events:none;
+    background:
+      radial-gradient(circle at 12% 8%, var(--jp-accent,#d4af00) 0%, transparent 40%),
+      radial-gradient(circle at 92% 96%, var(--jp-accent,#d4af00) 0%, transparent 42%);
+  }
+  .job-poster .jp-topbar{
+    position:relative; display:flex; align-items:center; gap:26px;
+    padding:64px 72px 0; box-sizing:border-box;
+  }
+  .job-poster .jp-badge{
+    width:92px; height:92px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--jp-hdr2,#332750),var(--jp-hdr1,#1c1530));
+    color:var(--jp-accent,#d4af00);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; font-size:34px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.12);
+  }
+  .job-poster .jp-brand-name{font-family:'Fraunces',serif; font-weight:700; font-size:30px; color:#241f0f; line-height:1.25;}
+  .job-poster .jp-brand-tag{font-size:14px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-soft); margin-top:4px;}
+  .job-poster .jp-type-badge{
+    margin-left:auto; align-self:flex-start;
+    background:var(--jp-accent,#d4af00); color:#241f0f;
+    font-weight:700; font-size:15px; letter-spacing:.5px;
+    padding:10px 22px; border-radius:999px; white-space:nowrap;
+  }
+  .job-poster .jp-title-block{position:relative; padding:44px 72px 0; box-sizing:border-box;}
+  .job-poster .jp-kicker{font-size:15px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--jp-accent,#b8860b);}
+  .job-poster .jp-client-name{
+    font-family:'Fraunces',serif; font-weight:700; font-size:56px; line-height:1.18;
+    color:#201c0d; margin-top:10px; word-break:break-word;
+  }
+  .job-poster .jp-date-row{display:flex; align-items:center; gap:14px; margin-top:16px; font-size:20px; color:var(--ink-soft);}
+  .job-poster .jp-date-row .sep{width:6px;height:6px;border-radius:50%;background:var(--jp-accent,#d4af00);}
+  .job-poster .jp-rule{
+    height:2px; margin:34px 72px 0;
+    background:linear-gradient(90deg,var(--jp-accent,#d4af00),transparent);
+  }
+  .job-poster .jp-body{position:relative; padding:36px 72px 0; box-sizing:border-box;}
+  .job-poster .jp-section{margin-top:34px;}
+  .job-poster .jp-section:first-child{margin-top:0;}
+  .job-poster .jp-section-head{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .job-poster .jp-section-head .dot{width:10px; height:10px; border-radius:50%; background:var(--jp-accent,#d4af00); flex-shrink:0;}
+  .job-poster .jp-section-head .txt{font-size:19px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--jp-hdr2,#332750);}
+  .job-poster .jp-row{padding:14px 0; border-bottom:1px solid var(--line); display:flex; gap:30px; align-items:baseline;}
+  .job-poster .jp-row:last-child{border-bottom:none;}
+  .job-poster .jp-row .jp-label{
+    flex:0 0 250px; font-size:15px; font-weight:600; letter-spacing:.3px; color:var(--ink-soft);
+  }
+  .job-poster .jp-row .jp-value{
+    flex:1; font-size:22px; font-weight:500; color:#241f0f; line-height:1.45; word-break:break-word;
+  }
+  .job-poster .jp-row.jp-highlight .jp-value{font-weight:700; color:var(--jp-hdr2,#332750);}
+  .job-poster .jp-footer{position:absolute; left:0; right:0; bottom:52px; text-align:center; padding:0 72px; box-sizing:border-box;}
+  .job-poster .jp-footer-line{height:1px; margin-bottom:18px; background:linear-gradient(90deg,transparent,var(--jp-accent,#d4af00),transparent); opacity:.6;}
+  .job-poster .jp-footer-text{font-size:15px; color:var(--ink-soft); letter-spacing:.4px;}
+  .job-poster .jp-footer-brand{font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:#241f0f; margin-bottom:6px;}
+  .job-poster .jp-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:14px; background:linear-gradient(90deg,var(--jp-hdr1,#1c1530),var(--jp-accent,#d4af00),var(--jp-hdr2,#332750));}
+
+  /* Jaring pengaman otomatis: dipasang lewat JS bila konten job sangat panjang
+     (nama klien / deskripsi paket / catatan yang panjang), supaya isi tidak pernah
+     menabrak footer di bagian bawah poster. Dua tingkat kerapatan, diterapkan bertahap. */
+  .job-poster.jp-compact .jp-title-block{padding-top:32px;}
+  .job-poster.jp-compact .jp-client-name{font-size:44px;}
+  .job-poster.jp-compact .jp-rule{margin-top:24px;}
+  .job-poster.jp-compact .jp-body{padding-top:26px;}
+  .job-poster.jp-compact .jp-section{margin-top:22px;}
+  .job-poster.jp-compact .jp-row{padding:9px 0;}
+  .job-poster.jp-compact .jp-row .jp-value{font-size:19px; line-height:1.35;}
+  .job-poster.jp-compact2 .jp-client-name{font-size:38px;}
+  .job-poster.jp-compact2 .jp-section{margin-top:14px;}
+  .job-poster.jp-compact2 .jp-row{padding:6px 0;}
+  .job-poster.jp-compact2 .jp-row .jp-label{font-size:13px;}
+  .job-poster.jp-compact2 .jp-row .jp-value{font-size:16px; line-height:1.3;}
+
+  /* ---------- POSTER UNDUHAN KWITANSI (GAMBAR, 1080x1350) ----------
+     Desain resi/invoice yang proper untuk dikirim ke klien lewat WA/gambar —
+     terpisah dari versi PDF (yang dibuat teks vektor lewat jsPDF). Sengaja HANYA
+     memuat info yang relevan buat klien (sama seperti versi PDF): harga paket,
+     diskon, total tagihan, DP, sisa, status bayar — tanpa biaya/keuntungan internal. */
+  .kwitansi-poster{
+    width:1080px; height:1350px; position:relative; overflow:hidden;
+    background:linear-gradient(165deg,#fffdf6 0%,#fffaeb 55%,#fdf6e0 100%);
+    font-family:'Poppins',sans-serif; color:#1c1a12; box-sizing:border-box;
+  }
+  .kwitansi-poster .kw-watermark{
+    position:absolute; inset:0; opacity:.05; pointer-events:none;
+    background:
+      radial-gradient(circle at 12% 8%, var(--jp-accent,#d4af00) 0%, transparent 40%),
+      radial-gradient(circle at 92% 96%, var(--jp-accent,#d4af00) 0%, transparent 42%);
+  }
+  .kwitansi-poster .kw-topbar{position:relative; display:flex; align-items:center; gap:26px; padding:64px 72px 0; box-sizing:border-box;}
+  .kwitansi-poster .kw-badge{
+    width:92px; height:92px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--jp-hdr2,#332750),var(--jp-hdr1,#1c1530));
+    color:var(--jp-accent,#d4af00);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; font-size:34px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.12);
+  }
+  .kwitansi-poster .kw-brand-name{font-family:'Fraunces',serif; font-weight:700; font-size:30px; color:#241f0f; line-height:1.25;}
+  .kwitansi-poster .kw-brand-tag{font-size:14px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-soft); margin-top:4px;}
+  .kwitansi-poster .kw-doc-badge{margin-left:auto; text-align:right;}
+  .kwitansi-poster .kw-doc-title{font-family:'Fraunces',serif; font-weight:700; font-size:30px; letter-spacing:3px; color:var(--jp-hdr2,#332750);}
+  .kwitansi-poster .kw-doc-no{font-size:15px; color:var(--ink-soft); margin-top:6px; letter-spacing:.5px;}
+  .kwitansi-poster .kw-rule{height:2px; margin:40px 72px 0; background:linear-gradient(90deg,var(--jp-accent,#d4af00),transparent);}
+  .kwitansi-poster .kw-client-block{position:relative; padding:36px 72px 0; box-sizing:border-box;}
+  .kwitansi-poster .kw-kicker{font-size:15px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--jp-accent,#b8860b);}
+  .kwitansi-poster .kw-client-name{font-family:'Fraunces',serif; font-weight:700; font-size:52px; line-height:1.2; color:#201c0d; margin-top:10px; word-break:break-word;}
+  .kwitansi-poster .kw-meta-row{display:flex; align-items:center; gap:14px; margin-top:14px; font-size:19px; color:var(--ink-soft); flex-wrap:wrap;}
+  .kwitansi-poster .kw-meta-row .sep{width:6px; height:6px; border-radius:50%; background:var(--jp-accent,#d4af00); flex-shrink:0;}
+  .kwitansi-poster .kw-body{position:relative; padding:40px 72px 0; box-sizing:border-box;}
+  .kwitansi-poster .kw-row{display:flex; justify-content:space-between; align-items:baseline; gap:20px; padding:16px 0; border-bottom:1px solid var(--line);}
+  .kwitansi-poster .kw-row .kw-label{font-size:19px; color:var(--ink-soft); font-weight:600;}
+  .kwitansi-poster .kw-row .kw-value{font-size:23px; font-weight:600; color:#241f0f; text-align:right;}
+  .kwitansi-poster .kw-row.kw-highlight{border-bottom:2px solid var(--jp-accent,#d4af00); padding:20px 0;}
+  .kwitansi-poster .kw-row.kw-highlight .kw-label,
+  .kwitansi-poster .kw-row.kw-highlight .kw-value{font-size:27px; font-weight:700; color:var(--jp-hdr2,#332750);}
+  .kwitansi-poster .kw-status-row{display:flex; justify-content:space-between; align-items:center; margin-top:26px;}
+  .kwitansi-poster .kw-status-label{font-size:17px; color:var(--ink-soft); font-weight:600;}
+  .kwitansi-poster .kw-status-badge{background:var(--jp-accent,#d4af00); color:#241f0f; font-weight:700; font-size:16px; padding:8px 22px; border-radius:999px; white-space:nowrap;}
+  .kwitansi-poster .kw-note{margin-top:22px; font-size:16px; font-style:italic; color:var(--ink-soft); line-height:1.5; word-break:break-word;}
+  .kwitansi-poster .kw-footer{position:absolute; left:0; right:0; bottom:52px; text-align:center; padding:0 72px; box-sizing:border-box;}
+  .kwitansi-poster .kw-footer-line{height:1px; margin-bottom:16px; background:linear-gradient(90deg,transparent,var(--jp-accent,#d4af00),transparent); opacity:.6;}
+  .kwitansi-poster .kw-footer-brand{font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:#241f0f; margin-bottom:6px;}
+  .kwitansi-poster .kw-footer-text{font-size:14px; color:var(--ink-soft); letter-spacing:.3px;}
+  .kwitansi-poster .kw-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:14px; background:linear-gradient(90deg,var(--jp-hdr1,#1c1530),var(--jp-accent,#d4af00),var(--jp-hdr2,#332750));}
+
+  /* ---------- Gambar Story Instagram (ringkas & nama disensor, untuk diunggah publik) ---------- */
+  .job-story{
+    width:1080px; height:1920px; position:relative; overflow:hidden;
+    background:linear-gradient(165deg,#fffdf6 0%,#fffaeb 55%,#fdf6e0 100%);
+    font-family:'Poppins',sans-serif; color:#1c1a12;
+    box-sizing:border-box;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:0 100px;
+  }
+  .job-story .js-watermark{
+    position:absolute; inset:0; opacity:.06; pointer-events:none;
+    background:
+      radial-gradient(circle at 15% 10%, var(--jp-accent,#d4af00) 0%, transparent 42%),
+      radial-gradient(circle at 88% 92%, var(--jp-accent,#d4af00) 0%, transparent 45%);
+  }
+  .job-story .js-frame{position:absolute; inset:40px; border:2px solid var(--jp-accent,#d4af00); opacity:.4; border-radius:6px; pointer-events:none;}
+  .job-story .js-badge{
+    width:112px; height:112px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--jp-hdr2,#332750),var(--jp-hdr1,#1c1530));
+    color:var(--jp-accent,#d4af00);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; font-size:40px;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.12);
+    margin-bottom:26px;
+  }
+  .job-story .js-brand{font-family:'Fraunces',serif; font-weight:700; font-size:27px; letter-spacing:1.5px; color:#241f0f;}
+  .job-story .js-brand-tag{font-size:13px; letter-spacing:4px; text-transform:uppercase; color:var(--ink-soft); margin-top:8px; margin-bottom:56px;}
+  .job-story .js-kicker{font-size:18px; font-weight:700; letter-spacing:6px; text-transform:uppercase; color:var(--jp-accent,#b8860b); margin-bottom:22px;}
+  .job-story .js-name{font-family:'Fraunces',serif; font-weight:700; font-size:66px; line-height:1.22; color:#201c0d; word-break:break-word;}
+  .job-story .js-rule{width:130px; height:3px; margin:38px auto; background:linear-gradient(90deg,transparent,var(--jp-accent,#d4af00),transparent);}
+  .job-story .js-info{display:flex; flex-direction:column; gap:26px; margin-top:4px; width:100%;}
+  .job-story .js-info-label{font-size:14px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--ink-soft);}
+  .job-story .js-info-value{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:32px; color:#241f0f; margin-top:6px;}
+  .job-story .js-footer{position:absolute; left:0; right:0; bottom:100px; text-align:center;}
+  .job-story .js-footer-line{width:210px; height:1px; margin:0 auto 20px; background:linear-gradient(90deg,transparent,var(--jp-accent,#d4af00),transparent);}
+  .job-story .js-footer-brand{font-family:'Fraunces',serif; font-size:21px; font-weight:600; color:#241f0f;}
+  .job-story .js-footer-text{font-size:14px; color:var(--ink-soft); letter-spacing:1px; margin-top:6px;}
+  .job-story .js-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:14px; background:linear-gradient(90deg,var(--jp-hdr1,#1c1530),var(--jp-accent,#d4af00),var(--jp-hdr2,#332750));}
+
+  /* ---------- Login (autentikasi) ---------- */
+  .auth-gate{
+    position:fixed; inset:0; z-index:99999;
+    background:linear-gradient(165deg,#fffdf6 0%,#fffaeb 55%,#fdf6e0 100%);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    box-sizing:border-box;
+  }
+  .auth-card{
+    width:100%; max-width:360px; background:#fff; border-radius:16px;
+    padding:34px 28px; box-shadow:0 20px 50px -20px rgba(90,70,30,.35);
+    border:1px solid var(--line); text-align:center; box-sizing:border-box;
+  }
+  .auth-badge{
+    width:64px; height:64px; border-radius:50%; margin:0 auto 16px;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; font-size:24px; color:#231f0f;
+  }
+  .auth-card h2{margin:0 0 4px; font-size:19px; font-family:'Fraunces',serif;}
+  .auth-card p.auth-sub{color:var(--ink-soft); font-size:12.5px; margin:0 0 22px;}
+  .auth-field{margin-bottom:14px; text-align:left;}
+  .auth-field label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:5px;}
+  .auth-field input{width:100%; box-sizing:border-box;}
+  .auth-error{color:#b3261e; font-size:12.5px; margin:-4px 0 14px; display:none; text-align:left;}
+  .auth-error.show{display:block;}
+  .auth-card button[type="submit"]{width:100%; margin-top:6px;}
+  .auth-success{color:var(--ok); font-size:12.5px; margin:-4px 0 14px; display:none; text-align:left;}
+  .auth-success.show{display:block;}
+  .auth-tabs{display:flex; gap:6px; margin-bottom:18px; background:#f5efd6; padding:4px; border-radius:10px;}
+  .auth-tabs button{flex:1; border:none; background:transparent; padding:8px 6px; border-radius:8px; font-size:12.5px; font-weight:600; color:var(--ink-soft);}
+  .auth-tabs button.active{background:#fff; color:var(--ink); box-shadow:0 2px 6px rgba(0,0,0,.08);}
+  .auth-hint{font-size:11.5px; color:var(--ink-soft); margin-top:16px;}
+  .auth-hint button{border:none; background:none; color:var(--warn); font-weight:700; cursor:pointer; text-decoration:underline; padding:0; font-size:11.5px;}
+  /* Ikon mata lihat/sembunyikan password — dipakai di form login, daftar & pengaturan akun */
+  .pw-wrap{position:relative;}
+  .pw-wrap input{padding-right:38px !important;}
+  .pw-toggle{
+    position:absolute; right:3px; top:50%; transform:translateY(-50%);
+    width:30px; height:30px; border:none; background:transparent; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-size:15px; border-radius:8px;
+    color:var(--ink-soft); padding:0;
+  }
+  .pw-toggle:hover{background:#f5efd6; transform:translateY(-50%);}
+  .akun-table td.akun-pw{font-family:monospace; letter-spacing:.5px;}
+  .akun-me{background:var(--gold-pale) !important;}
+
+  /* ---------- Chip pengguna (role) di header ---------- */
+  .user-chip{display:flex; align-items:center; gap:8px; font-size:11.5px; color:#d8c98a; flex-shrink:0;}
+  .user-chip .role-badge{
+    padding:3px 10px; border-radius:999px; font-weight:700; font-size:10px; letter-spacing:.5px;
+    text-transform:uppercase; background:var(--gold-pale); color:#7a5f00; white-space:nowrap;
+  }
+  .user-chip button{
+    border:none; background:none; color:#d8c98a; font-size:11px; cursor:pointer;
+    text-decoration:underline; padding:0; white-space:nowrap;
+  }
+  /* Elemen bertanda admin-only otomatis disembunyikan untuk akun peran "Tim".
+     Peran "Tim" TIDAK BOLEH: (1) membuka halaman Pengaturan, (2) mempublish/
+     membatalkan publish/menghapus Saran & Penilaian, (3) mengubah teks, ukuran
+     font, warna/tema, dan desain tata letak keseluruhan di Kalender Job, serta
+     (4) mengubah data rekap job (tambah/edit/hapus job, ubah status job langsung
+     di tabel, pulihkan data, hapus semua data, import job dari Excel) — semua
+     aksi itu ditandai admin-only. Aksi lain (lihat, unduh gambar, salin,
+     Google Calendar, melihat & mengirim Saran & Penilaian, dsb) tetap terbuka
+     untuk Tim. */
+  body.role-tim .admin-only{display:none !important;}
+
+  /* ---------- SARAN & PENILAIAN (daftar ulasan klien) ---------- */
+  .ulasan-list{display:flex; flex-direction:column; gap:14px; margin-top:22px;}
+  .ulasan-card{background:#fffef9; border:1px solid var(--line); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow);}
+  .ulasan-card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;}
+  .ulasan-name{font-family:'Fraunces',serif; font-weight:700; font-size:16px; color:#241f0f;}
+  .ulasan-sub{font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-deep,#8a6a10); margin-top:2px;}
+  .ulasan-stars{margin-top:4px; color:#e5dcb0; letter-spacing:2px; font-size:15px;}
+  .ulasan-stars .on{color:var(--gold);}
+  .ulasan-date{font-size:11.5px; color:var(--ink-soft); white-space:nowrap; padding-top:2px;}
+  .ulasan-comment{margin-top:10px; font-size:13.5px; line-height:1.65; color:#3a3423; white-space:pre-wrap;}
+  .ulasan-actions{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
+
+  /* ---------- POSTER TESTIMONI / ULASAN KLIEN (1080x1920, untuk unggahan Story IG) ----------
+     Desain elegan bertema gelap-emas, senada dengan identitas Kaone Motret, dibuat KHUSUS
+     untuk file gambar yang diunduh — bukan tampilan kartu ulasan di layar. */
+  .ulasan-poster{
+    width:1080px; height:1920px; position:relative; overflow:hidden;
+    background:linear-gradient(165deg,#14120a 0%,#211d10 45%,#2c2712 100%);
+    font-family:'Poppins',sans-serif; color:#f4ecd0; box-sizing:border-box;
+  }
+  .ulasan-poster .up-glow{
+    position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(circle at 14% 6%, rgba(244,217,62,.18) 0%, transparent 45%),
+      radial-gradient(circle at 88% 96%, rgba(244,217,62,.14) 0%, transparent 46%);
+  }
+  .ulasan-poster .up-frame{position:absolute; inset:54px; border:1px solid rgba(244,217,62,.38); pointer-events:none;}
+  .ulasan-poster .up-frame-inner{position:absolute; inset:64px; border:1px solid rgba(244,217,62,.16); pointer-events:none;}
+  .ulasan-poster .up-corner{position:absolute; width:52px; height:52px; border-color:#f4d93e; pointer-events:none;}
+  .ulasan-poster .up-corner.tl{top:54px; left:54px; border-top:2px solid; border-left:2px solid;}
+  .ulasan-poster .up-corner.tr{top:54px; right:54px; border-top:2px solid; border-right:2px solid;}
+  .ulasan-poster .up-corner.bl{bottom:54px; left:54px; border-bottom:2px solid; border-left:2px solid;}
+  .ulasan-poster .up-corner.br{bottom:54px; right:54px; border-bottom:2px solid; border-right:2px solid;}
+
+  .ulasan-poster .up-top{position:relative; text-align:center; padding-top:158px;}
+  .ulasan-poster .up-badge{
+    width:106px; height:106px; border-radius:50%; margin:0 auto;
+    background:linear-gradient(135deg,#f4d93e,#d4af00);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; color:#231f0f; font-size:40px;
+    box-shadow:0 14px 32px rgba(212,175,0,.35), inset 0 0 0 3px rgba(255,255,255,.4);
+  }
+  .ulasan-poster .up-brand{margin-top:26px; font-family:'Fraunces',serif; font-weight:700; font-size:34px; letter-spacing:2px; color:#fffdf6;}
+  .ulasan-poster .up-tag{margin-top:8px; font-size:15px; letter-spacing:4px; text-transform:uppercase; color:#d8c98a;}
+
+  .ulasan-poster .up-stars{margin-top:66px; text-align:center; font-size:54px; letter-spacing:12px; color:#3c3419;}
+  .ulasan-poster .up-stars .on{color:#f4d93e; text-shadow:0 0 26px rgba(244,217,62,.5);}
+
+  .ulasan-poster .up-quotemark{
+    text-align:center; font-family:'Fraunces',serif; font-size:140px; line-height:.4; height:80px;
+    color:#f4d93e; opacity:.55; margin-top:48px;
+  }
+  .ulasan-poster .up-quote-wrap{padding:0 100px; box-sizing:border-box; margin-top:14px;}
+  .ulasan-poster .up-quote{
+    font-family:'Fraunces',serif; font-style:italic; font-weight:500; line-height:1.55;
+    text-align:center; color:#fffdf6; word-break:break-word;
+  }
+  .ulasan-poster .up-name-wrap{text-align:center; margin-top:58px;}
+  .ulasan-poster .up-namerule{width:60px; height:2px; background:#f4d93e; margin:0 auto 22px; opacity:.8;}
+  .ulasan-poster .up-name{font-family:'Fraunces',serif; font-weight:700; font-size:32px; color:#f4d93e;}
+  .ulasan-poster .up-sub{margin-top:8px; font-size:15px; letter-spacing:3px; text-transform:uppercase; color:#a89968;}
+
+  .ulasan-poster .up-footer{position:absolute; left:0; right:0; bottom:92px; text-align:center; padding:0 96px; box-sizing:border-box;}
+  .ulasan-poster .up-footer-line{height:1px; margin-bottom:24px; background:linear-gradient(90deg,transparent,#f4d93e,transparent); opacity:.7;}
+  .ulasan-poster .up-cta{font-family:'Fraunces',serif; font-style:italic; font-size:22px; color:#f4ecd0; line-height:1.5;}
+  .ulasan-poster .up-contact{margin-top:14px; font-size:15px; letter-spacing:1px; color:#d8c98a;}
+  .ulasan-poster .up-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:16px; background:linear-gradient(90deg,#8a6a10,#f4d93e,#8a6a10);}
+
+  /* REKAP */
+  .rekap-tabs{display:flex; gap:8px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:18px; padding-bottom:4px; scrollbar-width:none;}
+  .rekap-tabs::-webkit-scrollbar{display:none;}
+  .rekap-tabs button{
+    background:#fff; border:1.5px solid var(--line); padding:8px 16px; border-radius:999px; font-size:13px; font-weight:600;
+    flex:0 0 auto; white-space:nowrap;
+  }
+  .rekap-tabs button.active{background:linear-gradient(135deg,var(--gold-light),var(--gold)); border-color:transparent; color:#231f0f;}
+  .rekap-sublevel{display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; margin:-8px 0 18px; padding-bottom:2px; scrollbar-width:none;}
+  .rekap-sublevel::-webkit-scrollbar{display:none;}
+  .rekap-sublevel button{
+    background:#fbf6e6; border:1px solid var(--line); padding:6px 13px; border-radius:999px; font-size:12px; font-weight:600; color:#6d5d2a;
+    flex:0 0 auto; white-space:nowrap;
+  }
+  .rekap-sublevel button.active{background:#241f0f; border-color:#241f0f; color:var(--gold-light);}
+  #rekapPoster{background:#fffef9; padding:30px; border-radius:14px; overflow-x:hidden;}
+  #rekapPoster .rp-head{text-align:center; margin-bottom:18px;}
+  #rekapPoster .rp-head .b{font-family:'Fraunces',serif; font-weight:700; font-size:15px; letter-spacing:2px; color:var(--warn); text-transform:uppercase;}
+  #rekapPoster .rp-head h2{font-size:28px; margin:4px 0 0;}
+  #rekapPoster .stat{border-radius:14px;}
+  .rekap-block{background:#fffdf6; border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:16px;}
+  .rekap-table-wrap{width:100%; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:10px; border:1px solid var(--line);}
+  table.rekaptable{width:100%; min-width:520px; border-collapse:collapse; font-size:13.5px; margin-top:0;}
+  table.rekaptable th{background:#241f0f; color:#f4ecd0; padding:9px 10px; text-align:left; font-size:12px; text-transform:uppercase; white-space:nowrap;}
+  table.rekaptable td{padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  table.rekaptable tfoot td{font-weight:700; background:var(--gold-pale);}
+
+  .donut-wrap{display:flex; gap:30px; align-items:center; flex-wrap:wrap; justify-content:center;
+    background:#fffdf6; border:1px solid var(--line); border-radius:14px; padding:22px; margin-bottom:20px;}
+  .donut-legend{flex:1; min-width:220px;}
+  .donut-legend-title{font-family:'Fraunces',serif; font-weight:700; font-size:14px; color:#5c4a12; margin-bottom:10px; letter-spacing:.5px;}
+  .donut-legend-item{display:flex; align-items:center; gap:9px; padding:6px 0; font-size:13px; border-bottom:1px dashed #f0e6c0;}
+  .donut-legend-item:last-child{border-bottom:none;}
+  .donut-legend-item .dot{width:12px; height:12px; border-radius:3px; flex-shrink:0;}
+  .donut-legend-item .lbl{flex:1; font-weight:600; color:#241f0f;}
+  .donut-legend-item .pct{font-weight:700; color:#8a6d16; min-width:48px; text-align:right;}
+  .donut-legend-item .cnt{color:var(--ink-soft); font-size:11.5px; min-width:52px; text-align:right;}
+
+  .month-compare-card{background:linear-gradient(135deg,#fffef9,#fbf3d6); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-bottom:16px;}
+  .mcc-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  .mcc-label{font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.8px;}
+  .mcc-val{font-family:'Fraunces',serif; font-weight:700; font-size:26px; color:#241f0f; margin-top:2px;}
+  .mcc-diff{font-size:12.5px; font-weight:700; padding:5px 10px; border-radius:999px; background:#efe8cf; color:#5c4a12; white-space:nowrap;}
+  .mcc-diff.up{background:#e3f3e2; color:#2f7d32;}
+  .mcc-diff.down{background:#fbe6e2; color:#b3401f;}
+  .mcc-sub{margin-top:8px; font-size:12.5px; color:var(--ink-soft);}
+
+  .monthly-chart-wrap{background:#fffdf6; border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:20px;}
+  .monthly-chart-legend{display:flex; gap:16px; font-size:12px; color:var(--ink-soft); margin-bottom:10px; flex-wrap:wrap;}
+  .monthly-chart-hint{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-soft); margin-top:10px; opacity:.85;}
+  .monthly-chart-hint svg{width:13px; height:13px; flex-shrink:0;}
+  .monthly-chart-legend .dot{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:middle;}
+  .monthly-chart-scroll{width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .monthly-chart-scroll svg{display:block;}
+
+  .op-bar-row{margin-bottom:14px;}
+  .op-bar-row:last-of-type{margin-bottom:0;}
+  .op-bar-clickable{cursor:pointer; padding:6px; margin:-6px -6px 8px; border-radius:10px; transition:background-color .15s ease;}
+  .op-bar-clickable:hover{background-color:var(--gold-pale);}
+  .op-bar-clickable:active{transform:scale(.99); transition-duration:.08s;}
+  .op-bar-label{display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12.5px; color:#241f0f; margin-bottom:7px; font-weight:600;}
+  .op-bar-label svg{width:15px; height:15px; vertical-align:-3px; margin-right:4px;}
+  .op-bar-track{height:10px; background:#f0e6c0; border-radius:999px; overflow:hidden;}
+  .op-bar-fill{height:100%; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:999px;}
+  .op-pengiriman-list{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+  .op-peng-item{
+    display:flex; align-items:center; gap:7px; background:#fff; border:1px solid var(--line); border-radius:999px;
+    padding:6px 12px; font-size:12px; color:#241f0f; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .op-peng-item:hover{transform:translateY(-2px); box-shadow:0 6px 14px rgba(180,150,0,.18); border-color:var(--gold-light);}
+  .op-peng-item:active{transform:translateY(0) scale(.97); transition-duration:.08s;}
+  .op-peng-cnt{background:var(--gold); color:#231f0f; font-weight:700; border-radius:999px; padding:1px 8px; font-size:11px;}
+
+  .footer-note{text-align:center; color:var(--ink-soft); font-size:12px; margin-top:40px; line-height:1.7; padding:0 20px;}
+  .copyright-bar{
+    margin-top:28px; padding:18px 20px; text-align:center;
+    background:linear-gradient(90deg,#1c1a12,#2c2712);
+    color:#d8c98a; font-size:12.5px; font-weight:600; letter-spacing:1.5px;
+  }
+  .version-tag{
+    display:inline-block; margin-left:8px; padding:2px 8px; border-radius:999px;
+    background:rgba(255,255,255,.08); color:#a89a68; font-size:10.5px; font-weight:600;
+    letter-spacing:.5px; vertical-align:middle;
+  }
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+    background:#1c1a12; color:#f4ecd0; padding:12px 22px; border-radius:999px; font-size:13.5px;
+    box-shadow:0 8px 24px rgba(0,0,0,.3); z-index:400; opacity:0; pointer-events:none; transition:.25s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+
+  .backup-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
+  .info-box{background:#fff8e6; border:1px solid #f0e0a0; border-radius:10px; padding:12px 16px; font-size:12.5px; color:#5b4e10; line-height:1.6; margin-top:14px;}
+  .kwitansi-status-box{display:flex; align-items:flex-start; gap:8px; border-radius:10px; padding:11px 14px; font-size:12.5px; line-height:1.55; margin:14px 0 0;
+    background:#f0f6ee; border:1px solid #cfe6c6; color:#2f5a2a;}
+  .kwitansi-status-box svg{width:16px; height:16px; flex-shrink:0; margin-top:1px;}
+  .kwitansi-status-box.outdated{background:#fdf1de; border:1px solid #f2c98a; color:#7a4a06;}
+
+  /* ---------- NOTIFIKASI (lonceng) ----------
+     Dulu dibuat position:fixed supaya tombol notifikasi selalu berada di sudut
+     kanan-atas layar. Masalahnya, "fixed" itu terlepas total dari elemen header —
+     kalau baris header melebar/menyempit/wrap (nama akun panjang, layar lebar
+     desktop, notch iPhone, dst), posisi tombolnya TIDAK ikut menyesuaikan dan jadi
+     terlihat "mengambang" sendirian, tidak nempel ke elemen manapun.
+     Solusinya: jadikan tombol ini bagian NORMAL dari flex header (baris .topbar-actions
+     di samping .user-chip), bukan dilepas dari alur halaman. header.topbar sendiri
+     sudah position:sticky, jadi tombol ini otomatis tetap kelihatan saat discroll
+     TANPA perlu posisi fixed terpisah — dan otomatis ikut pindah dengan benar di
+     semua ukuran layar karena posisinya dihitung oleh flexbox, bukan angka pixel tetap. */
+  .topbar-actions{display:flex; align-items:center; gap:12px; flex-shrink:0;}
+  .notif-wrap{position:relative; flex-shrink:0;}
+  .notif-btn{
+    position:relative; width:40px; height:40px; border-radius:50%;
+    background:rgba(28,26,18,.75); border:1px solid rgba(255,255,255,.22);
+    color:#f4ecd0; font-size:17px; display:flex; align-items:center; justify-content:center;
+    transition:.15s; box-shadow:0 4px 14px rgba(0,0,0,.22); backdrop-filter:blur(3px);
+  }
+  .notif-btn:hover{background:rgba(44,39,18,.9);}
+  .notif-btn.has-unread{animation:notifPulse 1.8s ease-in-out infinite;}
+  @keyframes notifPulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(244,217,62,.45);}
+    50%{box-shadow:0 0 0 6px rgba(244,217,62,0);}
+  }
+  .notif-badge{
+    position:absolute; top:-4px; right:-4px; min-width:18px; height:18px; padding:0 4px;
+    border-radius:999px; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; line-height:1; border:2px solid #1c1a12;
+  }
+  .notif-panel{
+    position:absolute; top:calc(100% + 12px); right:0; width:340px; max-width:calc(100vw - 32px);
+    max-height:70vh; overflow-y:auto; background:#fff; color:var(--ink); border-radius:14px;
+    box-shadow:0 20px 50px rgba(0,0,0,.28); z-index:210; border:1px solid var(--line);
+    display:flex; flex-direction:column;
+  }
+  .notif-panel-head{
+    position:sticky; top:0; background:linear-gradient(90deg,#1c1a12,#2c2712); color:#f4ecd0;
+    padding:14px 16px; font-family:'Fraunces',serif; font-weight:700; font-size:14.5px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; z-index:1;
+  }
+  .notif-panel-head .head-right{display:flex; align-items:center; gap:10px; flex-shrink:0;}
+  .notif-panel-head .cnt{font-family:'Poppins',sans-serif; font-weight:500; font-size:11.5px; color:#d8c98a; white-space:nowrap;}
+  .notif-markall-btn{
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.3); color:#f4ecd0;
+    font-family:'Poppins',sans-serif; font-size:10.5px; font-weight:600; letter-spacing:.2px;
+    padding:5px 10px; border-radius:999px; white-space:nowrap; transition:.15s;
+  }
+  .notif-markall-btn:hover{background:rgba(255,255,255,.22);}
+  .notif-list{padding:6px; overflow-y:auto;}
+  .notif-item{
+    display:flex; gap:10px; align-items:flex-start; padding:11px 10px; border-radius:10px;
+    cursor:pointer; transition:.12s;
+  }
+  .notif-item:hover{background:#faf6e5;}
+  .notif-item + .notif-item{margin-top:2px;}
+  .notif-item.unread{background:#fffaeb;}
+  .notif-item .ni-icon{font-size:19px; flex-shrink:0; margin-top:1px;}
+  .notif-item .ni-body{flex:1; min-width:0;}
+  .notif-item .ni-title{font-size:13px; font-weight:700; color:#241f0f; line-height:1.35;}
+  .notif-item .ni-desc{font-size:12px; color:var(--ink-soft); margin-top:2px; line-height:1.4;}
+  .notif-item .ni-dot{
+    width:16px; height:16px; border-radius:50%; background:var(--gold); flex-shrink:0; margin-top:2px;
+    border:none; padding:0; color:#231f0f; font-size:9px; font-weight:700; line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.15s;
+  }
+  .notif-item .ni-dot::after{content:'';}
+  .notif-item .ni-dot:hover{background:var(--gold-light); transform:scale(1.25);}
+  .notif-item .ni-dot:hover::after{content:'✓';}
+  .notif-empty{padding:34px 20px; text-align:center; color:var(--ink-soft); font-size:13px;}
+  .notif-empty .em{font-size:30px; margin-bottom:8px;}
+  .notif-panel-foot{
+    border-top:1px solid var(--line); padding:8px; text-align:center; background:#fffefb; flex-shrink:0;
+  }
+  .notif-changelog-btn{
+    background:transparent; border:none; color:var(--warn); font-size:12px; font-weight:600;
+    padding:8px 10px; width:100%; border-radius:8px; transition:.15s;
+  }
+  .notif-changelog-btn:hover{background:var(--gold-pale);}
+  @media(max-width:640px){
+    .notif-panel{position:fixed; top:auto; bottom:0; left:0; right:0; width:100%; max-width:100%;
+      max-height:78vh; border-radius:18px 18px 0 0;}
+  }
+
+  /* ---------- RIWAYAT CHANGELOG (modal) ---------- */
+  .changelog-modal{max-width:520px;}
+  .changelog-history{max-height:58vh; overflow-y:auto; display:flex; flex-direction:column; gap:16px; margin-top:6px; padding-right:4px;}
+  .changelog-entry{padding-bottom:14px; border-bottom:1px solid var(--line);}
+  .changelog-entry:last-child{border-bottom:none; padding-bottom:0;}
+  .changelog-entry-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;}
+  .changelog-entry-date{font-size:11.5px; color:var(--ink-soft);}
+  .changelog-latest-tag{
+    background:var(--gold-pale); color:#7a6400; font-size:10px; font-weight:700;
+    padding:2px 8px; border-radius:999px; letter-spacing:.3px; text-transform:uppercase;
+  }
+
+  /* ---------- POPUP PEMBARUAN APLIKASI ---------- */
+  .update-modal{max-width:460px;}
+  .update-badge-row{display:flex; align-items:center; gap:10px; margin-bottom:6px;}
+  .update-badge{
+    background:linear-gradient(135deg,var(--gold-light),var(--gold)); color:#231f0f;
+    font-size:11px; font-weight:700; letter-spacing:.5px; padding:4px 11px; border-radius:999px;
+  }
+  .update-icon-badge{
+    width:52px; height:52px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    display:flex; align-items:center; justify-content:center; font-size:24px;
+    box-shadow:0 8px 20px rgba(212,175,0,.35);
+  }
+  .update-list{list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:10px;}
+  .update-list li{
+    display:flex; gap:10px; align-items:flex-start; font-size:13.5px; line-height:1.5; color:#3a3423;
+  }
+  .update-list li .ul-dot{
+    width:22px; height:22px; border-radius:50%; background:var(--gold-pale); color:#7a6400;
+    display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; margin-top:1px;
+  }
+  .update-list li .ul-body{display:flex; flex-direction:column; gap:3px; min-width:0;}
+  /* Kategori perubahan changelog — warnanya beda tiap kategori supaya cepat dikenali
+     sekilas: Fitur (baru), Perbaikan (bugfix), Peningkatan (improvement). Kategori lain
+     di luar tiga ini otomatis jatuh ke gaya .cat-lainnya (netral). */
+  .ul-cat{
+    align-self:flex-start; font-size:10px; font-weight:700; letter-spacing:.4px; text-transform:uppercase;
+    padding:2px 8px; border-radius:999px; white-space:nowrap;
+  }
+  .ul-cat.cat-fitur{background:var(--gold-pale); color:#7a6400;}
+  .ul-cat.cat-perbaikan{background:#fbe4e0; color:#9c3223;}
+  .ul-cat.cat-peningkatan{background:#dff0de; color:#2e6b2e;}
+  .ul-cat.cat-lainnya{background:#eee9d8; color:#5b5646;}
+
+  /* ---------- POPUP SELAMAT DATANG (fitur & keunggulan, hanya tampil sekali) ---------- */
+  .welcome-modal{max-width:480px;}
+  .welcome-hero{text-align:center; padding:6px 4px 4px;}
+  .welcome-hero .welcome-badge-icon{
+    width:64px; height:64px; border-radius:50%; margin:0 auto 12px;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    display:flex; align-items:center; justify-content:center; font-size:30px;
+    box-shadow:0 10px 24px rgba(212,175,0,.4);
+  }
+  .welcome-hero h3{margin:0 0 6px; font-size:20px;}
+  .welcome-hero p{margin:0; font-size:13px; color:var(--ink-soft); line-height:1.55;}
+  .welcome-feature-list{list-style:none; margin:18px 0 0; padding:0; display:flex; flex-direction:column; gap:12px;}
+  .welcome-feature-list li{
+    display:flex; gap:12px; align-items:flex-start; padding:11px 12px; border:1px solid var(--line);
+    border-radius:12px; background:#fffef9;
+  }
+  .welcome-feature-list .wf-icon{
+    width:32px; height:32px; border-radius:9px; flex-shrink:0; background:var(--gold-pale);
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .welcome-feature-list .wf-title{font-weight:700; font-size:13.5px; color:#241f0f;}
+  .welcome-feature-list .wf-desc{font-size:12px; color:var(--ink-soft); margin-top:2px; line-height:1.45;}
+
+  /* =========================================================
+     RESPONSIF SMARTPHONE
+  ========================================================= */
+  @media(max-width:640px){
+    header.topbar{padding:10px 14px 8px;}
+    .brand-badge{width:34px; height:34px; font-size:15px;}
+    .brand-text .name{font-size:16px;}
+    .brand-text .tag{font-size:9px; letter-spacing:1px;}
+    /* Nav jadi strip yang bisa digeser horizontal, jadi seluruh menu tetap
+       terjangkau tanpa membungkus & mendorong konten turun */
+    nav.mainnav{
+      flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch;
+      width:100%; margin-top:8px; padding-bottom:2px; scrollbar-width:none;
+    }
+    nav.mainnav::-webkit-scrollbar{display:none;}
+    nav.mainnav button{padding:7px 12px; font-size:12.5px;}
+    .topbar-row{gap:6px;}
+    .notif-btn{width:34px; height:34px; font-size:15px;}
+    .datetime-strip{font-size:10.5px; text-align:left;}
+
+    main{padding:16px 12px 6px;}
+    .card{padding:16px;}
+
+    .hero{padding:14px 4px 4px;}
+    .hero h1{font-size:26px; margin:4px 0 3px;}
+    .hero p{font-size:13px;}
+    .hero .kicker{font-size:10.5px; letter-spacing:2px;}
+    h2{font-size:18px;}
+    h3{font-size:14.5px;}
+    .toolbar h2{font-size:17px;}
+
+    .center-btn-wrap{margin:18px 0 6px;}
+    .big-add-btn{padding:14px 28px; font-size:14.5px; gap:8px;}
+    .big-add-btn .plus{width:26px; height:26px; font-size:16px;}
+
+    .quick-menu{gap:8px; margin-top:16px;}
+    .quick-menu-item{padding:10px 4px; border-radius:12px;}
+    .quick-menu-item .qm-icon{font-size:19px;}
+    .quick-menu-item .qm-label{font-size:10px;}
+
+    .daily-box{margin-top:20px; gap:10px;}
+    .daily-card{padding:14px 15px;}
+    .dq-text{font-size:14px;}
+    .ayat-arab{font-size:19px;}
+    .ayat-arti{font-size:13px;}
+
+    .stat-grid{grid-template-columns:repeat(2,1fr); gap:9px; margin-top:18px;}
+    .stat{padding:12px 12px;}
+    .stat .value{font-size:17px;}
+    .stat .value.long{font-size:13.5px;}
+    .stat .value.longer{font-size:11.5px;}
+    .stat .sub{font-size:10px;}
+    .stat .label{font-size:10px;}
+
+    .upcoming{margin-top:22px;}
+    .job-mini{flex-direction:column; align-items:flex-start; gap:6px;}
+    .job-mini .l{font-size:13px;}
+
+    /* Menu Pembagian Tugas Tim — kartu ringkasan, kartu per-akun & kotak bonus
+       supaya nilai/label tidak mepet atau keluar dari kolom di layar HP */
+    .task-summary-grid{grid-template-columns:repeat(2,1fr); gap:8px; margin:12px 0 16px;}
+    .task-stat{padding:11px 12px;}
+    .task-stat .ts-value{font-size:18px;}
+    .task-stat .ts-label{font-size:9.5px; letter-spacing:.5px;}
+    .task-person-card{padding:12px 13px;}
+    .task-person-name{font-size:14.5px;}
+    .task-person-meta{font-size:10.5px;}
+    .task-person-stats{gap:6px;}
+    .task-mini-stat{font-size:10px; padding:4px 8px;}
+    .task-bonus-box{padding:10px 12px;}
+    .task-bonus-row{gap:8px;}
+    .task-bonus-label{font-size:10px;}
+    .task-bonus-amount{font-size:16px;}
+    .task-bonus-detail{font-size:10px;}
+    .bonus-adjust-btn{padding:7px 11px; font-size:11px;}
+
+    .form-actions{justify-content:stretch;}
+    .form-actions .btn{flex:1; text-align:center;}
+
+    table.jobtable, table.rekaptable{font-size:11.5px;}
+    table.jobtable th, table.rekaptable th{padding:8px 6px; font-size:10px;}
+    table.jobtable td, table.rekaptable td{padding:8px 6px;}
+    .row-actions{display:grid; grid-template-columns:1fr 1fr; gap:8px; flex:1; width:100%;}
+    .row-actions .icon-btn{width:100%; text-align:center; padding:9px 4px;}
+    .badge-select-wrap select{min-width:100px; font-size:10.5px; padding:4px 18px 4px 8px;}
+
+    .cal-controls{gap:8px;}
+    .cal-nav .cur{font-size:15px; min-width:120px;}
+    .cal-nav button{padding:6px 10px; font-size:13px;}
+    .poster-wrap{padding:12px; border-radius:12px;}
+    .thanks-editor{padding:14px 15px;}
+    .thanks-controls-row{flex-direction:column; align-items:stretch;}
+    .font-size-control{justify-content:center;}
+    .layout-picker, .theme-picker{padding:14px 15px;}
+    .layout-grid{grid-template-columns:repeat(3,1fr);}
+
+    .modal{padding:16px; border-radius:12px;}
+    .modal-actions{flex-direction:column;}
+    .modal-actions .btn{width:100%;}
+
+    .rekap-tabs button{padding:7px 12px; font-size:12px;}
+    #rekapPoster{padding:16px;}
+    #rekapPoster .rp-head{margin-bottom:12px;}
+    #rekapPoster .rp-head .b{font-size:11px; letter-spacing:1.2px;}
+    #rekapPoster .rp-head h2{font-size:18px;}
+    .donut-wrap{padding:14px; gap:16px;}
+    .donut-wrap svg{width:150px; height:150px;}
+    .donut-legend-title{font-size:12.5px;}
+    .donut-legend-item{font-size:12px;}
+    .mcc-val{font-size:20px;}
+    .mcc-label,.mcc-sub{font-size:11.5px;}
+    .monthly-chart-legend{font-size:11px;}
+    .rekap-block{padding:12px;}
+    .op-bar-label{font-size:11.5px;}
+    .op-peng-item{font-size:11px; padding:5px 10px;}
+
+    .toolbar{flex-direction:column; align-items:stretch;}
+    .search-box{flex-direction:column;}
+    .search-box input,.search-box select{width:100%;}
+
+    .ulasan-card{padding:13px 14px;}
+    .ulasan-actions{flex-direction:column;}
+    .ulasan-actions .btn, .ulasan-actions .icon-btn{width:100%; text-align:center;}
+  }
+  @media(max-width:380px){
+    .quick-menu-item{padding:8px 3px;}
+    .quick-menu-item .qm-icon{font-size:17px;}
+    .quick-menu-item .qm-label{font-size:9.5px;}
+    .stat-grid{grid-template-columns:1fr 1fr;}
+    .task-summary-grid{grid-template-columns:1fr 1fr;}
+    .task-stat .ts-value{font-size:16px;}
+    .task-bonus-row{flex-direction:column; align-items:stretch;}
+    .task-bonus-row .bonus-adjust-btn, .task-bonus-row .bonus-claim-btn{width:100%; text-align:center;}
+    #rekapPoster{padding:12px;}
+    #rekapPoster .rp-head h2{font-size:16px;}
+    .donut-wrap svg{width:130px; height:130px;}
+  }
+
+  /* =========================================================
+     ✨ PENYEGARAN TAMPILAN & RESPONSIF HP  (v1.5.0)
+     Blok ini sengaja diletakkan PALING BAWAH di dalam <style> supaya
+     aturannya menimpa aturan lama di atas tanpa perlu mengubah/merusak
+     gaya yang sudah ada. Isinya 4 hal besar:
+       1. Perbaikan dasar untuk Android & iPhone (safe-area, anti zoom
+          otomatis saat mengetik, area sentuh minimal 44px).
+       2. Navigasi atas jadi strip geser yang jelas + tombol "naik ke atas".
+       3. Tabel Daftar Job berubah jadi kartu di layar HP (tidak lagi
+          perlu digeser ke samping untuk membaca).
+       4. Polesan visual: bayangan lebih lembut, jarak lebih lega,
+          warna lebih tenang di mata.
+  ========================================================= */
+
+  /* ---------- 1. DASAR: ANDROID & IPHONE ---------- */
+  html{
+    -webkit-text-size-adjust:100%; text-size-adjust:100%;
+    scroll-behavior:smooth;
+  }
+  body{
+    -webkit-tap-highlight-color:transparent;
+    overflow-x:hidden;
+    /* Ruang aman bawah untuk iPhone dengan home-indicator */
+    padding-bottom:calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+  /* Semua kolom isian & tombol tidak lagi "melompat"/ter-zoom paksa di iPhone */
+  input, select, textarea, button{
+    -webkit-tap-highlight-color:transparent;
+    max-width:100%;
+  }
+  /* Elemen yang sering bikin halaman melar ke samping di HP */
+  img, svg, canvas, video, table{max-width:100%;}
+
+  /* Fokus keyboard terlihat jelas (aksesibilitas) tanpa mengganggu klik mouse */
+  :focus-visible{
+    outline:2.5px solid var(--gold);
+    outline-offset:2px;
+    border-radius:8px;
+  }
+
+  /* ---------- 2. HEADER & NAVIGASI ---------- */
+  header.topbar{
+    padding-top:calc(12px + env(safe-area-inset-top, 0px));
+    padding-left:calc(22px + env(safe-area-inset-left, 0px));
+    padding-right:calc(22px + env(safe-area-inset-right, 0px));
+    background:linear-gradient(120deg,#16140d 0%,#221e10 55%,#2f2913 100%);
+    box-shadow:0 6px 22px rgba(20,17,5,.28);
+  }
+  /* Strip menu: tetap bisa digeser, tapi sekarang ada petunjuk bayangan di tepi
+     kanan supaya jelas bahwa masih ada menu lain di sebelahnya. */
+  .mainnav-shell{position:relative;}
+  .mainnav-shell::after{
+    content:''; position:absolute; top:0; bottom:0; right:0; width:34px; pointer-events:none;
+    background:linear-gradient(90deg, rgba(25,22,12,0), rgba(25,22,12,.92));
+    opacity:0; transition:opacity .2s ease; border-radius:0 999px 999px 0;
+  }
+  .mainnav-shell.has-more::after{opacity:1;}
+  nav.mainnav{
+    scroll-behavior:smooth; scroll-padding:0 12px;
+    background:rgba(255,255,255,.05); border-radius:16px; padding:4px;
+    border:1px solid rgba(255,255,255,.07);
+  }
+  nav.mainnav button{
+    border:none; background:transparent; color:#ddd0a4;
+    scroll-snap-align:center;
+  }
+  nav.mainnav button:focus{outline:none;}
+  nav.mainnav button:focus-visible{outline:2px solid var(--gold-light); outline-offset:2px;}
+  nav.mainnav button:hover, nav.mainnav button:focus-visible{transform:none; background:rgba(244,217,62,.2); color:#fff;}
+  nav.mainnav button.active{
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    color:#231f0f;
+    box-shadow:0 4px 14px rgba(212,175,0,.35);
+    transform:none;
+  }
+  nav.mainnav button.active:hover{background:linear-gradient(135deg,var(--gold-light),var(--gold)); color:#231f0f;}
+
+  /* ---------- 3. TOMBOL "NAIK KE ATAS" ---------- */
+  .to-top-btn{
+    position:fixed; z-index:180;
+    right:calc(16px + env(safe-area-inset-right, 0px));
+    bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+    width:46px; height:46px; border-radius:50%; border:none;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    color:#231f0f; font-size:19px; font-weight:700; line-height:1;
+    box-shadow:0 10px 26px rgba(120,95,0,.32);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; visibility:hidden; transform:translateY(14px) scale(.85);
+    transition:opacity .22s ease, transform .22s cubic-bezier(.34,1.56,.64,1), visibility .22s;
+  }
+  .to-top-btn.show{opacity:1; visibility:visible; transform:translateY(0) scale(1);}
+  .to-top-btn:hover{transform:translateY(-3px) scale(1.05);}
+  .to-top-btn:active{transform:scale(.92);}
+
+  /* ---------- 4. POLESAN VISUAL UMUM ---------- */
+  body{
+    background:
+      radial-gradient(1100px 520px at 8% -6%, rgba(244,217,62,.16), transparent 62%),
+      radial-gradient(900px 480px at 96% 2%, rgba(212,175,0,.10), transparent 60%),
+      linear-gradient(180deg,#fffdf6 0%,#fdf8ea 100%);
+    background-attachment:fixed;
+  }
+  .card{
+    border-radius:18px;
+    border:1px solid rgba(214,196,130,.45);
+    box-shadow:0 1px 2px rgba(60,48,10,.05), 0 10px 30px -14px rgba(90,72,10,.22);
+  }
+  .card h2{letter-spacing:.2px;}
+  .stat, .task-stat, .daily-card, .quick-menu-item, .job-mini,
+  .report-card, .task-person-card, .ulasan-card{
+    border-radius:16px;
+  }
+  .stat, .task-stat{
+    box-shadow:0 1px 2px rgba(60,48,10,.04), 0 8px 22px -14px rgba(90,72,10,.28);
+  }
+  .stat.gold, .task-stat.gold{
+    box-shadow:0 8px 22px -10px rgba(190,155,0,.55);
+  }
+  .section-title{
+    letter-spacing:.2px;
+    padding-bottom:8px;
+    border-bottom:1px solid rgba(214,196,130,.4);
+  }
+  .info-box{
+    border-radius:14px;
+    border-left:4px solid var(--gold);
+  }
+  .btn{border-radius:11px; letter-spacing:.2px;}
+  .btn-primary{box-shadow:0 6px 18px -8px rgba(190,155,0,.85);}
+  input[type=text],input[type=url],input[type=date],input[type=number],
+  input[type=tel],input[type=password],input[type=time],select,textarea{
+    border-radius:11px; border-color:#e8e0c6;
+  }
+  input:focus,select:focus,textarea:focus{
+    box-shadow:0 0 0 3.5px rgba(212,175,0,.16);
+  }
+  table.jobtable th, table.rekaptable th{
+    background:linear-gradient(120deg,#231f10,#332d15);
+    position:sticky; top:0; z-index:2;
+  }
+  .table-wrap{border-radius:14px;}
+  .toast{
+    bottom:calc(22px + env(safe-area-inset-bottom, 0px));
+    border-radius:14px; padding:13px 20px; font-weight:500;
+    max-width:min(420px, calc(100vw - 32px)); text-align:center; line-height:1.45;
+  }
+  .copyright-bar{
+    padding-bottom:calc(18px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ---------- 5. MODAL: JADI "BOTTOM SHEET" DI HP ---------- */
+  .overlay{
+    backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+    overscroll-behavior:contain;
+  }
+  .modal{
+    border-radius:18px;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    animation:modalRise .26s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes modalRise{
+    from{opacity:0; transform:translateY(16px) scale(.98);}
+    to{opacity:1; transform:none;}
+  }
+
+  /* ---------- 6. RESPONSIF LAYAR HP (≤640px) ---------- */
+  @media(max-width:640px){
+    header.topbar{
+      padding:calc(10px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) 10px calc(14px + env(safe-area-inset-left, 0px));
+    }
+    /* iOS memperbesar halaman sendiri kalau font kolom isian < 16px.
+       Disamakan 16px supaya layar tidak "meloncat" saat mulai mengetik. */
+    input[type=text],input[type=url],input[type=date],input[type=number],
+    input[type=tel],input[type=password],input[type=time],input[type=search],
+    select,textarea{
+      font-size:16px; padding:12px 13px;
+    }
+    .rp-input-wrap input.money-input{padding-left:34px;}
+
+    /* Area sentuh nyaman: minimal 44px (rekomendasi Apple & Google) */
+    nav.mainnav button{min-height:40px; padding:9px 15px; font-size:13px;}
+    .btn{min-height:46px; padding:12px 20px; font-size:14px;}
+    .icon-btn{min-height:40px; padding:9px 13px; font-size:12.5px;}
+    .notif-btn, .to-top-btn{min-width:44px; min-height:44px;}
+    .badge-select-wrap select{min-height:34px;}
+
+    main{padding:14px 12px 6px;}
+    .card{padding:16px 14px; border-radius:16px;}
+    #app .card + .card{margin-top:14px;}
+
+    /* ---- Tabel yang berbasis "jobtable" (Daftar Job & Rekap Tugas Detail)
+       jadi tampilan KARTU di HP, tidak perlu digeser ke samping ---- */
+    .table-wrap{overflow-x:visible; border:none; border-radius:0; background:transparent;}
+    table.jobtable{display:block; width:100%; font-size:13px;}
+    table.jobtable thead{display:none;}
+    table.jobtable tbody{display:block;}
+    table.jobtable tr{
+      display:block; background:#fffefa; border:1px solid var(--line);
+      border-radius:14px; padding:12px 14px; margin-bottom:10px;
+      box-shadow:0 1px 2px rgba(60,48,10,.04), 0 8px 20px -16px rgba(90,72,10,.4);
+    }
+    table.jobtable tr:hover td{background:transparent;}
+    table.jobtable td{
+      display:flex; flex-direction:column; align-items:flex-start; gap:3px;
+      padding:8px 0; border-bottom:1px dashed rgba(214,196,130,.5);
+      text-align:left; overflow:hidden;
+    }
+    table.jobtable td:last-child{border-bottom:none;}
+    table.jobtable td::before{
+      content:attr(data-label);
+      font-size:10.5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase;
+      color:var(--ink-soft);
+    }
+    table.jobtable td[data-label]:empty{display:none;}
+    /* Baris pertama (nomor + tanggal) & nama klien tetap kompak sebaris,
+       karena isinya singkat dan cocok jadi "judul kartu". Baris lain (harga,
+       DP, sisa, dll) TIDAK disebelahkan dengan labelnya lagi — supaya nilai
+       uang yang panjang tidak lagi kepepet dan pecah/keluar dari kotaknya. */
+    table.jobtable td[data-label="No"]{
+      flex-direction:row; align-items:baseline; justify-content:space-between; gap:12px;
+      border-bottom:none; padding-bottom:0;
+      font-family:'Fraunces',serif; font-weight:700; font-size:15px; color:#241f0f;
+    }
+    table.jobtable td[data-label="No"]::before{flex-shrink:0; white-space:nowrap;}
+    table.jobtable td[data-label="Klien"]{
+      flex-direction:row; align-items:baseline; justify-content:space-between; gap:12px;
+      font-weight:700; font-size:14.5px; color:#241f0f;
+    }
+    table.jobtable td[data-label="Klien"]::before{flex-shrink:0; white-space:nowrap;}
+    table.jobtable td.row-actions{
+      display:grid; grid-template-columns:1fr 1fr; gap:8px;
+      padding-top:12px; margin-top:4px; border-top:1px solid var(--line); border-bottom:none;
+    }
+    table.jobtable td.row-actions::before{display:none;}
+    table.jobtable td.row-actions .icon-btn{width:100%; text-align:center;}
+
+    /* Tabel Rekap (bukan jobtable) tetap tabel biasa yang digeser ke samping. */
+    table.rekaptable{font-size:12.5px;}
+
+    /* ---- Modal jadi bottom sheet ---- */
+    .overlay{padding:0; align-items:flex-end;}
+    .modal{
+      max-width:100%; width:100%;
+      max-height:92vh; max-height:92dvh;
+      border-radius:22px 22px 0 0;
+      padding:22px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+      animation:sheetUp .28s cubic-bezier(.22,1,.36,1) both;
+    }
+    /* Gagang kecil di atas sheet, penanda visual bahwa ini panel yang muncul dari bawah */
+    .modal::before{
+      content:''; display:block; width:42px; height:4px; border-radius:999px;
+      background:#e2d8b6; margin:-6px auto 14px;
+    }
+    .modal h3{font-size:18px;}
+    @keyframes sheetUp{
+      from{transform:translateY(100%);}
+      to{transform:translateY(0);}
+    }
+
+    /* ---- Kalender: kontrol dirapikan jadi satu kolom yang enak ditekan ---- */
+    .cal-controls{flex-direction:column; align-items:stretch; gap:10px;}
+    .cal-controls h2{text-align:center; font-size:19px;}
+    .cal-nav{justify-content:space-between; background:var(--gold-pale); border-radius:999px; padding:5px;}
+    .cal-nav .cur{flex:1; min-width:0; font-size:16px;}
+    .cal-nav button{min-width:42px; min-height:38px; border-radius:999px;}
+    .cal-controls .btn{width:100%;}
+    .poster-wrap{padding:10px; border-radius:14px;}
+    .layout-grid{grid-template-columns:repeat(3,1fr); gap:8px;}
+    .layout-card{min-height:62px;}
+    .theme-swatch{width:42px; height:42px;}
+
+    .quick-menu-item{min-height:74px;}
+    .stat-clickable .label::after{content:' 👆'; opacity:.75;}
+  }
+
+  @media(max-width:380px){
+    .hero h1{font-size:23px;}
+    nav.mainnav button{font-size:12px; padding:9px 12px;}
+    table.jobtable td{font-size:12.5px;}
+    table.jobtable td.row-actions{grid-template-columns:1fr;}
+  }
+
+  /* ---------- 7. POSTER KALENDER: PRATINJAU STABIL DI IPHONE ----------
+     Penyebab lama pratinjau kadang acak/geser di iPhone: poster diperkecil
+     memakai properti `zoom`, yang di Safari iOS dihitung berbeda dengan
+     browser lain — akibatnya hasil pengukuran posisi blok di dalam poster
+     jadi meleset. Sekarang poster SELALU diperkecil dengan transform:scale
+     dari titik kiri-atas, dan tinggi ruangnya dihitung pasti lewat JS. */
+  .poster-wrap{
+    overflow:hidden;
+    /* jangan biarkan poster 1080px memaksa halaman melebar di HP */
+    max-width:100%;
+  }
+  .poster-scale-inner{
+    position:relative; width:100%; overflow:hidden;
+    /* ruang sementara sebelum JS selesai menghitung, supaya tidak "loncat" */
+    min-height:120px;
+    /* Disembunyikan sesaat supaya poster tidak sempat berkedip dalam ukuran
+       asli 1080px sebelum diperkecil (kedipan ini yang dulu terlihat di iPhone).
+       Kalau karena suatu hal JS gagal, ada pengaman waktu di skrip yang tetap
+       memunculkannya — jadi poster tidak pernah hilang permanen. */
+    opacity:0; transition:opacity .28s ease;
+  }
+  .poster-scale-inner.is-ready{opacity:1;}
+  .cp-poster{
+    transform-origin:top left !important;
+    zoom:1;
+    position:absolute; top:0; left:0;
+    margin:0;
+    /* Safari iOS kadang me-render ulang elemen ber-transform dengan salah kalau
+       tidak dipromosikan ke lapisan komposit sendiri. */
+    -webkit-backface-visibility:hidden; backface-visibility:hidden;
+    will-change:transform;
+  }
+  .poster-loading{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    padding:26px 16px; color:#d8c98a; font-size:12.5px; letter-spacing:1px;
+  }
+
+/* Ikon SVG buatan sendiri (menggantikan emoji) — lihat sprite <symbol> di awal <body>
+   dan helper JS ic('nama'). Ukuran ikut ukuran font di sekitarnya (1em), warna ikut
+   currentColor supaya otomatis kebagian warna teks/tombol tempat ia dipasang. */
+.ic{width:1.1em;height:1.1em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-0.18em;display:inline-block;}
+.ic-fw{stroke-width:1.6;}
+
+  /* ---------- NOTIFIKASI REAL-TIME (kotak pemberitahuan + pengaturan) ---------- */
+  .rt-stack{
+    position:fixed; z-index:1500; right:16px; width:min(380px, calc(100vw - 24px));
+    top:calc(env(safe-area-inset-top, 0px) + 62px);
+    display:flex; flex-direction:column; gap:8px; pointer-events:none;
+  }
+  @media(max-width:640px){
+    .rt-stack{left:12px; right:12px; width:auto; top:calc(env(safe-area-inset-top, 0px) + 58px);}
+  }
+  .rt-toast{
+    pointer-events:auto; display:flex; align-items:flex-start; gap:10px; cursor:pointer;
+    background:#1c1a12; color:#f4ecd0; border:1px solid rgba(244,217,62,.38); border-left:4px solid var(--gold-light);
+    border-radius:14px; padding:11px 4px 11px 12px; box-shadow:0 12px 32px rgba(0,0,0,.38);
+    animation:rtIn .28s ease-out both; touch-action:pan-y; transition:transform .2s ease, opacity .2s ease;
+  }
+  .rt-toast.out{opacity:0; transform:translateX(28px);}
+  .rt-ic{
+    flex-shrink:0; width:30px; height:30px; border-radius:50%; margin-top:1px;
+    background:rgba(244,217,62,.16); color:var(--gold-light);
+    display:flex; align-items:center; justify-content:center; font-size:16px;
+  }
+  .rt-body{flex:1; min-width:0;}
+  .rt-title{font-size:13px; font-weight:700; line-height:1.35; color:#fff; overflow-wrap:anywhere;}
+  .rt-desc{
+    font-size:12px; color:#d8c98a; margin-top:2px; line-height:1.4; overflow-wrap:anywhere;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .rt-actions{margin-top:8px;}
+  .rt-act{
+    border:0; border-radius:999px; padding:0 16px; min-height:36px; cursor:pointer;
+    background:linear-gradient(135deg,#F4D93E,#D4AF00); color:#231f0f; font:600 12.5px 'Poppins',sans-serif;
+  }
+  .rt-x{
+    flex-shrink:0; width:40px; height:40px; margin-top:-4px; border:0; background:transparent; cursor:pointer;
+    color:#a89a68; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px;
+  }
+  .rt-x:hover{color:#f4ecd0; background:rgba(255,255,255,.08);}
+  @keyframes rtIn{from{opacity:0; transform:translateY(-10px) scale(.98);} to{opacity:1; transform:none;}}
+  .notif-btn.rt-ring{animation:rtRing .9s ease-in-out;}
+  @keyframes rtRing{
+    0%,100%{transform:rotate(0);} 15%{transform:rotate(14deg);} 30%{transform:rotate(-12deg);}
+    45%{transform:rotate(9deg);} 60%{transform:rotate(-6deg);} 75%{transform:rotate(3deg);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .rt-toast{animation:none; transition:none;}
+    .notif-btn.rt-ring{animation:none;}
+  }
+  .rt-set-status{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); margin:6px 0 14px;}
+  .rt-dot{width:9px; height:9px; border-radius:50%; background:#b9b39a; flex-shrink:0;}
+  .rt-dot.live{background:#2e9d3a; box-shadow:0 0 0 3px rgba(46,157,58,.18);}
+  .rt-dot.wait{background:#d4a800;}
+  .rt-dot.off{background:#c0392b;}
+  .rt-set-row{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:13px 2px; border-top:1px solid var(--line); min-height:56px;
+  }
+  label.rt-set-row{cursor:pointer;}
+  .rt-set-row b{display:block; font-size:13.5px; color:var(--ink);}
+  .rt-set-row small{display:block; font-size:12px; color:var(--ink-soft); line-height:1.45; margin-top:2px;}
+  .rt-sw{
+    -webkit-appearance:none; appearance:none; flex-shrink:0; position:relative; cursor:pointer;
+    width:46px !important; height:28px !important; min-height:0 !important; padding:0 !important; margin:0 !important;
+    border:0 !important; border-radius:999px !important; background:#d9d2b0 !important; transition:background .15s;
+  }
+  .rt-sw::after{
+    content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.3); transition:left .15s;
+  }
+  .rt-sw:checked{background:var(--gold) !important;}
+  .rt-sw:checked::after{left:21px;}
+  .rt-sw:disabled{opacity:.45; cursor:not-allowed;}
+
+  /* ---------- KLAIM BONUS: dua jenis (Tunai / WDP) ---------- */
+  .claim-modal-summary{
+    background:var(--gold-pale); border:1px dashed var(--gold-light); border-radius:12px;
+    padding:14px 16px; text-align:center;
+  }
+  .claim-modal-summary .cms-label{font-size:11.5px; color:#7a6400; font-weight:600; letter-spacing:.2px;}
+  .claim-modal-summary .cms-value{font-family:'Fraunces',serif; font-weight:700; font-size:26px; color:var(--ink); margin-top:2px;}
+  .claim-modal-summary .cms-meta{font-size:11.5px; color:var(--ink-soft); margin-top:4px;}
+
+  .claim-type-toggle{display:flex; gap:10px; flex-wrap:wrap;}
+  .claim-type-toggle button{
+    flex:1 1 150px; min-width:150px; padding:12px 10px; border-radius:12px;
+    border:1.5px solid #e5ddc0; background:#fff; text-align:left; cursor:pointer; transition:.15s;
+  }
+  .claim-type-toggle button .ctt-title{display:block; font-weight:700; font-size:13.5px; color:var(--ink);}
+  .claim-type-toggle button small{display:block; margin-top:3px; font-size:11px; color:var(--ink-soft); font-weight:500;}
+  .claim-type-toggle button:disabled{opacity:.5; cursor:not-allowed; background:#f5f2e6;}
+  .claim-type-toggle button:disabled small{color:var(--danger);}
+  .claim-type-toggle button.active-tunai{border-color:var(--ok); background:#e5f5e6;}
+  .claim-type-toggle button.active-tunai .ctt-title{color:var(--ok);}
+  .claim-type-toggle button.active-wdp{border-color:#7c4fd1; background:#f1eafc;}
+  .claim-type-toggle button.active-wdp .ctt-title{color:#6a3fc0;}
+  .claim-wdp-fields{grid-template-columns:1fr 1fr; gap:16px 20px;}
+  @media(max-width:520px){ .claim-wdp-fields{grid-template-columns:1fr;} }
+
+  .claim-type-badge{
+    display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px;
+    font-size:10.5px; font-weight:700; vertical-align:middle; white-space:nowrap;
+  }
+  .claim-type-badge .ic{width:11px; height:11px;}
+  .claim-type-badge.tunai{background:#e5f5e6; color:var(--ok);}
+  .claim-type-badge.wdp{background:#f1eafc; color:#6a3fc0;}
+  .claim-ml-info{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:5px;
+    font-size:11.5px; color:var(--ink-soft);
+  }
+  .claim-copy-btn{
+    background:#f1eafc; color:#6a3fc0; border:1px solid #ddd0f7; border-radius:999px;
+    padding:3px 10px; font-size:10.5px; font-weight:700; white-space:nowrap;
+  }
+  .claim-copy-btn:hover{background:#e6d9fa;}
+  @media(max-width:640px){
+    .claim-type-toggle{flex-direction:column;}
+    .claim-type-toggle button{min-width:0;}
+  }
+
+  /* ===== Form Input/Edit Job — desain panel per bagian + bar total di bawah ===== */
+  .jf{container-type:inline-size; display:flex; flex-direction:column; gap:16px;}
+  .jf-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid var(--line);}
+  .jf-head h2{margin:0;}
+  .jf-head p{margin:4px 0 0; font-size:13px; color:var(--ink-soft);}
+  .jf-no{font-size:12px; font-weight:600; color:#7a6400; background:var(--gold-pale); border:1px solid #efe2a0; border-radius:999px; padding:5px 12px; white-space:nowrap;}
+  .jf-sec{border:1px solid var(--line); border-radius:16px; background:#fff;}
+  .jf-sec-h{display:flex; align-items:center; gap:12px; padding:14px 18px; background:#fff9e6; border-bottom:1px solid var(--line); border-radius:15px 15px 0 0;}
+  .jf-ico{width:36px; height:36px; border-radius:10px; background:var(--ink); color:var(--gold-light); display:grid; place-items:center; flex-shrink:0;}
+  .jf-ico .ic{width:18px; height:18px;}
+  .jf-sec-h h3{margin:0; font-size:16px;}
+  .jf-sec-h p{margin:2px 0 0; font-size:12px; color:var(--ink-soft); line-height:1.4;}
+  .jf-body{padding:18px;}
+  .jf label{color:#3f3a29; margin-bottom:6px;}
+  .jf input:not([type=checkbox]),.jf select,.jf textarea{background:#fffdf7;}
+  .jf input:focus,.jf select:focus,.jf textarea:focus{background:#fff;}
+  .jf-check{padding:10px 12px; border:1.5px dashed #e6dcae; border-radius:11px; background:#fffdf3;}
+  .jf #durasiHariHintWrap{background:#fff9e6; border-left:3px solid var(--gold); border-radius:8px; padding:8px 12px;}
+  .jf #durasiHariHintWrap .field-hint{margin:0; font-size:12px; color:#5c4a12;}
+  .jf .jarak-box{background:#fff9e6; border:1px solid #f0e4a6;}
+  .jf .jarak-box .jr-group-label{text-transform:none; letter-spacing:0; font-size:12px; display:flex; align-items:center; gap:6px;}
+  .jf-bar{position:sticky; bottom:calc(8px + env(safe-area-inset-bottom,0px)); z-index:5; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; padding:12px 16px; background:rgba(28,26,18,.97); color:#fff; border-radius:16px; box-shadow:0 14px 30px -12px rgba(28,26,18,.55);}
+  .jf-totals{display:flex; gap:24px; flex-wrap:wrap;}
+  .jf-totals span{display:block; font-size:11.5px; color:#cbbf8f;}
+  .jf-totals b{font-family:'Fraunces',serif; font-size:18px; color:var(--gold-light); white-space:nowrap;}
+  .jf-bar .form-actions{margin:0;}
+  .jf-bar .btn-outline{background:transparent; color:#efe6c0; border-color:rgba(255,255,255,.3);}
+  .jf-bar .btn-outline:hover{background:rgba(255,255,255,.08);}
+  @container (max-width:560px){
+    .jf .form-grid{grid-template-columns:1fr;}
+    .jf-body{padding:14px;}
+    .jf-totals{width:100%; justify-content:space-between;}
+    .jf-bar .form-actions{width:100%;}
+  }
+
+  /* Hasil Cetak */
+  .cx{display:flex; flex-direction:column; gap:8px;}
+  .cx-row{display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.3fr); gap:10px; align-items:center; padding:8px 12px; border:1.5px solid var(--line); border-radius:11px; background:#fffdf7;}
+  .cx-row:has(input[data-cx]:checked){border-color:var(--gold); background:#fff9e6;}
+  .cx-n{display:flex; align-items:center; gap:9px; margin:0; font-size:13.5px; cursor:pointer;}
+  .cx-n input,.cx-b input{width:18px; height:18px; accent-color:var(--gold);}
+  .cx-p{font-size:12px; color:var(--ink-soft);}
+  .cx-c{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .cx-b{display:flex; align-items:center; gap:6px; margin:0; font-size:12.5px; white-space:nowrap;}
+  .jf .cx-q{width:76px;}
+  .jf .cx-s{width:auto; flex:1; min-width:0; padding:8px 10px;}
+  @container (max-width:560px){ .cx-row{grid-template-columns:1fr; gap:6px;} }
+
+  /* Kolom Rp / +62: prefix menyatu dengan isian, satu bingkai */
+  .jf .rp-input-wrap,.hc .rp-input-wrap{display:flex; align-items:stretch; border:1.5px solid #e8e0c6; border-radius:11px; background:#fffdf7; overflow:hidden; transition:border-color .15s, box-shadow .15s;}
+  .jf .rp-input-wrap:focus-within,.hc .rp-input-wrap:focus-within{border-color:var(--gold); box-shadow:0 0 0 3.5px rgba(212,175,0,.16); background:#fff;}
+  .jf .rp-input-wrap:has(input:read-only),.hc .rp-input-wrap:has(input:read-only){background:#faf6e6;}
+  .jf .rp-input-wrap .rp-prefix,.hc .rp-input-wrap .rp-prefix{position:static; transform:none; display:flex; align-items:center; padding:0 13px; background:var(--gold-pale); color:#7a6400; font-size:13px; font-weight:700; border-right:1.5px solid #efe2a0; flex-shrink:0;}
+  .jf .rp-input-wrap input.money-input,.jf .rp-input-wrap input[type=tel],.hc .rp-input-wrap input.money-input{flex:1; min-width:0; width:auto; min-height:41px; border:0; border-radius:0; background:transparent; box-shadow:none; padding-left:12px; font-variant-numeric:tabular-nums;}
+  /* Kerapian umum */
+  .jf .form-grid{align-items:start;}
+  .jf input:not([type=checkbox]):not([type=hidden]):not(.money-input):not([type=tel]),.jf select{min-height:44px;}
+  .jf textarea{resize:vertical; min-height:84px;}
+  .jf .honor-tim-row .rp-input-wrap{min-width:0;}
+
+  /* Kabari klien via WhatsApp */
+  .wa-box{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:14px 0 4px; padding:12px 14px; border:1.5px solid #bfe8b5; background:#f1fbef; border-radius:14px;}
+  .wa-box-ic{width:38px; height:38px; border-radius:50%; background:#25D366; color:#fff; display:grid; place-items:center; flex-shrink:0;}
+  .wa-box-ic .ic{width:20px; height:20px;}
+  .wa-box-tx{flex:1; min-width:170px; display:flex; flex-direction:column; gap:2px;}
+  .wa-box-tx b{font-size:14px; color:#14532d;}
+  .wa-box-tx span{font-size:12.5px; color:#3f6b4b;}
+  .btn-wa{background:#25D366; color:#062e14; border:1.5px solid #25D366; font-weight:700;}
+  .btn-wa:hover{background:#1fbd5b; border-color:#1fbd5b;}
+  .wa-preview{background:#efeae2; border-radius:14px; padding:14px;}
+  .wa-preview textarea{width:100%; background:#d9fdd3; border:1.5px solid #bfe8b5; border-radius:14px 14px 3px 14px; line-height:1.55; resize:vertical;}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     ICON SPRITE — kumpulan ikon SVG buatan sendiri (garis minimalis,
+     gaya konsisten: viewBox 0 0 24 24, stroke=currentColor, stroke-width 2,
+     rounded cap/join). Dipakai lewat helper JS ic('nama') yang menghasilkan
+     <svg class="ic"><use href="#ic-nama"></use></svg>. Menggantikan emoji
+     yang sebelumnya dipakai sebagai ikon visual di seluruh aplikasi.
+     JANGAN dipakai di dalam alert()/confirm()/textContent/CSS content —
+     tempat itu tidak bisa merender HTML/SVG.
+     ============================================================ -->
+<svg style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true">
+<defs>
+<symbol id="ic-warning" viewBox="0 0 24 24"><path d="M12 3 L22 20 L2 20 Z" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17.2" r="0.9" fill="currentColor" stroke="none"/></symbol>
+<symbol id="ic-close" viewBox="0 0 24 24"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></symbol>
+<symbol id="ic-save" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3"/><rect x="8" y="14" width="8" height="6"/></symbol>
+<symbol id="ic-edit" viewBox="0 0 24 24"><path d="M4 20 L4.8 16.5 L15 6.3 L17.7 9 L7.5 19.2 Z"/><line x1="13.2" y1="8.1" x2="15.9" y2="10.8"/></symbol>
+<symbol id="ic-trash" viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7 L7 21 h10 l1-14"/><path d="M9 7 V4 h6 v3"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></symbol>
+<symbol id="ic-clipboard" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="1.5"/><rect x="9" y="2.5" width="6" height="3" rx="1"/><line x1="8.5" y1="10" x2="15.5" y2="10"/><line x1="8.5" y1="13.5" x2="15.5" y2="13.5"/><line x1="8.5" y1="17" x2="13" y2="17"/></symbol>
+<symbol id="ic-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M4.2 6.2l2.1 2.1M17.7 15.7l2.1 2.1M3 12h3M18 12h3M4.2 17.8l2.1-2.1M17.7 8.3l2.1-2.1" stroke-linecap="round"/></symbol>
+<symbol id="ic-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="8,12.3 11,15.3 16,9"/></symbol>
+<symbol id="ic-check" viewBox="0 0 24 24"><polyline points="4,12.5 9.5,18 20,6"/></symbol>
+<symbol id="ic-money" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="5.5" y1="9" x2="5.5" y2="9.01"/><line x1="18.5" y1="15" x2="18.5" y2="15.01"/></symbol>
+<symbol id="ic-download" viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7,10.5 12,15.5 17,10.5"/><line x1="4.5" y1="19.5" x2="19.5" y2="19.5"/></symbol>
+<symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="7.5" y1="14" x2="7.5" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="16.5" y1="14" x2="16.5" y2="14.01"/><line x1="7.5" y1="17.5" x2="7.5" y2="17.51"/><line x1="12" y1="17.5" x2="12" y2="17.51"/></symbol>
+<symbol id="ic-eye" viewBox="0 0 24 24"><path d="M2 12 C5 6.5 9 4 12 4 s7 2.5 10 8 c-3 5.5 -7 8 -10 8 s-7 -2.5 -10 -8 Z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="ic-eye-off" viewBox="0 0 24 24"><path d="M2 12 C5 6.5 9 4 12 4 s7 2.5 10 8 c-3 5.5 -7 8 -10 8 s-7 -2.5 -10 -8 Z"/><circle cx="12" cy="12" r="3"/><line x1="3" y1="21" x2="21" y2="3"/></symbol>
+<symbol id="ic-folder" viewBox="0 0 24 24"><path d="M3 6.5 h6 l2 2.5 h10 v11 h-18 Z"/></symbol>
+<symbol id="ic-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7.5" x2="12" y2="13"/><line x1="12" y1="16.3" x2="12" y2="16.31"/></symbol>
+<symbol id="ic-camera" viewBox="0 0 24 24"><path d="M3 8 h4 l1.6-2.5h6.8L17 8h4v11H3Z"/><circle cx="12" cy="13.2" r="3.6"/></symbol>
+<symbol id="ic-video" viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="13" height="11" rx="1.5"/><path d="M15.5 10.5 L21 7 v10 l-5.5-3.5Z"/></symbol>
+<symbol id="ic-chart" viewBox="0 0 24 24"><line x1="4" y1="20" x2="4" y2="4"/><line x1="4" y1="20" x2="21" y2="20"/><rect x="7" y="13" width="3" height="7"/><rect x="12.5" y="9" width="3" height="11"/><rect x="18" y="5" width="3" height="15"/></symbol>
+<symbol id="ic-star" viewBox="0 0 24 24"><path d="M12 3.5 L14.6 9.3 L21 10.1 L16.3 14.4 L17.6 20.6 L12 17.3 L6.4 20.6 L7.7 14.4 L3 10.1 L9.4 9.3 Z" stroke-linejoin="round"/></symbol>
+<symbol id="ic-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20 c0-4.5 3.5-7 8-7s8 2.5 8 7"/></symbol>
+<symbol id="ic-crown" viewBox="0 0 24 24"><path d="M3 18 L4.5 8 L9 13 L12 6 L15 13 L19.5 8 L21 18 Z" stroke-linejoin="round"/><line x1="3" y1="20.5" x2="21" y2="20.5"/></symbol>
+<symbol id="ic-refresh" viewBox="0 0 24 24"><path d="M20 11 A8 8 0 1 0 18.6 15.5"/><polyline points="20,5 20,11 14,11"/></symbol>
+<symbol id="ic-chat" viewBox="0 0 24 24"><path d="M3 5.5 h18 v11 h-7.5 l-4 4 v-4 H3 Z"/></symbol>
+<symbol id="ic-plus" viewBox="0 0 24 24"><line x1="12" y1="4.5" x2="12" y2="19.5"/><line x1="4.5" y1="12" x2="19.5" y2="12"/></symbol>
+<symbol id="ic-minus" viewBox="0 0 24 24"><line x1="4.5" y1="12" x2="19.5" y2="12"/></symbol>
+<symbol id="ic-sparkle" viewBox="0 0 24 24"><path d="M12 2.5 L13.6 9 L20 10.5 L13.6 12 L12 18.5 L10.4 12 L4 10.5 L10.4 9 Z" stroke-linejoin="round"/></symbol>
+<symbol id="ic-megaphone" viewBox="0 0 24 24"><path d="M3 10 v4 h3 l9 5 V5 l-9 5 Z"/><path d="M14 8.5 a5 5 0 0 1 0 7"/><path d="M6 14 l1 5 h2.5 l-0.8-5Z"/></symbol>
+<symbol id="ic-note" viewBox="0 0 24 24"><path d="M6 3 h9 l4 4 v14 h-13 Z"/><path d="M15 3 v4 h4"/><line x1="8.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="15.5" y2="16"/></symbol>
+<symbol id="ic-map-pin" viewBox="0 0 24 24"><path d="M12 21 C8 16.5 5 13 5 9.5 a7 7 0 1 1 14 0 c0 3.5 -3 7 -7 11.5 Z"/><circle cx="12" cy="9.3" r="2.4"/></symbol>
+<symbol id="ic-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.3" cy="9.3" r="1.8"/><path d="M4 17 l5-5 4 4 3-3 4 4"/></symbol>
+<symbol id="ic-pin" viewBox="0 0 24 24"><path d="M14.5 3.5 l6 6 -3 3 -1.5 5.5 -2-2 -5 5 -1-1 5-5 -2-2 5.5-1.5 Z" stroke-linejoin="round"/></symbol>
+<symbol id="ic-receipt" viewBox="0 0 24 24"><path d="M6 2.5 h12 v19 l-2-1.5 -2 1.5 -2-1.5 -2 1.5 -2-1.5 -2 1.5 Z"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></symbol>
+<symbol id="ic-bell" viewBox="0 0 24 24"><path d="M6 11 a6 6 0 1 1 12 0 c0 4 1.5 5.5 1.5 5.5 h-15 s1.5-1.5 1.5-5.5Z"/><path d="M10 19.5 a2 2 0 0 0 4 0"/></symbol>
+<symbol id="ic-arrow-up" viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="5"/><polyline points="6,10.5 12,4.5 18,10.5"/></symbol>
+<symbol id="ic-arrow-right" viewBox="0 0 24 24"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13.5,6 19.5,12 13.5,18"/></symbol>
+<symbol id="ic-undo" viewBox="0 0 24 24"><path d="M5 10 h9 a5.5 5.5 0 1 1 -3.9 9.4"/><polyline points="9,5 5,10 9,15"/></symbol>
+<symbol id="ic-hands" viewBox="0 0 24 24"><path d="M4 20 C4 15 6 10 9 6 M11 6 c0 5 0 9 1 14 M13 6 c0 5 0 9 -1 14 M15 6 c3 4 5 9 5 14"/></symbol>
+<symbol id="ic-wave" viewBox="0 0 24 24"><path d="M4 15 c0-4 1-9 3-11 1.5-1.5 3.5-1 3 1 -0.5 2 -1.5 3 -1 5 M9 16 c-1-3 0-8 1.5-10 1.5-1.5 3-0.5 2.5 1.5 M13 17 c-1.5-3 -1-7 0.5-9 1.5-1.5 3-0.5 2 1.5 M15.5 18 c-0.5-2 0-4.5 1-6 1-1.5 3-0.5 2.5 1.5 -0.5 2 -2 4.5 -4 6" stroke-linejoin="round"/></symbol>
+<symbol id="ic-road" viewBox="0 0 24 24"><path d="M9 3 L4 21"/><path d="M15 3 L20 21"/><line x1="12" y1="4" x2="12" y2="7"/><line x1="12" y1="10.5" x2="12" y2="13.5"/><line x1="12" y1="17" x2="12" y2="20"/></symbol>
+<symbol id="ic-mailbox-empty" viewBox="0 0 24 24"><path d="M4 10 a5 5 0 0 1 10 0 v8 H4 Z"/><line x1="1.5" y1="18" x2="16.5" y2="18"/><line x1="14" y1="7" x2="20" y2="7"/></symbol>
+<symbol id="ic-inbox" viewBox="0 0 24 24"><polyline points="3,12 8,12 10,15 14,15 16,12 21,12"/><path d="M6 5 h12 l3 7 v7 H3 v-7 Z"/></symbol>
+<symbol id="ic-printer" viewBox="0 0 24 24"><path d="M6 8 V3 h12 v5"/><rect x="3" y="8" width="18" height="8" rx="1"/><path d="M6 16 v5 h12 v-5"/><line x1="7" y1="11.5" x2="7" y2="11.51"/></symbol>
+<symbol id="ic-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2"/><line x1="10" y1="19" x2="14" y2="19"/></symbol>
+<symbol id="ic-mail" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="1.5"/><polyline points="3.5,6.5 12,13 20.5,6.5"/></symbol>
+<symbol id="ic-party" viewBox="0 0 24 24"><path d="M4 21 L8 9 l7 7 Z"/><circle cx="16" cy="5" r="1"/><circle cx="20" cy="9" r="1"/><circle cx="19" cy="4" r="1"/><path d="M9.5 11.5 l3-3"/></symbol>
+<symbol id="ic-scroll" viewBox="0 0 24 24"><path d="M6 4 a2 2 0 0 0 0 4 h13 v11 a2 2 0 0 1 -2 2 H6 a2 2 0 0 1 -2-2 V6 a2 2 0 0 1 2-2 Z"/><path d="M17 8 a2 2 0 0 1 2 2 v0"/><line x1="7.5" y1="12" x2="14" y2="12"/><line x1="7.5" y1="15.5" x2="14" y2="15.5"/></symbol>
+<symbol id="ic-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.3" y1="15.3" x2="21" y2="21"/></symbol>
+<symbol id="ic-book" viewBox="0 0 24 24"><path d="M4 4.5 c3 -1.5 6 -1.5 8 0 v15 c-2-1.5-5-1.5-8 0 Z"/><path d="M20 4.5 c-3 -1.5 -6 -1.5 -8 0 v15 c2-1.5 5-1.5 8 0 Z"/></symbol>
+<symbol id="ic-car" viewBox="0 0 24 24"><path d="M4 16 l1.5-5.5 A2 2 0 0 1 7.4 9 h9.2 a2 2 0 0 1 1.9 1.5 L20 16"/><rect x="2.5" y="16" width="19" height="4" rx="1.5"/><circle cx="7" cy="20" r="1.6"/><circle cx="17" cy="20" r="1.6"/></symbol>
+<symbol id="ic-map" viewBox="0 0 24 24"><polygon points="9,4 15,6.5 21,4 21,18 15,20.5 9,18 3,20.5 3,6.5" stroke-linejoin="round"/><line x1="9" y1="4" x2="9" y2="18"/><line x1="15" y1="6.5" x2="15" y2="20.5"/></symbol>
+<symbol id="ic-palette" viewBox="0 0 24 24"><path d="M12 3 a9 8 0 1 0 0 16 c1.4 0 2-0.8 2-1.8 0-0.7-0.4-1-0.4-1.7 0-1 0.8-1.5 1.8-1.5 h2 a4 4 0 0 0 4-4 C21.4 6.4 17.2 3 12 3Z"/><circle cx="7.5" cy="10.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="11" cy="7.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.2" cy="8" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="ic-bulb" viewBox="0 0 24 24"><path d="M8 10 a4 4 0 1 1 8 0 c0 2 -1 3 -1.8 4.2 -0.5 0.8 -0.7 1.3 -0.7 1.8 h-3 c0-0.5-0.2-1-0.7-1.8 C9 13 8 12 8 10Z"/><line x1="9.5" y1="19" x2="14.5" y2="19"/><line x1="10" y1="21.2" x2="14" y2="21.2"/></symbol>
+<symbol id="ic-truck" viewBox="0 0 24 24"><rect x="1.5" y="7" width="12" height="9" rx="1"/><path d="M13.5 10.5 h4 l3 3.2 V16 h-7Z"/><circle cx="6" cy="18.5" r="1.7"/><circle cx="17" cy="18.5" r="1.7"/></symbol>
+<symbol id="ic-trend-down" viewBox="0 0 24 24"><polyline points="3,7 10,14 14,10 21,17"/><polyline points="21,11 21,17 15,17"/></symbol>
+<symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="12" x2="12" y2="7"/><line x1="12" y1="12" x2="15.5" y2="14"/></symbol>
+<symbol id="ic-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5 V7 a4 4 0 0 1 8 0 v3.5"/></symbol>
+<symbol id="ic-rocket" viewBox="0 0 24 24"><path d="M12 2 c3 2 5 6 5 10.5 c0 2-1 4-2 5 l-3-2 l-3 2 c-1-1-2-3-2-5 C7 8 9 4 12 2Z"/><path d="M9 15.5 l-3 1.5 1-3.5 M15 15.5 l3 1.5 -1-3.5"/><circle cx="12" cy="10" r="1.6" fill="currentColor" stroke="none"/></symbol>
+<symbol id="ic-new-badge" viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="10" rx="2"/><path d="M6.5 14.5 V9.5 l3 5 V9.5 M11.5 14.5 v-5 h2.5 M11.5 12 h2 M11.5 14.5 h2.5 M16 9.5 h2.2 c1 0 1.5 0.5 1.5 1.2 s-0.5 1.1 -1.5 1.1 H16 v2.7 M16 11.8 h2" stroke-width="1.4"/></symbol>
+<symbol id="ic-hourglass" viewBox="0 0 24 24"><path d="M6 3 h12 M6 21 h12 M7 3 c0 4.5 2 6.5 5 9 c3-2.5 5-4.5 5-9 M7 21 c0-4.5 2-6.5 5-9 c3 2.5 5 4.5 5 9"/></symbol>
+</defs>
+</svg>
+
+<div class="auth-gate" id="authGate">
+  <div class="auth-card">
+    <div class="auth-badge">KM</div>
+    <h2>Kaone Motret</h2>
+    <p class="auth-sub" id="authSub">Masuk untuk membuka Buku Job Fotografer</p>
+
+    <div class="auth-tabs">
+      <button type="button" id="authTabLogin" class="active">Masuk</button>
+      <button type="button" id="authTabRegister">Daftar Akun</button>
+    </div>
+
+    <form id="authForm">
+      <div class="auth-field">
+        <label>Username</label>
+        <input type="text" id="authUsername" autocomplete="username" required>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="authPassword" autocomplete="current-password" required>
+          <button type="button" class="pw-toggle" data-pw-target="authPassword" aria-label="Lihat/sembunyikan password"><svg class="ic" aria-hidden="true"><use href="#ic-eye"></use></svg></button>
+        </div>
+      </div>
+      <div class="auth-error" id="authError">Username atau password salah.</div>
+      <button type="submit" class="btn btn-primary">Masuk</button>
+    </form>
+
+    <form id="registerForm" style="display:none;">
+      <div class="auth-field">
+        <label>Nama Lengkap</label>
+        <input type="text" id="regNamaLengkap" autocomplete="name" required>
+      </div>
+      <div class="auth-field">
+        <label>Username Baru</label>
+        <input type="text" id="regUsername" autocomplete="username" required>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="regPassword" autocomplete="new-password" required minlength="4">
+          <button type="button" class="pw-toggle" data-pw-target="regPassword" aria-label="Lihat/sembunyikan password"><svg class="ic" aria-hidden="true"><use href="#ic-eye"></use></svg></button>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Ulangi Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="regPassword2" autocomplete="new-password" required minlength="4">
+          <button type="button" class="pw-toggle" data-pw-target="regPassword2" aria-label="Lihat/sembunyikan password"><svg class="ic" aria-hidden="true"><use href="#ic-eye"></use></svg></button>
+        </div>
+      </div>
+      <div class="auth-error" id="registerError">Username sudah digunakan.</div>
+      <button type="submit" class="btn btn-primary">Daftar &amp; Masuk</button>
+    </form>
+
+    <div class="auth-hint" id="authHint">
+      Belum punya akun? <button type="button" id="gotoRegister">Daftar di sini</button>
+    </div>
+  </div>
+</div>
+
+<header class="topbar">
+  <div class="topbar-row">
+    <div class="brand">
+      <div class="brand-badge">KM</div>
+      <div class="brand-text">
+        <div class="name">Kaone Motret</div>
+        <div class="tag">Buku Job Fotografer</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="user-chip" id="userChip"></div>
+      <div class="notif-wrap" id="notifWrap">
+        <button type="button" class="notif-btn" id="notifBtn" aria-label="Notifikasi">
+          <svg class="ic" aria-hidden="true"><use href="#ic-bell"></use></svg><span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="mainnav-shell" id="mainNavShell">
+  <nav class="mainnav" id="mainNav">
+    <button data-view="beranda">Beranda</button>
+    <button data-view="daftar">Daftar Job</button>
+    <button data-view="kalender">Kalender Job</button>
+    <button data-view="rekap">Rekap</button>
+    <button data-view="tugas">Pembagian Tugas</button>
+    <button data-view="laporan">Laporan</button>
+    <button data-view="ulasan">Saran &amp; Penilaian</button>
+    <button data-view="pengaturan">Pengaturan</button>
+  </nav>
+  </div>
+  <div class="datetime-strip" id="headerClock">Memuat waktu...</div>
+  <div class="datetime-strip" id="syncStatus" style="margin-top:4px; padding-top:0; border-top:none;">⏳ Memuat data...</div>
+</header>
+
+<main id="app"></main>
+
+<div class="footer-note">
+  Data tersimpan otomatis ke cloud.<br>
+  Disarankan rutin cadangkan data.
+</div>
+
+<footer class="copyright-bar">
+  <div>© <span id="copyrightYear"></span> Kaone Motret. All Right Reserved. <span class="version-tag" id="appVersionTag"></span></div>
+</footer>
+
+<button type="button" class="to-top-btn" id="toTopBtn" aria-label="Kembali ke atas" title="Kembali ke atas"><svg class="ic" aria-hidden="true"><use href="#ic-arrow-up"></use></svg></button>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* =========================================================
+   KAONE MOTRET — BUKU JOB FOTOGRAFER
+   Single-file app. Data disimpan di localStorage browser.
+========================================================= */
+
+// Helper ikon SVG — mengembalikan markup <svg> yang mengambil bentuknya dari sprite
+// <symbol> di awal <body> (cari id="ic-NAMA"). Dipakai di SEMUA tempat yang dulu
+// memakai emoji sebagai ikon visual (tombol, judul section, badge, dsb). HANYA aman
+// dipakai di tempat yang dirender sebagai HTML (innerHTML/template) — JANGAN dipakai
+// di alert(), confirm(), .textContent, atau CSS content:, karena semua itu menampilkan
+// teks polos dan tidak bisa merender tag SVG.
+function ic(name, cls){
+  return `<svg class="ic${cls?' '+cls:''}" aria-hidden="true"><use href="#ic-${name}"></use></svg>`;
 }
 
-// Font & library: tampilkan cache dulu (cepat), perbarui di belakang layar.
-async function staleWhileRevalidate(event, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(event.request, { ignoreVary: true });
-  const fetching = fetch(event.request).then(res => {
-    if (res && (res.ok || res.type === 'opaque')) cache.put(event.request, res.clone());
-    return res;
-  }).catch(() => null);
-  if (cached) { event.waitUntil(fetching); return cached; }
-  return (await fetching) || Response.error();
+/* =========================================================
+   ⚠️⚠️ ATURAN WAJIB — BERLAKU UNTUK SETIAP PERUBAHAN DI FILE INI ⚠️⚠️
+   (berlaku untuk SIAPA PUN atau APA PUN yang mengedit file ini,
+   termasuk AI assistant seperti Claude, tanpa terkecuali dan
+   tanpa perlu diminta ulang setiap kali)
+
+   TIDAK ADA perubahan pada file ini — sekecil apa pun, termasuk
+   perbaikan bug, penyesuaian tampilan/CSS, penambahan fitur, atau
+   refactor kode — yang boleh dianggap selesai tanpa DUA langkah
+   berikut:
+
+   1. NAIKKAN versi di konstanta APP_VERSION (cari "const APP_VERSION"
+      di file ini). Ikuti semver: patch (x.x.+1) untuk perbaikan kecil,
+      minor (x.+1.0) untuk fitur baru, major (+1.0.0) untuk perubahan
+      besar/breaking.
+      ⚠️ PENGECUALIAN VERSI: kalau perubahan ini dilakukan di HARI YANG
+      SAMA dengan tanggal entri PALING ATAS yang sudah ada di CHANGELOG
+      saat ini, JANGAN naikkan versi lagi — tetap pakai nomor versi
+      yang sama (anggap sebagai kelanjutan pembaruan hari itu). Versi
+      HANYA dinaikkan kalau perubahan dilakukan di hari yang berbeda
+      dari tanggal entri teratas tersebut.
+   2. TAMBAHKAN satu entri BARU di paling ATAS array CHANGELOG (cari
+      "const CHANGELOG" di file ini) — atau, kalau versinya tidak naik
+      sesuai pengecualian di atas, cukup TAMBAHKAN satu item baru ke
+      dalam "items" milik entri teratas yang sudah ada (jangan buat
+      entri versi/tanggal baru). JANGAN PERNAH menimpa atau
+      menghapus entri versi sebelumnya — itu riwayat resmi aplikasi.
+      Tulis "items" dengan bahasa yang mudah dipahami pengguna awam
+      (bukan istilah teknis programmer), singkat & jelas dari sudut
+      pandang pengguna.
+
+   ⚠️ PENGECUALIAN: langkah di atas BOLEH dilewati HANYA kalau
+   perubahannya benar-benar TIDAK TERLIHAT/TIDAK TERASA sama sekali
+   oleh pengguna di tampilan atau perilaku aplikasi — misalnya
+   sekadar merapikan komentar, mengubah nama variabel internal,
+   atau refactor kode yang hasil akhirnya identik persis dari sudut
+   pandang pengguna. Kalau ragu apakah suatu perubahan "terlihat"
+   atau tidak, anggap SAJA terlihat dan tetap jalankan kedua langkah
+   di atas — lebih aman mencatat berlebih daripada pengguna kehilangan
+   info pembaruan.
+
+   Kalau kedua langkah di atas terlewat padahal perubahannya memang
+   terlihat/terasa oleh pengguna, perubahan tetap berjalan secara
+   teknis, TAPI pengguna lama TIDAK akan melihat notifikasi pop-up
+   "Apa yang Baru" — sehingga mereka tidak akan tahu ada pembaruan
+   sama sekali.
+========================================================= */
+
+const STORAGE_KEY = 'kaoneMotret_jobs_v1';
+const TASKS_STORAGE_KEY = 'kaoneMotret_tasks_v1';
+const BONUS_STORAGE_KEY = 'kaoneMotret_bonus_v1';
+const BONUS_RATE_STORAGE_KEY = 'kaoneMotret_bonusRate_v1';
+const BONUS_CLAIM_STORAGE_KEY = 'kaoneMotret_bonusClaims_v1';
+const BONUS_CLAIM_WA_NUMBER = '6285117071704'; // nomor WhatsApp Admin tujuan pesan klaim bonus (format internasional, tanpa +)
+const DEFAULT_BONUS_PER_JAM = 500; // Rp per jam kerja — nilai AWAL saja; Admin bisa mengubahnya kapan saja lewat menu Pembagian Tugas (lihat variabel BONUS_PER_JAM di bawah)
+const REPORTS_STORAGE_KEY = 'kaoneMotret_reports_v1';
+/* ---------- Klaim Bonus: dua jenis (Tunai & WDP) ----------
+   WDP = Weekly Diamond Pass, paket mingguan pembelian diamond Mobile Legends yang
+   dibelikan Admin ke akun Tim sebagai bentuk lain dari bonus, selain uang tunai.
+   Kedua ambang batas ini nilai AWAL saja — Admin bisa mengubahnya kapan saja lewat
+   menu Pembagian Tugas > Pengaturan Bonus (lihat MIN_KLAIM_TUNAI/MIN_KLAIM_WDP di bawah). */
+const MIN_KLAIM_TUNAI_STORAGE_KEY = 'kaoneMotret_minKlaimTunai_v1';
+const MIN_KLAIM_WDP_STORAGE_KEY = 'kaoneMotret_minKlaimWdp_v1';
+const DEFAULT_MIN_KLAIM_TUNAI = 50000;
+const DEFAULT_MIN_KLAIM_WDP = 32000;
+const START_NO_URUT = 180;
+
+/* =========================================================
+   LOGIN & AKUN PENGGUNA
+   CATATAN KEAMANAN: aplikasi ini tetap berjalan sepenuhnya di browser
+   (tanpa server/back-end sungguhan) dan memakai Supabase dengan anon
+   key yang memang publik/terbuka. Supaya kredensial Admin TIDAK ikut
+   tertulis di kode sumber HTML ini (yang bisa dibaca siapa pun lewat
+   "View Source"), seluruh akun sekarang disimpan sebagai DATA di tabel
+   Supabase "kaone_motret_users" (lihat instruksi SQL di dekat
+   SUPABASE_URL di bawah) — bukan lagi ditulis langsung sebagai teks di
+   JavaScript seperti sebelumnya. Proses login pun hanya meminta SATU
+   baris akun yang cocok saja (bukan menarik seluruh daftar akun),
+   sehingga jauh lebih sulit disalahgunakan orang iseng yang sekadar
+   membuka DevTools/View Source.
+
+   TAPI perlu tetap jujur: karena tidak ada server otentikasi sungguhan
+   (mis. Supabase Auth + Row Level Security berbasis identitas login),
+   seseorang yang memang cukup paham teknis tetap BISA memakai tab
+   Network di DevTools untuk menyadap anon key lalu memanggil langsung
+   API Supabase-nya dan berpotensi melihat/mengubah data akun. Untuk
+   keamanan yang benar-benar kuat, dibutuhkan back-end/otentikasi
+   sungguhan (di luar cakupan file HTML statis ini). Yang diterapkan di
+   sini adalah perbaikan praktis: kredensial Admin tidak lagi ada di
+   source code, dan permukaan yang terekspos dibuat sekecil mungkin.
+========================================================= */
+const AUTH_SESSION_KEY = 'kaoneMotret_authSession_v1';
+let currentUserRole = null; // 'admin' | 'tim'
+let currentUsername = null;
+let currentUserId = null;
+let currentNamaLengkap = null;
+function isAdmin(){ return currentUserRole === 'admin'; }
+
+function applyRoleToUI(){
+  document.body.classList.toggle('role-tim', currentUserRole==='tim');
+  const chip = document.getElementById('userChip');
+  if(!chip) return;
+  chip.innerHTML = `
+    <span class="role-badge">${currentUserRole==='admin' ? 'Admin' : 'Tim'}</span>
+    <span>${escapeHtml(currentNamaLengkap || currentUsername || '')}</span>
+    <button type="button" id="btnLogout">Keluar</button>
+  `;
+  document.getElementById('btnLogout')?.addEventListener('click', logout);
 }
 
-// Klik pada notifikasi perangkat (dikirim oleh registration.showNotification di index.html,
-// lihat rtSystemNotify): fokuskan tab yang sudah terbuka jika ada, atau buka tab baru.
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  const data = event.notification.data || {};
-  event.waitUntil((async () => {
-    const clientsList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const c of clientsList) {
-      if (new URL(c.url).pathname === SHELL_PATH || new URL(c.url).pathname === SCOPE_PATH) {
-        c.postMessage({ type: 'notif-click', id: data.id || null, view: data.view || null });
-        return c.focus();
+async function attemptLogin(username, password){
+  if(!cloudSyncEnabled) return {ok:false, reason:'offline'};
+  try{
+    const { data, error } = await supabaseClient
+      .from(USERS_TABLE)
+      .select('id,username,role,nama_lengkap')
+      .eq('username', username)
+      .eq('password', password)
+      .maybeSingle();
+    if(error) throw error;
+    if(!data) return {ok:false, reason:'invalid'};
+    currentUserId = data.id;
+    currentUsername = data.username;
+    currentUserRole = data.role;
+    currentNamaLengkap = data.nama_lengkap || '';
+    try{ localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({id:data.id, username:data.username, role:data.role, namaLengkap:currentNamaLengkap})); }catch(e){}
+    return {ok:true};
+  }catch(e){
+    console.error('Gagal login (pastikan tabel kaone_motret_users sudah dibuat, lihat komentar dekat SUPABASE_URL)', e);
+    return {ok:false, reason:'error'};
+  }
+}
+
+async function attemptRegister(username, password, namaLengkap){
+  if(!cloudSyncEnabled) return {ok:false, reason:'offline'};
+  try{
+    const { data: existing, error: checkErr } = await supabaseClient
+      .from(USERS_TABLE).select('id').eq('username', username).maybeSingle();
+    if(checkErr) throw checkErr;
+    if(existing) return {ok:false, reason:'taken'};
+    // Akun yang mendaftar sendiri lewat halaman login selalu berperan "tim" (bukan admin).
+    const { data, error } = await supabaseClient
+      .from(USERS_TABLE)
+      .insert({ username, password, role:'tim', nama_lengkap:namaLengkap })
+      .select('id,username,role,nama_lengkap')
+      .single();
+    if(error) throw error;
+    currentUserId = data.id;
+    currentUsername = data.username;
+    currentUserRole = data.role;
+    currentNamaLengkap = data.nama_lengkap || '';
+    try{ localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({id:data.id, username:data.username, role:data.role, namaLengkap:currentNamaLengkap})); }catch(e){}
+    return {ok:true};
+  }catch(e){
+    console.error('Gagal mendaftar (pastikan tabel kaone_motret_users sudah dibuat, lihat komentar dekat SUPABASE_URL)', e);
+    return {ok:false, reason:'error'};
+  }
+}
+
+function logout(){
+  if(!confirm('Yakin ingin keluar dari Buku Job?')) return;
+  try{ localStorage.removeItem(AUTH_SESSION_KEY); }catch(e){}
+  location.reload();
+}
+function checkAuthSession(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null'); }catch(e){}
+  if(saved && saved.id && saved.username && saved.role){
+    currentUserId = saved.id;
+    currentUserRole = saved.role;
+    currentUsername = saved.username;
+    currentNamaLengkap = saved.namaLengkap || '';
+    return true;
+  }
+  return false;
+}
+
+/* Ubah username/password akun sendiri saja — dipakai lewat panel "Akun Saya" di
+   Pengaturan, terbuka untuk Admin maupun Tim, tapi masing-masing HANYA bisa
+   mengubah akunnya sendiri (mengubah baris lain tidak dilakukan lewat fungsi ini). */
+async function updateOwnAccount(newUsername, newPassword, newNamaLengkap){
+  if(!cloudSyncEnabled) return {ok:false, reason:'offline'};
+  if(!currentUserId) return {ok:false, reason:'error'};
+  const payload = {};
+  if(newUsername && newUsername !== currentUsername) payload.username = newUsername;
+  if(newPassword) payload.password = newPassword;
+  if(typeof newNamaLengkap === 'string' && newNamaLengkap !== (currentNamaLengkap||'')) payload.nama_lengkap = newNamaLengkap;
+  if(Object.keys(payload).length===0) return {ok:false, reason:'nochange'};
+  try{
+    if(payload.username){
+      const { data: existing, error: checkErr } = await supabaseClient
+        .from(USERS_TABLE).select('id').eq('username', payload.username).maybeSingle();
+      if(checkErr) throw checkErr;
+      if(existing && existing.id !== currentUserId) return {ok:false, reason:'taken'};
+    }
+    const { error } = await supabaseClient.from(USERS_TABLE).update(payload).eq('id', currentUserId);
+    if(error) throw error;
+    if(payload.username) currentUsername = payload.username;
+    if(typeof payload.nama_lengkap === 'string') currentNamaLengkap = payload.nama_lengkap;
+    try{ localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({id:currentUserId, username:currentUsername, role:currentUserRole, namaLengkap:currentNamaLengkap})); }catch(e){}
+    applyRoleToUI();
+    return {ok:true};
+  }catch(e){
+    console.error('Gagal mengubah akun', e);
+    return {ok:false, reason:'error'};
+  }
+}
+
+/* Daftar seluruh akun — hanya diambil & ditampilkan di panel "Kelola Akun" milik
+   Admin (menu Pengaturan). Akun biasa tidak pernah menarik daftar lengkap ini. */
+let akunList = [];
+let akunLoading = false;
+async function pullAkunFromCloud(){
+  if(!cloudSyncEnabled || !isAdmin()) return false;
+  akunLoading = true;
+  if(currentView==='pengaturan') render();
+  try{
+    const { data, error } = await supabaseClient
+      .from(USERS_TABLE)
+      .select('id,username,password,role,nama_lengkap,created_at')
+      .order('created_at', { ascending:true });
+    if(error) throw error;
+    akunList = data || [];
+    akunLoading = false;
+    if(currentView==='pengaturan') render();
+    return true;
+  }catch(e){
+    console.error('Gagal memuat daftar akun (pastikan tabel kaone_motret_users sudah dibuat)', e);
+    akunLoading = false;
+    if(currentView==='pengaturan') render();
+    return false;
+  }
+}
+
+document.getElementById('authForm')?.addEventListener('submit', async function(e){
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  const u = document.getElementById('authUsername').value.trim();
+  const p = document.getElementById('authPassword').value;
+  const errEl = document.getElementById('authError');
+  errEl.classList.remove('show');
+  if(btn){ btn.disabled = true; btn.textContent = 'Memproses...'; }
+  const res = await attemptLogin(u, p);
+  if(btn){ btn.disabled = false; btn.textContent = 'Masuk'; }
+  if(res.ok){
+    document.getElementById('authGate')?.remove();
+    applyRoleToUI();
+    initAppAfterAuth();
+  } else {
+    errEl.textContent = res.reason==='offline'
+      ? 'Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.'
+      : 'Username atau password salah.';
+    errEl.classList.add('show');
+  }
+});
+
+document.getElementById('registerForm')?.addEventListener('submit', async function(e){
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  const nama = document.getElementById('regNamaLengkap').value.trim();
+  const u = document.getElementById('regUsername').value.trim();
+  const p = document.getElementById('regPassword').value;
+  const p2 = document.getElementById('regPassword2').value;
+  const errEl = document.getElementById('registerError');
+  errEl.classList.remove('show');
+  if(!nama){ errEl.textContent = 'Nama lengkap wajib diisi.'; errEl.classList.add('show'); return; }
+  if(!u || !p){ errEl.textContent = 'Username dan password wajib diisi.'; errEl.classList.add('show'); return; }
+  if(p.length < 4){ errEl.textContent = 'Password minimal 4 karakter.'; errEl.classList.add('show'); return; }
+  if(p !== p2){ errEl.textContent = 'Ulangi password tidak sama.'; errEl.classList.add('show'); return; }
+  if(btn){ btn.disabled = true; btn.textContent = 'Memproses...'; }
+  const res = await attemptRegister(u, p, nama);
+  if(btn){ btn.disabled = false; btn.textContent = 'Daftar & Masuk'; }
+  if(res.ok){
+    document.getElementById('authGate')?.remove();
+    applyRoleToUI();
+    initAppAfterAuth();
+  } else {
+    errEl.textContent = res.reason==='taken' ? 'Username sudah digunakan, coba username lain.'
+      : res.reason==='offline' ? 'Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.'
+      : 'Gagal mendaftar. Coba lagi.';
+    errEl.classList.add('show');
+  }
+});
+
+/* Tab "Masuk" / "Daftar Akun" di gerbang login */
+function setAuthTab(tab){
+  const isLogin = tab==='login';
+  document.getElementById('authTabLogin')?.classList.toggle('active', isLogin);
+  document.getElementById('authTabRegister')?.classList.toggle('active', !isLogin);
+  const authForm = document.getElementById('authForm');
+  const registerForm = document.getElementById('registerForm');
+  if(authForm) authForm.style.display = isLogin ? '' : 'none';
+  if(registerForm) registerForm.style.display = isLogin ? 'none' : '';
+  const sub = document.getElementById('authSub');
+  if(sub) sub.textContent = isLogin ? 'Masuk untuk membuka Buku Job Fotografer' : 'Daftar akun baru — cukup username & password';
+  const hint = document.getElementById('authHint');
+  if(hint){
+    hint.innerHTML = isLogin
+      ? 'Belum punya akun? <button type="button" id="gotoRegister">Daftar di sini</button>'
+      : 'Sudah punya akun? <button type="button" id="gotoLogin">Masuk di sini</button>';
+  }
+  document.getElementById('authError')?.classList.remove('show');
+  document.getElementById('registerError')?.classList.remove('show');
+}
+document.addEventListener('click', function(e){
+  if(e.target.closest('#authTabLogin') || e.target.closest('#gotoLogin')){ setAuthTab('login'); return; }
+  if(e.target.closest('#authTabRegister') || e.target.closest('#gotoRegister')){ setAuthTab('register'); return; }
+  // Ikon mata lihat/sembunyikan password — berlaku di semua form (login, daftar, akun saya)
+  const pwToggle = e.target.closest('.pw-toggle');
+  if(pwToggle){
+    const input = document.getElementById(pwToggle.dataset.pwTarget);
+    if(input){
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      pwToggle.innerHTML = show ? ic('eye-off') : ic('eye');
+    }
+    return;
+  }
+});
+
+/* =========================================================
+   SINKRONISASI ANTAR PERANGKAT (Supabase)
+   Ganti dua nilai di bawah ini dengan URL & anon key project
+   Supabase Anda (Project Settings → API). localStorage tetap
+   dipakai sebagai cache lokal supaya app tetap jalan walau
+   koneksi internet sedang putus.
+========================================================= */
+const SUPABASE_URL = 'https://gyleppavsgbtrlgbyztv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5bGVwcGF2c2didHJsZ2J5enR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NjU0MDQsImV4cCI6MjEwMzM0MTQwNH0.0t7bMoTjgd-c48O37wo1QyGFsFnjrRiAkDzH8VMgw-Q';
+const SYNC_TABLE = 'kaone_motret_data';
+const SYNC_ROW_ID = 'main';
+
+/* Tabel terpisah untuk Saran & Penilaian (testimoni) klien. Setiap baris = satu ulasan,
+   dikirim oleh klien lewat formulir "Saran & Penilaian" di halaman pricelist wedding.
+   Buat tabel ini di Supabase (SQL Editor) apabila belum ada:
+
+   create table kaone_motret_ulasan (
+     id uuid primary key default gen_random_uuid(),
+     nama_klien text not null,
+     rating smallint not null,
+     komentar text,
+     dipublikasikan boolean not null default false,
+     publish_targets jsonb not null default '[]'::jsonb,
+     created_at timestamptz not null default now()
+   );
+   alter table kaone_motret_ulasan enable row level security;
+   create policy "Publik boleh kirim ulasan" on kaone_motret_ulasan for insert to anon with check (true);
+   create policy "Publik boleh baca ulasan" on kaone_motret_ulasan for select to anon using (true);
+   create policy "Publik boleh hapus ulasan" on kaone_motret_ulasan for delete to anon using (true);
+   create policy "Publik boleh update status publikasi ulasan" on kaone_motret_ulasan for update to anon using (true) with check (true);
+
+   Kalau tabelnya SUDAH ada dari sebelumnya (dibuat sebelum kolom "dipublikasikan" ini
+   ditambahkan), cukup jalankan di SQL Editor:
+
+   alter table kaone_motret_ulasan add column if not exists dipublikasikan boolean not null default false;
+   create policy "Publik boleh update status publikasi ulasan" on kaone_motret_ulasan for update to anon using (true) with check (true);
+
+   TAMBAHAN — kolom "publish_targets" untuk memilih ulasan dipublikasikan ke mana saja
+   (Pricelist Wedding / Prewedding / Margondang / Mangayun / Isi Biodata, bisa pilih satu,
+   beberapa, atau semuanya). Kalau tabelnya sudah ada dari sebelumnya dan belum punya
+   kolom ini, jalankan di SQL Editor (baris kedua otomatis memindahkan ulasan yang sudah
+   pernah dipublikasikan lewat sistem lama ke target "wedding" supaya tidak hilang):
+
+   alter table kaone_motret_ulasan add column if not exists publish_targets jsonb not null default '[]'::jsonb;
+   update kaone_motret_ulasan set publish_targets = '["wedding"]'::jsonb
+     where dipublikasikan = true and publish_targets = '[]'::jsonb;
+
+   Kolom "dipublikasikan" (boolean) tetap dipertahankan dan otomatis mengikuti apakah
+   "wedding" ada di publish_targets — supaya halaman pricelist wedding yang sudah ada
+   sebelumnya tetap berjalan tanpa perlu diubah. Untuk halaman pricelist Prewedding,
+   Margondang, Mangayun, dan Isi Biodata (menyusul dikirim terpisah), baca langsung
+   kolom publish_targets dan cek apakah array-nya berisi 'prewedding', 'margondang',
+   'mangayun', atau 'biodata' secara berurutan.
+*/
+const ULASAN_TABLE = 'kaone_motret_ulasan';
+const PUBLISH_TARGETS = [
+  { key:'wedding',          label:'Pricelist Wedding'         },
+  { key:'prewedding',       label:'Pricelist Prewedding'      },
+  { key:'margondang',       label:'Pricelist Margondang'      },
+  { key:'mangayun',         label:'Pricelist Mangayun'        },
+  { key:'wisuda',           label:'Pricelist Wisuda'          },
+  { key:'undangan_digital', label:'Pricelist Undangan Digital'},
+  { key:'biodata',          label:'Isi Biodata'               },
+  { key:'self_photo',       label:'Pricelist Self Photo (Kaone Studio)' },
+];
+function getUlasanTargets(u){
+  if(Array.isArray(u.publish_targets)) return u.publish_targets;
+  return u.dipublikasikan ? ['wedding'] : []; // fallback untuk baris lama sebelum kolom publish_targets ada
+}
+function ulasanTargetLabels(targets){
+  return targets.map(k => PUBLISH_TARGETS.find(t=>t.key===k)?.label || k).join(', ');
+}
+
+/* Label "keterangan" di bawah nama klien pada kartu Saran & Penilaian — menunjukkan ASAL
+   ulasan itu dikirim (bukan tujuan publikasinya, itu sudah ada di "publish_targets" di atas).
+   Baris ulasan baru diharapkan membawa kolom "asal_form" berisi salah satu dari:
+   'wedding', 'prewedding', 'margondang', 'mangayun', 'wisuda', 'undangan_digital',
+   atau 'biodata'. Kalau asalnya 'biodata', keterangannya mengikuti "jenis_acara" yang
+   dipilih klien di formulir Isi Biodata (kolom "jenis_acara" pada baris yang sama).
+
+   Kalau tabelnya SUDAH ada dari sebelumnya dan belum punya kolom ini, jalankan di SQL
+   Editor Supabase (baris kedua menandai semua ulasan lama sebagai berasal dari pricelist
+   wedding, karena dulu cuma dari sana formulirnya dikirim):
+
+   alter table kaone_motret_ulasan add column if not exists asal_form text;
+   alter table kaone_motret_ulasan add column if not exists jenis_acara text;
+   update kaone_motret_ulasan set asal_form = 'wedding' where asal_form is null;
+
+   PENTING: kolom ini baru akan terisi kalau formulir pengiriman ulasan di halaman
+   pricelist wedding/prewedding/margondang/mangayun/wisuda/undangan digital dan formulir
+   Isi Biodata (file terpisah dari rekap job ini) ikut disesuaikan supaya saat insert ke
+   tabel kaone_motret_ulasan, mereka menyertakan asal_form (dan jenis_acara khusus untuk
+   biodata) sesuai halaman asalnya masing-masing.
+
+   Pricelist Self Photo (Kaone Studio, file terpisah "pricelist-kaone-studio.html") juga
+   mengirim ulasan ke tabel yang sama ini, dengan asal_form = 'self_photo'. Ulasan yang
+   masuk dari sana muncul di daftar Saran & Penilaian seperti biasa, dan baru tampil di
+   halaman pricelist-nya setelah Admin mencentang target "Pricelist Self Photo (Kaone
+   Studio)" lewat tombol "📢 Kelola Publikasi" — tidak ada kolom/tabel tambahan yang
+   perlu dibuat di Supabase untuk ini. */
+const ASAL_FORM_LABELS = {
+  wedding:          'Wedding',
+  prewedding:       'Prewedding',
+  margondang:       'Margondang',
+  mangayun:         'Mangayun',
+  wisuda:           'Wisuda',
+  undangan_digital: 'Undangan Digital',
+  self_photo:       'Self Photo Studio',
+};
+function ulasanSourceLabel(u){
+  const asal = u.asal_form;
+  if(asal === 'biodata') return u.jenis_acara || 'Isi Biodata';
+  if(asal === 'wedding') return u.jenis_acara || 'Wedding';
+  return ASAL_FORM_LABELS[asal] || 'Wedding'; // fallback untuk baris lama sebelum kolom asal_form ada
+}
+
+
+/* Tabel akun pengguna (login, daftar akun baru, ubah username/password sendiri,
+   dan panel "Kelola Akun" milik Admin).
+
+   Kalau tabel kaone_motret_users SUDAH ada sebelumnya (dibuat sebelum kolom Nama
+   Lengkap ditambahkan ke aplikasi ini), cukup jalankan satu baris tambahan ini saja
+   di SQL Editor supaya kolomnya tersedia — tidak perlu membuat ulang tabel maupun
+   policy yang sudah ada:
+
+   alter table kaone_motret_users add column if not exists nama_lengkap text;
+
+   Kalau tabel ini BELUM ada sama sekali, buat dari awal di Supabase (SQL Editor)
+   dengan kolom nama_lengkap sudah termasuk sejak awal:
+
+   create table kaone_motret_users (
+     id uuid primary key default gen_random_uuid(),
+     username text not null unique,
+     password text not null,
+     role text not null default 'tim',
+     nama_lengkap text,
+     created_at timestamptz not null default now()
+   );
+   alter table kaone_motret_users enable row level security;
+   create policy "Publik boleh baca akun" on kaone_motret_users for select to anon using (true);
+   create policy "Publik boleh daftar akun baru" on kaone_motret_users for insert to anon with check (true);
+   create policy "Publik boleh ubah akun" on kaone_motret_users for update to anon using (true) with check (true);
+
+   Lalu buat SATU akun Admin awal langsung lewat SQL Editor (BUKAN lewat form Daftar
+   di halaman login, supaya kredensial Admin tidak pernah tertulis di kode HTML ini
+   sama sekali). Silakan ganti usernamenya & passwordnya sesuai keinginan, contoh
+   memakai akun Admin yang sudah dipakai sebelumnya:
+
+   insert into kaone_motret_users (username, password, role) values
+     ('rasyidhrp', '17rasyidrekapjob', 'admin');
+
+   Kalau akun Tim lama ("timkaone") masih mau dipakai, bisa didaftarkan juga lewat
+   baris SQL serupa (role 'tim'), atau anggota tim cukup Daftar sendiri lewat halaman
+   login karena akun hasil daftar-sendiri otomatis berperan "tim".
+*/
+const USERS_TABLE = 'kaone_motret_users';
+
+let supabaseClient = null;
+let cloudSyncEnabled = false;
+if (SUPABASE_URL.indexOf('GANTI_DENGAN') === -1 && SUPABASE_ANON_KEY.indexOf('GANTI_DENGAN') === -1 && window.supabase) {
+  try {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    cloudSyncEnabled = true;
+  } catch (e) { console.error('Gagal inisialisasi Supabase', e); }
+}
+
+function setSyncStatus(status){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  const map = {
+    synced:  {text:'☁️ Data tersinkron ke semua device',        color:'#8fe28a'},
+    saving:  {text:'⏳ Menyimpan ke cloud...',                   color:'#f4d93e'},
+    loading: {text:'⏳ Memuat data dari cloud...',                color:'#f4d93e'},
+    offline: {text:'⚠️ Mode offline — data hanya di device ini', color:'#e6a2a2'},
+  };
+  const s = map[status] || map.offline;
+  el.textContent = s.text;
+  el.style.color = s.color;
+}
+
+
+/* ---------- Kabari klien via WhatsApp: foto sudah selesai ---------- */
+const PESAN_SELESAI_KEY='kaoneMotret_pesanSelesai_v1';
+const PESAN_SELESAI_DEFAULT_LAMA='Halo Kak {nama},\n\nKabar baik dari Kaone Motret! 🎉 Foto {acara} Kakak ({tanggal}) sudah selesai diedit dan dicetak.\n\n{tagihan}{ajakan}\n\nTerima kasih sudah mempercayakan momen berharga Kakak kepada Kaone Motret 🙏📸';
+const PESAN_SELESAI_DEFAULT='Halo Kak {nama},\n\nKabar baik dari Kaone Motret! 🎉 Foto {acara} Kakak ({tanggal}) sudah selesai diedit dan dicetak.\n\n{tagihan}{ajakan}\n\n📍 Lokasi Kaone Motret:\n{maps}\n\nTerima kasih sudah mempercayakan momen berharga Kakak kepada Kaone Motret 🙏📸';
+function normPesanSelesai(t){ return (!t || t===PESAN_SELESAI_DEFAULT_LAMA) ? PESAN_SELESAI_DEFAULT : t; }
+let PESAN_SELESAI_TPL=(()=>{try{return localStorage.getItem(PESAN_SELESAI_KEY)||PESAN_SELESAI_DEFAULT;}catch(e){return PESAN_SELESAI_DEFAULT;}})();
+PESAN_SELESAI_TPL=normPesanSelesai(PESAN_SELESAI_TPL);
+function pesanSelesaiCardHtml(){
+  return `<div class="card"><h2 style="margin-top:0;">${ic('phone')} Pesan WhatsApp: Foto Selesai</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai tombol "Kabari Klien" di Detail Job saat Proses Edit dan Proses Cetak sudah Selesai. Isinya masih bisa diedit sebelum dikirim.</p>
+    <textarea id="pesanSelesaiTpl" rows="11" style="width:100%">${escapeHtml(PESAN_SELESAI_TPL)}</textarea>
+    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {acara} {tanggal} {paket} {sisa} {tagihan} {ajakan} {maps}. {tagihan} hanya muncul kalau belum lunas — berisi pengingat sisa pembayaran, bukan info tempat bayar (pelunasan biasanya sudah dilakukan di hari H acara). {ajakan} berisi ajakan menjemput foto. {maps} berisi link Google Maps lokasi Kaone Motret, dari titik yang sama dengan acuan hitung jarak.</div>
+    <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
+      <button type="button" class="btn btn-primary" onclick="simpanPesanSelesai()">Simpan pesan</button>
+      <button type="button" class="btn btn-outline" onclick="resetPesanSelesai()">Kembalikan bawaan</button>
+    </div></div>`;
+}
+function simpanPesanSelesai(){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah pesan ini.'); return; }
+  PESAN_SELESAI_TPL=(document.getElementById('pesanSelesaiTpl').value||'').trim()||PESAN_SELESAI_DEFAULT;
+  try{ localStorage.setItem(PESAN_SELESAI_KEY,PESAN_SELESAI_TPL); }catch(_){}
+  pushToCloud();
+  toast('Pesan WhatsApp disimpan');
+}
+function resetPesanSelesai(){ document.getElementById('pesanSelesaiTpl').value=PESAN_SELESAI_DEFAULT; }
+function mapsStudioLink(){ return 'https://www.google.com/maps?q='+ORIGIN_COORD.lat+','+ORIGIN_COORD.lng; }
+function bangunPesanSelesai(j){
+  const jenis=j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'acara') : (j.jenisAcara||'acara');
+  const sisa=Math.max(0,hitungSisaPembayaran(j));
+  const tagihan=(j.statusPembayaran==='Lunas'||sisa<=0) ? '' : `Sebagai pengingat, masih ada sisa pembayaran sebesar ${fmtRp(sisa)} ya, Kak.\n\n`;
+  const ajakan='Silakan datang ke Kaone Motret untuk menjemput fotonya. Kabari kami dulu ya, Kak, supaya kami pastikan ada yang menyambut saat Kakak datang.';
+  const map={nama:(j.namaKlien||'').trim(), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'', sisa:fmtRp(sisa), tagihan, ajakan, maps:mapsStudioLink()};
+  return PESAN_SELESAI_TPL.replace(/\{(\w+)\}/g,(m,k)=>k in map?map[k]:m).replace(/Kak\s+,/g,'Kak,').replace(/\n{3,}/g,'\n\n').trim();
+}
+function waLinkKlien(no,text){
+  let d=String(no||'').replace(/\D/g,'');
+  if(d.startsWith('0')) d='62'+d.slice(1); else if(!d.startsWith('62')) d='62'+d;
+  return 'https://wa.me/'+d+'?text='+encodeURIComponent(text);
+}
+function waSelesaiBoxHtml(j){
+  if(j.prosesEdit!=='Selesai' || j.prosesCetak!=='Selesai') return '';
+  if((j.pengiriman||'').startsWith('Sudah')) return '';
+  const adaNo=!!waDigits(j.noWhatsapp);
+  const kapan=j.waSelesaiAt ? new Date(j.waSelesaiAt).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+  const sub=!adaNo ? 'Isi nomor WhatsApp di Edit Job untuk mengabari klien.' : kapan ? `✓ Sudah dikabari ${kapan}` : 'Kabari klien lewat WhatsApp supaya fotonya segera diambil.';
+  return `<div class="wa-box"><div class="wa-box-ic">${ic('phone')}</div>
+    <div class="wa-box-tx"><b>Foto sudah selesai</b><span>${escapeHtml(sub)}</span></div>
+    ${adaNo?`<button type="button" class="btn btn-wa" onclick="openWaSelesaiModal('${j.id}')">${kapan?'Kirim Ulang':'Kabari Klien'}</button>`:''}</div>`;
+}
+function openWaSelesaiModal(jobId){
+  const j=jobs.find(x=>x.id===jobId); if(!j) return;
+  if(!waDigits(j.noWhatsapp)){ alert('Nomor WhatsApp klien belum diisi. Isi dulu lewat Edit Job.'); return; }
+  showModal(`
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('phone')} Kabari Klien: Foto Sudah Selesai</h3>
+    <div class="field-hint" style="margin-bottom:10px;">Kepada <b>${escapeHtml(j.namaKlien||'Klien')}</b> · +62 ${escapeHtml(waDigits(j.noWhatsapp))}</div>
+    <div class="wa-preview"><textarea id="waSelesaiText" rows="12">${escapeHtml(bangunPesanSelesai(j))}</textarea></div>
+    <div class="field-hint" style="margin-top:8px;">Pesan masih bisa diedit. WhatsApp akan terbuka dengan pesan ini, tinggal tekan kirim.</div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" onclick="openJobDetailModal('${j.id}')">Kembali</button>
+      <button type="button" class="btn btn-outline" onclick="waSelesaiSalin()">${ic('clipboard')} Salin Pesan</button>
+      <button type="button" class="btn btn-wa" onclick="waSelesaiKirim('${j.id}')">${ic('phone')} Buka WhatsApp</button>
+    </div>`);
+}
+function waSelesaiSalin(){
+  const ta=document.getElementById('waSelesaiText'); if(!ta) return;
+  const ok=()=>toast('Pesan disalin');
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(ta.value).then(ok,()=>{ta.select(); document.execCommand('copy'); ok();}); }
+  else { ta.select(); document.execCommand('copy'); ok(); }
+}
+function waSelesaiKirim(jobId){
+  const j=jobs.find(x=>x.id===jobId), ta=document.getElementById('waSelesaiText'); if(!j||!ta) return;
+  window.open(waLinkKlien(j.noWhatsapp,ta.value.trim()),'_blank','noopener');
+  j.waSelesaiAt=Date.now();
+  saveJobs();
+  openJobDetailModal(jobId);
+}
+
+/* ---------- Kolom Rp & +62 (prefix menyatu, keyboard angka) ---------- */
+function rpInput(name,val,attrs,plain){
+  return `<div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" enterkeyhint="next" class="money-input" name="${name}" value="${fmtRibuan(val)}" ${attrs||''} ${plain?'':'oninput="handleMoneyInput(this); updateCalc();"'}></div>`;
+}
+function rpField(label,name,val){ return `<div><label>${label}</label>${rpInput(name,val)}</div>`; }
+function waDigits(v){ let d=String(v||'').replace(/\D/g,''); if(d.startsWith('62')&&d.length>=11) d=d.slice(2); return d.replace(/^0+/,''); }
+function waFieldHtml(v){
+  const d=waDigits(v);
+  return `<div class="rp-input-wrap"><span class="rp-prefix">+62</span><input type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="tel-national" maxlength="13" placeholder="812 3456 7890" value="${d}" oninput="onWaInput(this)"><input type="hidden" name="noWhatsapp" id="waHidden" value="${d?'0'+d:''}"></div>`;
+}
+function onWaInput(el){
+  const d=waDigits(el.value); if(d!==el.value) el.value=d;
+  const h=document.getElementById('waHidden'); if(h) h.value=d?'0'+d:'';
+}
+
+/* ---------- Harga & hitung Hasil Cetak (Input Job) ---------- */
+const HARGA_CETAK_KEY='kaoneMotret_hargaCetak_v1';
+const HARGA_CETAK_DEFAULT={f16:110000,f12:9500,f12b:25000,f10:0,f6:1500,album1:0,album2:0,album3:0,album4:0,fd16:0,fd32:0,fd64:0,shia350:350000,shia400:400000};
+const ROLL_FOTO={1:40,2:80,3:120,4:180};
+let HARGA_CETAK=(()=>{try{return {...HARGA_CETAK_DEFAULT,...JSON.parse(localStorage.getItem(HARGA_CETAK_KEY)||'{}')};}catch(e){return {...HARGA_CETAK_DEFAULT};}})();
+const HARGA_CETAK_FIELDS=[['f16','Foto 16" + Bingkai (per foto)'],['f12','Foto 12" (per foto)'],['f12b','Bingkai 12" (per foto)'],['f10','Foto 10" (per foto)'],['f6','Foto 6" (per lembar)'],['album1','Album 1 roll'],['album2','Album 2 roll'],['album3','Album 3 roll'],['album4','Album 4 roll'],['fd16','Flashdisk 16 GB'],['fd32','Flashdisk 32 GB'],['fd64','Flashdisk 64 GB'],['shia350','Modal Shia Makeup (paket standar)'],['shia400','Modal Shia Makeup (12" pakai bingkai)']];
+function hargaCetakCardHtml(){
+  return `<div class="card"><h2 style="margin-top:0;">${ic('money')} Harga Cetak</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai di form Input Job untuk menghitung Biaya Cetak dan Harga Paket Shia Makeup secara otomatis.</p>
+    <form class="form-grid hc" onsubmit="simpanHargaCetak(event)">
+      ${HARGA_CETAK_FIELDS.map(([k,l])=>`<div><label>${l}</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-hk="${k}" value="${fmtRibuan(HARGA_CETAK[k])}" oninput="handleMoneyInput(this)"></div></div>`).join('')}
+      <div class="full form-actions"><button type="submit" class="btn btn-primary">Simpan harga</button></div>
+    </form></div>`;
+}
+function simpanHargaCetak(e){
+  e.preventDefault();
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah harga cetak.'); return; }
+  document.querySelectorAll('[data-hk]').forEach(i=>{ HARGA_CETAK[i.dataset.hk]=parseRibuan(i.value)||0; });
+  try{ localStorage.setItem(HARGA_CETAK_KEY,JSON.stringify(HARGA_CETAK)); }catch(_){}
+  pushToCloud();
+  toast('Harga cetak disimpan');
+}
+function bacaCetak(){
+  const $=(a,k)=>document.querySelector('[data-cx'+a+'="'+k+'"]');
+  const on=k=>!!$('',k)?.checked, qty=k=>$('-qty',k)?.value||1, sel=k=>$('-sel',k)?.value;
+  return {f16:{on:on('f16'),qty:qty('f16')}, f12:{on:on('f12'),qty:qty('f12'),bingkai:!!$('-b','f12')?.checked}, f10:{on:on('f10'),qty:qty('f10')}, f6:{on:on('f6'),roll:sel('f6')}, album:{on:on('album'),roll:sel('album')}, fd:{on:on('fd'),gb:sel('fd')}};
+}
+function hitungCetak(s){
+  const H=HARGA_CETAK, L=[]; let total=0;
+  const q=x=>Math.min(99,Math.max(1,parseInt(x)||1));
+  if(s.f16.on){ const n=q(s.f16.qty); total+=n*H.f16; L.push(`Foto 16" + Bingkai ×${n}`); }
+  if(s.f12.on){ const n=q(s.f12.qty); total+=n*(H.f12+(s.f12.bingkai?H.f12b:0)); L.push(`Foto 12"${s.f12.bingkai?' + Bingkai':''} ×${n}`); }
+  if(s.f10.on){ const n=q(s.f10.qty); total+=n*H.f10; L.push(`Foto 10" ×${n}`); }
+  if(s.f6.on){ const r=Number(s.f6.roll)||1, n=ROLL_FOTO[r]; total+=n*H.f6; L.push(`Foto 6" ${r} roll (${n} foto)`); }
+  if(s.album.on){ const r=Number(s.album.roll)||1; total+=H['album'+r]||0; L.push(`Album ${r} roll`); }
+  if(s.fd.on){ const g=Number(s.fd.gb)||16; total+=H['fd'+g]||0; L.push(`Flashdisk ${g} GB`); }
+  return {total,lines:L};
+}
+// Modal/biaya cetak selalu dibulatkan KE ATAS ke kelipatan Rp50.000 (mis. 60rb -> 100rb, 110rb -> 150rb).
+const KELIPATAN_MODAL=50000;
+function bulatModal(n){ n=Number(n)||0; return n<=0 ? 0 : Math.ceil(n/KELIPATAN_MODAL)*KELIPATAN_MODAL; }
+// Vendor Shia Makeup (paket: Foto 16" + Bingkai, Album, dan Foto 12"/10"/6"): hitungan akurat <= 350rb dicatat 350rb,
+// <= 400rb dicatat 400rb, lebih dari itu dihitung akurat lalu dibulatkan ke atas. Foto 12" pakai bingkai minimal 400rb.
+function modalShiaCetak(s,total){
+  const H=HARGA_CETAK;
+  if(!(s.f16.on && s.album.on && (s.f12.on || s.f10.on || s.f6.on))) return null;
+  const lantai=(s.f12.on && s.f12.bingkai) ? H.shia400 : H.shia350;
+  const m = total<=H.shia350 ? H.shia350 : total<=H.shia400 ? H.shia400 : bulatModal(total);
+  return Math.max(m,lantai);
+}
+function cetakRecalc(fromVendor){
+  const f=document.getElementById('jobForm'); if(!f) return;
+  const sel=bacaCetak(), {total,lines}=hitungCetak(sel);
+  if(fromVendor && !lines.length) return;
+  const shia=(f.elements['vendor']?.value==='Shia Makeup') ? modalShiaCetak(sel,total) : null;
+  const modal=shia||0;
+  const biaya=modal?0:bulatModal(total);
+  f.elements['biayaCetak'].value=fmtRibuan(biaya);
+  if(modal && f.elements['setoranShia']) f.elements['setoranShia'].value=fmtRibuan(modal);
+  const ta=f.elements['deskripsiPaket'];
+  const base=ta.value.replace(/\n?Hasil cetak: [^\n]*/,'').replace(/\s+$/,'');
+  ta.value=lines.length ? (base?base+'\n':'')+'Hasil cetak: '+lines.join(', ') : base;
+  const h=document.getElementById('cetakHint');
+  if(h) h.textContent = !lines.length ? '' : modal ? `Paket Shia Makeup terdeteksi: Harga Paket Vendor terisi ${fmtRp(modal)} (hitungan ${fmtRp(total)}), Biaya Cetak ${fmtRp(0)}.` : `Biaya Cetak terisi ${fmtRp(biaya)} (hitungan ${fmtRp(total)}, dibulatkan ke atas per ${fmtRp(KELIPATAN_MODAL)}).`;
+  updateCalc();
+}
+function cetakSectionHtml(d){
+  const c=d.cetak||{}, H=HARGA_CETAK, cur=(k,a,def)=>(c[k]&&c[k][a]!=null)?c[k][a]:def;
+  const chk=k=>`<input type="checkbox" data-cx="${k}" ${c[k]&&c[k].on?'checked':''}>`;
+  const qty=k=>`<input type="number" min="1" max="99" class="cx-q" data-cx-qty="${k}" value="${cur(k,'qty',1)}" aria-label="Jumlah">`;
+  const so=(k,arr,v,fmt)=>`<select class="cx-s" data-cx-sel="${k}">${arr.map(x=>`<option value="${x}" ${String(x)===String(v)?'selected':''}>${fmt(x)}</option>`).join('')}</select>`;
+  const row=(k,name,price,ctrl)=>`<div class="cx-row"><label class="cx-n">${chk(k)}<b>${name}</b></label><span class="cx-p">${price}</span><span class="cx-c">${ctrl}</span></div>`;
+  return `<section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('camera')}</span><div><h3>Hasil Cetak</h3><p>Centang yang dipesan. Otomatis masuk ke Deskripsi Paket dan Biaya Cetak.</p></div></div>
+    <div class="jf-body cx" id="cetakSection" oninput="cetakRecalc()" onchange="cetakRecalc()">
+      ${row('f16','Foto 16" + Bingkai',fmtRp(H.f16)+' / foto',qty('f16'))}
+      ${row('f12','Foto 12"',fmtRp(H.f12)+' / foto',qty('f12')+`<label class="cx-b"><input type="checkbox" data-cx-b="f12" ${c.f12&&c.f12.bingkai?'checked':''}> Bingkai +${fmtRp(H.f12b)}</label>`)}
+      ${row('f10','Foto 10"',fmtRp(H.f10)+' / foto',qty('f10'))}
+      ${row('f6','Foto 6"',fmtRp(H.f6)+' / foto',so('f6',[1,2,3,4],cur('f6','roll',1),r=>`${r} roll (${ROLL_FOTO[r]} foto)`))}
+      ${row('album','Album','',so('album',[1,2,3,4],cur('album','roll',1),r=>`${r} roll — ${fmtRp(H['album'+r])}`))}
+      ${row('fd','Flashdisk','',so('fd',[16,32,64],cur('fd','gb',16),g=>`${g} GB — ${fmtRp(H['fd'+g])}`))}
+      <div class="field-hint" id="cetakHint"></div>
+    </div></section>`;
+}
+
+function collectAllData(){
+  return { jobs, tasks, bonusAdjustments, bonusClaims, hargaCetak: HARGA_CETAK, pesanSelesai: PESAN_SELESAI_TPL, bonusRate: BONUS_PER_JAM, minKlaimTunai: MIN_KLAIM_TUNAI, minKlaimWdp: MIN_KLAIM_WDP, reports, thanksOverrides, thanksFontSize, posterThemeOverrides, layoutOverrides };
+}
+function applyAllData(data){
+  if(!data) return;
+  if(Array.isArray(data.jobs)) jobs = normalizeJobsWhitespace(data.jobs);
+  if(Array.isArray(data.tasks)) tasks = data.tasks;
+  if(Array.isArray(data.bonusAdjustments)) bonusAdjustments = data.bonusAdjustments;
+  if(Array.isArray(data.bonusClaims)) bonusClaims = data.bonusClaims;
+  if(data.hargaCetak && typeof data.hargaCetak==='object'){ HARGA_CETAK={...HARGA_CETAK_DEFAULT,...data.hargaCetak}; try{ localStorage.setItem(HARGA_CETAK_KEY,JSON.stringify(HARGA_CETAK)); }catch(e){} }
+  if(typeof data.pesanSelesai==='string' && data.pesanSelesai.trim()){ PESAN_SELESAI_TPL=normPesanSelesai(data.pesanSelesai); try{ localStorage.setItem(PESAN_SELESAI_KEY,PESAN_SELESAI_TPL); }catch(e){} }
+  if(typeof data.bonusRate==='number' && Number.isFinite(data.bonusRate) && data.bonusRate>=0) BONUS_PER_JAM = data.bonusRate;
+  if(typeof data.minKlaimTunai==='number' && Number.isFinite(data.minKlaimTunai) && data.minKlaimTunai>=0) MIN_KLAIM_TUNAI = data.minKlaimTunai;
+  if(typeof data.minKlaimWdp==='number' && Number.isFinite(data.minKlaimWdp) && data.minKlaimWdp>=0) MIN_KLAIM_WDP = data.minKlaimWdp;
+  if(Array.isArray(data.reports)) reports = data.reports;
+  if(data.thanksOverrides) thanksOverrides = data.thanksOverrides;
+  if(data.thanksFontSize) thanksFontSize = data.thanksFontSize;
+  if(data.posterThemeOverrides) posterThemeOverrides = data.posterThemeOverrides;
+  if(data.layoutOverrides) layoutOverrides = data.layoutOverrides;
+}
+
+/* Penunjang notifikasi real-time (lihat bagian "NOTIFIKASI REAL-TIME" di bawah).
+   Dideklarasikan di sini karena pushToCloud() memakainya. */
+let rtPushPending = false;            // true selama ada perubahan lokal yang belum sempat terkirim ke cloud
+const rtOwnStamps = new Set();        // penanda waktu simpan milik device ini, untuk mengenali "gema" perubahan sendiri
+function rtRememberOwnPush(iso){
+  rtOwnStamps.add(Date.parse(iso));
+  if(rtOwnStamps.size > 30) rtOwnStamps.delete(rtOwnStamps.values().next().value);
+}
+
+let cloudPushTimer = null;
+function pushToCloud(){
+  if(!cloudSyncEnabled){ setSyncStatus('offline'); return; }
+  setSyncStatus('saving');
+  rtPushPending = true;
+  clearTimeout(cloudPushTimer);
+  const myTimer = cloudPushTimer = setTimeout(async ()=>{
+    try{
+      const stamp = new Date().toISOString();
+      rtRememberOwnPush(stamp);
+      const { error } = await supabaseClient
+        .from(SYNC_TABLE)
+        .upsert({ id: SYNC_ROW_ID, payload: collectAllData(), updated_at: stamp });
+      if(error) throw error;
+      setSyncStatus('synced');
+    }catch(e){
+      console.error('Gagal sinkron ke cloud', e);
+      setSyncStatus('offline');
+    }finally{
+      if(cloudPushTimer === myTimer) rtPushPending = false;
+    }
+  }, 600);
+}
+
+// Simpan seluruh data yang ada di memori ke cache lokal (localStorage).
+function persistAllLocal(){
+  saveJobsLocal();
+  saveTasksLocal();
+  saveBonusAdjustmentsLocal();
+  saveBonusClaimsLocal();
+  saveBonusRateLocal();
+  saveMinKlaimTunaiLocal();
+  saveMinKlaimWdpLocal();
+  saveReportsLocal();
+  saveThanksOverridesLocal();
+  saveThanksFontSizeLocal();
+  savePosterThemeOverridesLocal();
+  saveLayoutOverridesLocal();
+}
+
+async function pullFromCloud(){
+  if(!cloudSyncEnabled){ setSyncStatus('offline'); return false; }
+  setSyncStatus('loading');
+  try{
+    const { data, error } = await supabaseClient
+      .from(SYNC_TABLE)
+      .select('payload')
+      .eq('id', SYNC_ROW_ID)
+      .maybeSingle();
+    if(error) throw error;
+    if(data && data.payload){
+      applyAllData(data.payload);
+      persistAllLocal();
+      setSyncStatus('synced');
+      return true;
+    }else{
+      await pushToCloud();
+      return false;
+    }
+  }catch(e){
+    console.error('Gagal memuat dari cloud', e);
+    setSyncStatus('offline');
+    return false;
+  }
+}
+
+/* ---------- SARAN & PENILAIAN — ambil ulasan klien dari tabel Supabase terpisah ---------- */
+async function pullUlasanFromCloud(){
+  if(!cloudSyncEnabled) return false;
+  ulasanLoading = true;
+  if(currentView==='ulasan') render();
+  try{
+    const { data, error } = await supabaseClient
+      .from(ULASAN_TABLE)
+      .select('*')
+      .order('created_at', { ascending:false });
+    if(error) throw error;
+    ulasanList = data || [];
+    saveUlasanLocalCache();
+    ulasanLoading = false;
+    if(currentView==='ulasan') render();
+    renderNotifBadge();
+    return true;
+  }catch(e){
+    console.error('Gagal memuat ulasan dari cloud (pastikan tabel kaone_motret_ulasan sudah dibuat)', e);
+    ulasanLoading = false;
+    if(currentView==='ulasan') render();
+    return false;
+  }
+}
+async function deleteUlasanItem(id){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa menghapus ulasan.'); return; }
+  const u = ulasanList.find(x=>String(x.id)===String(id));
+  const nama = u ? (u.nama_klien || 'ulasan ini') : 'ulasan ini';
+  if(!confirm(`Yakin ingin menghapus ulasan dari "${nama}"? Tindakan ini tidak bisa dibatalkan.`)) return;
+  ulasanList = ulasanList.filter(x=>String(x.id)!==String(id));
+  saveUlasanLocalCache();
+  render();
+  if(!cloudSyncEnabled){ toast('Ulasan dihapus'); return; }
+  try{
+    const { error } = await supabaseClient.from(ULASAN_TABLE).delete().eq('id', id);
+    if(error) throw error;
+    toast('Ulasan dihapus');
+  }catch(e){
+    console.error('Gagal menghapus ulasan di cloud', e);
+    toast('Terhapus di layar ini, tapi gagal sinkron hapus ke cloud');
+  }
+}
+/* Kelola publikasi ulasan — satu ulasan bisa dipublikasikan ke lebih dari satu halaman
+   sekaligus (Pricelist Wedding / Margondang / Mangayun / Isi Biodata), lewat modal
+   centang "Kelola Publikasi". Kolom "dipublikasikan" (boolean lama) tetap disinkronkan
+   otomatis mengikuti status target "wedding", supaya halaman pricelist wedding yang
+   sudah ada tetap berjalan tanpa perlu diubah. */
+function openUlasanPublishModal(id){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengatur publikasi ulasan.'); return; }
+  const u = ulasanList.find(x=>String(x.id)===String(id));
+  if(!u) return;
+  const current = getUlasanTargets(u);
+  showModal(`
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('megaphone')} Kelola Publikasi</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">
+      Centang halaman tujuan publikasi.
+    </div>
+    <div class="publish-target-list">
+      ${PUBLISH_TARGETS.map(t=>`
+        <label class="publish-target-item">
+          <input type="checkbox" class="publishTargetCheck" value="${t.key}" ${current.includes(t.key)?'checked':''}>
+          <span>${t.label}</span>
+        </label>
+      `).join('')}
+    </div>
+    <div class="modal-actions" style="justify-content:flex-end;margin-top:18px;">
+      <button type="button" class="btn btn-primary" id="btnSavePublishTargets">${ic('save')} Simpan Publikasi</button>
+    </div>
+  `);
+  const ov = document.getElementById('modalOverlay');
+  ov?.querySelector('#btnSavePublishTargets')?.addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    const checked = Array.from(ov.querySelectorAll('.publishTargetCheck:checked')).map(c=>c.value);
+    const btn = e.currentTarget;
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    await saveUlasanPublishTargets(id, checked);
+    closeModal();
+  });
+}
+async function saveUlasanPublishTargets(id, targets){
+  const idx = ulasanList.findIndex(x=>String(x.id)===String(id));
+  if(idx===-1) return;
+  const before = ulasanList[idx];
+  const beforeTargets = getUlasanTargets(before);
+  const beforeDipublikasikan = before.dipublikasikan;
+  ulasanList[idx] = {...before, publish_targets: targets, dipublikasikan: targets.includes('wedding')};
+  saveUlasanLocalCache();
+  render();
+  if(!cloudSyncEnabled){
+    toast(targets.length ? `Dipublikasikan ke: ${ulasanTargetLabels(targets)}` : 'Publikasi ulasan dibatalkan');
+    return;
+  }
+  try{
+    const { error } = await supabaseClient
+      .from(ULASAN_TABLE)
+      .update({ publish_targets: targets, dipublikasikan: targets.includes('wedding') })
+      .eq('id', id);
+    if(error) throw error;
+    toast(targets.length ? `Dipublikasikan ke: ${ulasanTargetLabels(targets)}` : 'Publikasi ulasan dibatalkan di semua halaman');
+  }catch(e){
+    console.error('Gagal menyimpan target publikasi ulasan (pastikan kolom "publish_targets" sudah ada di tabel, lihat komentar dekat SUPABASE_URL)', e);
+    // Batalkan perubahan di layar kalau gagal disimpan ke cloud, supaya tampilan tetap sesuai data sebenarnya.
+    ulasanList[idx] = {...ulasanList[idx], publish_targets: beforeTargets, dipublikasikan: beforeDipublikasikan};
+    saveUlasanLocalCache();
+    render();
+    alert('Gagal menyimpan pengaturan publikasi. Pastikan kolom "publish_targets" sudah dibuat di tabel kaone_motret_ulasan (lihat komentar di kode dekat SUPABASE_URL).');
+  }
+}
+
+
+const JENIS_ACARA_LIST = ['Marbagas','Mangayun/Aqiqah','Margondang 1 Hari','Margondang 2 Hari','Wisuda','Patuaekkon','Lainnya'];
+
+// Warna kartu detail job — berbeda tiap jenis acara supaya gambar yang diunduh mudah dibedakan sekilas
+const JENIS_ACARA_COLORS = {
+  'Marbagas':            {hdr1:'#2a1216', hdr2:'#4a2029', accent:'#d0a441', soft:'#f2dfa8'},
+  'Mangayun/Aqiqah':      {hdr1:'#2a1520', hdr2:'#472339', accent:'#e2a0b8', soft:'#f6dce6'},
+  'Margondang 1 Hari':    {hdr1:'#0f2224', hdr2:'#1c3a3d', accent:'#5cc2c7', soft:'#c9ecee'},
+  'Margondang 2 Hari':    {hdr1:'#1c1530', hdr2:'#332750', accent:'#ab8fe0', soft:'#e2d7f5'},
+  'Wisuda':               {hdr1:'#101d30', hdr2:'#1e3556', accent:'#7cb0e8', soft:'#d4e6f7'},
+  'Patuaekkon':           {hdr1:'#2b1a0c', hdr2:'#4a2f14', accent:'#c99a4e', soft:'#f0dfb8'},
+  'Lainnya':              {hdr1:'#1c1a12', hdr2:'#2c2712', accent:'#d4af00', soft:'#f4d93e'},
+};
+function jenisAcaraColor(jenisAcara){
+  return JENIS_ACARA_COLORS[jenisAcara] || JENIS_ACARA_COLORS['Lainnya'];
+}
+const PENGIRIMAN_LIST = ['Sudah Dijemput','Sudah Diantar','Belum Diantar','Belum Dijemput'];
+const STATUS_BAYAR_LIST = ['Lunas','DP','Belum Bayar'];
+const VENDOR_LIST = ['Shia Makeup','Kaone Motret','Lainnya'];
+
+// Pemetaan kolom Excel (import/template) <-> field data job
+const EXCEL_FIELD_MAP = [
+  {header:'Nama Klien', field:'namaKlien'},
+  {header:'Tanggal Acara (YYYY-MM-DD)', field:'tanggalAcara'},
+  {header:'Jenis Acara', field:'jenisAcara'},
+  {header:'Jenis Acara Lainnya', field:'jenisAcaraLain'},
+  {header:'No WhatsApp', field:'noWhatsapp'},
+  {header:'Paket', field:'paket'},
+  {header:'Deskripsi Paket', field:'deskripsiPaket'},
+  {header:'Desa', field:'desa'},
+  {header:'Dusun (opsional)', field:'dusun'},
+  {header:'Kecamatan', field:'kecamatan'},
+  {header:'Kabupaten', field:'kabupaten'},
+  {header:'Provinsi', field:'provinsi'},
+  {header:'Link Maps', field:'linkMaps'},
+  {header:'Titik Koordinat (Lat, Lng)', field:'koordinat'},
+  {header:'Proses Edit (Selesai/Belum Selesai)', field:'prosesEdit'},
+  {header:'Proses Cetak (Selesai/Belum Selesai)', field:'prosesCetak'},
+  {header:'Pengiriman', field:'pengiriman'},
+  {header:'Status Pembayaran', field:'statusPembayaran'},
+  {header:'Vendor (Shia Makeup/Kaone Motret/Lainnya)', field:'vendor'},
+  {header:'Vendor Lainnya (jika Vendor = Lainnya)', field:'vendorLain'},
+  {header:'Tim/Freelancer', field:'timFreelancer'},
+  {header:'DP', field:'dp'},
+  {header:'Penghasilan Dari Klien/Mitra', field:'penghasilan'},
+  {header:'Biaya Cetak', field:'biayaCetak'},
+  {header:'Honor Tim', field:'honorTim'},
+  {header:'Diskon', field:'diskon'},
+  {header:'Sedekah Nominal (otomatis)', field:'sedekahNominal'},
+  {header:'Status Sedekah (Sudah/Belum)', field:'sedekahStatus'},
+  {header:'Harga Paket Vendor', field:'setoranShia'},
+  {header:'Catatan', field:'catatan'},
+];
+
+const DAY_NAMES = ['AHAD','SENIN','SELASA','RABU','KAMIS',"JUM'AT",'SABTU'];
+const MONTH_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+// Kalimat kecil (di bawah judul bulan) — masih berbeda tiap bulan seperti sebelumnya
+const MONTH_QUOTES = [
+  {sub:"Awal cerita baru di tahun ini"},
+  {sub:"Cinta yang mekar di bulan cinta"},
+  {sub:"Semangat baru menyambut Maret"},
+  {sub:"April ceria penuh kebahagiaan"},
+  {sub:"Mei yang hangat dan berkesan"},
+  {sub:"Our beautiful June, penuh kenangan"},
+  {sub:"Juli yang cerah dan penuh syukur"},
+  {sub:"Agustus, semangat merdeka & cinta"},
+  {sub:"September ceria bersama Kaone Motret"},
+  {sub:"Oktober penuh warna dan kenangan"},
+  {sub:"November hangat, cerita tetap abadi"},
+  {sub:"Penutup tahun penuh syukur"}
+];
+
+// Kalimat kicker di atas judul bulan — sengaja dibuat beragam gaya & panjangnya,
+// tidak semua berpola "Our Beautiful <Bulan>", supaya poster tiap bulan terasa berbeda.
+const MONTH_KICKERS = [
+  "Awal Cerita Baru",
+  "Bulan Penuh Cinta",
+  "Semangat yang Mekar",
+  "April Ceria",
+  "Merangkai Kenangan Mei",
+  "Our Beautiful June",
+  "Cerita Hangat Bulan Juli",
+  "Semangat Kemerdekaan, Abadi dalam Bingkai",
+  "September Berkesan",
+  "Warna-Warni Oktober",
+  "November, Bulan Penuh Syukur",
+  "Menutup Tahun dengan Cerita Indah",
+];
+
+// Bank kalimat puitis untuk ucapan terima kasih pada poster kalender.
+// Dikombinasikan (pembuka + penutup) secara unik untuk tiap pasangan bulan-tahun,
+// sehingga ucapannya selalu berbeda dari Januari 2026 hingga Desember 2030 dan seterusnya.
+const THANKS_OPENERS = [
+  "Di setiap senyum yang kami abadikan",
+  "Di setiap tawa yang mengiringi hari itu",
+  "Di setiap langkah kecil menuju janji suci",
+  "Di balik lensa yang merekam kebahagiaanmu",
+  "Di setiap detik yang kami bekukan dalam bingkai",
+  "Di antara riuh doa dan restu yang mengalir",
+  "Di setiap cahaya yang jatuh pada wajah bahagia itu",
+  "Di setiap momen yang tak akan pernah terulang",
+  "Di setiap kisah yang kau percayakan pada kami",
+  "Di setiap detak yang mengiringi langkah baru itu",
+  "Di setiap peluk hangat yang tertangkap kamera",
+  "Di setiap jejak yang kami ikuti sepanjang hari itu",
+  "Di setiap gerak sederhana yang penuh makna",
+  "Di setiap kilau air mata bahagia",
+  "Di setiap detik berharga yang kau bagikan bersama kami"
+];
+const THANKS_CLOSERS = [
+  "tersimpan doa dan syukur yang tak pernah usai",
+  "kami menitipkan rasa terima kasih yang tulus",
+  "ada cerita cinta yang akan abadi selamanya",
+  "kami belajar bahwa kebahagiaan sesederhana ini begitu berharga",
+  "tersimpan kepercayaan yang kami jaga sepenuh hati",
+  "kami menemukan makna dari setiap kesabaran menunggu momen",
+  "kami ikut merasakan haru yang sama",
+  "tumbuh rasa syukur yang tak bisa diungkapkan kata",
+  "kami menitipkan doa agar kebahagiaan ini abadi",
+  "kami belajar mencintai profesi ini lebih dalam lagi",
+  "ada kepercayaan yang kami jaga seperti amanah",
+  "kami menemukan alasan untuk terus bersyukur",
+  "tersimpan kenangan yang akan terus hidup di setiap tatap",
+  "kami merasa terhormat menjadi bagian dari ceritamu",
+  "kami menitipkan harapan agar cinta ini abadi selamanya"
+];
+function getPoeticThanks(year, month){
+  const idx = year*12 + month;
+  const oi = ((idx % THANKS_OPENERS.length) + THANKS_OPENERS.length) % THANKS_OPENERS.length;
+  const ci = (Math.floor(idx / THANKS_OPENERS.length) % THANKS_CLOSERS.length + THANKS_CLOSERS.length) % THANKS_CLOSERS.length;
+  return `${THANKS_OPENERS[oi]}, ${THANKS_CLOSERS[ci]}.`;
+}
+function posterKey(year, month){ return `${year}-${String(month+1).padStart(2,'0')}`; }
+function loadThanksOverrides(){
+  try{ return JSON.parse(localStorage.getItem('kaoneMotret_thanksOverride_v1')||'{}'); }catch(e){ return {}; }
+}
+function saveThanksOverridesLocal(){ localStorage.setItem('kaoneMotret_thanksOverride_v1', JSON.stringify(thanksOverrides)); }
+function saveThanksOverrides(){ saveThanksOverridesLocal(); pushToCloud(); }
+function loadThanksFontSize(){
+  const v = Number(localStorage.getItem('kaoneMotret_thanksFontSize_v1'));
+  return (v && v>=18 && v<=48) ? v : 30;
+}
+function saveThanksFontSizeLocal(){ localStorage.setItem('kaoneMotret_thanksFontSize_v1', String(thanksFontSize)); }
+function saveThanksFontSize(){ saveThanksFontSizeLocal(); pushToCloud(); }
+function currentThanksText(){
+  const override = thanksOverrides[posterKey(calYear, calMonth)];
+  return (override && override.trim()) ? override.trim() : getPoeticThanks(calYear, calMonth);
+}
+
+/* ---------- 12 tema desain poster kalender (bisa dipilih bebas per bulan) ---------- */
+const POSTER_THEMES = [
+  {name:'Klasik Emas',      bg1:'#fffdf5', bg2:'#fdf6e0', bg3:'#f8ecc6', accent:'#b8901f', accentLight:'#cbb15a', accentPale:'#efe3bd', ink:'#1c1a12', ink2:'#2c2712', inkSoft:'#a4914f', quote:'#7a6d47'},
+  {name:'Rose Gold Elegan', bg1:'#fff9f8', bg2:'#fcefec', bg3:'#f6dcd6', accent:'#b76e79', accentLight:'#d59aa1', accentPale:'#f3dcdf', ink:'#241416', ink2:'#3a2226', inkSoft:'#ad8286', quote:'#8c6266'},
+  {name:'Hijau Sage Alami', bg1:'#fbfdf8', bg2:'#f1f4ec', bg3:'#e2e9d4', accent:'#7c8b5f', accentLight:'#a3ae87', accentPale:'#e3e8d6', ink:'#1c2016', ink2:'#2b3020', inkSoft:'#8e9a78', quote:'#65714f'},
+  {name:'Biru Dusty Senja', bg1:'#f9fcfd', bg2:'#eef3f6', bg3:'#dbe7ec', accent:'#5f7f92', accentLight:'#8fa9b7', accentPale:'#dbe6ea', ink:'#151d21', ink2:'#232f34', inkSoft:'#7d95a1', quote:'#526c7a'},
+  {name:'Lavender Krem',    bg1:'#fdfbfd', bg2:'#f5f0f6', bg3:'#e8dced', accent:'#8b7aa8', accentLight:'#ad9fc3', accentPale:'#e8e0ee', ink:'#1c1a22', ink2:'#2b2733', inkSoft:'#9d8fb5', quote:'#6e5f89'},
+  {name:'Mustard Cerah',    bg1:'#fffdf6', bg2:'#fdf3d9', bg3:'#f8e4ad', accent:'#c99a1f', accentLight:'#dcb655', accentPale:'#f2debe', ink:'#201b0c', ink2:'#2f2712', inkSoft:'#b39448', quote:'#8a6d1f'},
+  {name:'Terracotta Hangat',bg1:'#fffaf7', bg2:'#fbf0ea', bg3:'#f3dccb', accent:'#c1694f', accentLight:'#d99277', accentPale:'#f0d9cd', ink:'#251712', ink2:'#38231c', inkSoft:'#c08a76', quote:'#a05c44'},
+  {name:'Merah Marun Mewah',bg1:'#fefaf9', bg2:'#f8ebe9', bg3:'#eecfca', accent:'#8c3a3a', accentLight:'#b06c6c', accentPale:'#eed3d1', ink:'#211110', ink2:'#331917', inkSoft:'#a67d7c', quote:'#6f2f2f'},
+  {name:'Zamrud Elegan',    bg1:'#f8fdfb', bg2:'#eaf5ee', bg3:'#cee6d7', accent:'#2f6b4f', accentLight:'#5f927a', accentPale:'#d6ebe0', ink:'#0f1e17', ink2:'#1c2f26', inkSoft:'#6e9683', quote:'#255a41'},
+  {name:'Tembaga Klasik',   bg1:'#fffbf6', bg2:'#faeee1', bg3:'#f0d5b6', accent:'#a9673a', accentLight:'#c68f65', accentPale:'#eeddc9', ink:'#231609', ink2:'#332111', inkSoft:'#b89165', quote:'#8f5a30'},
+  {name:'Charcoal Mewah',   bg1:'#f4f2ee', bg2:'#e7e2d9', bg3:'#d4cabb', accent:'#8a6a2f', accentLight:'#a68a55', accentPale:'#ded2b8', ink:'#161510', ink2:'#211f18', inkSoft:'#8c805f', quote:'#5f5334'},
+  {name:'Blush Pink Lembut',bg1:'#fffbfc', bg2:'#fcedf1', bg3:'#f6d6e0', accent:'#c46a85', accentLight:'#dc98ac', accentPale:'#f4dbe3', ink:'#231017', ink2:'#341a24', inkSoft:'#c393a2', quote:'#a3506a'},
+];
+function posterThemeKey(){ return posterKey(calYear, calMonth); }
+function loadPosterThemeOverrides(){
+  try{ return JSON.parse(localStorage.getItem('kaoneMotret_posterTheme_v1')||'{}'); }catch(e){ return {}; }
+}
+function savePosterThemeOverridesLocal(){ localStorage.setItem('kaoneMotret_posterTheme_v1', JSON.stringify(posterThemeOverrides)); }
+function savePosterThemeOverrides(){ savePosterThemeOverridesLocal(); pushToCloud(); }
+function currentThemeIndex(){
+  const override = posterThemeOverrides[posterThemeKey()];
+  return (override!==undefined && override!==null && POSTER_THEMES[override]) ? override : calMonth;
+}
+function applyPosterTheme(poster, theme){
+  poster.style.setProperty('--poster-bg1', theme.bg1);
+  poster.style.setProperty('--poster-bg2', theme.bg2);
+  poster.style.setProperty('--poster-bg3', theme.bg3);
+  poster.style.setProperty('--poster-accent', theme.accent);
+  poster.style.setProperty('--poster-accent-light', theme.accentLight);
+  poster.style.setProperty('--poster-accent-pale', theme.accentPale);
+  poster.style.setProperty('--poster-ink', theme.ink);
+  poster.style.setProperty('--poster-ink2', theme.ink2);
+  poster.style.setProperty('--poster-ink-soft', theme.inkSoft);
+  poster.style.setProperty('--poster-quote', theme.quote);
+}
+
+/* ---------- 12 desain layout poster (font, bentuk tanggal, ornamen, tata letak) ----------
+   Terpisah dari POSTER_THEMES (warna) di atas — keduanya bisa dipilih & dikombinasikan bebas. */
+const LAYOUT_STYLES = [
+  {name:'Klasik Simetris',   titleAlign:'center', dateShape:'circle',    frameStyle:'solid',   fontTitle:"'Fraunces',serif",           fontQuote:"'Fraunces',serif"},
+  {name:'Minimalis Modern',  titleAlign:'left',   dateShape:'underline', frameStyle:'corners', fontTitle:"'Cormorant Garamond',serif", fontQuote:"'Cormorant Garamond',serif"},
+  {name:'Garis Ganda Mewah', titleAlign:'center', dateShape:'square',    frameStyle:'double',  fontTitle:"'Italiana',serif",           fontQuote:"'Cormorant Garamond',serif"},
+  {name:'Pita Kontemporer',  titleAlign:'left',   dateShape:'dot',       frameStyle:'ribbon',  fontTitle:"'Fraunces',serif",           fontQuote:"'Fraunces',serif"},
+  {name:'Elegan Bertitik',   titleAlign:'center', dateShape:'dot',       frameStyle:'corners', fontTitle:"'Cormorant Garamond',serif", fontQuote:"'Fraunces',serif"},
+  {name:'Editorial Kiri',    titleAlign:'left',   dateShape:'circle',    frameStyle:'double',  fontTitle:"'Italiana',serif",           fontQuote:"'Cormorant Garamond',serif"},
+  {name:'Garis Bawah Chic',  titleAlign:'center', dateShape:'underline', frameStyle:'solid',   fontTitle:"'Fraunces',serif",           fontQuote:"'Cormorant Garamond',serif"},
+  {name:'Bingkai Sudut',     titleAlign:'left',   dateShape:'square',    frameStyle:'corners', fontTitle:"'Cormorant Garamond',serif", fontQuote:"'Cormorant Garamond',serif"},
+  {name:'Pita Split',        titleAlign:'left',   dateShape:'circle',    frameStyle:'ribbon',  fontTitle:"'Italiana',serif",           fontQuote:"'Fraunces',serif"},
+  {name:'Klasik Ganda',      titleAlign:'center', dateShape:'circle',    frameStyle:'double',  fontTitle:"'Cormorant Garamond',serif", fontQuote:"'Cormorant Garamond',serif"},
+  {name:'Modern Titik Kiri', titleAlign:'left',   dateShape:'dot',       frameStyle:'solid',   fontTitle:"'Fraunces',serif",           fontQuote:"'Cormorant Garamond',serif"},
+  {name:'Mewah Persegi',     titleAlign:'center', dateShape:'square',    frameStyle:'ribbon',  fontTitle:"'Italiana',serif",           fontQuote:"'Cormorant Garamond',serif"},
+];
+function loadLayoutOverrides(){
+  try{ return JSON.parse(localStorage.getItem('kaoneMotret_posterLayout_v1')||'{}'); }catch(e){ return {}; }
+}
+function saveLayoutOverridesLocal(){ localStorage.setItem('kaoneMotret_posterLayout_v1', JSON.stringify(layoutOverrides)); }
+function saveLayoutOverrides(){ saveLayoutOverridesLocal(); pushToCloud(); }
+function currentLayoutIndex(){
+  const override = layoutOverrides[posterThemeKey()];
+  return (override!==undefined && override!==null && LAYOUT_STYLES[override]) ? override : calMonth;
+}
+
+// Kutipan motivasi harian untuk Beranda — index berganti otomatis tiap hari
+const MOTIVATION_QUOTES = [
+  "Setiap jepretan adalah kepercayaan yang dititipkan kepadamu — jaga baik-baik.",
+  "Rezeki tidak pernah salah alamat, teruslah bekerja dengan hati yang lapang.",
+  "Foto yang bagus lahir dari kesabaran menunggu momen yang tepat.",
+  "Kerja keras hari ini adalah portofolio terbaik untuk esok hari.",
+  "Konsistensi kecil yang dilakukan setiap hari akan menjadi hasil besar suatu saat nanti.",
+  "Klien akan lupa harganya, tapi selalu ingat bagaimana kamu memperlakukan mereka.",
+  "Belajar dari setiap job, sekecil apa pun, karena di situlah jam terbangmu bertambah.",
+  "Kualitas kerja yang jujur akan selalu menemukan jalannya sendiri kepada rezeki.",
+  "Jangan bandingkan babak 1 hidupmu dengan babak 10 orang lain — teruslah berkarya.",
+  "Momen yang kamu abadikan hari ini akan menjadi kenangan berharga puluhan tahun lagi.",
+  "Ketekunan mengalahkan bakat ketika bakat tidak mau tekun.",
+  "Setiap vendor dan klien yang percaya padamu adalah amanah, bukan sekadar transaksi.",
+  "Sukses bukan tentang seberapa banyak job, tapi seberapa jujur kamu mengerjakannya.",
+  "Semangat pagi ini menentukan hasil jepretan sore nanti.",
+  "Terus asah kemampuan, karena kamera terbaik adalah dirimu sendiri yang terus belajar.",
+  "Rejeki datang lewat pintu yang berbeda-beda, tetap bersyukur di setiap jenis job.",
+  "Bersungguh-sungguhlah dalam hal kecil, karena di situlah kekuatanmu terlihat.",
+  "Waktu istirahat yang cukup membuat hasil karya lebih maksimal — jangan lupa jaga diri.",
+  "Setiap tantangan di lapangan adalah pelajaran yang tidak diajarkan di sekolah manapun.",
+  "Kepercayaan klien dibangun dari komitmen kecil yang selalu ditepati.",
+  "Fokus pada progres, bukan kesempurnaan — hasil terbaik lahir dari proses yang konsisten.",
+  "Networking yang baik dengan vendor adalah investasi jangka panjang untuk bisnismu.",
+  "Rasa syukur adalah kunci hati yang tenang di tengah padatnya jadwal job.",
+  "Jangan takut memulai dari yang kecil, karena semua profesional pernah menjadi pemula.",
+  "Detail kecil yang kamu perhatikan hari ini adalah kualitas yang diingat klien esok hari.",
+  "Bekerja dengan niat baik akan selalu menemukan berkahnya sendiri.",
+  "Kesulitan hari ini adalah bahan cerita suksesmu di masa depan.",
+  "Terus berinovasi, karena dunia fotografi tidak pernah berhenti berkembang.",
+  "Hari yang produktif dimulai dari niat yang lurus dan hati yang bersyukur.",
+  "Percayalah, kerja keras yang jujur tidak pernah mengkhianati hasil."
+];
+
+// Ayat pilihan cadangan (offline) jika koneksi internet untuk mengambil ayat harian tidak tersedia
+const FALLBACK_AYAT = [
+  {surah:'Al-Insyirah', ayat:6, arab:'إِنَّ مَعَ الْعُسْرِ يُسْرًا', arti:'Sesungguhnya sesudah kesulitan itu ada kemudahan.'},
+  {surah:'Al-Baqarah', ayat:286, arab:'لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا', arti:'Allah tidak membebani seseorang melainkan sesuai dengan kesanggupannya.'},
+  {surah:'At-Talaq', ayat:3, arab:'وَمَنْ يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ', arti:'Barangsiapa bertawakal kepada Allah, niscaya Allah akan mencukupkan (keperluan)nya.'},
+  {surah:'Ibrahim', ayat:7, arab:'لَئِنْ شَكَرْتُمْ لَأَزِيدَنَّكُمْ', arti:'Jika kamu bersyukur, pasti akan Aku tambah nikmat-Ku kepadamu.'},
+  {surah:'Al-Baqarah', ayat:153, arab:'إِنَّ اللَّهَ مَعَ الصَّابِرِينَ', arti:'Sesungguhnya Allah beserta orang-orang yang sabar.'},
+  {surah:'Al-Anfal', ayat:46, arab:'وَاصْبِرُوا إِنَّ اللَّهَ مَعَ الصَّابِرِينَ', arti:'Bersabarlah, sesungguhnya Allah beserta orang-orang yang sabar.'},
+  {surah:'Az-Zumar', ayat:53, arab:'لَا تَقْنَطُوا مِنْ رَحْمَةِ اللَّهِ', arti:'Janganlah kamu berputus asa dari rahmat Allah.'}
+];
+function dayOfYear(d){
+  const start = new Date(d.getFullYear(),0,0);
+  return Math.floor((d - start) / 86400000);
+}
+function renderDailyQuote(){
+  const el = document.getElementById('dailyQuoteText');
+  if(!el) return;
+  const idx = dayOfYear(new Date()) % MOTIVATION_QUOTES.length;
+  el.textContent = `"${MOTIVATION_QUOTES[idx]}"`;
+}
+async function renderDailyAyat(){
+  const box = document.getElementById('dailyAyatBox');
+  if(!box) return;
+  const totalAyat = 6236;
+  const n = (dayOfYear(new Date()) % totalAyat) + 1;
+  try{
+    const res = await fetch(`https://api.alquran.cloud/v1/ayah/${n}/editions/quran-uthmani,id.indonesian`);
+    if(!res.ok) throw new Error('fetch gagal');
+    const json = await res.json();
+    const arab = json.data[0].text;
+    const arti = json.data[1].text;
+    const surahName = json.data[0].surah.name;
+    const numberInSurah = json.data[0].numberInSurah;
+    box.innerHTML = `
+      <div class="ayat-arab">${arab}</div>
+      <div class="ayat-arti">"${escapeHtml(arti)}"</div>
+      <div class="ayat-ref">${escapeHtml(surahName)} : ${numberInSurah}</div>
+    `;
+  }catch(err){
+    const idx = dayOfYear(new Date()) % FALLBACK_AYAT.length;
+    const a = FALLBACK_AYAT[idx];
+    box.innerHTML = `
+      <div class="ayat-arab">${a.arab}</div>
+      <div class="ayat-arti">"${escapeHtml(a.arti)}"</div>
+      <div class="ayat-ref">QS. ${escapeHtml(a.surah)} : ${a.ayat} <span style="opacity:.6;font-weight:400;">(offline)</span></div>
+    `;
+  }
+}
+
+/* Menghilangkan spasi berlebih di awal/akhir tiap isian teks pada satu job (mis. "Portibi "
+   dan "Portibi" harus dianggap sama). Dipakai saat data dimuat, supaya data lama yang
+   terlanjur ada spasi tersembunyi ikut dirapikan otomatis, bukan cuma input baru. */
+function normalizeJobWhitespace(job){
+  const cleaned = {...job};
+  Object.keys(cleaned).forEach(k=>{
+    if(typeof cleaned[k] === 'string') cleaned[k] = cleaned[k].trim();
+  });
+  return cleaned;
+}
+function normalizeJobsWhitespace(list){
+  return (list||[]).map(normalizeJobWhitespace);
+}
+
+let jobs = normalizeJobsWhitespace(loadJobs());
+let currentView = 'beranda';
+let editingId = null;
+let calMonth = new Date().getMonth();
+let calYear = new Date().getFullYear();
+let rekapTab = 'bulan';
+let rekapSection = 'ringkasan';
+let rekapWilayahLevel = 'kecamatan';
+let modalDateJobs = null;
+let thanksOverrides = loadThanksOverrides();
+let thanksFontSize = loadThanksFontSize();
+let posterThemeOverrides = loadPosterThemeOverrides();
+let layoutOverrides = loadLayoutOverrides();
+const ULASAN_STORAGE_KEY = 'kaoneMotret_ulasan_v1';
+let ulasanList = loadUlasanLocal();
+let ulasanLoading = false;
+let tasks = loadTasksLocal();
+let editingTaskId = null; // id tugas yang sedang diedit Admin lewat form Pembagian Tugas (null = mode tambah baru)
+let taskRekapFilter = {userId:'', role:'', status:'', from:'', to:''};
+let bonusAdjustments = loadBonusAdjustmentsLocal();
+let bonusClaims = loadBonusClaimsLocal();
+let BONUS_PER_JAM = loadBonusRateLocal(); // tarif bonus per jam kerja — awalnya Rp500, tapi bisa diubah Admin lewat menu Pembagian Tugas
+let MIN_KLAIM_TUNAI = loadMinKlaimTunaiLocal(); // syarat minimal klaim bonus berupa uang Tunai
+let MIN_KLAIM_WDP = loadMinKlaimWdpLocal();     // syarat minimal klaim bonus berupa WDP (Weekly Diamond Pass)
+let reports = loadReportsLocal();
+let reportsFilterStatus = '';
+let teamAccountsPublic = []; // daftar akun Tim (id+username saja, tanpa password) — dipakai akun Tim untuk memilih target laporan
+
+/* ---------- STORAGE ---------- */
+function loadJobs(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ console.error('Gagal memuat data', e); return []; }
+}
+function loadTasksLocal(){
+  try{
+    const raw = localStorage.getItem(TASKS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ console.error('Gagal memuat data tugas', e); return []; }
+}
+function saveTasksLocal(){
+  try{ localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks)); }
+  catch(e){ console.error('Gagal menyimpan data tugas', e); }
+}
+function saveTasks(){
+  saveTasksLocal();
+  pushToCloud();
+}
+function loadBonusAdjustmentsLocal(){
+  try{
+    const raw = localStorage.getItem(BONUS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ console.error('Gagal memuat data penyesuaian bonus', e); return []; }
+}
+function saveBonusAdjustmentsLocal(){
+  try{ localStorage.setItem(BONUS_STORAGE_KEY, JSON.stringify(bonusAdjustments)); }
+  catch(e){ console.error('Gagal menyimpan data penyesuaian bonus', e); }
+}
+function saveBonusAdjustments(){
+  saveBonusAdjustmentsLocal();
+  pushToCloud();
+}
+function loadBonusClaimsLocal(){
+  try{
+    const raw = localStorage.getItem(BONUS_CLAIM_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ console.error('Gagal memuat data klaim bonus', e); return []; }
+}
+function saveBonusClaimsLocal(){
+  try{ localStorage.setItem(BONUS_CLAIM_STORAGE_KEY, JSON.stringify(bonusClaims)); }
+  catch(e){ console.error('Gagal menyimpan data klaim bonus', e); }
+}
+function saveBonusClaims(){
+  saveBonusClaimsLocal();
+  pushToCloud();
+}
+function loadBonusRateLocal(){
+  try{
+    const raw = localStorage.getItem(BONUS_RATE_STORAGE_KEY);
+    const n = raw!=null ? Number(raw) : NaN;
+    return (Number.isFinite(n) && n>=0) ? n : DEFAULT_BONUS_PER_JAM;
+  }catch(e){ console.error('Gagal memuat tarif bonus', e); return DEFAULT_BONUS_PER_JAM; }
+}
+function saveBonusRateLocal(){
+  try{ localStorage.setItem(BONUS_RATE_STORAGE_KEY, String(BONUS_PER_JAM)); }
+  catch(e){ console.error('Gagal menyimpan tarif bonus', e); }
+}
+// Admin mengubah tarif bonus per jam (berlaku untuk seluruh akun Tim, dihitung ulang otomatis).
+function loadMinKlaimTunaiLocal(){
+  try{
+    const raw = localStorage.getItem(MIN_KLAIM_TUNAI_STORAGE_KEY);
+    const n = raw!=null ? Number(raw) : NaN;
+    return (Number.isFinite(n) && n>=0) ? n : DEFAULT_MIN_KLAIM_TUNAI;
+  }catch(e){ console.error('Gagal memuat syarat minimal klaim tunai', e); return DEFAULT_MIN_KLAIM_TUNAI; }
+}
+function saveMinKlaimTunaiLocal(){
+  try{ localStorage.setItem(MIN_KLAIM_TUNAI_STORAGE_KEY, String(MIN_KLAIM_TUNAI)); }
+  catch(e){ console.error('Gagal menyimpan syarat minimal klaim tunai', e); }
+}
+function setMinKlaimTunai(val){
+  const n = Number(val);
+  if(!Number.isFinite(n) || n<0) return false;
+  MIN_KLAIM_TUNAI = Math.round(n);
+  saveMinKlaimTunaiLocal();
+  pushToCloud();
+  return true;
+}
+function loadMinKlaimWdpLocal(){
+  try{
+    const raw = localStorage.getItem(MIN_KLAIM_WDP_STORAGE_KEY);
+    const n = raw!=null ? Number(raw) : NaN;
+    return (Number.isFinite(n) && n>=0) ? n : DEFAULT_MIN_KLAIM_WDP;
+  }catch(e){ console.error('Gagal memuat syarat minimal klaim WDP', e); return DEFAULT_MIN_KLAIM_WDP; }
+}
+function saveMinKlaimWdpLocal(){
+  try{ localStorage.setItem(MIN_KLAIM_WDP_STORAGE_KEY, String(MIN_KLAIM_WDP)); }
+  catch(e){ console.error('Gagal menyimpan syarat minimal klaim WDP', e); }
+}
+function setMinKlaimWdp(val){
+  const n = Number(val);
+  if(!Number.isFinite(n) || n<0) return false;
+  MIN_KLAIM_WDP = Math.round(n);
+  saveMinKlaimWdpLocal();
+  pushToCloud();
+  return true;
+}
+function setBonusRate(newRate){
+  const n = Number(newRate);
+  if(!Number.isFinite(n) || n<0) return false;
+  BONUS_PER_JAM = Math.round(n);
+  saveBonusRateLocal();
+  pushToCloud();
+  return true;
+}
+function loadReportsLocal(){
+  try{
+    const raw = localStorage.getItem(REPORTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ console.error('Gagal memuat data laporan', e); return []; }
+}
+function saveReportsLocal(){
+  try{ localStorage.setItem(REPORTS_STORAGE_KEY, JSON.stringify(reports)); }
+  catch(e){ console.error('Gagal menyimpan data laporan', e); }
+}
+function saveReports(){
+  saveReportsLocal();
+  pushToCloud();
+}
+// Daftar publik akun Tim (id + username saja, TANPA password) — bisa ditarik oleh akun mana pun
+// yang sedang login (Admin maupun Tim), berbeda dari pullAkunFromCloud() yang memuat password dan
+// sengaja dikunci khusus Admin. Dipakai supaya akun Tim bisa memilih "akun Tim mana yang dilaporkan"
+// tanpa perlu melihat daftar akun lengkap.
+async function pullTeamAccountsPublic(){
+  if(!cloudSyncEnabled) return false;
+  try{
+    const { data, error } = await supabaseClient
+      .from(USERS_TABLE)
+      .select('id,username,role,nama_lengkap')
+      .eq('role','tim')
+      .order('username', { ascending:true });
+    if(error) throw error;
+    teamAccountsPublic = data || [];
+    if(currentView==='laporan') render();
+    if(document.getElementById('honorTimSection')) refreshHonorTimSection();
+    return true;
+  }catch(e){
+    console.error('Gagal memuat daftar akun Tim untuk menu Laporan', e);
+    return false;
+  }
+}
+function getTaskJob(task){
+  return jobs.find(j=>String(j.id)===String(task.jobId)) || null;
+}
+function getTaskDate(task){
+  const j = getTaskJob(task);
+  return j?.tanggalAcara || task.tanggal || '';
+}
+// Tanggal hari TERAKHIR job. Sumber utamanya field job.tanggalSelesai (dipilih langsung
+// lewat rentang tanggal di form Input/Edit Job). Untuk job lama yang dibuat sebelum fitur
+// rentang tanggal ini ada dan masih menyimpan job.durasiHari, tetap dihitung dari situ
+// sebagai cadangan supaya data lama tidak berubah maknanya.
+function getJobFinishDate(job){
+  if(!job?.tanggalAcara) return '';
+  if(job.tanggalSelesai){
+    const dMulai = new Date(job.tanggalAcara+'T00:00:00');
+    const dSelesai = new Date(job.tanggalSelesai+'T00:00:00');
+    if(!Number.isNaN(dSelesai.getTime()) && dSelesai>=dMulai) return job.tanggalSelesai;
+  }
+  const durasiLama = parseInt(job.durasiHari, 10);
+  if(Number.isFinite(durasiLama) && durasiLama>1){
+    const d = new Date(job.tanggalAcara+'T00:00:00');
+    d.setDate(d.getDate() + (durasiLama-1));
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  return job.tanggalAcara;
+}
+// Jumlah hari job (dihitung dari selisih Tanggal Acara ke Tanggal Selesai, inklusif).
+function getJobDurasiHari(job){
+  const mulai = job?.tanggalAcara;
+  const akhir = getJobFinishDate(job);
+  if(!mulai || !akhir) return 1;
+  const diffMs = new Date(akhir+'T00:00:00') - new Date(mulai+'T00:00:00');
+  const diff = Math.round(diffMs/86400000) + 1;
+  return diff>=1 ? diff : 1;
+}
+// Cek apakah sebuah tanggal (YYYY-MM-DD) termasuk dalam rentang hari job ini
+// (dari Tanggal Acara sampai Tanggal Selesai/getJobFinishDate, inklusif kedua ujung).
+function isJobOnDate(job, dateIso){
+  if(!job?.tanggalAcara || !dateIso) return false;
+  const mulai = job.tanggalAcara;
+  const akhir = getJobFinishDate(job) || mulai;
+  return dateIso>=mulai && dateIso<=akhir;
+}
+// Semua tanggal (YYYY-MM-DD) yang dilewati job ini, dari Tanggal Acara sampai
+// Tanggal Selesai, inklusif. Untuk job 1 hari hasilnya cuma 1 tanggal.
+// Dipakai supaya job berdurasi 2 hari (atau lebih) ditandai di SEMUA harinya
+// di kalender poster — bukan cuma di hari pertama — dan supaya klik di hari
+// kedua/ketiga dst tetap bisa menampilkan detail job tersebut.
+function getJobDateRange(job){
+  const mulai = job?.tanggalAcara;
+  const akhir = getJobFinishDate(job) || mulai;
+  if(!mulai) return [];
+  const out = [];
+  let d = new Date(mulai+'T00:00:00');
+  const end = new Date(akhir+'T00:00:00');
+  let guard = 0;
+  while(d<=end && guard<366){
+    out.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    d.setDate(d.getDate()+1);
+    guard++;
+  }
+  return out;
+}
+// Cek apakah RENTANG HARI job (bukan cuma tanggal mulainya) menyentuh bulan tertentu
+// (monthKey format 'YYYY-MM'). Dipakai di semua tempat yang mengelompokkan/menghitung
+// job per bulan (Kalender Job, filter bulan di Daftar Job, Salin Daftar Job per Bulan)
+// supaya job berdurasi >1 hari yang menyeberang ke bulan berikutnya tetap konsisten
+// muncul di kedua bulan yang bersangkutan, bukan hanya di bulan tanggal mulainya.
+function jobOverlapsMonth(job, monthKey){
+  if(!job?.tanggalAcara) return false;
+  return getJobDateRange(job).some(iso=> iso.slice(0,7)===monthKey);
+}
+// Batas waktu tugas dianggap "selesai otomatis": pukul 23.59 pada hari TERAKHIR job
+// (hari job itu sendiri kalau 1 hari, atau hari kedua kalau job berdurasi 2 hari, dst).
+function getTaskDeadline(task){
+  const j = getTaskJob(task);
+  const tglAkhir = j ? getJobFinishDate(j) : (task.tanggal || '');
+  if(!tglAkhir) return null;
+  const d = new Date(tglAkhir+'T23:59:00');
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+// Menandai tugas menjadi "Selesai" secara otomatis begitu waktu sekarang sudah melewati
+// batas 23.59 di hari terakhir job-nya. Tugas yang statusnya sudah pernah diubah manual
+// oleh Admin/Tim (lewat tombol ✓/↩️) tidak akan disentuh lagi oleh proses otomatis ini,
+// supaya keputusan manual mereka tetap dihormati.
+function autoUpdateTaskStatuses(){
+  if(!Array.isArray(tasks) || !tasks.length) return false;
+  const now = new Date();
+  let changed = false;
+  tasks.forEach(t=>{
+    if(t.manualStatusSet) return; // sudah pernah diubah manual, jangan ditimpa
+    if((t.status||'Belum')==='Selesai') return;
+    const deadline = getTaskDeadline(t);
+    if(deadline && now >= deadline){
+      t.status = 'Selesai';
+      t.autoCompleted = true;
+      t.updatedAt = Date.now();
+      changed = true;
+    }
+  });
+  if(changed) saveTasksLocal(); // simpan lokal dulu; sinkron ke cloud lewat siklus saveTasks/pushToCloud yang berjalan
+  return changed;
+}
+// Batas waktu Status Pembayaran dianggap "Lunas otomatis": pukul 23.59 pada hari
+// TERAKHIR job (hari job itu sendiri kalau 1 hari, atau hari kedua kalau job
+// berdurasi 2 hari, dst — pakai getJobFinishDate yang sama dengan logika tugas di atas).
+function getJobPaymentDeadline(job){
+  const tglAkhir = getJobFinishDate(job);
+  if(!tglAkhir) return null;
+  const d = new Date(tglAkhir+'T23:59:00');
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+// Menandai Status Pembayaran job menjadi "Lunas" secara otomatis begitu waktu sekarang
+// sudah melewati pukul 23.59 di hari terakhir job-nya. Job yang statusnya sudah pernah
+// diubah manual oleh Admin lewat dropdown Status Pembayaran (job.manualStatusPembayaranSet)
+// tidak akan disentuh lagi oleh proses otomatis ini, supaya keputusan manual Admin
+// (misalnya sengaja mengembalikan ke "Belum Bayar" karena pembayaran dibatalkan) tetap
+// dihormati dan tidak langsung ditimpa balik jadi "Lunas" di siklus berikutnya.
+function autoUpdateJobPaymentStatuses(){
+  if(!Array.isArray(jobs) || !jobs.length) return false;
+  const now = new Date();
+  let changed = false;
+  jobs.forEach(j=>{
+    if(j.manualStatusPembayaranSet) return; // sudah pernah diubah manual, jangan ditimpa
+    if((j.statusPembayaran||'')==='Lunas') return;
+    const deadline = getJobPaymentDeadline(j);
+    if(deadline && now >= deadline){
+      j.statusPembayaran = 'Lunas';
+      j.autoLunas = true;
+      j.updatedAt = Date.now();
+      changed = true;
+    }
+  });
+  if(changed) saveJobsLocal(); // simpan lokal dulu; sinkron ke cloud lewat siklus saveJobs/pushToCloud yang berjalan
+  return changed;
+}
+function getTaskPerson(task){
+  return task.username || akunList.find(a=>String(a.id)===String(task.userId))?.username || '-';
+}
+function getTaskSlots(task){
+  // Tugas baru menyimpan banyak sesi jam di task.slots (array {mulai,selesai}).
+  // Tugas lama (sebelum fitur multi-jam) hanya punya jamMulai/jamSelesai tunggal —
+  // tetap didukung dengan menganggapnya sebagai satu sesi.
+  if(Array.isArray(task.slots) && task.slots.length) return task.slots;
+  if(task.jamMulai && task.jamSelesai) return [{mulai:task.jamMulai, selesai:task.jamSelesai}];
+  return [];
+}
+function slotHours(slot){
+  if(!slot?.mulai || !slot?.selesai) return 0;
+  const [h1,m1]=slot.mulai.split(':').map(Number), [h2,m2]=slot.selesai.split(':').map(Number);
+  if([h1,m1,h2,m2].some(Number.isNaN)) return 0;
+  let mins=(h2*60+m2)-(h1*60+m1);
+  if(mins<0) mins += 24*60;
+  return mins/60;
+}
+function taskHours(task){
+  return getTaskSlots(task).reduce((sum,slot)=>sum+slotHours(slot),0);
+}
+function fmtTaskHours(n){
+  n=Number(n)||0;
+  const h=Math.floor(n), m=Math.round((n-h)*60);
+  return m ? `${h}j ${m}m` : `${h}j`;
+}
+/* ---------- BONUS TIM (Rp500/jam, bisa disesuaikan Admin lewat penambahan/pemotongan jam) ---------- */
+// Total jam kerja murni dari tugas-tugas yang sudah dibagi ke akun ini (tanpa penyesuaian).
+function userTaskHours(userId){
+  return tasks.filter(t=>String(t.userId)===String(userId)).reduce((s,t)=>s+taskHours(t),0);
+}
+// Riwayat penyesuaian bonus (tambah/potong jam) milik satu akun, terbaru di atas.
+function userBonusAdjustments(userId){
+  return (bonusAdjustments||[]).filter(b=>String(b.userId)===String(userId)).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+}
+// Total jam hasil penyesuaian Admin saja (bisa positif/negatif).
+function userBonusAdjustHours(userId){
+  return userBonusAdjustments(userId).reduce((s,b)=>s+Number(b.jam||0),0);
+}
+// Total jam akhir yang dipakai untuk hitung bonus = jam kerja asli + penyesuaian Admin.
+function userTotalBonusHours(userId){
+  return userTaskHours(userId) + userBonusAdjustHours(userId);
+}
+// Total bonus dalam Rupiah (tidak pernah minus — dibatasi ke 0 kalau penyesuaian sampai melebihi jam kerja).
+function userBonusRupiah(userId){
+  const jam = Math.max(0, userTotalBonusHours(userId));
+  return Math.round(jam * BONUS_PER_JAM);
+}
+/* ---------- PEMBATASAN KLAIM PER BULAN ----------
+   Bonus satu bulan baru boleh diklaim setelah bulan itu sendiri selesai berjalan
+   (lihat KLAIM_BUFFER_BULAN), dan setelah itu boleh diklaim kapan saja (tidak ada
+   batas akhir). Jeda ini sengaja dibuat supaya Tim tidak mengklaim bonus bulan yang
+   masih berjalan (jam kerja bulan itu belum tentu final).
+   Contoh dengan KLAIM_BUFFER_BULAN = 1: bonus bulan September baru boleh mulai
+   diklaim begitu masuk bulan Oktober (1 Oktober). */
+// Jumlah bulan jeda sebelum bonus satu bulan boleh mulai diklaim, dihitung dari
+// AWAL bulan itu sendiri. Nilai 1 = boleh diklaim begitu bulan itu selesai & masuk
+// bulan berikutnya (mis. bulan 9 → boleh diklaim mulai bulan 10). Ubah angka ini saja
+// kalau kebijakan jeda klaim berubah di kemudian hari.
+const KLAIM_BUFFER_BULAN = 1;
+// Bulan berjalan sekarang, format 'YYYY-MM'.
+function currentBulanStr(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+// Menambahkan n bulan ke sebuah string bulan 'YYYY-MM' dan mengembalikan hasilnya
+// dalam format yang sama. Dipakai untuk menghitung kapan masa tunggu klaim berakhir.
+function addBulanStr(bulanStr, n){
+  const [y, m] = bulanStr.split('-').map(Number);
+  const d = new Date(y, (m - 1) + n, 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+// Label bulan yang mudah dibaca, mis. "September 2026".
+function fmtBulanLabel(bulanStr){
+  if(!bulanStr) return '-';
+  const d = new Date(bulanStr+'-01T00:00:00');
+  if(Number.isNaN(d.getTime())) return bulanStr;
+  return new Intl.DateTimeFormat('id-ID',{month:'long', year:'numeric'}).format(d);
+}
+// Tanggal pasti mulai bolehnya bonus satu bulan diklaim, mis. "1 November 2026".
+function tanggalMulaiBolehKlaim(bulanStr){
+  const bulanMulai = addBulanStr(bulanStr, KLAIM_BUFFER_BULAN);
+  const d = new Date(bulanMulai+'-01T00:00:00');
+  return `1 ${new Intl.DateTimeFormat('id-ID',{month:'long', year:'numeric'}).format(d)}`;
+}
+// Satu bulan dianggap "sudah selesai masa tunggunya" (boleh mulai diklaim) begitu
+// tanggal sekarang sudah masuk bulan tersebut + KLAIM_BUFFER_BULAN.
+function isBulanSudahSelesai(bulanStr){
+  return !!bulanStr && addBulanStr(bulanStr, KLAIM_BUFFER_BULAN) <= currentBulanStr();
+}
+// Seluruh bulan (format 'YYYY-MM') yang punya jam tugas ATAU penyesuaian bonus untuk
+// akun ini, diurutkan naik.
+function userBonusMonthsAll(userId){
+  const set = new Set();
+  tasks.filter(t=>String(t.userId)===String(userId)).forEach(t=>{
+    const tgl = getTaskDate(t);
+    if(tgl) set.add(String(tgl).slice(0,7));
+  });
+  userBonusAdjustments(userId).forEach(b=>{
+    if(b.createdAt) set.add(new Date(b.createdAt).toISOString().slice(0,7));
+  });
+  return [...set].sort();
+}
+// Jam kerja tugas akun ini KHUSUS pada satu bulan tertentu.
+function userTaskHoursBulan(userId, bulanStr){
+  return tasks.filter(t=>String(t.userId)===String(userId) && String(getTaskDate(t)).slice(0,7)===bulanStr)
+    .reduce((s,t)=>s+taskHours(t), 0);
+}
+// Jam hasil penyesuaian Admin KHUSUS pada satu bulan tertentu (berdasarkan kapan
+// penyesuaian itu dibuat).
+function userBonusAdjustHoursBulan(userId, bulanStr){
+  return userBonusAdjustments(userId)
+    .filter(b=>b.createdAt && new Date(b.createdAt).toISOString().slice(0,7)===bulanStr)
+    .reduce((s,b)=>s+Number(b.jam||0), 0);
+}
+function userTotalBonusHoursBulan(userId, bulanStr){
+  return userTaskHoursBulan(userId, bulanStr) + userBonusAdjustHoursBulan(userId, bulanStr);
+}
+// Apakah satu klaim (lama atau baru) sudah mencakup bulan tertentu. Klaim BARU selalu
+// menyimpan daftar bulan persis yang diklaim (claim.bulanList). Klaim LAMA (dibuat
+// sebelum fitur pembatasan per-bulan ini ada) tidak menyimpan itu — tapi karena logika
+// lama menjumlahkan SELURUH akumulasi bonus sampai saat itu diajukan, klaim lama
+// otomatis dianggap mencakup semua bulan sampai dengan bulan klaim itu dibuat, supaya
+// bonus yang sudah pernah diklaim di masa lalu tidak terhitung dobel di sistem baru ini.
+function claimCoversBulan(claim, bulanStr){
+  if(Array.isArray(claim.bulanList) && claim.bulanList.length){
+    return claim.bulanList.includes(bulanStr);
+  }
+  const claimBulan = claim.createdAt ? new Date(claim.createdAt).toISOString().slice(0,7) : '0000-00';
+  return bulanStr <= claimBulan;
+}
+// Kumpulan bulan yang sudah "dipakai" oleh klaim manapun milik akun ini (baik masih
+// Menunggu maupun sudah Dicairkan — begitu diajukan, bulan itu tidak bisa diklaim lagi).
+function userClaimedBulanSet(userId){
+  const bulanCandidates = userBonusMonthsAll(userId);
+  const claims = (bonusClaims||[]).filter(c=>String(c.userId)===String(userId));
+  const claimed = new Set();
+  bulanCandidates.forEach(b=>{
+    if(claims.some(c=>claimCoversBulan(c,b))) claimed.add(b);
+  });
+  return claimed;
+}
+// Daftar bulan yang SUDAH SELESAI & BELUM PERNAH DIKLAIM — inilah yang boleh diajukan
+// klaim sekarang. Bulan berjalan (belum selesai) sengaja tidak pernah masuk daftar ini.
+function userClaimableBulanList(userId){
+  const claimedSet = userClaimedBulanSet(userId);
+  return userBonusMonthsAll(userId).filter(b=>isBulanSudahSelesai(b) && !claimedSet.has(b));
+}
+// Total jam & Rupiah bonus yang SUDAH BISA diklaim sekarang oleh akun ini.
+function userClaimableBonusJam(userId){
+  return userClaimableBulanList(userId).reduce((s,b)=>s+userTotalBonusHoursBulan(userId,b), 0);
+}
+function userClaimableBonusRupiah(userId){
+  return Math.round(Math.max(0, userClaimableBonusJam(userId)) * BONUS_PER_JAM);
+}
+// Bulan bonus PALING AWAL yang belum pernah diklaim tapi masih dalam masa tunggu
+// (belum boleh diklaim) — dipakai untuk memberi tahu akun Tim kapan tepatnya bonus
+// tersebut akan mulai bisa diajukan. Mengembalikan null kalau tidak ada bulan yang
+// masih menunggu (semua sudah bisa diklaim atau memang belum ada bonus sama sekali).
+function userNextClaimInfo(userId){
+  const claimedSet = userClaimedBulanSet(userId);
+  const pending = userBonusMonthsAll(userId).filter(b=>!claimedSet.has(b) && !isBulanSudahSelesai(b));
+  if(!pending.length) return null;
+  const bulan = pending[0]; // userBonusMonthsAll sudah terurut naik
+  return { bulan, label: fmtBulanLabel(bulan), tanggalMulai: tanggalMulaiBolehKlaim(bulan) };
+}
+// Klaim bonus milik satu akun Tim yang masih berstatus "Menunggu" (belum dicairkan Admin), jika ada.
+function userPendingBonusClaim(userId){
+  return (bonusClaims||[]).find(c=>String(c.userId)===String(userId) && c.status==='Menunggu') || null;
+}
+// Seluruh klaim bonus berstatus "Menunggu" dari semua akun Tim, terbaru di atas — dipakai Admin.
+function pendingBonusClaims(){
+  return (bonusClaims||[]).filter(c=>c.status==='Menunggu').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+}
+// Total bonus yang SUDAH DIKLAIM oleh akun Tim bulan ini (dihitung dari tanggal klaim diajukan) —
+// baik yang masih berstatus "Menunggu" dicairkan maupun yang sudah "Dicairkan". Begitu seorang
+// akun Tim mengajukan klaim, nominal itu jadi kewajiban yang harus dibayarkan Admin, sehingga
+// otomatis mengurangi Penghasilan Bersih Admin (bukan menunggu sampai benar-benar dicairkan).
+function totalBonusDiklaimBulanIni(){
+  const today = new Date();
+  return (bonusClaims||[]).filter(c=>{
+    const d = new Date(c.createdAt);
+    return d.getMonth()===today.getMonth() && d.getFullYear()===today.getFullYear();
+  }).reduce((s,c)=>s+(Number(c.jumlah)||0),0);
+}
+// Label & kata kerja tampilan untuk satu klaim, tergantung jenisnya (Tunai/WDP) — dipakai
+// di berbagai tempat (kartu status, riwayat, daftar Admin) supaya konsisten satu sama lain.
+function claimJenisLabel(c){ return c && c.jenis==='WDP' ? 'WDP' : 'Tunai'; }
+function claimVerbSelesai(c){ return c && c.jenis==='WDP' ? 'dikirim' : 'dicairkan'; }
+function claimVerbMenunggu(c){ return c && c.jenis==='WDP' ? 'diproses' : 'dicairkan'; }
+
+// Akun Tim mengajukan klaim atas bonus yang sudah terkumpul: dicatat sebagai "Menunggu",
+// lalu diarahkan ke WhatsApp Admin berisi pesan siap kirim agar Admin bisa memprosesnya.
+// Langkah pemilihan jenis (Tunai/WDP) ditangani lewat modal, lihat openClaimBonusModal().
+function claimBonus(){
+  if(isAdmin()){ alert('Fitur klaim bonus hanya untuk akun Tim.'); return; }
+  if(!currentUserId){ alert('Sesi login tidak ditemukan, silakan login ulang.'); return; }
+  if(userPendingBonusClaim(currentUserId)){ alert('Klaim bonus Anda sebelumnya masih menunggu diproses oleh Admin.'); return; }
+  // Hanya bulan yang sudah lewat masa tunggu & belum pernah diklaim yang boleh
+  // diajukan — bonus bulan yang masih dalam masa tunggu sengaja belum bisa diklaim
+  // supaya tidak diklaim berkali-kali secara tergesa-gesa (lihat KLAIM_BUFFER_BULAN).
+  const bulanList = userClaimableBulanList(currentUserId);
+  if(!bulanList.length){
+    const next = userNextClaimInfo(currentUserId);
+    const info = next
+      ? `Bonus bulan ${next.label} baru bisa mulai diklaim tanggal ${next.tanggalMulai}.`
+      : `Belum ada jam kerja/bonus yang tercatat untuk diklaim.`;
+    alert(`Belum ada bonus yang bisa diklaim. ${info}`);
+    return;
+  }
+  const jam = Math.max(0, bulanList.reduce((s,b)=>s+userTotalBonusHoursBulan(currentUserId,b), 0));
+  const jumlah = Math.round(jam * BONUS_PER_JAM);
+  if(jumlah<=0){ alert('Belum ada bonus yang bisa diklaim.'); return; }
+  const ambangTerendah = Math.min(MIN_KLAIM_TUNAI, MIN_KLAIM_WDP);
+  if(jumlah < ambangTerendah){
+    alert(`Bonus terkumpul ${fmtRp(jumlah)}, belum mencapai syarat minimal klaim (Tunai min. ${fmtRp(MIN_KLAIM_TUNAI)}, WDP min. ${fmtRp(MIN_KLAIM_WDP)}).`);
+    return;
+  }
+  openClaimBonusModal(bulanList, jam, jumlah);
+}
+
+// Isi pop-up pengajuan klaim: ringkasan bonus, pilihan jenis (Tunai/WDP — yang belum
+// memenuhi syarat minimal otomatis dinonaktifkan), dan untuk WDP field ID Game & Server.
+function claimBonusModalHtml(ctx){
+  const tunaiOk = ctx.jumlah >= MIN_KLAIM_TUNAI;
+  const wdpOk = ctx.jumlah >= MIN_KLAIM_WDP;
+  const defaultJenis = tunaiOk ? 'Tunai' : 'WDP';
+  // ID Game & Server WDP terakhir dipakai akun ini — supaya tidak perlu diketik ulang tiap klaim.
+  const lastWdp = (bonusClaims||[])
+    .filter(c=>String(c.userId)===String(currentUserId) && c.jenis==='WDP' && c.mlId)
+    .sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];
+  return `
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('phone')} Ajukan Klaim Bonus</h3>
+    <div class="claim-modal-summary">
+      <div class="cms-label">Bonus siap diklaim</div>
+      <div class="cms-value">${fmtRp(ctx.jumlah)}</div>
+      <div class="cms-meta">${fmtTaskHours(ctx.jam)} jam kerja &middot; bulan ${ctx.bulanList.map(fmtBulanLabel).join(', ')}</div>
+    </div>
+    <form id="claimBonusForm" class="form-grid" style="margin-top:14px;">
+      <div class="full">
+        <label>Pilih Jenis Klaim</label>
+        <div class="claim-type-toggle">
+          <button type="button" id="btnClaimTunai" ${tunaiOk?'':'disabled'}>
+            <span class="ctt-title">${ic('money')} Uang Tunai</span>
+            <small>${tunaiOk ? 'Min. '+fmtRp(MIN_KLAIM_TUNAI) : 'Kurang '+fmtRp(MIN_KLAIM_TUNAI-ctx.jumlah)+' lagi'}</small>
+          </button>
+          <button type="button" id="btnClaimWdp" ${wdpOk?'':'disabled'}>
+            <span class="ctt-title">${ic('sparkle')} WDP Mobile Legends</span>
+            <small>${wdpOk ? 'Min. '+fmtRp(MIN_KLAIM_WDP) : 'Kurang '+fmtRp(MIN_KLAIM_WDP-ctx.jumlah)+' lagi'}</small>
+          </button>
+        </div>
+        <input type="hidden" id="claimJenis" value="${defaultJenis}">
+      </div>
+      <div class="full claim-wdp-fields" id="claimWdpFields" style="display:${defaultJenis==='WDP'?'grid':'none'};">
+        <div>
+          <label>ID Game Mobile Legends *</label>
+          <input type="text" id="claimMlId" inputmode="numeric" autocomplete="off" placeholder="Contoh: 123456789" value="${escapeHtml(lastWdp&&lastWdp.mlId||'')}">
+        </div>
+        <div>
+          <label>Server (Zone ID) *</label>
+          <input type="text" id="claimMlZone" inputmode="numeric" autocomplete="off" placeholder="Contoh: 1234" value="${escapeHtml(lastWdp&&lastWdp.mlZone||'')}">
+        </div>
+        <div class="full field-hint">${ic('bulb')} ID Game & Server bisa dilihat lewat menu profil dalam game Mobile Legends.</div>
+      </div>
+      <div class="form-actions full">
+        <button type="submit" class="btn btn-primary">${ic('save')} Ajukan Klaim</button>
+      </div>
+    </form>
+  `;
+}
+function openClaimBonusModal(bulanList, jam, jumlah){
+  showModal(claimBonusModalHtml({jumlah, jam, bulanList}));
+  const ov = document.getElementById('modalOverlay');
+  const jenisInput = ov?.querySelector('#claimJenis');
+  const btnTunai = ov?.querySelector('#btnClaimTunai');
+  const btnWdp = ov?.querySelector('#btnClaimWdp');
+  const wdpFields = ov?.querySelector('#claimWdpFields');
+  function setJenis(j){
+    if(jenisInput) jenisInput.value = j;
+    btnTunai?.classList.toggle('active-tunai', j==='Tunai');
+    btnWdp?.classList.toggle('active-wdp', j==='WDP');
+    if(wdpFields) wdpFields.style.display = j==='WDP' ? 'grid' : 'none';
+  }
+  setJenis(jenisInput?.value || 'Tunai');
+  btnTunai?.addEventListener('click', ()=>{ if(!btnTunai.disabled) setJenis('Tunai'); });
+  btnWdp?.addEventListener('click', ()=>{ if(!btnWdp.disabled) setJenis('WDP'); });
+
+  ov?.querySelector('#claimBonusForm')?.addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const jenis = jenisInput?.value === 'WDP' ? 'WDP' : 'Tunai';
+    if(jenis==='Tunai' && jumlah < MIN_KLAIM_TUNAI){ alert(`Belum mencapai syarat minimal klaim tunai (${fmtRp(MIN_KLAIM_TUNAI)}).`); return; }
+    if(jenis==='WDP' && jumlah < MIN_KLAIM_WDP){ alert(`Belum mencapai syarat minimal klaim WDP (${fmtRp(MIN_KLAIM_WDP)}).`); return; }
+    let mlId = '', mlZone = '';
+    if(jenis==='WDP'){
+      mlId = (document.getElementById('claimMlId')?.value||'').trim();
+      mlZone = (document.getElementById('claimMlZone')?.value||'').trim();
+      if(!mlId || !mlZone){ alert('ID Game dan Server wajib diisi untuk klaim WDP.'); return; }
+    }
+    const labelBulan = bulanList.map(fmtBulanLabel).join(', ');
+    const confirmMsg = jenis==='WDP'
+      ? `Ajukan klaim WDP senilai ${fmtRp(jumlah)} untuk bulan ${labelBulan}?\nID Game: ${mlId} (Server ${mlZone})\nAnda akan diarahkan ke WhatsApp Admin.`
+      : `Ajukan klaim tunai sebesar ${fmtRp(jumlah)} untuk bulan ${labelBulan}? Anda akan diarahkan ke WhatsApp Admin untuk konfirmasi.`;
+    if(!confirm(confirmMsg)) return;
+
+    const claim = {
+      id: 'clm_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+      userId: currentUserId, username: currentUsername,
+      jumlah, jam, bulanList, jenis,
+      status: 'Menunggu',
+      createdAt: Date.now(),
+      cairAt: null, cairBy: null
+    };
+    if(jenis==='WDP'){ claim.mlId = mlId; claim.mlZone = mlZone; }
+    bonusClaims.push(claim);
+    saveBonusClaims();
+
+    const pesan = jenis==='WDP'
+      ? `Halo Admin, saya *${currentUsername}* ingin menukar bonus tim bulan *${labelBulan}* sebesar *${fmtRp(jumlah)}* dengan *WDP (Weekly Diamond Pass)* Mobile Legends.\nID Game: *${mlId}*\nServer: *${mlZone}*\nMohon diproses. Terima kasih 🙏`
+      : `Halo Admin, saya *${currentUsername}* ingin mengklaim bonus tim bulan *${labelBulan}* sebesar *${fmtRp(jumlah)}* (${fmtTaskHours(jam)} jam kerja) secara *tunai*. Mohon dicairkan. Terima kasih 🙏`;
+    window.open(`https://wa.me/${BONUS_CLAIM_WA_NUMBER}?text=${encodeURIComponent(pesan)}`, '_blank');
+
+    toast(jenis==='WDP' ? 'Klaim WDP diajukan — mengarahkan ke WhatsApp Admin' : 'Klaim bonus diajukan — mengarahkan ke WhatsApp Admin');
+    closeModal();
+    renderNotifBadge();
+    render();
+  });
+}
+// Admin menandai satu klaim bonus sebagai sudah diproses (dicairkan untuk Tunai, dikirim untuk WDP).
+function cairkanBonusClaim(claimId){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa memproses klaim bonus.'); return; }
+  const claim = bonusClaims.find(c=>String(c.id)===String(claimId));
+  if(!claim){ alert('Klaim bonus tidak ditemukan.'); return; }
+  if(claim.status==='Dicairkan'){ toast('Klaim ini sudah diproses sebelumnya'); return; }
+  const isWdp = claim.jenis==='WDP';
+  const confirmMsg = isWdp
+    ? `Tandai WDP senilai ${fmtRp(claim.jumlah)} untuk ${claim.username} sebagai sudah dikirim?\nID Game: ${claim.mlId||'-'} (Server ${claim.mlZone||'-'})`
+    : `Tandai bonus ${fmtRp(claim.jumlah)} untuk ${claim.username} sebagai sudah dicairkan?`;
+  if(!confirm(confirmMsg)) return;
+  claim.status = 'Dicairkan';
+  claim.cairAt = Date.now();
+  claim.cairBy = currentUsername;
+  saveBonusClaims();
+  toast(`${isWdp?'WDP':'Bonus'} ${claim.username} ditandai sudah ${claimVerbSelesai(claim)}`);
+  renderNotifBadge();
+  render();
+}
+function formatTaskDate(s){
+  if(!s) return '-';
+  const d=new Date(s+'T00:00:00');
+  return Number.isNaN(d.getTime()) ? s : d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+}
+function getTaskJobLabel(task){
+  const j=getTaskJob(task);
+  if(j) return `#${getJobNo(j.id)} — ${j.namaKlien||'Tanpa Nama'}`;
+  return task.jobName || 'Job sudah tidak tersedia';
+}
+function taskComments(task){
+  return Array.isArray(task.comments) ? task.comments : [];
+}
+function taskCommentNotifId(taskId, commentId){
+  return 'taskcomment_' + taskId + '_' + commentId;
+}
+function taskHasUnreadComment(task){
+  // Hanya relevan bagi Tim (bukan admin): tandai kalau ada komentar dari
+  // Admin pada tugas ini yang belum pernah dibuka/dibaca oleh akun ini.
+  if(isAdmin()) return false;
+  const read = loadNotifRead();
+  return taskComments(task).some(c=>c.byRole==='admin' && !read.has(taskCommentNotifId(task.id, c.id)));
+}
+function formatCommentTime(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  if(Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'}).format(d) + ' WIB';
+}
+
+function loadUlasanLocal(){
+  try{
+    const raw = localStorage.getItem(ULASAN_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ console.error('Gagal memuat ulasan tersimpan', e); return []; }
+}
+function saveUlasanLocalCache(){
+  try{
+    localStorage.setItem(ULASAN_STORAGE_KEY, JSON.stringify(ulasanList));
+  }catch(e){ console.error('Gagal menyimpan cache ulasan', e); }
+}
+function saveJobsLocal(){
+  invalidateJobNoCache(); // data berubah -> cache nomor urut jadi basi, hitung ulang saat dibutuhkan lagi
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+  }catch(e){
+    // Biasanya terjadi kalau penyimpanan localStorage browser sudah penuh (jarang, tapi bisa
+    // terjadi kalau data job sudah sangat banyak). Tanpa penanganan ini, perubahan terbaru bisa
+    // gagal tersimpan tanpa pemberitahuan apa pun ke pengguna — sangat berisiko untuk data job.
+    console.error('Gagal menyimpan data job', e);
+    alert('⚠️ Gagal menyimpan data! Kemungkinan penyimpanan browser sudah penuh.\n\nSegera buka menu Pengaturan → Cadangkan Data untuk menyelamatkan data yang sudah ada, lalu pertimbangkan menghapus job lama yang tidak diperlukan.');
+  }
+}
+function saveJobs(){
+  saveJobsLocal();
+  pushToCloud(); // supaya perubahan langsung tersedia di device lain
+  renderNotifBadge(); // data job berubah -> notifikasi (H-3/bayar/proses) ikut diperbarui
+}
+function uid(){ return 'job_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+/* ---------- UTIL ---------- */
+function fmtRp(n){
+  n = Number(n)||0;
+  return 'Rp ' + n.toLocaleString('id-ID');
+}
+/* ---------- Util kolom uang (input "Rp", hanya angka, titik otomatis tiap 3 digit) ---------- */
+/* Kelas ukuran font untuk kartu ".stat .value" berdasar panjang digit angkanya —
+   dipakai di SEMUA kartu ringkasan yang menampilkan nominal Rupiah, supaya nominal
+   besar (jutaan ke atas) otomatis mengecil duluan sebelum sempat kepepet/wrap jelek
+   di kartu yang tidak terlalu lebar (terutama saat banyak kartu sebaris di desktop). */
+function statValueSizeClass(val){
+  const digitLen = String(val).replace(/[^0-9]/g,'').length;
+  return digitLen >= 10 ? ' longer' : (digitLen >= 7 ? ' long' : '');
+}
+function fmtRibuan(n){
+  const digits = String(n===undefined||n===null?'':n).replace(/[^\d]/g,'');
+  if(!digits) return '';
+  return Number(digits).toLocaleString('id-ID');
+}
+function parseRibuan(str){
+  if(str===undefined||str===null) return 0;
+  const digits = String(str).replace(/[^\d]/g,'');
+  return digits ? Number(digits) : 0;
+}
+function handleMoneyInput(el){
+  el.value = fmtRibuan(el.value);
+}
+function vendorDisplay(j){
+  if(!j) return '-';
+  return j.vendor==='Lainnya' ? (j.vendorLain||'Lainnya') : (j.vendor||'-');
+}
+function fmtTgl(iso){
+  if(!iso) return '-';
+  const d = new Date(iso+'T00:00:00');
+  return d.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+}
+// Format rentang tanggal secara ringkas & wajar dibaca:
+//  - 1 hari                         -> "22 September 2026"
+//  - >1 hari, bulan & tahun sama     -> "22-23 September 2026"
+//  - >1 hari, bulan beda tapi tahun sama -> "30 September - 1 Oktober 2026"
+//  - >1 hari, tahun beda             -> "31 Desember 2026 - 1 Januari 2027"
+function fmtTglRange(startIso, endIso){
+  if(!startIso) return '-';
+  if(!endIso || endIso===startIso) return fmtTgl(startIso);
+  const d1 = new Date(startIso+'T00:00:00');
+  const d2 = new Date(endIso+'T00:00:00');
+  if(Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return fmtTgl(startIso);
+  const bulan1 = d1.toLocaleDateString('id-ID',{month:'long'});
+  const bulan2 = d2.toLocaleDateString('id-ID',{month:'long'});
+  const tahun1 = d1.getFullYear(), tahun2 = d2.getFullYear();
+  if(tahun1===tahun2 && bulan1===bulan2) return `${d1.getDate()}-${d2.getDate()} ${bulan1} ${tahun1}`;
+  if(tahun1===tahun2) return `${d1.getDate()} ${bulan1} - ${d2.getDate()} ${bulan2} ${tahun1}`;
+  return `${fmtTgl(startIso)} - ${fmtTgl(endIso)}`;
+}
+// Format tanggal SEBUAH JOB (bukan tanggal mentah) — otomatis menampilkan rentang
+// "mulai - selesai" untuk job berdurasi lebih dari 1 hari, dan tanggal tunggal untuk
+// job 1 hari. Dipakai di SEMUA tempat yang menampilkan/menyalin tanggal acara sebuah
+// job (Daftar Job, Detail Job, Salin Detail Job, poster/story unduhan, notifikasi,
+// dsb) supaya job multi-hari selalu tampil konsisten di seluruh aplikasi.
+function fmtTglJob(job){
+  if(!job?.tanggalAcara) return '-';
+  return fmtTglRange(job.tanggalAcara, getJobFinishDate(job) || job.tanggalAcara);
+}
+/* Nama hari dalam Bahasa Indonesia, dengan penamaan "Ahad" & "Jum'at"
+   (bukan "Minggu" / "Jumat") — dipakai di semua tempat yang menampilkan nama hari. */
+function namaHariID(date, opts){
+  let hari = new Intl.DateTimeFormat('id-ID', {...(opts||{}), weekday:'long'}).format(date);
+  if(hari === 'Minggu') hari = 'Ahad';
+  if(hari === 'Jumat') hari = "Jum'at";
+  return hari;
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+function escapeHtml(s){
+  return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+/* Gabungan nama Dusun (kalau dicentang & diisi) dengan nama Desa/Kelurahan,
+   dipakai di semua tempat yang menampilkan alamat lengkap job (daftar, detail,
+   rekap, dsb) supaya info dusun ikut tampil konsisten tanpa mengubah tempat
+   yang memang sengaja dibuat ringkas (poster kalender & judul kalender/ICS). */
+function desaDisplay(j){
+  const desa = (j.desa||'').trim();
+  // Cukup cek isi kolom Dusun-nya saja (bukan status ceklisnya) supaya tetap tampil
+  // benar untuk data yang masuk lewat cara lain di luar form (mis. import Excel).
+  const dusun = (j.dusun||'').trim();
+  if(dusun && desa) return `Dusun ${dusun}, ${desa}`;
+  if(dusun) return `Dusun ${dusun}`;
+  return desa;
+}
+
+/* jobs terurut berdasarkan tanggal acara, dengan no urut otomatis mulai dari 180.
+   Di-cache supaya tidak menyortir & memetakan ULANG seluruh daftar job setiap kali
+   dipanggil — sebelumnya ini dipanggil satu per satu di dalam loop render tabel/daftar
+   job terdekat (lewat getJobNo), yang membuatnya lambat kalau jumlah job sudah banyak. */
+let _jobsNoCache = null;
+let _jobNoMap = null;
+function invalidateJobNoCache(){ _jobsNoCache = null; _jobNoMap = null; }
+function sortedJobsWithNo(){
+  if(_jobsNoCache) return _jobsNoCache;
+  const sorted = [...jobs].sort((a,b)=>{
+    if(a.tanggalAcara === b.tanggalAcara) return (a.createdAt||0) - (b.createdAt||0);
+    return new Date(a.tanggalAcara) - new Date(b.tanggalAcara);
+  });
+  _jobsNoCache = sorted.map((j,i)=>({...j, noUrut: START_NO_URUT + i}));
+  return _jobsNoCache;
+}
+function getJobNo(id){
+  if(!_jobNoMap){
+    _jobNoMap = new Map();
+    sortedJobsWithNo().forEach(j=>_jobNoMap.set(j.id, j.noUrut));
+  }
+  return _jobNoMap.has(id) ? _jobNoMap.get(id) : '-';
+}
+
+/* Sedekah otomatis:
+   - Vendor "Shia Makeup": tetap Rp20.000.
+   - Vendor lain: dihitung dari (Penghasilan - Honor Tim - Biaya Cetak - Diskon),
+     lalu tiap kelipatan Rp100.000 disedekahkan Rp10.000 (dibulatkan ke bawah). */
+function hitungSedekah(j){
+  if(j.vendor==='Shia Makeup') return 20000;
+  const penghasilan = Number(j.penghasilan)||0;
+  const biayaCetak = Number(j.biayaCetak)||0;
+  const honorTim = Number(j.honorTim)||0;
+  const diskon = Number(j.diskon)||0;
+  const dasar = penghasilan - honorTim - biayaCetak - diskon;
+  if(dasar<=0) return 0;
+  return Math.floor(dasar/100000)*10000;
+}
+// Omzet = Penghasilan Dari Klien/Mitra - Diskon (harga final setelah diskon diterapkan).
+// Sebelum diskon bukan harga final, jadi Omzet TIDAK boleh menghitung nilai sebelum diskon.
+function hitungOmzet(j){
+  const penghasilan = Number(j.penghasilan)||0;
+  const diskon = Number(j.diskon)||0;
+  return penghasilan - diskon;
+}
+function hitungBersih(j){
+  const penghasilan = Number(j.penghasilan)||0;
+  const biayaCetak = Number(j.biayaCetak)||0;
+  const honorTim = Number(j.honorTim)||0;
+  const diskon = Number(j.diskon)||0;
+  // Sedekah baru dikurangkan dari Penghasilan Bersih setelah statusnya "Sudah" (belum
+  // dianggap pengeluaran selama masih "Belum" disedekahkan).
+  const sedekah = j.sedekahStatus==='Sudah' ? (Number(j.sedekahNominal)||0) : 0;
+  // Harga Paket Vendor hanya relevan (dan dikurangkan) kalau vendor job ini selain Kaone Motret.
+  const setoranShia = (j.vendor && j.vendor!=='Kaone Motret') ? (Number(j.setoranShia)||0) : 0;
+  return penghasilan - biayaCetak - honorTim - diskon - sedekah - setoranShia;
+}
+// Sisa pembayaran = (Penghasilan Dari Klien/Mitra - Diskon) dikurangi DP yang sudah diterima.
+// Diskon mengurangi harga paket yang sebenarnya harus dibayar klien, jadi harus ikut
+// dikurangkan di sini juga — sebelumnya Diskon hanya memengaruhi Penghasilan Bersih Admin,
+// padahal klien tetap ditagih penuh tanpa potongan diskon di Sisa Pembayaran.
+function hitungSisaPembayaran(j){
+  const penghasilan = Number(j.penghasilan)||0;
+  const diskon = Number(j.diskon)||0;
+  const dp = Number(j.dp)||0;
+  return penghasilan - diskon - dp;
+}
+
+/* Honor Tim per anggota: sejak fitur "pilih anggota tim & honor masing-masing" di
+   form Input/Edit Job, satu job bisa membagi Honor Tim ke lebih dari satu akun Tim
+   sekaligus (j.honorTimList). Dipakai untuk menghitung "penghasilan" milik masing-
+   masing akun Tim di Beranda & menu Tugas — bukan honor keseluruhan job (yang
+   ditampilkan lewat j.honorTim, dijumlah dari seluruh anggota di honorTimList).
+   Job lama (sebelum fitur ini ada) belum punya honorTimList, jadi otomatis dianggap 0
+   untuk semua akun (belum ada rincian per orang, hanya total honorTim saja). */
+function honorTimUntukAkun(job, userId){
+  return (job.honorTimList||[]).reduce((s,x)=>String(x.userId)===String(userId) ? s+(Number(x.nominal)||0) : s, 0);
+}
+function totalHonorTimAkun(userId, jobsArr){
+  return (jobsArr||[]).reduce((s,j)=>s+honorTimUntukAkun(j, userId), 0);
+}
+
+/* =========================================================
+   PERHITUNGAN JARAK (dari Titik Koordinat job)
+   ---------------------------------------------------------
+   Hanya 1 jenis jarak yang dihitung & ditampilkan: JARAK REAL
+   (estimasi rute kendaraan via layanan routing publik OSRM —
+   https://project-osrm.org). Memanggil API OSRM, lebih mendekati
+   jarak tempuh nyata dibanding jarak garis lurus. Hasilnya
+   di-cache di localStorage (per koordinat) supaya: (a) tidak perlu
+   memanggil API berulang-ulang untuk koordinat yang sama, (b)
+   tampilan yang dirender sinkron (poster/story/salin teks) tetap
+   bisa menampilkan jarak jalan kalau sebelumnya sudah pernah
+   dihitung. Pemanggilan API dibatasi TIMEOUT supaya form/modal
+   tidak macet kalau koneksi lambat atau API sedang tidak merespons.
+
+   Titik acuan = lokasi utama Kaone Motret. Saran tambahan biaya
+   transport (Rp100.000/50km) dihitung dari jarak real ini.
+
+   ⚠️ CATATAN UNTUK DEVELOPER — JANGAN LUPA:
+   Setiap kali blok perhitungan jarak ini diubah (rumus, sumber API,
+   tarif, dsb), tambahkan juga entri baru di daftar CHANGELOG (cari
+   "const CHANGELOG" di file ini) supaya pengguna lama otomatis
+   melihat notifikasi pop-up "Apa yang Baru" saat membuka aplikasi.
+========================================================= */
+const ORIGIN_COORD = { lat: 1.4589317712838183, lng: 99.64406954232793 };
+const TARIF_TRANSPORT_PER_KM = 100000 / 50; // Rp2.000/km, setara Rp100rb per 50km
+
+// Endpoint OSRM publik (demo server resmi project-osrm.org, gratis, tanpa API key).
+// Kalau suatu saat perlu pindah ke server OSRM sendiri (misal karena rate-limit),
+// cukup ganti URL ini — jangan lupa catat perubahannya di CHANGELOG.
+const OSRM_BASE_URL = 'https://router.project-osrm.org/route/v1/driving';
+const OSRM_TIMEOUT_MS = 8000; // batas tunggu API supaya form/modal tidak macet di koneksi lambat
+const OSRM_CACHE_KEY = 'kaone_osrm_road_cache_v1';
+const OSRM_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // cache dianggap "segar" selama 30 hari
+
+// Menerima format bebas seperti "1.458931, 99.644069" atau "1.458931 99.644069".
+function parseCoordString(str){
+  if(!str) return null;
+  const m = String(str).trim().match(/(-?\d+(?:[.,]\d+)?)\s*[, ]\s*(-?\d+(?:[.,]\d+)?)/);
+  if(!m) return null;
+  const lat = parseFloat(m[1].replace(',', '.'));
+  const lng = parseFloat(m[2].replace(',', '.'));
+  if(isNaN(lat) || isNaN(lng)) return null;
+  if(Math.abs(lat)>90 || Math.abs(lng)>180) return null;
+  return {lat, lng};
+}
+// Buka lokasi job di Maps — prioritas Titik Koordinat (lebih akurat & langsung menunjuk
+// titik persis), baru kalau kosong/tidak valid, pakai Link Maps yang ditempel manual.
+// Tersedia untuk Admin maupun Tim karena sifatnya hanya "lihat", bukan mengubah data.
+function openJobMaps(jobId){
+  const j = jobs.find(x=>String(x.id)===String(jobId));
+  if(!j){ toast('Job tidak ditemukan'); return; }
+  const c = parseCoordString(j.koordinat);
+  if(c){
+    window.open(`https://www.google.com/maps?q=${c.lat},${c.lng}`, '_blank', 'noopener');
+    return;
+  }
+  const link = (j.linkMaps||'').trim();
+  if(link){
+    let url = link;
+    if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    window.open(url, '_blank', 'noopener');
+    return;
+  }
+  toast('Job ini belum ada Titik Koordinat maupun Link Maps');
+}
+
+/* ---- Estimasi jarak jalan real (rute kendaraan via OSRM) — async + cache + timeout ---- */
+function loadOsrmCache(){
+  try{ return JSON.parse(localStorage.getItem(OSRM_CACHE_KEY)) || {}; }
+  catch(e){ return {}; }
+}
+function saveOsrmCache(cache){
+  try{ localStorage.setItem(OSRM_CACHE_KEY, JSON.stringify(cache)); }
+  catch(e){ /* localStorage penuh/diblokir browser — abaikan, cache jadi tidak persisten */ }
+}
+function osrmCacheKey(c){
+  return c.lat.toFixed(6) + ',' + c.lng.toFixed(6);
+}
+// Ambil estimasi jarak jalan dari CACHE SAJA (sinkron, tanpa memanggil API). Dipakai
+// di tempat yang harus render langsung tanpa menunggu (poster/story/salin teks) —
+// kalau koordinat ini belum pernah dihitung/cache sudah basi, hasilnya null.
+function getCachedJarakJalanKm(j){
+  const c = parseCoordString(j && j.koordinat);
+  if(!c) return null;
+  const entry = loadOsrmCache()[osrmCacheKey(c)];
+  if(!entry) return null;
+  if(Date.now() - entry.ts > OSRM_CACHE_TTL_MS) return null; // cache basi, anggap belum ada
+  return entry.km;
+}
+// Panggil API OSRM untuk estimasi jarak rute kendaraan (km). Pakai cache dulu kalau
+// ada; kalau tidak, fetch dengan timeout (AbortController) supaya tidak menggantung
+// selamanya kalau koneksi lambat/API tidak merespons. Berhasil → otomatis disimpan
+// ke cache. Gagal/timeout/koordinat kosong → null (gagal senyap, UI tetap fallback
+// ke jarak garis lurus).
+async function fetchJarakJalanKm(j){
+  const c = parseCoordString(j && j.koordinat);
+  if(!c) return null;
+  const cached = getCachedJarakJalanKm(j);
+  if(cached!==null) return cached;
+
+  const url = `${OSRM_BASE_URL}/${ORIGIN_COORD.lng},${ORIGIN_COORD.lat};${c.lng},${c.lat}?overview=false`;
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), OSRM_TIMEOUT_MS);
+  try{
+    const res = await fetch(url, {signal: controller.signal});
+    if(!res.ok) return null;
+    const data = await res.json();
+    const meters = data && data.routes && data.routes[0] && data.routes[0].distance;
+    if(typeof meters !== 'number') return null;
+    const km = meters / 1000;
+    const cache = loadOsrmCache();
+    cache[osrmCacheKey(c)] = {km, ts: Date.now()};
+    saveOsrmCache(cache);
+    return km;
+  }catch(e){
+    return null; // timeout (AbortError), offline, atau error API lainnya
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+/* ---- Format tampilan & saran transport (jarak real via OSRM) ---- */
+function fmtJarakJalan(km){
+  if(km===null || km===undefined || isNaN(km)) return '-';
+  return km.toLocaleString('id-ID', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' km (jarak real)';
+}
+// Saran tambahan biaya transport, dibulatkan ke Rp1.000 terdekat.
+function hitungSaranTransport(km){
+  if(km===null || km===undefined || isNaN(km)) return null;
+  return Math.round(km * TARIF_TRANSPORT_PER_KM / 1000) * 1000;
+}
+
+// Update tampilan jarak & saran transport secara LIVE saat kolom Titik Koordinat
+// diisi di form. Jarak real (OSRM): kalau sudah ada di cache langsung tampil, kalau
+// belum akan menampilkan status "Menghitung…" dulu lalu terisi otomatis (atau pesan
+// gagal kalau timeout/koneksi bermasalah).
+let jarakJalanReqId = 0; // penanda request terbaru — supaya balasan fetch yang sudah usang (mis. user keburu mengubah koordinat lagi sebelum fetch sebelumnya selesai) tidak menimpa hasil yang lebih baru
+function updateJarakCalc(){
+  const input = document.getElementById('koordinatInput');
+  if(!input) return;
+  const job = {koordinat: input.value};
+  const c = parseCoordString(job.koordinat);
+
+  const elJalan = document.getElementById('jarakJalanText');
+  const elJalanBiaya = document.getElementById('jarakJalanBiayaText');
+  const reqId = ++jarakJalanReqId;
+
+  if(!c){
+    if(elJalan) elJalan.textContent = '-';
+    if(elJalanBiaya) elJalanBiaya.textContent = '-';
+    return;
+  }
+
+  const cachedJalan = getCachedJarakJalanKm(job);
+  if(cachedJalan!==null){
+    if(elJalan) elJalan.textContent = fmtJarakJalan(cachedJalan);
+    if(elJalanBiaya) elJalanBiaya.textContent = fmtRp(hitungSaranTransport(cachedJalan));
+    return;
+  }
+
+  if(elJalan) elJalan.textContent = 'Menghitung…';
+  if(elJalanBiaya) elJalanBiaya.textContent = '…';
+  fetchJarakJalanKm(job).then(kmJalan=>{
+    if(reqId !== jarakJalanReqId) return; // sudah usang (ada input baru sesudahnya) — abaikan hasil ini
+    const elJalan2 = document.getElementById('jarakJalanText');
+    const elJalanBiaya2 = document.getElementById('jarakJalanBiayaText');
+    if(kmJalan===null){
+      if(elJalan2) elJalan2.textContent = 'Tidak tersedia (cek koneksi)';
+      if(elJalanBiaya2) elJalanBiaya2.textContent = '-';
+    }else{
+      if(elJalan2) elJalan2.textContent = fmtJarakJalan(kmJalan);
+      if(elJalanBiaya2) elJalanBiaya2.textContent = fmtRp(hitungSaranTransport(kmJalan));
+    }
+  });
+}
+
+/* ---------- NAV ---------- */
+document.getElementById('mainNav').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-view]');
+  if(!btn) return;
+  editingId = null;
+  navigate(btn.dataset.view);
+});
+
+/* ---------- Strip menu atas: petunjuk "masih ada menu lain" ----------
+   Di layar HP, menu utama berbentuk strip yang digeser ke samping. Tanpa penanda,
+   menu di sebelah kanan sering tidak disadari ada. Bayangan gelap tipis di tepi
+   kanan hanya muncul kalau memang masih ada menu yang belum terlihat. */
+function updateNavScrollHint(){
+  const nav = document.getElementById('mainNav');
+  const shell = document.getElementById('mainNavShell');
+  if(!nav || !shell) return;
+  const sisaKanan = nav.scrollWidth - nav.clientWidth - nav.scrollLeft;
+  shell.classList.toggle('has-more', sisaKanan > 8);
+}
+/* Menu yang sedang aktif selalu digeser ke tengah pandangan, jadi pengguna tahu
+   persis sedang berada di halaman mana tanpa harus menggeser strip menu sendiri. */
+function scrollActiveNavIntoView(){
+  const active = document.querySelector('#mainNav button.active');
+  if(!active) return;
+  try{ active.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'}); }
+  catch(e){ /* browser lama: abaikan saja */ }
+  setTimeout(updateNavScrollHint, 320);
+}
+document.getElementById('mainNav')?.addEventListener('scroll', updateNavScrollHint, {passive:true});
+window.addEventListener('resize', updateNavScrollHint, {passive:true});
+setTimeout(updateNavScrollHint, 200);
+
+/* ---------- Tombol "kembali ke atas" ----------
+   Halaman Daftar Job / Rekap bisa sangat panjang di HP. Tombol ini muncul sendiri
+   setelah digulir cukup jauh, lalu hilang lagi saat sudah berada di bagian atas. */
+(function setupToTopButton(){
+  const btn = document.getElementById('toTopBtn');
+  if(!btn) return;
+  let ticking = false;
+  const sync = ()=>{
+    btn.classList.toggle('show', window.scrollY > 420);
+    ticking = false;
+  };
+  window.addEventListener('scroll', ()=>{
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(sync);
+  }, {passive:true});
+  btn.addEventListener('click', ()=> window.scrollTo({top:0, behavior:'smooth'}));
+  sync();
+})();
+function navigate(view){
+  // Peran "Tim" (non-admin) tidak boleh membuka form Input/Edit Job — karena itu
+  // langsung mengubah data rekap job. Halaman lain (termasuk Pengaturan) boleh dibuka;
+  // kontrol yang mengubah data di dalamnya (mis. Pulihkan Data) tetap dikunci sendiri.
+  // Kalau tombol yang memicu ini sudah disembunyikan lewat CSS, ini jaring pengaman tambahan.
+  // Peran "Tim" sekarang BOLEH membuka Pengaturan — dipakai untuk mengubah
+  // username/password akun sendiri lewat panel "Akun Saya". Kontrol yang
+  // mengubah data job (Pulihkan Data, Hapus Semua, Import Excel, dsb.) di
+  // dalamnya tetap dikunci sendiri lewat class admin-only.
+  if(!isAdmin() && view==='form') view = 'beranda';
+  currentView = view;
+  document.querySelectorAll('#mainNav button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  render();
+  scrollActiveNavIntoView();
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(view==='ulasan') pullUlasanFromCloud();
+  if(view==='form' && isAdmin()) pullTeamAccountsPublic();
+  if(view==='tugas' && isAdmin()) pullAkunFromCloud();
+  // Data 'tasks' sebelumnya hanya ditarik SEKALI saat aplikasi pertama dibuka, jadi kalau
+  // Admin/Tim lain menambah/mengubah tugas dari device lain sementara device ini sudah
+  // terbuka, perubahan itu tidak pernah muncul sampai aplikasi ditutup & dibuka ulang.
+  // Sekarang setiap kali membuka menu Tugas, tarik ulang data terbaru dari cloud.
+  if(view==='tugas') pullFromCloud().then(changed=>{ if(changed && currentView==='tugas') refreshView(); });
+  if(view==='laporan' && !isAdmin()) pullTeamAccountsPublic();
+  if(view==='pengaturan' && isAdmin()) pullAkunFromCloud();
+}
+
+/* ---------- RENDER ROOT ---------- */
+function render(){
+  // Cek dulu apakah ada tugas yang harus ditandai selesai otomatis (lewat pukul 23.59
+  // pada hari job / hari kedua kalau job 2 hari) sebelum tampilan dibangun, supaya
+  // status yang terlihat selalu yang terbaru.
+  autoUpdateTaskStatuses();
+  const app = document.getElementById('app');
+  if(currentView==='beranda') app.innerHTML = viewBeranda();
+  else if(currentView==='form') app.innerHTML = viewForm();
+  else if(currentView==='daftar') app.innerHTML = viewDaftar();
+  else if(currentView==='kalender') app.innerHTML = viewKalender();
+  else if(currentView==='rekap') app.innerHTML = viewRekap();
+  else if(currentView==='tugas') app.innerHTML = viewTugas();
+  else if(currentView==='laporan') app.innerHTML = viewLaporan();
+  else if(currentView==='ulasan') app.innerHTML = viewUlasan();
+  else if(currentView==='pengaturan') app.innerHTML = viewPengaturan();
+  attachHandlers();
+}
+
+/* Re-render tampilan yang sedang aktif TANPA memindahkan posisi scroll ke atas.
+   Dipakai untuk aksi kecil di dalam satu halaman yang sama (mis. terapkan filter, ubah
+   status, hapus satu baris) — beda dengan navigate(), yang memang sengaja scroll ke atas
+   karena dipakai untuk BERPINDAH menu. */
+function refreshView(){
+  const scrollY = window.scrollY;
+  render();
+  window.scrollTo({top:scrollY, left:0, behavior:'auto'});
+}
+
+/* =========================================================
+   BERANDA
+========================================================= */
+function viewBeranda(){
+  const today = new Date();
+  const thisMonthJobs = jobs.filter(j=>{
+    const d = new Date(j.tanggalAcara+'T00:00:00');
+    return d.getMonth()===today.getMonth() && d.getFullYear()===today.getFullYear();
+  });
+  const totalPenghasilanBulanIni = thisMonthJobs.reduce((s,j)=>s+hitungOmzet(j),0);
+  // Bonus Tim yang sudah diklaim bulan ini ikut mengurangi Penghasilan Bersih Admin —
+  // lihat totalBonusDiklaimBulanIni().
+  const totalBersihBulanIni = thisMonthJobs.reduce((s,j)=>s+hitungBersih(j),0) - (isAdmin() ? totalBonusDiklaimBulanIni() : 0);
+  const belumEdit = jobs.filter(j=>j.prosesEdit!=='Selesai').length;
+  const belumCetak = jobs.filter(j=>j.prosesCetak!=='Selesai').length;
+  // "Belum" di sini mencakup dua nilai pengiriman: 'Belum Diantar' dan 'Belum Dijemput'
+  // (lihat PENGIRIMAN_LIST) — keduanya dianggap belum tuntas selama belum diawali kata 'Sudah'.
+  const belumPengiriman = jobs.filter(j=>!(j.pengiriman||'').startsWith('Sudah')).length;
+  // Total nominal sedekah dari job yang status sedekahnya masih "Belum" —
+  // dipakai untuk kartu "Sedekah Belum Selesai" yang bisa diklik di Beranda (admin only).
+  const sedekahBelumJobs = jobs.filter(j=>j.sedekahStatus!=='Sudah');
+  const totalSedekahBelum = sedekahBelumJobs.reduce((s,j)=>s+(Number(j.sedekahNominal||hitungSedekah(j))||0),0);
+
+  const upcoming = [...jobs]
+    .filter(j=>j.tanggalAcara && new Date(j.tanggalAcara) >= new Date(new Date().toDateString()))
+    .sort((a,b)=>new Date(a.tanggalAcara)-new Date(b.tanggalAcara))
+    .slice(0,5);
+  const homeTasks = isAdmin() ? tasks : tasks.filter(t=>String(t.userId)===String(currentUserId) || t.username===currentUsername);
+  const homeTaskPending = homeTasks.filter(t=>(t.status||'Belum')!=='Selesai').length;
+  // Penghasilan milik akun Tim sendiri bulan ini, dari rincian Honor Tim per anggota
+  // yang diisi Admin di form job (lihat honorTimUntukAkun/totalHonorTimAkun).
+  const honorSayaBulanIni = (!isAdmin() && currentUserId) ? totalHonorTimAkun(currentUserId, thisMonthJobs) : 0;
+
+  return `
+  <div class="hero">
+    <div class="kicker">Kaone Motret · Buku Job</div>
+    <h1>Selamat Datang ${ic('wave')}</h1>
+    <p>Kelola job fotografermu di sini.</p>
+  </div>
+
+  <div class="center-btn-wrap admin-only">
+    <button class="big-add-btn" id="btnInputJob">
+      <span class="plus">+</span> Input Job Baru
+    </button>
+  </div>
+
+  <div class="quick-menu">
+    <div class="quick-menu-item" data-goto="daftar">
+      <span class="qm-icon">${ic('clipboard')}</span><span class="qm-label">Daftar Job</span>
+    </div>
+    <div class="quick-menu-item" data-goto="kalender">
+      <span class="qm-icon">${ic('calendar')}</span><span class="qm-label">Kalender Job</span>
+    </div>
+    <div class="quick-menu-item" data-goto="rekap">
+      <span class="qm-icon">${ic('chart')}</span><span class="qm-label">Rekap</span>
+    </div>
+    <div class="quick-menu-item" data-goto="tugas">
+      <span class="qm-icon">${ic('folder')}</span><span class="qm-label">${isAdmin()?'Pembagian Tugas':'Tugas Saya'}</span>
+    </div>
+    <div class="quick-menu-item" data-goto="laporan">
+      <span class="qm-icon">${ic('alert')}</span><span class="qm-label">${isAdmin()?'Laporan':'Buat Laporan'}</span>
+    </div>
+    <div class="quick-menu-item" data-goto="ulasan">
+      <span class="qm-icon">${ic('star')}</span><span class="qm-label">Saran &amp; Penilaian</span>
+    </div>
+    <div class="quick-menu-item" data-goto="pengaturan">
+      <span class="qm-icon">${ic('settings')}</span><span class="qm-label">Pengaturan</span>
+    </div>
+  </div>
+
+  <div class="daily-box">
+    <div class="daily-card">
+      <div class="dq-label">${ic('sparkle')} Motivasi Hari Ini</div>
+      <div class="dq-text" id="dailyQuoteText">Memuat...</div>
+    </div>
+    <div class="daily-card">
+      <div class="dq-label">${ic('book')} Renungan Hari Ini</div>
+      <div id="dailyAyatBox"><div class="dq-loading">Memuat ayat...</div></div>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat gold">
+      <div class="label">Total Job Tercatat</div>
+      <div class="value">${jobs.length}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Job Bulan Ini</div>
+      <div class="value">${thisMonthJobs.length}</div>
+    </div>
+    <div class="stat">
+      <div class="label">${isAdmin()?'Total Tugas Tim':'Tugas Saya'}</div>
+      <div class="value">${homeTasks.length}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Tugas Belum Selesai</div>
+      <div class="value">${homeTaskPending}</div>
+    </div>
+    <div class="stat">
+      <div class="label">${isAdmin()?'Penghasilan Bulan Ini':'Bonus Saya'}</div>
+      <div class="value">${fmtRp(isAdmin()?totalPenghasilanBulanIni:userBonusRupiah(currentUserId))}</div>
+    </div>
+    <div class="stat">
+      <div class="label">${isAdmin()?'Bersih Bulan Ini':'Jam Kerja Saya'}</div>
+      <div class="value">${isAdmin()?fmtRp(totalBersihBulanIni):fmtTaskHours(Math.max(0,userTotalBonusHours(currentUserId)))}</div>
+    </div>
+    ${!isAdmin() ? `
+    <div class="stat gold">
+      <div class="label">Penghasilan Job Saya Bulan Ini</div>
+      <div class="value">${fmtRp(honorSayaBulanIni)}</div>
+    </div>` : ''}
+    <div class="stat stat-clickable" data-open-status-list="prosesEdit" title="Lihat daftar job">
+      <div class="label">Edit Belum Selesai</div>
+      <div class="value">${belumEdit}</div>
+    </div>
+    <div class="stat stat-clickable" data-open-status-list="prosesCetak" title="Lihat daftar job">
+      <div class="label">Cetak Belum Selesai</div>
+      <div class="value">${belumCetak}</div>
+    </div>
+    <div class="stat stat-clickable" data-open-status-list="pengiriman" title="Lihat daftar job">
+      <div class="label">Belum Dijemput/Diantar</div>
+      <div class="value">${belumPengiriman}</div>
+    </div>
+    ${isAdmin() ? `
+    <div class="stat stat-clickable" data-open-status-list="sedekahStatus" title="Lihat status sedekah">
+      <div class="label">${ic('hands')} Sedekah Belum Selesai</div>
+      <div class="value">${fmtRp(totalSedekahBelum)}</div>
+    </div>` : ''}
+  </div>
+
+  <div class="upcoming">
+    <h3>${ic('calendar')} Job Terdekat</h3>
+    ${upcoming.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">${ic('calendar')}</div>Belum ada job yang akan datang.</div>` :
+      upcoming.map(j=>`
+        <div class="job-mini">
+          <div>
+            <div class="l">#${getJobNo(j.id)} — ${escapeHtml(j.namaKlien||'Tanpa Nama')} <span class="pill">${escapeHtml(j.jenisAcara||'-')}</span></div>
+            <div class="s">${fmtTglJob(j)} · ${escapeHtml(desaDisplay(j))}, ${escapeHtml(j.kecamatan||'')}</div>
+          </div>
+          <button class="icon-btn" data-view-job="${j.id}">Lihat</button>
+        </div>
+      `).join('')}
+  </div>
+  `;
+}
+
+/* =========================================================
+   FORM INPUT / EDIT JOB
+========================================================= */
+function buildJobFormHtml(j){
+  const d = j || {
+    tanggalAcara:'', tanggalSelesai:'', desa:'', dusun:'', adaDusun:false, kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'', koordinat:'',
+    jenisAcara:'', jenisAcaraLain:'', namaKlien:'', noWhatsapp:'', paket:'', deskripsiPaket:'',
+    prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Diantar',
+    vendor:'', vendorLain:'', timFreelancer:'', dp:'', biayaCetak:'', honorTim:'', honorTimList:[], diskon:'',
+    penghasilan:'', sedekahNominal:'', sedekahStatus:'Belum', setoranShia:'',
+    statusPembayaran:'Belum Bayar', catatan:''
+  };
+  // State pemilihan anggota Tim & honor masing-masing untuk form ini (lihat
+  // renderHonorTimSectionHtml, toggleHonorTimMember, onHonorTimNominalInput di bawah).
+  // jobFormHonorTimLegacy menyimpan Honor Tim job lama (sebelum honorTimList ada) supaya
+  // job lama yang belum pernah diisi rincian per-orang tidak tiba-tiba jadi Rp0.
+  jobFormHonorTim = (d.honorTimList || []).map(x=>({userId:x.userId, nama:x.nama, nominal:Number(x.nominal)||0}));
+  jobFormHonorTimLegacy = Number(d.honorTim)||0;
+  const opt = (list,val)=>list.map(o=>`<option value="${o}" ${o===val?'selected':''}>${o}</option>`).join('');
+  const jarakAwalJalan = getCachedJarakJalanKm(d); // hanya dari cache dulu — fetch baru dipicu setelah form ini dipasang ke DOM (lihat bindJobFormEvents)
+  const koordAwalValid = !!parseCoordString(d.koordinat);
+
+  return `
+    <form id="jobForm" class="jf">
+      <div class="jf-head">
+        <div>
+          <h2>${j?ic('edit')+' Edit Job':ic('note')+' Input Job Baru'}</h2>
+          <p>Lengkapi data acara, lokasi, dan keuangan. Kolom bertanda * wajib diisi.</p>
+        </div>
+        <span class="jf-no">${j ? `No. urut <b>#${getJobNo(j.id)}</b>` : 'No. urut otomatis'}</span>
+      </div>
+      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('user')}</span><div><h3>Data Klien &amp; Acara</h3><p>Siapa yang memesan dan kapan acaranya.</p></div></div><div class="form-grid jf-body">
+        <div><label>Nama Klien / Pemesan</label><input type="text" name="namaKlien" value="${escapeHtml(d.namaKlien)}" placeholder="Nama klien" autocomplete="off"></div>
+        <div><label>No. WhatsApp</label>${waFieldHtml(d.noWhatsapp)}</div>
+        <div><label>Tanggal Acara (Mulai) *</label><input type="date" name="tanggalAcara" id="tanggalAcaraInput" value="${d.tanggalAcara}" required oninput="onTanggalAcaraChange()"></div>
+        <div><label>Tanggal Acara (Selesai) *</label><input type="date" name="tanggalSelesai" id="tanggalSelesaiInput" value="${escapeHtml(getJobFinishDate(d)||d.tanggalAcara||'')}" required oninput="updateDurasiHariHint()"></div>
+        <div class="full" id="durasiHariHintWrap"><div class="field-hint" id="durasiHariHint">Job 1 hari — tugas tim otomatis ditandai selesai pukul 23.59 pada Tanggal Acara.</div></div>
+        <div>
+          <label>Jenis Acara *</label>
+          <select name="jenisAcara" required onchange="document.getElementById('jenisLainWrap').style.display=this.value==='Lainnya'?'block':'none'">
+            <option value="">Pilih jenis acara</option>
+            ${opt(JENIS_ACARA_LIST, d.jenisAcara)}
+          </select>
+        </div>
+        <div><label>Paket</label><input type="text" name="paket" value="${escapeHtml(d.paket)}" placeholder="Nama / isi paket"></div>
+        <div class="full" id="jenisLainWrap" style="display:${d.jenisAcara==='Lainnya'?'block':'none'}"><label>Sebutkan Jenis Acara Lainnya</label><input type="text" name="jenisAcaraLain" value="${escapeHtml(d.jenisAcaraLain||'')}"></div>
+        <div class="full">
+          <label>Deskripsi Paket</label>
+          <textarea name="deskripsiPaket" rows="3" placeholder="Rincian isi paket, misal: 1 album 20R, cetak 4R 50 lembar, softfile semua foto, dll.">${escapeHtml(d.deskripsiPaket||'')}</textarea>
+        </div>
+        </div>
+
+      </section>
+      ${cetakSectionHtml(d)}
+      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('map-pin')}</span><div><h3>Lokasi Acara</h3><p>Alamat dan titik peta, dipakai untuk menghitung jarak dan saran transport.</p></div></div><div class="form-grid jf-body">
+        <div class="full jf-check" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="adaDusunInput" name="adaDusun" style="width:18px;height:18px;" ${(d.adaDusun || d.dusun)?'checked':''} onchange="document.getElementById('dusunWrap').style.display=this.checked?'block':'none'">
+          <label for="adaDusunInput" style="margin:0;">Alamat ini punya Dusun</label>
+        </div>
+        <div class="full" id="dusunWrap" style="display:${(d.adaDusun || d.dusun)?'block':'none'}">
+          <label>Nama Dusun</label>
+          <input type="text" name="dusun" value="${escapeHtml(d.dusun||'')}" placeholder="Contoh: Dusun II Sukamaju">
+        </div>
+        <div><label>Desa / Kelurahan</label><input type="text" name="desa" value="${escapeHtml(d.desa)}"></div>
+        <div><label>Kecamatan</label><input type="text" name="kecamatan" value="${escapeHtml(d.kecamatan)}"></div>
+        <div><label>Kabupaten / Kota</label><input type="text" name="kabupaten" value="${escapeHtml(d.kabupaten)}"></div>
+        <div><label>Provinsi</label><input type="text" name="provinsi" value="${escapeHtml(d.provinsi)}"></div>
+        <div class="full">
+          <label>Titik Koordinat</label>
+          <div class="maps-input-wrap">
+            <div class="maps-field">
+              <span class="maps-prefix">${ic('map-pin')}</span>
+              <input type="text" inputmode="decimal" class="maps-input" id="koordinatInput" name="koordinat" value="${escapeHtml(d.koordinat||'')}" placeholder="-1.234567, 101.234567" oninput="updateJarakCalc()">
+            </div>
+            <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaKoordinat">${ic('map-pin')} Lihat Titik</button>
+            <button type="button" class="btn btn-outline maps-open-btn" id="btnCopyLinkMaps">${ic('clipboard')} Salin Link Maps</button>
+          </div>
+          <div class="field-hint">Format: Lintang, Bujur.</div>
+          <div class="jarak-box">
+            <div class="jr-group-label">${ic('road')} Jarak Real (OSRM)</div>
+            <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="jarakJalanText">${jarakAwalJalan===null?(koordAwalValid?'Menghitung…':'-'):fmtJarakJalan(jarakAwalJalan)}</b></div>
+            <div class="jr-row"><span>${ic('car')} Saran tambahan transport</span><b id="jarakJalanBiayaText">${jarakAwalJalan===null?(koordAwalValid?'…':'-'):fmtRp(hitungSaranTransport(jarakAwalJalan))}</b></div>
+          </div>
+        </div>
+      </div>
+
+      </section>
+      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('settings')}</span><div><h3>Status Proses</h3><p>Progres pengerjaan, pembayaran, dan siapa yang mengerjakan.</p></div></div><div class="form-grid jf-body">
+        <div><label>Proses Edit</label><select name="prosesEdit">${opt(['Belum Selesai','Selesai'], d.prosesEdit)}</select></div>
+        <div><label>Proses Cetak</label><select name="prosesCetak">${opt(['Belum Selesai','Selesai'], d.prosesCetak)}</select></div>
+        <div><label>Pengiriman</label><select name="pengiriman">${opt(PENGIRIMAN_LIST, d.pengiriman)}</select></div>
+        <div><label>Status Pembayaran</label><select name="statusPembayaran">${opt(STATUS_BAYAR_LIST, d.statusPembayaran)}</select></div>
+        <div>
+          <label>Vendor Asal Job</label>
+          <select name="vendor" onchange="onVendorChange(this)">
+            <option value="">Pilih vendor</option>
+            ${opt(VENDOR_LIST, d.vendor)}
+          </select>
+        </div>
+        <div><label>Tim / Freelancer</label><input type="text" name="timFreelancer" value="${escapeHtml(d.timFreelancer||'')}" placeholder="Nama tim / freelancer" autocomplete="off"></div>
+        <div class="full" id="vendorLainWrap" style="display:${d.vendor==='Lainnya'?'block':'none'}"><label>Sebutkan Vendor Lainnya</label><input type="text" name="vendorLain" value="${escapeHtml(d.vendorLain||'')}" placeholder="Nama vendor / relasi"></div>
+        </div>
+
+      </section>
+      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('money')}</span><div><h3>Keuangan</h3><p>Uang masuk dan keluar. Sisa bayar dan laba dihitung otomatis.</p></div></div><div class="form-grid jf-body">
+        ${rpField('Penghasilan Dari Klien/Mitra','penghasilan',d.penghasilan)}
+        ${rpField('Diskon','diskon',d.diskon)}
+        ${rpField('DP','dp',d.dp)}
+        ${rpField('Biaya Cetak','biayaCetak',d.biayaCetak)}
+        <div id="shiaSetoranWrap" class="full" style="display:${d.vendor && d.vendor!=='Kaone Motret'?'block':'none'}"><label>Harga Paket Vendor</label>${rpInput('setoranShia',d.setoranShia)}</div>
+        <div class="full" id="honorTimSection">${renderHonorTimSectionHtml()}</div>
+        <div><label>Sedekah (otomatis)</label>${rpInput('sedekahNominal',d.sedekahNominal||hitungSedekah(d),'id="sedekahNominalInput" readonly',true)}</div>
+        <div><label>Status Sedekah</label><select name="sedekahStatus" onchange="updateCalc()">${opt(['Belum','Sudah'], d.sedekahStatus)}</select></div>
+        </div>
+
+      </section>
+      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('note')}</span><div><h3>Catatan Tambahan</h3><p>Permintaan khusus atau hal yang perlu diingat.</p></div></div><div class="form-grid jf-body">
+        <div class="full">
+          <label>Catatan</label>
+          <textarea name="catatan" rows="3" placeholder="Catatan lain seputar job ini...">${escapeHtml(d.catatan||'')}</textarea>
+        </div>
+      </div>
+
+      </section>
+      <div class="jf-bar">
+        <div class="jf-totals">
+          <div><span>Sisa pembayaran</span><b id="calcSisa">${fmtRp(hitungSisaPembayaran(d))}</b></div>
+          <div><span>Penghasilan bersih</span><b id="calcBersih">${fmtRp(hitungBersih({...d, sedekahNominal: d.sedekahNominal||hitungSedekah(d)}))}</b></div>
+        </div>
+      <div class="form-actions">
+        ${j?`<button type="button" class="btn btn-danger" id="btnDeleteJob">${ic('trash')} Hapus Job</button>`:''}
+        <button type="button" class="btn btn-outline" id="btnCancelForm">Batal</button>
+        <button type="submit" class="btn btn-primary">${j?'Simpan Perubahan':'Simpan Job'}</button>
+      </div>
+      </div>
+    </form>
+  `;
+}
+
+/* ---------- Honor Tim per anggota (pilih anggota Tim + honor masing-masing di form job) ---------- */
+let jobFormHonorTim = [];        // [{userId, nama, nominal}, ...] — state form yang sedang dibuka
+let jobFormHonorTimLegacy = 0;   // Honor Tim job lama (sebelum honorTimList ada), dipakai kalau belum ada anggota dipilih
+function currentHonorTimTotal(){
+  const breakdownSum = jobFormHonorTim.reduce((s,x)=>s+(Number(x.nominal)||0),0);
+  return jobFormHonorTim.length ? breakdownSum : jobFormHonorTimLegacy;
+}
+function renderHonorTimSectionHtml(){
+  const list = teamAccountsPublic || [];
+  const total = currentHonorTimTotal();
+  return `
+    <label>Honor Tim</label>
+    <div class="honor-tim-list">
+      ${list.length ? list.map(a=>{
+        const nama = a.nama_lengkap || a.username;
+        const sel = jobFormHonorTim.find(x=>String(x.userId)===String(a.id));
+        return `
+        <div class="honor-tim-row">
+          <label class="honor-tim-check">
+            <input type="checkbox" data-honor-toggle="${escapeHtml(a.id)}" data-honor-nama="${escapeHtml(nama)}" ${sel?'checked':''} onchange="toggleHonorTimMember(this)">
+            <span>${escapeHtml(nama)}</span>
+          </label>
+          <div class="rp-input-wrap honor-tim-nominal-wrap" style="display:${sel?'flex':'none'}">
+            <span class="rp-prefix">Rp</span>
+            <input type="text" inputmode="numeric" class="money-input" data-honor-nominal="${escapeHtml(a.id)}" placeholder="0" value="${fmtRibuan(sel?sel.nominal:'')}" oninput="handleMoneyInput(this); onHonorTimNominalInput(this);">
+          </div>
+        </div>`;
+      }).join('') : `<div class="info-box">Belum ada akun Tim terdaftar.</div>`}
+    </div>
+    <div class="rp-input-wrap" style="max-width:260px;">
+      <span class="rp-prefix">Rp</span>
+      <input type="text" inputmode="numeric" class="money-input" name="honorTim" id="honorTimTotalDisplay" value="${fmtRibuan(total)}" readonly>
+    </div>
+    <div class="field-hint">Total Honor Tim otomatis${(!jobFormHonorTim.length && jobFormHonorTimLegacy) ? ' — nilai lama, belum dibagi.' : ''}</div>
+  `;
+}
+function refreshHonorTimSection(){
+  const wrap = document.getElementById('honorTimSection');
+  if(wrap) wrap.innerHTML = renderHonorTimSectionHtml();
+  updateCalc();
+}
+function toggleHonorTimMember(cb){
+  const id = cb.dataset.honorToggle;
+  const nama = cb.dataset.honorNama || '';
+  if(cb.checked){
+    if(!jobFormHonorTim.find(x=>String(x.userId)===String(id))) jobFormHonorTim.push({userId:id, nama, nominal:0});
+  } else {
+    jobFormHonorTim = jobFormHonorTim.filter(x=>String(x.userId)!==String(id));
+  }
+  refreshHonorTimSection();
+}
+function onHonorTimNominalInput(inp){
+  const id = inp.dataset.honorNominal;
+  const item = jobFormHonorTim.find(x=>String(x.userId)===String(id));
+  if(item) item.nominal = parseRibuan(inp.value);
+  const totalInput = document.getElementById('honorTimTotalDisplay');
+  if(totalInput) totalInput.value = fmtRibuan(currentHonorTimTotal());
+  updateCalc();
+}
+
+function viewForm(){
+  const j = editingId ? jobs.find(x=>x.id===editingId) : null;
+  return `<div class="card">${buildJobFormHtml(j)}</div>`;
+}
+function bindJobFormEvents(scopeEl, onDone){
+  const form = scopeEl.querySelector('#jobForm');
+  if(!form) return;
+  // Kalau koordinat sudah terisi (mode edit), langsung picu pengecekan jarak jalan
+  // (OSRM) begitu form tampil — biar tidak menunggu user mengetik ulang di kolom.
+  if(scopeEl.querySelector('#koordinatInput')?.value.trim()) updateJarakCalc();
+  {
+    const mulaiEl = scopeEl.querySelector('#tanggalAcaraInput');
+    const selesaiEl = scopeEl.querySelector('#tanggalSelesaiInput');
+    if(mulaiEl && selesaiEl && mulaiEl.value) selesaiEl.min = mulaiEl.value;
+  }
+  updateDurasiHariHint();
+  scopeEl.querySelector('#btnBukaKoordinat')?.addEventListener('click', ()=>{
+    const val = (scopeEl.querySelector('#koordinatInput')?.value || '').trim();
+    const c = parseCoordString(val);
+    if(!c){ toast('Isi Titik Koordinat yang valid dulu (Lintang, Bujur)'); return; }
+    window.open(`https://www.google.com/maps?q=${c.lat},${c.lng}`, '_blank', 'noopener');
+  });
+  // Tombol "Salin Link Maps": membuat link Google Maps langsung dari Titik Koordinat
+  // yang sudah diisi, lalu menyalinnya ke clipboard — menggantikan kolom Link Maps
+  // manual yang sudah dihapus dari form ini.
+  scopeEl.querySelector('#btnCopyLinkMaps')?.addEventListener('click', ()=>{
+    const val = (scopeEl.querySelector('#koordinatInput')?.value || '').trim();
+    const c = parseCoordString(val);
+    if(!c){ toast('Isi Titik Koordinat yang valid dulu (Lintang, Bujur)'); return; }
+    copyToClipboard(`https://www.google.com/maps?q=${c.lat},${c.lng}`, 'Link Maps disalin');
+  });
+  form.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const fd = new FormData(form);
+    const data = Object.fromEntries(fd.entries());
+    // Checkbox yang tidak dicentang tidak ikut terkirim lewat FormData, jadi harus
+    // dibaca terpisah. Kalau tidak dicentang, kosongkan juga isian Nama Dusun supaya
+    // tidak ada teks dusun "nyangkut" dari isian sebelumnya yang sudah disembunyikan.
+    data.adaDusun = fd.get('adaDusun') === 'on';
+    if(!data.adaDusun) data.dusun = '';
+    // Hilangkan spasi berlebih di awal/akhir tiap isian teks (mis. "Portibi " dan "Portibi"
+    // supaya dianggap sama di pencarian, filter, maupun rekap).
+    Object.keys(data).forEach(k=>{
+      if(typeof data[k] === 'string') data[k] = data[k].trim();
+    });
+    // Validasi rentang tanggal acara: Tanggal Selesai wajib ada dan tidak boleh lebih awal
+    // dari Tanggal Mulai. Kalau kosong (mis. form lama sebelum fitur ini), samakan dengan
+    // Tanggal Mulai supaya job tetap dianggap 1 hari seperti sebelumnya.
+    if(!data.tanggalSelesai) data.tanggalSelesai = data.tanggalAcara;
+    if(data.tanggalSelesai < data.tanggalAcara){
+      toast('Tanggal Acara Selesai tidak boleh lebih awal dari Tanggal Acara Mulai');
+      return;
+    }
+    // Kolom uang: ubah dari teks berformat "3.000.000" menjadi angka murni sebelum disimpan.
+    ['dp','penghasilan','biayaCetak','honorTim','diskon','sedekahNominal','setoranShia'].forEach(k=>{
+      data[k] = parseRibuan(data[k]);
+    });
+    // Rincian Honor Tim per anggota (hasil pilihan checkbox + nominal di section Honor Tim).
+    // Kalau tidak ada anggota yang dipilih (mis. job lama belum pernah dibagi), honorTimList
+    // dikosongkan saja — nilai total honorTim di atas tetap tersimpan apa adanya.
+    data.cetak = bacaCetak();
+    data.honorTimList = jobFormHonorTim.map(x=>({userId:x.userId, nama:x.nama, nominal:Number(x.nominal)||0}));
+    // Sedekah selalu dihitung ulang otomatis di titik penyimpanan, supaya konsisten
+    // walau kolom lain sempat diubah tanpa memicu event input.
+    data.sedekahNominal = hitungSedekah(data);
+    if(editingId){
+      const idx = jobs.findIndex(x=>x.id===editingId);
+      jobs[idx] = {...jobs[idx], ...data};
+    } else {
+      jobs.push({id:uid(), createdAt:Date.now(), ...data});
+    }
+    saveJobs();
+    toast(editingId ? 'Job berhasil diperbarui' : 'Job baru berhasil disimpan');
+    editingId = null;
+    onDone('saved');
+  });
+  scopeEl.querySelector('#btnCancelForm')?.addEventListener('click', ()=>{
+    editingId = null;
+    onDone('cancelled');
+  });
+  scopeEl.querySelector('#btnDeleteJob')?.addEventListener('click', ()=>{
+    if(confirm('Yakin ingin menghapus job ini? Tindakan ini tidak bisa dibatalkan.')){
+      jobs = jobs.filter(x=>x.id!==editingId);
+      saveJobs();
+      toast('Job dihapus');
+      editingId = null;
+      onDone('deleted');
+    }
+  });
+}
+function onVendorChange(sel){
+  document.getElementById('vendorLainWrap').style.display = sel.value==='Lainnya' ? 'block' : 'none';
+  document.getElementById('shiaSetoranWrap').style.display = (sel.value && sel.value!=='Kaone Motret') ? 'block' : 'none';
+  cetakRecalc(true);
+  updateCalc();
+}
+// Dipanggil saat Tanggal Acara (Mulai) diubah: pastikan Tanggal Acara (Selesai) tidak
+// pernah lebih awal dari tanggal mulai (kalau user mengubah tanggal mulai jadi lebih maju
+// daripada tanggal selesai yang sudah dipilih sebelumnya), lalu perbarui field 'min' dan hint.
+function onTanggalAcaraChange(){
+  const mulaiEl = document.getElementById('tanggalAcaraInput');
+  const selesaiEl = document.getElementById('tanggalSelesaiInput');
+  if(mulaiEl && selesaiEl){
+    const mulai = mulaiEl.value;
+    if(mulai){
+      selesaiEl.min = mulai;
+      if(selesaiEl.value && selesaiEl.value < mulai) selesaiEl.value = mulai;
+      if(!selesaiEl.value) selesaiEl.value = mulai;
+    }
+  }
+  updateDurasiHariHint();
+}
+function updateDurasiHariHint(){
+  const hintEl = document.getElementById('durasiHariHint');
+  if(!hintEl) return;
+  const mulai = document.getElementById('tanggalAcaraInput')?.value || '';
+  const selesai = document.getElementById('tanggalSelesaiInput')?.value || '';
+  if(!mulai || !selesai){ hintEl.textContent = 'Isi Tanggal Acara Mulai & Selesai dulu untuk melihat kapan tugas otomatis ditandai selesai.'; return; }
+  if(selesai < mulai){ hintEl.textContent = '⚠️ Tanggal Acara Selesai tidak boleh lebih awal dari Tanggal Acara Mulai.'; return; }
+  const durasi = getJobDurasiHari({tanggalAcara:mulai, tanggalSelesai:selesai});
+  const akhirLabel = formatTaskDate(selesai);
+  if(durasi<=1){
+    hintEl.textContent = `Job 1 hari — tugas tim otomatis ditandai selesai pukul 23.59 pada ${akhirLabel}.`;
+  } else {
+    hintEl.textContent = `Job ${durasi} hari (s/d ${akhirLabel}) — tugas tim otomatis ditandai selesai pukul 23.59 pada hari terakhir, yaitu ${akhirLabel}.`;
+  }
+}
+function updateCalc(){
+  const f = document.getElementById('jobForm');
+  if(!f) return;
+  const fd = new FormData(f);
+  const tmp = {
+    vendor: fd.get('vendor'),
+    dp: parseRibuan(fd.get('dp')),
+    penghasilan: parseRibuan(fd.get('penghasilan')),
+    biayaCetak: parseRibuan(fd.get('biayaCetak')),
+    honorTim: parseRibuan(fd.get('honorTim')),
+    diskon: parseRibuan(fd.get('diskon')),
+    sedekahStatus: fd.get('sedekahStatus'),
+    setoranShia: parseRibuan(fd.get('setoranShia')),
+  };
+  const sedekah = hitungSedekah(tmp);
+  const sedekahInput = document.getElementById('sedekahNominalInput');
+  if(sedekahInput) sedekahInput.value = fmtRibuan(sedekah);
+  document.getElementById('calcSisa').textContent = fmtRp(hitungSisaPembayaran(tmp));
+  document.getElementById('calcBersih').textContent = fmtRp(hitungBersih({...tmp, sedekahNominal:sedekah}));
+}
+
+/* =========================================================
+   DAFTAR JOB
+========================================================= */
+function viewDaftar(){
+  const withNo = sortedJobsWithNo();
+  return `
+  <div class="card">
+    <div class="toolbar">
+      <h2 style="margin:0;">${ic('clipboard')} Daftar Semua Job</h2>
+      <div class="search-box">
+        <input type="text" id="searchBox" placeholder="Cari nama klien, No WA, desa, jenis acara...">
+        <select id="filterJenis">
+          <option value="">Semua Jenis Acara</option>
+          ${JENIS_ACARA_LIST.map(j=>`<option value="${j}">${j}</option>`).join('')}
+        </select>
+        <select id="filterBulan">
+          <option value="">Semua Bulan</option>
+          ${getAvailableMonthKeys().slice().reverse().map(k=>`<option value="${k}">${monthKeyLabel(k)}</option>`).join('')}
+        </select>
+        <button class="btn btn-outline" id="btnCopyPerBulan">${ic('clipboard')} Salin per Bulan</button>
+        <button class="btn btn-primary admin-only" id="btnInputJob2">+ Job Baru</button>
+      </div>
+    </div>
+    <div id="daftarTableWrap" class="table-wrap"></div>
+  </div>
+  `;
+}
+function renderDaftarTable(){
+  const wrap = document.getElementById('daftarTableWrap');
+  if(!wrap) return;
+  const q = (document.getElementById('searchBox')?.value||'').toLowerCase();
+  const fj = document.getElementById('filterJenis')?.value||'';
+  const fb = document.getElementById('filterBulan')?.value||'';
+  let list = sortedJobsWithNo();
+  if(q){
+    const qDigits = q.replace(/[^0-9]/g,'');
+    list = list.filter(j=>{
+      const hay = [j.namaKlien,j.desa,j.dusun,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket]
+        .join(' ').toLowerCase();
+      if(hay.includes(q)) return true;
+      if(qDigits && String(j.noWhatsapp||'').replace(/[^0-9]/g,'').includes(qDigits)) return true;
+      return false;
+    });
+  }
+  if(fj) list = list.filter(j=>j.jenisAcara===fj);
+  if(fb) list = list.filter(j=>jobOverlapsMonth(j, fb));
+
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty-state"><div class="em">${ic('mailbox-empty')}</div>Belum ada job.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = `
+  <table class="jobtable">
+    <thead><tr>
+      <th>No</th><th>Tanggal</th><th>Klien</th><th>Jenis Acara</th><th>Lokasi</th>
+      <th>Edit</th><th>Cetak</th><th>Pengiriman</th><th>Bayar</th><th>Bersih</th><th>Aksi</th>
+    </tr></thead>
+    <tbody>
+    ${list.map(j=>`
+      <tr>
+        <td data-label="No">#${j.noUrut}</td>
+        <td data-label="Tanggal">${fmtTglJob(j)}</td>
+        <td data-label="Klien">${escapeHtml(j.namaKlien||'-')}</td>
+        <td data-label="Jenis Acara">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara)}</td>
+        <td data-label="Lokasi">${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</td>
+        <td data-label="Edit">${badgeSelect(j.id, 'prosesEdit', ['Belum Selesai','Selesai'], j.prosesEdit)}</td>
+        <td data-label="Cetak">${badgeSelect(j.id, 'prosesCetak', ['Belum Selesai','Selesai'], j.prosesCetak)}</td>
+        <td data-label="Pengiriman">${badgeSelect(j.id, 'pengiriman', PENGIRIMAN_LIST, j.pengiriman)}</td>
+        <td data-label="Bayar">${badgeSelect(j.id, 'statusPembayaran', STATUS_BAYAR_LIST, j.statusPembayaran)}</td>
+        <td data-label="Bersih">${fmtRp(hitungBersih(j))}</td>
+        <td class="row-actions">
+          <button class="icon-btn admin-only" data-edit="${j.id}">Edit</button>
+          <button class="icon-btn" data-view-job="${j.id}">Lihat</button>
+          <button class="icon-btn" data-open-maps="${j.id}" title="Buka di Maps">${ic('map')} Maps</button>
+          <button class="icon-btn icon-btn-danger admin-only" data-delete="${j.id}" title="Hapus job">${ic('trash')} Hapus</button>
+        </td>
+      </tr>
+    `).join('')}
+    </tbody>
+  </table>
+  `;
+  wrap.querySelectorAll('select[data-field]').forEach(sel=>{
+    sel.addEventListener('click', e=> e.stopPropagation());
+    sel.addEventListener('change', e=>{
+      e.stopPropagation();
+      const jobId = sel.dataset.jobId;
+      const field = sel.dataset.field;
+      const idx = jobs.findIndex(x=>x.id===jobId);
+      if(idx===-1) return;
+      jobs[idx][field] = sel.value;
+      // Kalau Admin mengubah Status Pembayaran secara manual, tandai supaya proses
+      // "Lunas otomatis" (autoUpdateJobPaymentStatuses) tidak menimpa balik pilihan
+      // manual ini di siklus berikutnya — sama seperti perilaku status Tugas.
+      if(field==='statusPembayaran') jobs[idx].manualStatusPembayaranSet = true;
+      saveJobs();
+      toast('Status diperbarui');
+      renderDaftarTable();
+    });
+  });
+}
+
+/* =========================================================
+   SALIN DAFTAR JOB PER BULAN (untuk dikirim ke grup WhatsApp)
+========================================================= */
+function getAvailableMonthKeys(){
+  const set = new Set();
+  jobs.forEach(j=>{
+    if(!j.tanggalAcara) return;
+    getJobDateRange(j).forEach(iso=> set.add(iso.slice(0,7))); // 'YYYY-MM' — sertakan tiap bulan yang disentuh rentang job
+  });
+  return [...set].sort(); // urut kronologis lama -> baru
+}
+function monthKeyLabel(key){
+  const [y,m] = key.split('-').map(Number);
+  return `${MONTH_NAMES[m-1]} ${y}`;
+}
+function buildMonthlyCopyText(selectedKeys){
+  const sortedKeys = [...selectedKeys].sort();
+  const blocks = sortedKeys.map(key=>{
+    const monthJobs = jobs
+      .filter(j=> jobOverlapsMonth(j, key))
+      .sort((a,b)=> a.tanggalAcara.localeCompare(b.tanggalAcara));
+
+    const items = monthJobs.map((j)=>{
+      // Satu job = satu baris tanggal (bukan per-hari), tetap acara yang sama meski
+      // berdurasi >1 hari. Tanggalnya dipotong (clip) ke rentang bulan yang sedang
+      // disalin, lalu ditulis "awal-akhir" kalau >1 hari di bulan ini, atau tanggal
+      // tunggal kalau cuma 1 hari.
+      const rangeInMonth = getJobDateRange(j).filter(iso=> iso.slice(0,7)===key);
+      const tglAwal = Number(rangeInMonth[0].slice(8,10));
+      const tglAkhir = Number(rangeInMonth[rangeInMonth.length-1].slice(8,10));
+      const tglLabel = tglAwal===tglAkhir ? `${tglAwal}` : `${tglAwal}-${tglAkhir}`;
+      const namaHari = namaHariID(new Date(j.tanggalAcara+'T00:00:00'));
+      const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : (j.jenisAcara||'-');
+      const desa = desaDisplay(j) || '-';
+      const tim = (j.timFreelancer||'').trim();
+      const noUrut = getJobNo(j.id);
+      const lines = [
+        `${noUrut}. Tgl ${tglLabel} (${namaHari}) — ${desa}`,
+        `    Acara : ${jenis}`,
+      ];
+      if(tim) lines.push(`    Tim   : ${tim}`);
+      return lines.join('\n');
+    });
+
+    const header = `${ic('calendar')} *${monthKeyLabel(key).toUpperCase()}*`;
+    const divider = '━━━━━━━━━━━━━━━━━━━━━';
+    const body = items.length ? items.join('\n\n') : '(Belum ada job di bulan ini)';
+    const total = `Total: ${monthJobs.length} job`;
+    return [header, divider, body, '', total].join('\n');
+  });
+
+  return [
+    ic('camera')+' *KAONE MOTRET — DAFTAR JOB*',
+    '',
+    blocks.join('\n\n'),
+  ].join('\n');
+}
+function openCopyPerBulanModal(){
+  const keys = getAvailableMonthKeys();
+  if(keys.length===0){
+    alert('Belum ada job dengan tanggal acara yang tercatat.');
+    return;
+  }
+  const checkboxesHtml = keys.slice().reverse().map(key=>{
+    const count = jobs.filter(j=> jobOverlapsMonth(j, key)).length;
+    return `
+      <label style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--line);font-weight:500;font-size:13.5px;">
+        <input type="checkbox" class="cpb-month" value="${key}" style="width:16px;height:16px;">
+        ${monthKeyLabel(key)} <span style="color:var(--ink-soft);font-weight:400;">(${count} job)</span>
+      </label>`;
+  }).join('');
+
+  showModal(`
+    <button class="close-x" id="closeModal">${ic('close')}</button>
+    <h3 style="margin-top:0;">${ic('clipboard')} Salin Daftar Job per Bulan</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">
+      Pilih 1–4 bulan untuk disalin.
+    </div>
+    <div id="cpbMonthList" style="max-height:260px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:4px 10px;">
+      ${checkboxesHtml}
+    </div>
+    <div id="cpbLimitWarning" style="display:none;color:var(--danger);font-size:12.5px;margin-top:8px;">
+      Maksimal 4 bulan sekaligus.
+    </div>
+    <div class="form-actions" style="margin-top:16px;">
+      <button type="button" class="btn btn-outline" id="cpbCancel">Batal</button>
+      <button type="button" class="btn btn-primary" id="cpbGenerate">Buat &amp; Salin Teks</button>
+    </div>
+    <textarea id="cpbPreview" readonly rows="10" style="width:100%;margin-top:14px;display:none;font-size:12.5px;font-family:monospace;"></textarea>
+  `);
+
+  const ov = document.getElementById('modalOverlay');
+  const checkboxes = ov.querySelectorAll('.cpb-month');
+  checkboxes.forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const checkedCount = ov.querySelectorAll('.cpb-month:checked').length;
+      const warning = document.getElementById('cpbLimitWarning');
+      if(checkedCount > 4){
+        cb.checked = false; // batalkan centang terakhir yang bikin lebih dari 4
+        warning.style.display = 'block';
+      } else {
+        warning.style.display = 'none';
+      }
+    });
+  });
+  ov.querySelector('#cpbCancel')?.addEventListener('click', (e)=>{ e.stopPropagation(); closeModal(); });
+  ov.querySelector('#cpbGenerate')?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const selected = [...ov.querySelectorAll('.cpb-month:checked')].map(cb=>cb.value);
+    if(selected.length===0){
+      alert('Pilih minimal 1 bulan terlebih dahulu.');
+      return;
+    }
+    const text = buildMonthlyCopyText(selected);
+    const preview = document.getElementById('cpbPreview');
+    preview.value = text;
+    preview.style.display = 'block';
+    copyToClipboard(text, `Daftar job ${selected.length} bulan berhasil disalin`);
+  });
+}
+function badgeClassFor(field, value){
+  if(field==='prosesEdit' || field==='prosesCetak'){
+    return value==='Selesai' ? 'badge-ok' : 'badge-bad';
+  }
+  if(field==='pengiriman'){
+    return (value||'').startsWith('Sudah') ? 'badge-ok' : 'badge-warn';
+  }
+  if(field==='statusPembayaran'){
+    if(value==='Lunas') return 'badge-ok';
+    if(value==='DP') return 'badge-warn';
+    return 'badge-bad';
+  }
+  if(field==='sedekahStatus'){
+    return value==='Sudah' ? 'badge-ok' : 'badge-bad';
+  }
+  return 'badge-warn';
+}
+function badgeSelect(jobId, field, options, value){
+  const cls = badgeClassFor(field, value);
+  return `<span class="badge-select-wrap ${cls}">
+    <select data-job-id="${jobId}" data-field="${field}" ${isAdmin()?'':'disabled'}>
+      ${options.map(o=>`<option value="${o}" ${o===value?'selected':''}>${o}</option>`).join('')}
+    </select>
+  </span>`;
+}
+function badgeFor(status){
+  return status==='Selesai' ? `<span class="badge badge-ok">Selesai</span>` : `<span class="badge badge-bad">Belum Selesai</span>`;
+}
+function badgeBayar(s){
+  if(s==='Lunas') return `<span class="badge badge-ok">Lunas</span>`;
+  if(s==='DP') return `<span class="badge badge-warn">DP</span>`;
+  return `<span class="badge badge-bad">Belum Bayar</span>`;
+}
+
+/* =========================================================
+   KALENDER JOB
+========================================================= */
+function viewKalender(){
+  const overrideVal = thanksOverrides[posterKey(calYear, calMonth)] || '';
+  return `
+  <div class="card">
+    <div class="cal-controls">
+      <h2 style="margin:0;">${ic('calendar')} Kalender Job</h2>
+      <div class="cal-nav">
+        <button id="calPrev">‹</button>
+        <div class="cur">${MONTH_NAMES[calMonth]} ${calYear}</div>
+        <button id="calNext">›</button>
+      </div>
+      <button class="btn btn-primary" id="btnDownloadPoster">${ic('download')} Unduh Gambar (1080×1920)</button>
+      <button class="btn btn-outline" id="btnDownloadPosterKeterangan">${ic('download')} Unduh dengan Keterangan Tanggal</button>
+    </div>
+    <div class="poster-wrap" id="calSwipeViewport">
+      <div class="cal-swipe-track" id="calSwipeTrack">
+        <div class="cal-swipe-slide" data-role="prev"></div>
+        <div class="cal-swipe-slide" data-role="current">
+          <div class="poster-scale-inner" id="posterScaleInner">
+            ${renderPosterHtml()}
+          </div>
+        </div>
+        <div class="cal-swipe-slide" data-role="next"></div>
+      </div>
+    </div>
+
+    <div class="thanks-editor admin-only">
+      <div class="section-title" style="margin-top:0;">${ic('mail')} Ucapan Terima Kasih di Poster — ${MONTH_NAMES[calMonth]} ${calYear}</div>
+      <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 10px;">
+        Kosongkan untuk pakai ucapan otomatis.
+      </p>
+      <textarea id="thanksOverrideInput" rows="2" placeholder="Tulis ucapan terima kasih versimu sendiri di sini...">${escapeHtml(overrideVal)}</textarea>
+      <div class="thanks-controls-row">
+        <button class="btn btn-outline" id="btnSaveThanksText">${ic('save')} Simpan Teks Ini</button>
+        <button class="btn btn-outline" id="btnResetThanksText">${ic('undo')} Pakai Ucapan Otomatis</button>
+        <div class="font-size-control">
+          <span>Ukuran Font</span>
+          <button type="button" id="btnFontMinus">−</button>
+          <span id="fontSizeLabel">${thanksFontSize}px</span>
+          <button type="button" id="btnFontPlus">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="layout-picker admin-only">
+      <div class="section-title" style="margin-top:0;">${ic('image')} Pilih Desain Keseluruhan — ${MONTH_NAMES[calMonth]} ${calYear}</div>
+      <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 12px;">
+        Ganti bebas, khusus bulan ini.
+      </p>
+      <div class="layout-grid">
+        ${LAYOUT_STYLES.map((L,i)=>`
+          <button type="button" class="layout-card ${i===currentLayoutIndex()?'active':''}" data-layout-idx="${i}">
+            <div class="layout-card-preview" style="font-family:${L.fontTitle}">Aa</div>
+            <div class="layout-card-name">${escapeHtml(L.name)}</div>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="theme-picker admin-only">
+      <div class="section-title" style="margin-top:0;">${ic('palette')} Pilih Warna Poster — ${MONTH_NAMES[calMonth]} ${calYear}</div>
+      <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 12px;">
+        Pilih bebas, terpisah dari desain.
+      </p>
+      <div class="theme-swatches">
+        ${POSTER_THEMES.map((t,i)=>`
+          <button type="button" class="theme-swatch ${i===currentThemeIndex()?'active':''}" data-theme-idx="${i}" title="${escapeHtml(t.name)}" style="--sw1:${t.bg2};--sw2:${t.accent};"></button>
+        `).join('')}
+      </div>
+      <div class="theme-current-name">${escapeHtml(POSTER_THEMES[currentThemeIndex()].name)}</div>
+    </div>
+
+    <div class="info-box">
+      ${ic('bulb')} Klik tanggal untuk lihat detail job.
+    </div>
+  </div>
+  `;
+}
+function buildMiniStats(list, keyFn, topN){
+  const map = {};
+  list.forEach(j=>{
+    const k = keyFn(j) || '(Tidak diisi)';
+    map[k] = (map[k]||0) + 1;
+  });
+  const total = list.length;
+  let entries = Object.entries(map).sort((a,b)=> b[1]-a[1]);
+  let top = entries.slice(0, topN);
+  const restCount = entries.slice(topN).reduce((s,[,c])=>s+c, 0);
+  if(restCount>0) top.push(['Lainnya', restCount]);
+  return top.map(([label,count])=>({label, count, pct: total ? Math.round(count/total*100) : 0}));
+}
+// Statistik lengkap TANPA pengelompokan "Lainnya" — dipakai untuk baris Kecamatan
+// pada poster kalender supaya seluruh kecamatan tetap tampil satu per satu.
+function buildFullStats(list, keyFn){
+  const map = {};
+  list.forEach(j=>{
+    const k = keyFn(j) || '(Tidak diisi)';
+    map[k] = (map[k]||0) + 1;
+  });
+  const total = list.length;
+  let entries = Object.entries(map).sort((a,b)=> b[1]-a[1]);
+  return entries.map(([label,count])=>({label, count, pct: total ? (count/total*100) : 0}));
+}
+// Format persen apa adanya (tidak dibulatkan ke bilangan bulat). Presisi dijaga
+// maksimal 2 angka di belakang koma (dibuang bila 0), lalu ditulis dengan koma
+// sesuai kebiasaan format angka Indonesia.
+function formatPctExact(pct){
+  let s = pct.toFixed(2);
+  s = s.replace(/0+$/,'').replace(/\.$/,'');
+  return s.replace('.', ',');
+}
+function renderPosterHtml(){
+  const q = MONTH_QUOTES[calMonth];
+  const firstDay = new Date(calYear, calMonth, 1);
+  const startWeekday = firstDay.getDay(); // 0=Sunday
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+
+  // Sertakan job yang RENTANG harinya (Tanggal Acara s/d Tanggal Selesai) menyentuh
+  // bulan ini — bukan cuma yang tanggal mulainya di bulan ini. Ini penting supaya
+  // job 2 hari (atau lebih) yang menyeberang ke bulan berikutnya tetap muncul di
+  // kedua poster bulan yang bersangkutan.
+  const monthPrefix = `${calYear}-${String(calMonth+1).padStart(2,'0')}`;
+  const jobsThisMonth = jobs.filter(j=> jobOverlapsMonth(j, monthPrefix));
+  // Tandai SEMUA tanggal yang dilewati job (bukan cuma hari pertamanya) supaya job
+  // berdurasi 2 hari atau lebih ditandai di seluruh harinya di kalender poster.
+  const jobDates = new Set();
+  jobsThisMonth.forEach(j=>{
+    getJobDateRange(j).forEach(iso=>{
+      if(iso.slice(0,7)===monthPrefix) jobDates.add(Number(iso.slice(8,10)));
+    });
+  });
+
+  let cells = [];
+  for(let i=0;i<startWeekday;i++) cells.push(null);
+  for(let d=1; d<=daysInMonth; d++) cells.push(d);
+  while(cells.length % 7 !== 0) cells.push(null);
+  let rows = [];
+  for(let i=0;i<cells.length;i+=7) rows.push(cells.slice(i,i+7));
+
+  const monthLower = MONTH_NAMES[calMonth].toLowerCase();
+
+  // Jenis Acara & Kecamatan: tampilkan SELURUHNYA (tidak dikelompokkan jadi "Lainnya"),
+  // dan persennya ditulis apa adanya (tidak dibulatkan) supaya total tetap terlihat 100% akurat.
+  const jenisStats = buildFullStats(jobsThisMonth, j=> j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : j.jenisAcara);
+  const kecStats = buildFullStats(jobsThisMonth, j=> j.kecamatan);
+
+  // Baris statistik bisa berjumlah banyak — ukuran font, jarak baris, tinggi bar,
+  // dan lebar label diperkecil bertahap mengikuti jumlah item supaya seluruhnya
+  // tetap muat rapi di poster tanpa perlu memotong/mengelompokkan datanya.
+  const statSizing = (count)=>{
+    let rowGap=13, labelFont=14.5, pctFont=14, barH=5, labelW=132, titleGap=14;
+    if(count>4 && count<=6){ rowGap=10; labelFont=13; pctFont=12.5; barH=4; labelW=120; titleGap=11; }
+    else if(count>6 && count<=9){ rowGap=7; labelFont=11.5; pctFont=11; barH=4; labelW=110; titleGap=9; }
+    else if(count>9 && count<=13){ rowGap=5; labelFont=10; pctFont=9.5; barH=3; labelW=98; titleGap=7; }
+    else if(count>13 && count<=18){ rowGap=3.5; labelFont=8.5; pctFont=8; barH=3; labelW=88; titleGap=5; }
+    else if(count>18){ rowGap=2.5; labelFont=7.3; pctFont=7; barH=2; labelW=80; titleGap=4; }
+    return {rowGap, labelFont, pctFont, barH, labelW, titleGap};
+  };
+  const statsRowHtml = (s, sz)=>`
+        <div class="cp-stats-row" style="margin-bottom:${sz.rowGap}px;">
+          <span class="cp-stats-label" style="font-size:${sz.labelFont}px;width:${sz.labelW}px;">${escapeHtml(s.label)}</span>
+          <span class="cp-stats-bar" style="height:${sz.barH}px;"><span class="cp-stats-fill" style="width:${s.pct}%"></span></span>
+          <span class="cp-stats-pct" style="font-size:${sz.pctFont}px;">${formatPctExact(s.pct)}%</span>
+        </div>`;
+
+  const jenisSz = statSizing(jenisStats.length);
+  const kecSz = statSizing(kecStats.length);
+
+  const statsHtml = jobsThisMonth.length>0 ? `
+    <div class="cp-stats">
+      <div class="cp-stats-inner">
+        <div class="cp-stats-col">
+          <div class="cp-stats-title" style="margin-bottom:${jenisSz.titleGap}px;"></div>
+          ${jenisStats.map(s=>statsRowHtml(s, jenisSz)).join('')}
+        </div>
+        <div class="cp-stats-col">
+          <div class="cp-stats-title" style="margin-bottom:${kecSz.titleGap}px;"></div>
+          ${kecStats.map(s=>statsRowHtml(s, kecSz)).join('')}
+        </div>
+      </div>
+    </div>` : '';
+
+  // Keterangan tanggal job (tampil di layar saja, di bawah grid tanggal & sebelum
+  // persentase). Satu job = satu baris keterangan (bukan per-hari), diurutkan
+  // berdasarkan tanggal mulai. Formatnya:
+  //   - Job 1 hari:  "[tanggal] - [desa]"
+  //   - Job >1 hari: "[tanggal mulai]-[tanggal selesai] - [desa]"
+  // Tanggal mulai/selesai yang ditulis dipotong (clip) ke rentang bulan yang
+  // sedang ditampilkan, supaya tetap masuk akal kalau job menyeberang bulan.
+  const keteranganItems = jobsThisMonth
+    .slice()
+    .sort((a,b)=> a.tanggalAcara.localeCompare(b.tanggalAcara))
+    .map(j=>{
+      const rangeInMonth = getJobDateRange(j).filter(iso=> iso.slice(0,7)===monthPrefix);
+      if(rangeInMonth.length===0) return null;
+      const desa = j.desa || '-';
+      const tglAwal = Number(rangeInMonth[0].slice(8,10));
+      const tglAkhir = Number(rangeInMonth[rangeInMonth.length-1].slice(8,10));
+      const tglLabel = tglAwal===tglAkhir ? `${tglAwal}` : `${tglAwal}-${tglAkhir}`;
+      return `${tglLabel} - ${escapeHtml(desa)}`;
+    })
+    .filter(Boolean);
+  const keteranganHtml = keteranganItems.length ? `
+    <div class="cp-keterangan" id="cpKeterangan">
+      <div class="cp-ket-title">Keterangan Tanggal</div>
+      ${keteranganItems.map(t=>`<span class="cp-ket-item">${t}</span>`).join('')}
+    </div>` : '';
+
+  const theme = POSTER_THEMES[currentThemeIndex()];
+  const layout = LAYOUT_STYLES[currentLayoutIndex()];
+  const themeStyle = `--poster-bg1:${theme.bg1};--poster-bg2:${theme.bg2};--poster-bg3:${theme.bg3};--poster-accent:${theme.accent};--poster-accent-light:${theme.accentLight};--poster-accent-pale:${theme.accentPale};--poster-ink:${theme.ink};--poster-ink2:${theme.ink2};--poster-ink-soft:${theme.inkSoft};--poster-quote:${theme.quote};--poster-font-title:${layout.fontTitle};--poster-font-quote:${layout.fontQuote};`;
+
+  // Kicker beragam panjang tiap bulan — skala ukuran & jarak huruf otomatis menyesuaikan
+  // panjang teks supaya selalu muat dalam satu baris tanpa merusak tata letak.
+  const kickerText = MONTH_KICKERS[calMonth];
+  let kickerFontSize = 15, kickerLetterSpacing = 9;
+  if(kickerText.length > 26){ kickerFontSize = 12; kickerLetterSpacing = 3; }
+  else if(kickerText.length > 18){ kickerFontSize = 13.5; kickerLetterSpacing = 5; }
+
+  return `
+  <div id="calendarPoster" class="cp-poster" style="${themeStyle}" data-title-align="${layout.titleAlign}" data-date-shape="${layout.dateShape}" data-frame-style="${layout.frameStyle}">
+    <div class="cp-ribbon">KAONE MOTRET</div>
+    <div class="cp-frame"></div>
+    <div class="cp-frame-inner"></div>
+    <div class="cp-corner-mark tl"></div>
+    <div class="cp-corner-mark tr"></div>
+    <div class="cp-corner-mark bl"></div>
+    <div class="cp-corner-mark br"></div>
+
+    <div class="cp-kicker" style="font-size:${kickerFontSize}px; letter-spacing:${kickerLetterSpacing}px; white-space:nowrap;">${escapeHtml(kickerText)}</div>
+    <div class="cp-rule"><span class="ln"></span></div>
+    <div class="cp-title-wrap">
+      <div class="cp-title">${MONTH_NAMES[calMonth]}</div>
+      <div class="cp-year">${calYear}</div>
+      <div class="cp-quote">${escapeHtml(q.sub)}</div>
+    </div>
+    <div class="cp-brandbadge">KAONE MOTRET</div>
+    <div class="cp-watermark">${monthLower}</div>
+    <div class="cp-grid">
+      <table>
+        <thead><tr>${DAY_NAMES.map(dn=>`<th>${dn}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${rows.map(r=>`<tr>${r.map(d=>{
+            if(d===null) return `<td></td>`;
+            const has = jobDates.has(d);
+            return `<td><span class="cp-daynum${has?' has-job':''}" ${has?`data-cal-date="${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}"`:''}>${d}</span></td>`;
+          }).join('')}</tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    ${keteranganHtml}
+    ${statsHtml}
+    <div class="cp-thanks" style="font-size:${thanksFontSize}px">${escapeHtml(currentThanksText()).replaceAll('\n','<br>')}</div>
+    <div class="cp-sub">Dengan penuh syukur — Kaone Motret</div>
+    <div class="cp-book">BOOK&nbsp;NOW</div>
+  </div>
+  `;
+}
+function positionPosterStats(poster, showKeterangan){
+  // Tinggi grid tanggal berubah tergantung jumlah baris (5 atau 6 baris per bulan),
+  // jadi posisi blok statistik (dan keterangan) dihitung dinamis supaya selalu pas
+  // di bawah grid, tidak pernah bertumpuk, di bulan manapun.
+  // showKeterangan=true (default, dipakai saat tampil di layar): urutannya
+  //   grid -> keterangan tanggal job -> statistik/persentase.
+  // showKeterangan=false (dipakai saat mengunduh gambar): blok keterangan disembunyikan
+  //   total (tidak ikut ter-capture) dan statistik kembali menempel tepat di bawah grid,
+  //   persis seperti sebelum ada fitur keterangan ini.
+  //
+  // ⚠️ PENTING (perbaikan tampilan di iPhone):
+  // Dulu posisi dihitung memakai getBoundingClientRect(), yaitu ukuran NYATA di
+  // layar — yang ikut terpengaruh oleh pengecilan poster (scale/zoom). Di Safari
+  // iPhone hasil pembagian itu sering meleset sedikit, sehingga blok keterangan
+  // dan statistik bisa tampil bertumpuk atau melompat-lompat ("acak").
+  // Sekarang dipakai offsetTop/offsetHeight, yaitu ukuran TATA LETAK asli poster
+  // (selalu dalam skala 1080×1920, tidak terpengaruh scale sama sekali), jadi
+  // hasilnya identik di semua browser & semua ukuran layar.
+  if(showKeterangan===undefined) showKeterangan = true;
+  const stats = poster.querySelector('.cp-stats');
+  const keterangan = poster.querySelector('.cp-keterangan');
+  const gridWrap = poster.querySelector('.cp-grid');
+  if(!stats || !gridWrap) return;
+
+  const gridBottom = gridWrap.offsetTop + gridWrap.offsetHeight;
+
+  if(keterangan && showKeterangan){
+    keterangan.style.display = 'flex';
+    keterangan.style.top = Math.round(gridBottom + 40) + 'px';
+    // Baca tinggi keterangan SETELAH posisinya ditetapkan supaya jumlah barisnya
+    // sudah final (jumlah baris berubah tergantung banyaknya job bulan itu).
+    const ketBottom = keterangan.offsetTop + keterangan.offsetHeight;
+    stats.style.top = Math.round(ketBottom + 36) + 'px';
+  } else {
+    if(keterangan) keterangan.style.display = 'none';
+    stats.style.top = Math.round(gridBottom + 40) + 'px';
+  }
+}
+/* Menyesuaikan ukuran pratinjau poster kalender dengan lebar layar.
+   ------------------------------------------------------------------
+   Versi lama memakai properti CSS `zoom` untuk memperkecil poster. Di Safari
+   iPhone `zoom` diperlakukan berbeda dengan browser lain, dan hasil
+   pengukurannya bercampur dengan skala layar — itulah sebab pratinjau kalender
+   kadang terlihat acak, terpotong, atau bergeser sendiri di iPhone.
+
+   Versi ini SELALU memakai transform:scale dengan titik tumpu kiri-atas:
+   - Ukuran tata letak poster tetap 1080×1920 (jadi hasil unduhan gambar tetap
+     presisi & isi poster tidak pernah berubah posisi).
+   - Tinggi ruang pratinjau dihitung pasti (1920 × skala), jadi tidak ada
+     ruang kosong berlebih maupun konten yang saling menimpa.
+   - Cara ini berperilaku persis sama di Safari iPhone, Chrome Android,
+     dan browser desktop. */
+// Inti perhitungan skala satu poster (dipakai untuk poster yang sedang aktif
+// MAUPUN pratinjau bulan sebelumnya/berikutnya saat swipe) — supaya logikanya
+// hanya ditulis sekali dan selalu identik di mana pun dipakai.
+function scalePosterElement(poster, inner, containerWidth){
+  if(!poster || !inner || !containerWidth) return; // hindari skala 0 saat elemen belum sempat ter-layout
+  // Ukur & posisikan blok keterangan + statistik dulu. Pengukuran ini memakai
+  // ukuran tata letak asli, jadi aman dilakukan kapan pun.
+  positionPosterStats(poster, true);
+  const scale = Math.min(1, containerWidth / 1080);
+  poster.style.zoom = '';            // pastikan sisa nilai 'zoom' lama dibersihkan
+  poster.style.transformOrigin = 'top left';
+  poster.style.transform = `scale(${scale})`;
+  inner.style.height = Math.ceil(1920 * scale) + 'px';
+}
+function scalePoster(){
+  const inner = document.getElementById('posterScaleInner');
+  const wrap = inner?.parentElement;
+  const poster = document.getElementById('calendarPoster');
+  if(!inner || !wrap || !poster) return;
+
+  const containerWidth = inner.clientWidth || wrap.clientWidth;
+  if(!containerWidth) return;
+
+  scalePosterElement(poster, inner, containerWidth);
+  wrap.style.height = 'auto';
+  inner.classList.add('is-ready');
+
+  // Susun ulang jalur swipe (pratinjau bulan sebelum/sesudah) memakai lebar yang
+  // sama persis, supaya selalu pas dengan ukuran layar saat ini.
+  layoutSwipeTrack();
+}
+
+/* Jalankan ulang scalePoster dengan aman & tidak berlebihan.
+   Dipanggil saat: layar diputar, ukuran jendela berubah, font selesai dimuat,
+   atau saat pengguna kembali ke tab ini. Di iPhone, ukuran layar yang dilaporkan
+   browser sering baru benar beberapa saat setelah perubahan terjadi (bilah alamat
+   Safari menyusut/membesar saat digulir), jadi perhitungan diulang beberapa kali
+   pada jeda pendek — inilah yang membuat pratinjau tidak lagi "acak". */
+let _posterScaleRaf = null;
+function requestScalePoster(){
+  if(!document.getElementById('calendarPoster')) return;
+  if(_posterScaleRaf) cancelAnimationFrame(_posterScaleRaf);
+  _posterScaleRaf = requestAnimationFrame(()=>{
+    _posterScaleRaf = null;
+    scalePoster();
+  });
+}
+function schedulePosterRescale(){
+  requestScalePoster();
+  [60, 180, 400, 900].forEach(ms=> setTimeout(requestScalePoster, ms));
+  // Pengaman: apa pun yang terjadi, pratinjau poster wajib terlihat.
+  setTimeout(()=>{
+    document.getElementById('posterScaleInner')?.classList.add('is-ready');
+  }, 1200);
+}
+
+/* Pemantau ini dipasang SATU KALI saja untuk seluruh masa hidup halaman.
+   (Dulu listener 'resize' ditambahkan ulang tiap kali menu Kalender dibuka,
+   sehingga menumpuk dan membuat perhitungan dijalankan berkali-kali sekaligus.) */
+let _posterWatchersReady = false;
+let _posterResizeObserver = null;
+function setupPosterWatchers(){
+  if(_posterWatchersReady) return;
+  _posterWatchersReady = true;
+
+  window.addEventListener('resize', requestScalePoster, {passive:true});
+  window.addEventListener('orientationchange', schedulePosterRescale, {passive:true});
+  window.addEventListener('pageshow', schedulePosterRescale);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) schedulePosterRescale(); });
+
+  // Font Fraunces/Poppins dimuat dari internet. Sebelum font itu siap, tinggi
+  // baris di dalam poster masih memakai font cadangan — kalau skala dihitung
+  // pada saat itu saja, tata letak bisa bergeser begitu font aslinya datang.
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(schedulePosterRescale).catch(()=>{});
+  }
+
+  if('ResizeObserver' in window){
+    _posterResizeObserver = new ResizeObserver(()=> requestScalePoster());
+  }
+}
+/* Pantau lebar kotak pratinjau secara langsung (paling akurat — ikut berubah
+   walau yang berubah hanya lebar kartu, bukan ukuran jendela). */
+function observePosterContainer(){
+  if(!_posterResizeObserver) return;
+  const inner = document.getElementById('posterScaleInner');
+  if(!inner) return;
+  try{
+    _posterResizeObserver.disconnect();
+    _posterResizeObserver.observe(inner);
+  }catch(e){}
+}
+
+/* =========================================================
+   SWIPE KALENDER — geser jalur poster (sebelumnya|sekarang|berikutnya)
+   dengan jari untuk berpindah bulan.
+   ---------------------------------------------------------
+   Prinsip kerjanya: tiga poster (bulan sebelumnya, sekarang, berikutnya)
+   ditaruh berjajar dalam satu jalur ("track") yang lebih lebar dari layar.
+   Selagi jari menggeser, jalur itu ikut digeser persis sejauh gerakan jari
+   (1:1 — jadi kalender terasa "menempel" di jari). Saat jari dilepas:
+     - kalau geserannya cukup jauh → jalur diselesaikan dengan animasi halus
+       ke bulan tujuan, lalu bulan aktif (calMonth/calYear) benar-benar
+       dipindah & halaman dirender ulang seperti biasa (tombol ‹ ›).
+     - kalau kurang jauh → jalur "melenting" balik ke posisi semula.
+   Karena Desember selalu bersambung ke Januari (lihat shiftMonth), poster
+   tetangga selalu ada — jadi tidak perlu efek tahanan di ujung kalender. ========================================================= */
+let _calSwipe = {
+  active:false,      // sedang ada jari yang menekan & dipantau
+  decided:false,      // sudah diputuskan ini geser mendatar (bukan scroll biasa)
+  dragging:false,     // sedang menggeser jalur secara horizontal
+  animating:false,    // sedang animasi commit/snap-back (jangan diganggu)
+  pointerId:null,
+  startX:0, startY:0, currentX:0,
+  slideWidthCache:0,
+};
+// Menghitung bulan target maju/mundur sejauh `delta`, dengan pembungkusan
+// tahun otomatis (Januari-1 = Desember tahun sebelumnya, dst).
+function shiftMonth(month, year, delta){
+  let m = month + delta, y = year;
+  while(m < 0){ m += 12; y--; }
+  while(m > 11){ m -= 12; y++; }
+  return {month:m, year:y};
+}
+// Merender HTML poster untuk bulan & tahun TERTENTU (bukan bulan yang sedang
+// aktif). Triknya: pinjam sebentar variabel global calMonth/calYear (dibaca
+// oleh renderPosterHtml & seluruh helper temanya seperti tema/ucapan/layout
+// per-bulan), lalu kembalikan lagi seketika — aman karena JS berjalan
+// sebaris/synchronous, tak ada kode lain yang sempat "menyela" di antaranya.
+// Atribut id="calendarPoster" sengaja dibuang dari hasilnya (diganti tetap
+// memakai class .cp-poster untuk gaya visualnya) supaya tidak bentrok dengan
+// poster yang sedang aktif — id itu cuma boleh dipakai oleh SATU elemen.
+function renderPosterHtmlForMonth(month, year){
+  const savedMonth = calMonth, savedYear = calYear;
+  calMonth = month; calYear = year;
+  let html = '';
+  try{ html = renderPosterHtml(); }
+  finally{ calMonth = savedMonth; calYear = savedYear; }
+  return html.replace(' id="calendarPoster"', '');
+}
+// Mengisi slide pratinjau (sebelumnya/berikutnya) dengan poster bulan yang
+// sesuai, lalu langsung menyesuaikan skalanya dengan lebar layar saat ini.
+function fillSwipeNeighborSlide(slideEl, month, year, width){
+  if(!slideEl) return;
+  slideEl.innerHTML = `<div class="poster-scale-inner">${renderPosterHtmlForMonth(month, year)}</div>`;
+  const inner = slideEl.querySelector('.poster-scale-inner');
+  const poster = slideEl.querySelector('.cp-poster');
+  if(inner && poster){
+    scalePosterElement(poster, inner, width);
+    inner.classList.add('is-ready');
+  }
+}
+// Mengukur ulang lebar layar & menata ketiga slide (termasuk membangun ulang
+// isi pratinjau bulan sebelumnya/berikutnya kalau lebarnya berubah, misalnya
+// karena layar diputar). Dipanggil otomatis setiap kali scalePoster() jalan,
+// jadi ikut kebagian semua "pemicu" yang sudah ada (resize, orientasi, font
+// selesai dimuat, dsb) tanpa perlu pasang pemantau baru.
+function layoutSwipeTrack(){
+  if(_calSwipe.active || _calSwipe.animating) return; // jangan ganggu saat sedang digeser/dianimasikan
+  const viewport = document.getElementById('calSwipeViewport');
+  const track = document.getElementById('calSwipeTrack');
+  if(!viewport || !track) return;
+  const slidePrev = track.querySelector('.cal-swipe-slide[data-role="prev"]');
+  const slideNext = track.querySelector('.cal-swipe-slide[data-role="next"]');
+  if(!slidePrev || !slideNext) return;
+
+  const cs = getComputedStyle(viewport);
+  const padL = parseFloat(cs.paddingLeft) || 0, padR = parseFloat(cs.paddingRight) || 0;
+  const w = Math.round(viewport.clientWidth - padL - padR);
+  if(!w) return;
+
+  const sameWidth = (w === _calSwipe.slideWidthCache);
+  _calSwipe.slideWidthCache = w;
+
+  track.querySelectorAll('.cal-swipe-slide').forEach(s=>{ s.style.width = w + 'px'; });
+  track.style.width = (w * 3) + 'px';
+  track.style.transition = 'none';
+  track.style.transform = `translate3d(${-w}px,0,0)`;
+
+  if(sameWidth && slidePrev.dataset.built === '1' && slideNext.dataset.built === '1') return;
+
+  const prevYM = shiftMonth(calMonth, calYear, -1);
+  const nextYM = shiftMonth(calMonth, calYear, 1);
+  fillSwipeNeighborSlide(slidePrev, prevYM.month, prevYM.year, w);
+  fillSwipeNeighborSlide(slideNext, nextYM.month, nextYM.year, w);
+  slidePrev.dataset.built = '1';
+  slideNext.dataset.built = '1';
+}
+function endSwipeTracking(){
+  _calSwipe.active = false;
+  _calSwipe.dragging = false;
+  window.removeEventListener('pointermove', onCalSwipePointerMove);
+  window.removeEventListener('pointerup', onCalSwipePointerUp);
+  window.removeEventListener('pointercancel', onCalSwipePointerUp);
+}
+function onCalSwipePointerDown(e){
+  if(e.pointerType==='mouse' && e.button!==0) return;
+  if(_calSwipe.animating) return; // biarkan animasi commit/snap-back sebelumnya selesai dulu
+  const track = document.getElementById('calSwipeTrack');
+  if(!track || !_calSwipe.slideWidthCache) return;
+  _calSwipe.active = true;
+  _calSwipe.decided = false;
+  _calSwipe.dragging = false;
+  _calSwipe.pointerId = e.pointerId;
+  _calSwipe.startX = e.clientX;
+  _calSwipe.startY = e.clientY;
+  _calSwipe.currentX = e.clientX;
+  track.style.transition = 'none';
+  window.addEventListener('pointermove', onCalSwipePointerMove, {passive:false});
+  window.addEventListener('pointerup', onCalSwipePointerUp, {passive:true});
+  window.addEventListener('pointercancel', onCalSwipePointerUp, {passive:true});
+}
+function onCalSwipePointerMove(e){
+  if(!_calSwipe.active || e.pointerId !== _calSwipe.pointerId) return;
+  const dx = e.clientX - _calSwipe.startX;
+  const dy = e.clientY - _calSwipe.startY;
+
+  if(!_calSwipe.decided){
+    // Tunggu gerakan cukup jelas dulu sebelum memutuskan ini geser kalender
+    // (mendatar) atau sekadar menggulir halaman (tegak) — supaya jari yang
+    // baru sedikit bergetar saat menyentuh layar tidak langsung dianggap swipe.
+    if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    _calSwipe.decided = true;
+    _calSwipe.dragging = Math.abs(dx) > Math.abs(dy);
+    if(!_calSwipe.dragging){ endSwipeTracking(); return; } // serahkan ke scroll halaman biasa
+  }
+  if(!_calSwipe.dragging) return;
+
+  e.preventDefault(); // sudah pasti geser kalender — jangan sampai halaman ikut tergulir
+  _calSwipe.currentX = e.clientX;
+  const track = document.getElementById('calSwipeTrack');
+  const w = _calSwipe.slideWidthCache;
+  track.style.transform = `translate3d(${-w + dx}px,0,0)`;
+}
+function onCalSwipePointerUp(e){
+  const wasDragging = _calSwipe.dragging;
+  const dx = _calSwipe.currentX - _calSwipe.startX;
+  endSwipeTracking();
+  if(!wasDragging) return;
+
+  const track = document.getElementById('calSwipeTrack');
+  const w = _calSwipe.slideWidthCache || 1;
+  // Baru dianggap "sengaja pindah bulan" kalau sudah tergeser lumayan jauh
+  // (minimal 50px, atau sekitar seperlima lebar layar di layar besar).
+  const threshold = Math.max(50, w * 0.22);
+  if(dx <= -threshold) completeCalSwipe(track, w, 1);       // digeser ke kiri → bulan berikutnya
+  else if(dx >= threshold) completeCalSwipe(track, w, -1);  // digeser ke kanan → bulan sebelumnya
+  else snapBackCalSwipe(track, w);
+}
+function completeCalSwipe(track, w, dir){
+  if(!track) return;
+  _calSwipe.animating = true;
+  track.style.transition = 'transform .32s cubic-bezier(.22,.61,.36,1)';
+  void track.offsetWidth; // paksa reflow supaya transisi di bawah ini benar-benar teranimasi
+  track.style.transform = `translate3d(${-w - dir*w}px,0,0)`;
+  const finish = ()=>{
+    track.removeEventListener('transitionend', finish);
+    _calSwipe.animating = false;
+    calMonth += dir;
+    if(calMonth < 0){ calMonth = 11; calYear--; }
+    else if(calMonth > 11){ calMonth = 0; calYear++; }
+    navigate('kalender');
+  };
+  track.addEventListener('transitionend', finish, {once:true});
+}
+function snapBackCalSwipe(track, w){
+  if(!track) return;
+  _calSwipe.animating = true;
+  track.style.transition = 'transform .32s cubic-bezier(.22,1.15,.4,1)';
+  void track.offsetWidth; // paksa reflow supaya transisi di bawah ini benar-benar teranimasi
+  track.style.transform = `translate3d(${-w}px,0,0)`;
+  const finish = ()=>{
+    track.removeEventListener('transitionend', finish);
+    _calSwipe.animating = false;
+  };
+  track.addEventListener('transitionend', finish, {once:true});
+}
+// Dipanggil sekali setiap kali menu Kalender Job dibuka (elemen lamanya sudah
+// otomatis dibuang oleh navigate() lewat app.innerHTML, jadi aman pasang
+// listener baru di sini tanpa risiko menumpuk).
+function setupCalendarSwipe(){
+  const viewport = document.getElementById('calSwipeViewport');
+  if(!viewport) return;
+  layoutSwipeTrack();
+  viewport.addEventListener('pointerdown', onCalSwipePointerDown, {passive:true});
+}
+
+
+/* ---------- Modal detail tanggal / job ---------- */
+function openDateModal(dateIso){
+  // Pakai isJobOnDate (bukan cocok persis dengan tanggalAcara) supaya klik di hari
+  // kedua/ketiga dst dari job berdurasi >1 hari tetap menampilkan detail job itu.
+  const list = jobs.filter(j=>isJobOnDate(j, dateIso));
+  if(list.length===0) return;
+  modalDateJobs = list;
+  showModal(`
+    <button class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${fmtTgl(dateIso)}</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);">${list.length} job pada tanggal ini</div>
+    ${list.map(j=>`
+      <div class="modal-job">
+        <div style="font-weight:700;margin-bottom:4px;">#${getJobNo(j.id)} — ${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
+        <div class="mj-row"><span>Jenis Acara</span><span>${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara||'-')}</span></div>
+        <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}, ${escapeHtml(j.kabupaten||'-')}</span></div>
+        <div class="mj-row"><span>Paket</span><span>${escapeHtml(j.paket||'-')}</span></div>
+        <div class="mj-row"><span>WhatsApp</span><span>${escapeHtml(j.noWhatsapp||'-')}</span></div>
+        <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
+        <div class="mj-row"><span>Tim/Freelancer</span><span>${escapeHtml(j.timFreelancer||'-')}</span></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" data-open-maps="${j.id}">${ic('map')} Buka di Maps</button>
+          <button type="button" class="btn btn-outline" data-gcal="${j.id}">${ic('calendar')} Tambah ke Google Calendar</button>
+          <button type="button" class="btn btn-outline" data-ics="${j.id}">${ic('download')} Unduh .ics</button>
+          <button type="button" class="btn btn-outline admin-only" data-edit="${j.id}">${ic('edit')} Edit Job</button>
+        </div>
+      </div>
+    `).join('')}
+  `);
+}
+/* ---------- Modal daftar job dari kartu statistik Beranda (mis. "Belum Dijemput/Diantar") ----------
+   Dibuat generik per-field supaya gampang dipakai lagi untuk stat lain di masa depan
+   (mis. kalau nanti "Edit/Cetak Belum Selesai" juga ingin dibuat bisa diklik). */
+const STATUS_LIST_CONFIG = {
+  prosesEdit: {
+    label: 'Proses Edit',
+    icon: ic('edit'),
+    options: ['Belum Selesai','Selesai'],
+    isPending: j => j.prosesEdit!=='Selesai',
+  },
+  prosesCetak: {
+    label: 'Proses Cetak',
+    icon: ic('printer'),
+    options: ['Belum Selesai','Selesai'],
+    isPending: j => j.prosesCetak!=='Selesai',
+  },
+  pengiriman: {
+    label: 'Pengiriman',
+    icon: ic('truck'),
+    options: PENGIRIMAN_LIST,
+    isPending: j => !(j.pengiriman||'').startsWith('Sudah'),
+  },
+  sedekahStatus: {
+    label: 'Sedekah',
+    icon: ic('hands'),
+    options: ['Belum','Sudah'],
+    isPending: j => j.sedekahStatus!=='Sudah',
+    // Nominal sedekah tiap job dipakai untuk menghitung total di kartu Beranda & modal ini.
+    getAmount: j => Number(j.sedekahNominal||hitungSedekah(j))||0,
+  },
+  statusPembayaran: {
+    label: 'Pembayaran',
+    icon: ic('money'),
+    options: STATUS_BAYAR_LIST,
+    isPending: j => j.statusPembayaran!=='Lunas',
+    // Sisa yang masih harus ditagih ke klien untuk job yang belum Lunas.
+    getAmount: j => Math.max(0, hitungSisaPembayaran(j)),
+  },
+};
+function renderStatusListModalHtml(field){
+  const cfg = STATUS_LIST_CONFIG[field];
+  if(!cfg) return '';
+  const list = sortedJobsWithNo().filter(cfg.isPending);
+  const totalAmount = cfg.getAmount ? list.reduce((s,j)=>s+cfg.getAmount(j),0) : null;
+  return `
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${cfg.icon} ${cfg.label} Belum Tuntas</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job dengan status ${cfg.label.toLowerCase()} yang belum tuntas${totalAmount!==null ? ` · Total: <b>${fmtRp(totalAmount)}</b>` : ''}</div>
+    ${list.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">${ic('check-circle')}</div>Semua ${cfg.label.toLowerCase()} sudah tuntas.</div>` :
+      list.map(j=>`
+        <div class="modal-job">
+          <div style="font-weight:700;margin-bottom:4px;">#${j.noUrut} — ${escapeHtml(j.namaKlien||'Tanpa Nama')} <span class="pill">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara||'-')}</span></div>
+          <div class="mj-row"><span>Tanggal Acara</span><span>${fmtTglJob(j)}</span></div>
+          <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</span></div>
+          ${cfg.getAmount ? `<div class="mj-row"><span>Nominal Sedekah</span><span>${fmtRp(cfg.getAmount(j))}</span></div>` : ''}
+          <div class="mj-row"><span>Status ${cfg.label}</span><span>${badgeSelect(j.id, field, cfg.options, j[field])}</span></div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" data-view-job="${j.id}">Lihat Detail</button>
+            <button type="button" class="btn btn-outline admin-only" data-edit="${j.id}">${ic('edit')} Edit Job</button>
+          </div>
+        </div>
+      `).join('')}
+  `;
+}
+/* ---------- Modal daftar Klien Repeat Order (dari kartu "Klien Repeat Order" di
+   Ringkasan Rekap) ----------
+   Beda dari Top 5 Klien (yang cuma 5 teratas berdasar Omzet, admin-only), modal ini
+   menampilkan SEMUA klien yang sudah booking LEBIH DARI SEKALI — aman untuk Tim juga
+   (tanpa kolom Omzet), supaya kartunya tetap bisa diklik oleh siapa pun yang melihatnya. */
+function renderUniqueClientsModalHtml(){
+  const map = {};
+  jobs.forEach(j=>{
+    const nama = (j.namaKlien||'').trim();
+    if(!nama) return;
+    const key = nama.toLowerCase();
+    if(!map[key]) map[key] = {nama, count:0, omzet:0, lastDate:''};
+    map[key].count++;
+    map[key].omzet += hitungOmzet(j);
+    if(j.tanggalAcara && j.tanggalAcara > map[key].lastDate) map[key].lastDate = j.tanggalAcara;
+  });
+  const admin = isAdmin();
+  const totalKlienUnik = Object.keys(map).length;
+  // Hanya klien yang booking LEBIH DARI SEKALI yang ditampilkan — sesuai maksud kartunya.
+  const list = Object.values(map).filter(c=>c.count>1).sort((a,b)=> b.count-a.count || a.nama.localeCompare(b.nama));
+  return `
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('user')} Klien Repeat Order</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">${list.length} dari ${totalKlienUnik} klien unik sudah booking lebih dari sekali</div>
+    ${list.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">${ic('mailbox-empty')}</div>Belum ada klien yang booking berulang.</div>` :
+      list.map(c=>`
+        <div class="modal-job">
+          <div style="font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span>${escapeHtml(c.nama)}</span>
+            <span class="pill">Booking ${c.count}x</span>
+          </div>
+          <div class="mj-row"><span>Job Terakhir</span><span>${c.lastDate?fmtTgl(c.lastDate):'-'}</span></div>
+          ${admin?`<div class="mj-row"><span>Total Omzet</span><span>${fmtRp(c.omzet)}</span></div>`:''}
+        </div>
+      `).join('')}
+  `;
+}
+function openUniqueClientsModal(){
+  showModal(renderUniqueClientsModalHtml());
+}
+// ⚠️ Kalau fungsi ini diubah (field baru ditambahkan ke STATUS_LIST_CONFIG, dsb),
+// ingat catat juga di CHANGELOG + naikkan APP_VERSION — lihat aturan wajib di atas file ini.
+function openStatusListModal(field){
+  showModal(renderStatusListModalHtml(field));
+  const ov = document.getElementById('modalOverlay');
+  ov?.querySelectorAll('select[data-field]').forEach(sel=>{
+    sel.addEventListener('click', e=> e.stopPropagation());
+    sel.addEventListener('change', e=>{
+      e.stopPropagation();
+      if(!isAdmin()) return;
+      const jobId = sel.dataset.jobId;
+      const idx = jobs.findIndex(x=>x.id===jobId);
+      if(idx===-1) return;
+      jobs[idx][field] = sel.value;
+      saveJobs();
+      toast('Status diperbarui');
+      render(); // supaya angka di kartu statistik Beranda di belakang modal ikut ter-update
+      openStatusListModal(field); // bangun ulang isi modal (job yang sudah tuntas akan hilang dari daftar)
+    });
+  });
+}
+/* ---------- Modal daftar job berdasar NILAI PERSIS suatu status (bukan cuma "belum
+   tuntas" seperti STATUS_LIST_CONFIG di atas) — dipakai untuk kartu rincian per-status
+   Pengiriman di Rekap (mis. klik "Sudah Dijemput" -> lihat semua job berstatus itu). */
+function renderValueListModalHtml(field, value){
+  const cfg = STATUS_LIST_CONFIG[field];
+  const label = cfg ? cfg.label : field;
+  const icon = cfg ? cfg.icon : '';
+  const options = cfg ? cfg.options : null;
+  const list = sortedJobsWithNo().filter(j=>j[field]===value);
+  const totalAmount = cfg && cfg.getAmount ? list.reduce((s,j)=>s+cfg.getAmount(j),0) : null;
+  return `
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${icon} ${escapeHtml(value)}</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job dengan status ${label.toLowerCase()} "${escapeHtml(value)}"${totalAmount!==null ? ` · Total: <b>${fmtRp(totalAmount)}</b>` : ''}</div>
+    ${list.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">${ic('mailbox-empty')}</div>Belum ada job dengan status ini.</div>` :
+      list.map(j=>`
+        <div class="modal-job">
+          <div style="font-weight:700;margin-bottom:4px;">#${j.noUrut} — ${escapeHtml(j.namaKlien||'Tanpa Nama')} <span class="pill">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara||'-')}</span></div>
+          <div class="mj-row"><span>Tanggal Acara</span><span>${fmtTglJob(j)}</span></div>
+          <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</span></div>
+          ${options ? `<div class="mj-row"><span>Status ${label}</span><span>${badgeSelect(j.id, field, options, j[field])}</span></div>` : ''}
+          <div class="modal-actions">
+            <button type="button" class="btn btn-outline" data-view-job="${j.id}">Lihat Detail</button>
+            <button type="button" class="btn btn-outline admin-only" data-edit="${j.id}">${ic('edit')} Edit Job</button>
+          </div>
+        </div>
+      `).join('')}
+  `;
+}
+function openValueListModal(field, value){
+  showModal(renderValueListModalHtml(field, value));
+  const ov = document.getElementById('modalOverlay');
+  ov?.querySelectorAll('select[data-field]').forEach(sel=>{
+    sel.addEventListener('click', e=> e.stopPropagation());
+    sel.addEventListener('change', e=>{
+      e.stopPropagation();
+      if(!isAdmin()) return;
+      const jobId = sel.dataset.jobId;
+      const idx = jobs.findIndex(x=>x.id===jobId);
+      if(idx===-1) return;
+      jobs[idx][field] = sel.value;
+      saveJobs();
+      toast('Status diperbarui');
+      render(); // supaya angka di kartu statistik di belakang modal ikut ter-update
+      openValueListModal(field, value); // bangun ulang isi modal dgn filter nilai yang SAMA (job yang barusan diubah akan hilang dari daftar ini)
+    });
+  });
+}
+function showModal(innerHtml){
+  // hapus modal lama jika ada, agar tidak menumpuk
+  closeModal();
+  const ov = document.createElement('div');
+  ov.className='overlay';
+  ov.id='modalOverlay';
+  ov.innerHTML = `<div class="modal">${innerHtml}</div>`;
+  // Klik di area gelap luar kotak modal -> tutup. Sengaja dicek DUA event (mousedown DAN
+  // click) sama-sama kena overlay, bukan cuma "click" saja — supaya blok teks di dalam
+  // modal yang tak sengaja terseret sampai keluar kotak (mouse dilepas di area gelap)
+  // TIDAK dianggap sebagai klik-di-luar dan menutup modal secara tidak sengaja.
+  let mouseDownOnOverlay = false;
+  ov.addEventListener('mousedown', (e)=>{ mouseDownOnOverlay = (e.target===ov); });
+  ov.addEventListener('click', (e)=>{ if(e.target===ov && mouseDownOnOverlay) closeModal(); });
+  document.body.appendChild(ov);
+  document.addEventListener('keydown', escCloseModal);
+
+  // Pasang listener LANGSUNG pada tiap tombol di dalam modal (bukan hanya delegasi
+  // global) supaya dijamin selalu responsif terlepas dari cara modal ini dibuat.
+  ov.querySelector('#closeModal')?.addEventListener('click', (e)=>{ e.stopPropagation(); closeModal(); });
+  ov.querySelectorAll('[data-gcal]').forEach(b=>{
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); openGoogleCalendar(b.dataset.gcal); });
+  });
+  ov.querySelectorAll('[data-ics]').forEach(b=>{
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); downloadIcs(b.dataset.ics); });
+  });
+  ov.querySelectorAll('[data-edit]').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openEditJobModal(b.dataset.edit);
+    });
+  });
+  ov.querySelectorAll('[data-view-job]').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openJobDetailModal(b.dataset.viewJob);
+    });
+  });
+  ov.querySelectorAll('[data-detail-download]').forEach(b=>{
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); downloadJobDetailImage(b.dataset.detailDownload); });
+  });
+  ov.querySelectorAll('[data-detail-story]').forEach(b=>{
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); downloadJobStoryImage(b.dataset.detailStory); });
+  });
+  ov.querySelectorAll('[data-detail-copy]').forEach(b=>{
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); copyJobDetails(b.dataset.detailCopy); });
+  });
+  ov.querySelectorAll('[data-kwitansi]').forEach(b=>{
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); downloadKwitansiPdf(b.dataset.kwitansi); });
+  });
+  ov.querySelectorAll('[data-kwitansi-img]').forEach(b=>{
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); downloadKwitansiImage(b.dataset.kwitansiImg); });
+  });
+}
+function escCloseModal(e){
+  if(e.key==='Escape') closeModal();
+}
+function closeModal(){
+  const ov = document.getElementById('modalOverlay');
+  if(ov) ov.remove();
+  document.removeEventListener('keydown', escCloseModal);
+}
+
+/* ---------- Modal Edit Job (popup, tanpa pindah halaman) ---------- */
+function openEditJobModal(jobId){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa menambah/mengedit job.'); return; }
+  const j = jobId ? jobs.find(x=>x.id===jobId) : null;
+  editingId = j ? j.id : null;
+  showModal(`
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    ${buildJobFormHtml(j)}
+  `);
+  pullTeamAccountsPublic();
+  const ov = document.getElementById('modalOverlay');
+  bindJobFormEvents(ov, ()=>{
+    closeModal();
+    // segarkan tampilan yang sedang aktif di belakang modal
+    if(currentView==='daftar') renderDaftarTable();
+    else render();
+  });
+}
+
+/* ---------- Modal Detail Job (lihat, unduh gambar, salin, ics, google calendar) ---------- */
+function openJobDetailModal(jobId){
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
+  const lokasiFull = [desaDisplay(j),j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
+  const jarakJalanCachedDetail = getCachedJarakJalanKm(j);
+  const koordDetailValid = !!parseCoordString(j.koordinat);
+  // Kalau belum ada di cache tapi koordinatnya valid, tampilkan status "Menghitung…"
+  // dulu — hasil aslinya akan menyusul async & disuntikkan ke DOM lewat id di bawah
+  // (lihat pemanggilan fetchJarakJalanKm setelah showModal(...)).
+  const jarakJalanTeksAwal = jarakJalanCachedDetail!==null ? fmtJarakJalan(jarakJalanCachedDetail)
+    : (koordDetailValid ? 'Menghitung…' : '-');
+  const jarakJalanBiayaTeksAwal = jarakJalanCachedDetail!==null ? fmtRp(hitungSaranTransport(jarakJalanCachedDetail))
+    : (koordDetailValid ? '…' : '-');
+  const sections = [
+    {title:'Data Acara', rows:[
+      ['Nama Klien', j.namaKlien||'-'],
+      ['Tanggal Acara', fmtTglJob(j)],
+      ['Jenis Acara', jenis],
+      ['Lokasi', lokasiFull],
+      ['Link Maps', j.linkMaps||'-'],
+      ['Titik Koordinat', j.koordinat||'-'],
+      ['Jarak dari Kaone Motret (Real)', jarakJalanTeksAwal, 'jdJarakJalanText'],
+      ['Saran Transport', jarakJalanBiayaTeksAwal, 'jdJarakJalanBiayaText'],
+      ['No. WhatsApp', j.noWhatsapp||'-'],
+      ['Paket', j.paket||'-'],
+      ['Deskripsi Paket', j.deskripsiPaket||'-'],
+    ]},
+    {title:'Status & Proses', rows:[
+      ['Proses Edit', j.prosesEdit||'-'],
+      ['Proses Cetak', j.prosesCetak||'-'],
+      ['Pengiriman', j.pengiriman||'-'],
+      ['Status Pembayaran', j.statusPembayaran||'-'],
+      ['Vendor', vendorDisplay(j)],
+      ['Tim/Freelancer', j.timFreelancer||'-'],
+    ]},
+    {title:'Keuangan', rows:[
+      ['DP', fmtRp(j.dp)],
+      ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
+      ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
+      ['Biaya Cetak', fmtRp(j.biayaCetak)],
+      ['Honor Tim', fmtRp(j.honorTim)],
+      ['Diskon', fmtRp(j.diskon)],
+      ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
+      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
+      ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
+    ]},
+    {title:'Catatan', rows:[
+      ['Catatan', j.catatan||'-'],
+    ]},
+  ];
+  const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
+  const col = jenisAcaraColor(j.jenisAcara);
+  const cardStyle = `--jd-hdr1:${col.hdr1};--jd-hdr2:${col.hdr2};--jd-accent:${col.accent};--jd-soft:${col.soft};`;
+
+  showModal(`
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3 style="margin-bottom:2px;">Detail Job</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">#${getJobNo(j.id)} — ${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
+    <div class="job-detail-card" id="jobDetailCard" style="${cardStyle}">
+      <div class="jd-header">
+        <div class="jd-header-top">
+          <div class="jd-header-badge">KM</div>
+          <div class="jd-header-namewrap">
+            <div class="jd-header-name">Kaone Motret</div>
+            <div class="jd-header-tag">Buku Job Fotografer</div>
+          </div>
+          <div class="jd-type-badge">${escapeHtml(jenis)}</div>
+        </div>
+        <div class="jd-header-job">#${getJobNo(j.id)} — ${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
+      </div>
+      <div class="jd-body">
+        ${sections.map(sec=>`
+          <div class="jd-section-title">${escapeHtml(sec.title)}</div>
+          ${sec.rows.map(([label,val,id])=>`<div class="mj-row"><span>${escapeHtml(label)}</span><span${id?` id="${id}"`:''}>${escapeHtml(String(val))}</span></div>`).join('')}
+        `).join('')}
+      </div>
+      <div class="jd-footer">
+        <div class="jd-footer-line"></div>
+        <div class="jd-footer-text">Dicetak dari Buku Job Kaone Motret · ${printedAt}</div>
+      </div>
+      <div class="jd-bottom-bar"></div>
+    </div>
+    ${kwitansiStatusHtml(j)}
+    ${waSelesaiBoxHtml(j)}
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" data-detail-download="${j.id}">${ic('image')} Unduh Gambar</button>
+      <button type="button" class="btn btn-outline" data-detail-story="${j.id}">${ic('phone')} Unduh Gambar Story</button>
+      <button type="button" class="btn btn-outline" data-detail-copy="${j.id}">${ic('clipboard')} Salin Detail</button>
+      <button type="button" class="btn ${isKwitansiOutdated(j)?'btn-warning':'btn-outline'}" data-kwitansi="${j.id}">${ic('receipt')} ${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (PDF)':'Cetak Kwitansi (PDF)'}</button>
+      <button type="button" class="btn ${isKwitansiOutdated(j)?'btn-warning':'btn-outline'}" data-kwitansi-img="${j.id}">${ic('image')} ${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (Gambar)':'Cetak Kwitansi (Gambar)'}</button>
+      <button type="button" class="btn btn-outline" data-ics="${j.id}">${ic('download')} Unduh .ics</button>
+      <button type="button" class="btn btn-outline" data-gcal="${j.id}">${ic('calendar')} Tambah ke Google Calendar</button>
+      <button type="button" class="btn btn-primary admin-only" data-edit="${j.id}">${ic('edit')} Edit Job</button>
+    </div>
+  `);
+
+  // Kalau jarak jalan belum ada di cache, hitung sekarang (async) lalu suntikkan
+  // hasilnya ke baris yang sudah tampil di modal — kalau modalnya sudah ditutup
+  // duluan sebelum fetch selesai, elemen dengan id ini otomatis sudah tidak ada
+  // di DOM lagi sehingga update-nya otomatis diabaikan (tidak error).
+  if(jarakJalanCachedDetail===null && koordDetailValid){
+    fetchJarakJalanKm(j).then(kmJalan=>{
+      const elText = document.getElementById('jdJarakJalanText');
+      const elBiaya = document.getElementById('jdJarakJalanBiayaText');
+      if(!elText && !elBiaya) return; // modal sudah ditutup
+      if(kmJalan===null){
+        if(elText) elText.textContent = 'Tidak tersedia (cek koneksi)';
+        if(elBiaya) elBiaya.textContent = '-';
+      }else{
+        if(elText) elText.textContent = fmtJarakJalan(kmJalan);
+        if(elBiaya) elBiaya.textContent = fmtRp(hitungSaranTransport(kmJalan));
+      }
+    });
+  }
+}
+// Potong teks panjang (mis. catatan / deskripsi paket) supaya tinggi poster tetap presisi 1080x1920
+function truncateText(s, max){
+  s = String(s||'').trim();
+  if(s.length<=max) return s;
+  return s.slice(0,max-1).trimEnd()+'…';
+}
+/* ---------- Desain POSTER untuk file unduhan (1080x1920) ----------
+   Sengaja dibuat sebagai template terpisah dari #jobDetailCard (preview di dalam
+   modal), supaya file gambar yang diunduh terasa seperti dokumen resmi yang rapi —
+   bukan sekadar screenshot dari tampilan popup di layar. Baris yang kosong ('-')
+   otomatis disembunyikan supaya poster tidak penuh sesak oleh data kosong. */
+function buildJobPosterHtml(j){
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
+  const lokasiFull = [desaDisplay(j),j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
+  const col = jenisAcaraColor(j.jenisAcara);
+  const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
+  const jarakJalanPoster = getCachedJarakJalanKm(j); // poster dirender sinkron saat diunduh — pakai cache saja (biasanya sudah terisi kalau Detail Job sempat dibuka lebih dulu)
+
+  const sections = [
+    {title:'Data Acara', rows:[
+      ['Jenis Acara', jenis],
+      ['Lokasi', lokasiFull],
+      ['Link Maps', j.linkMaps||'-'],
+      ...(jarakJalanPoster!==null ? [['Jarak dari Kaone Motret (Real)', fmtJarakJalan(jarakJalanPoster)]] : []),
+      ...(jarakJalanPoster!==null ? [['Saran Transport', fmtRp(hitungSaranTransport(jarakJalanPoster))]] : []),
+      ['No. WhatsApp', j.noWhatsapp||'-'],
+      ['Paket', j.paket||'-'],
+      ['Deskripsi Paket', truncateText(j.deskripsiPaket, 160) || '-'],
+    ]},
+    {title:'Status & Proses', rows:[
+      ['Proses Edit', j.prosesEdit||'-'],
+      ['Proses Cetak', j.prosesCetak||'-'],
+      ['Pengiriman', j.pengiriman||'-'],
+      ['Status Pembayaran', j.statusPembayaran||'-'],
+      ['Vendor', vendorDisplay(j)],
+      ['Tim/Freelancer', j.timFreelancer||'-'],
+    ]},
+    {title:'Keuangan', rows:[
+      ['DP', fmtRp(j.dp)],
+      ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
+      ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
+      ['Biaya Cetak', fmtRp(j.biayaCetak)],
+      ['Honor Tim', fmtRp(j.honorTim)],
+      ['Diskon', fmtRp(j.diskon)],
+      ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
+      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
+      ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
+    ], highlightLast:true},
+    {title:'Catatan', rows:[
+      ['Catatan', truncateText(j.catatan, 190) || '-'],
+    ]},
+  ]
+  // Sembunyikan baris & seksi yang datanya kosong, supaya layout tetap rapi & tidak melebihi 1920px
+  .map(sec=>({...sec, rows:sec.rows.filter(([,val])=> val && val!=='-')}))
+  .filter(sec=>sec.rows.length>0);
+
+  return `
+    <div id="jobPosterExport" class="job-poster" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
+      <div class="jp-watermark"></div>
+      <div class="jp-topbar">
+        <div class="jp-badge">KM</div>
+        <div>
+          <div class="jp-brand-name">Kaone Motret</div>
+          <div class="jp-brand-tag">Buku Job Fotografer</div>
+        </div>
+        <div class="jp-type-badge">${escapeHtml(jenis)}</div>
+      </div>
+      <div class="jp-title-block">
+        <div class="jp-kicker">Detail Job &middot; #${getJobNo(j.id)}</div>
+        <div class="jp-client-name">${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
+        <div class="jp-date-row"><span>${fmtTglJob(j)}</span><span class="sep"></span><span>${escapeHtml(jenis)}</span></div>
+      </div>
+      <div class="jp-rule"></div>
+      <div class="jp-body">
+        ${sections.map(sec=>`
+          <div class="jp-section">
+            <div class="jp-section-head"><span class="dot"></span><span class="txt">${escapeHtml(sec.title)}</span></div>
+            ${sec.rows.map(([label,val],i)=>`
+              <div class="jp-row${sec.highlightLast && i===sec.rows.length-1 ? ' jp-highlight':''}">
+                <span class="jp-label">${escapeHtml(label)}</span>
+                <span class="jp-value">${escapeHtml(String(val))}</span>
+              </div>
+            `).join('')}
+          </div>
+        `).join('')}
+      </div>
+      <div class="jp-footer">
+        <div class="jp-footer-line"></div>
+        <div class="jp-footer-brand">Kaone Motret</div>
+        <div class="jp-footer-text">Dicetak dari Buku Job Kaone Motret &middot; ${printedAt}</div>
+      </div>
+      <div class="jp-bottom-bar"></div>
+    </div>
+  `;
+}
+function downloadJobDetailImage(jobId){
+  if(typeof html2canvas === 'undefined'){
+    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  toast('Menyiapkan gambar detail job...');
+
+  // Poster dirender di luar tampilan (opacity:0, tidak bisa diklik) hanya untuk keperluan
+  // pengambilan gambar, lalu dihapus lagi — supaya tidak mengganggu tampilan di layar
+  // dan hasil unduhannya selalu presisi 1080x1920 apa pun ukuran layar penggunanya.
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;z-index:-1;';
+  holder.innerHTML = buildJobPosterHtml(j);
+  document.body.appendChild(holder);
+  const posterEl = holder.querySelector('#jobPosterExport');
+
+  const capture = ()=>{
+    // Jaring pengaman: jika isi body poster berpotensi menabrak footer (mis. nama klien,
+    // deskripsi paket, atau catatan yang sama-sama panjang), rapatkan tata letak bertahap.
+    const fits = ()=>{
+      const body = posterEl.querySelector('.jp-body');
+      const footer = posterEl.querySelector('.jp-footer');
+      return body.getBoundingClientRect().bottom <= footer.getBoundingClientRect().top - 8;
+    };
+    if(!fits()) posterEl.classList.add('jp-compact');
+    if(!fits()) posterEl.classList.add('jp-compact2');
+
+    html2canvas(posterEl, {width:1080, height:1920, scale:1, backgroundColor:'#fffdf6'}).then(canvas=>{
+      holder.remove();
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `detail-job-${(j.namaKlien||'kaonemotret').replace(/\s+/g,'_')}-${j.tanggalAcara}.png`;
+      a.click();
+    }).catch(()=>{
+      holder.remove();
+      alert('Gagal membuat gambar. Coba lagi.');
+    });
+  };
+  // Tunggu font kustom (Fraunces/Poppins) selesai dimuat dulu, supaya teks di gambar
+  // tidak sempat ter-capture memakai font fallback sistem.
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(capture).catch(capture);
+  } else {
+    setTimeout(capture, 60);
+  }
+}
+/* Sensor nama untuk konten publik (story Instagram): setiap kata cukup huruf awalnya
+   yang tampil, sisanya diganti bintang — "Rasid Saleh" -> "R**** S****". */
+function sensorNama(nama){
+  const kata = String(nama||'').trim().split(/\s+/).filter(Boolean);
+  if(kata.length===0) return 'Klien';
+  return kata.map(w=> w.length<=1 ? w.toUpperCase() : w[0].toUpperCase()+'*'.repeat(w.length-1)).join(' ');
+}
+// Kartu ringkas 1080x1920 khusus untuk diunggah ke Instagram Story — hanya data penting
+// (tanpa data keuangan, no. WhatsApp, atau catatan internal) dan nama klien disensor.
+function buildJobStoryHtml(j){
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Acara') : (j.jenisAcara||'Acara');
+  const col = jenisAcaraColor(j.jenisAcara);
+  const lokasiUmum = [desaDisplay(j), j.kecamatan, j.kabupaten].filter(Boolean).join(', ')
+    || j.provinsi || '';
+  const jarakJalanStory = getCachedJarakJalanKm(j); // kartu Story dirender sinkron saat diunduh — pakai cache saja
+
+  const infoRows = [
+    ['Tanggal', fmtTglJob(j)],
+    ...(lokasiUmum ? [['Lokasi', lokasiUmum]] : []),
+    ...(j.paket ? [['Paket', truncateText(j.paket, 46)]] : []),
+    ...(jarakJalanStory!==null ? [['Jarak (Real)', fmtJarakJalan(jarakJalanStory)]] : []),
+  ];
+
+  return `
+    <div id="jobStoryExport" class="job-story" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
+      <div class="js-watermark"></div>
+      <div class="js-frame"></div>
+      <div class="js-badge">KM</div>
+      <div class="js-brand">Kaone Motret</div>
+      <div class="js-brand-tag">Wedding Photography</div>
+      <div class="js-kicker">Job #${getJobNo(j.id)} &middot; ${escapeHtml(jenis)}</div>
+      <div class="js-name">${escapeHtml(sensorNama(j.namaKlien))}</div>
+      <div class="js-rule"></div>
+      <div class="js-info">
+        ${infoRows.map(([label,val])=>`
+          <div class="js-info-row">
+            <div class="js-info-label">${escapeHtml(label)}</div>
+            <div class="js-info-value">${escapeHtml(String(val))}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="js-footer">
+        <div class="js-footer-line"></div>
+        <div class="js-footer-brand">Kaone Motret</div>
+        <div class="js-footer-text">Dokumentasi Pernikahan &amp; Acara</div>
+      </div>
+      <div class="js-bottom-bar"></div>
+    </div>
+  `;
+}
+function downloadJobStoryImage(jobId){
+  if(typeof html2canvas === 'undefined'){
+    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  toast('Menyiapkan gambar story...');
+
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;z-index:-1;';
+  holder.innerHTML = buildJobStoryHtml(j);
+  document.body.appendChild(holder);
+  const storyEl = holder.querySelector('#jobStoryExport');
+
+  const captureStory = ()=>{
+    html2canvas(storyEl, {width:1080, height:1920, scale:1, backgroundColor:'#fffdf6'}).then(canvas=>{
+      holder.remove();
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `story-${(j.namaKlien||'kaonemotret').replace(/\s+/g,'_')}-${j.tanggalAcara}.png`;
+      a.click();
+    }).catch(()=>{
+      holder.remove();
+      alert('Gagal membuat gambar. Coba lagi.');
+    });
+  };
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(captureStory).catch(captureStory);
+  } else {
+    setTimeout(captureStory, 60);
+  }
+}
+function copyToClipboard(text, successMsg){
+  const done = ()=> toast(successMsg || 'Teks disalin ke clipboard');
+  const fail = ()=>{
+    // Cadangan untuk browser/konteks yang tidak mengizinkan Clipboard API (mis. file://)
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    }catch(e){
+      alert('Gagal menyalin otomatis. Salin manual teks berikut:\n\n' + text);
+    }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(fail);
+  } else {
+    fail();
+  }
+}
+function copyJobDetails(jobId){
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
+  const lokasiFull = [desaDisplay(j),j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
+  const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
+  const jarakJalanCopy = getCachedJarakJalanKm(j); // teks Salin Detail dibuat sinkron saat tombolnya diklik — pakai cache saja
+
+  const groups = [
+    {title:ic('calendar')+' Data Acara', rows:[
+      ['Nama Klien', j.namaKlien||'-'],
+      ['Tanggal Acara', fmtTglJob(j)],
+      ['Jenis Acara', jenis],
+      ['Lokasi', lokasiFull],
+      ['Link Maps', j.linkMaps||'-'],
+      ['Titik Koordinat', j.koordinat||'-'],
+      ['Jarak dari Kaone Motret (Real)', jarakJalanCopy===null?'- (belum dihitung, buka Detail Job dulu)':fmtJarakJalan(jarakJalanCopy)],
+      ['Saran Transport', jarakJalanCopy===null?'-':fmtRp(hitungSaranTransport(jarakJalanCopy))],
+      ['No. WhatsApp', j.noWhatsapp||'-'],
+      ['Paket', j.paket||'-'],
+      ['Deskripsi Paket', j.deskripsiPaket||'-'],
+    ]},
+    {title:ic('settings')+' Status & Proses', rows:[
+      ['Proses Edit', j.prosesEdit||'-'],
+      ['Proses Cetak', j.prosesCetak||'-'],
+      ['Pengiriman', j.pengiriman||'-'],
+      ['Status Pembayaran', j.statusPembayaran||'-'],
+      ['Vendor', vendorDisplay(j)],
+      ['Tim/Freelancer', j.timFreelancer||'-'],
+    ]},
+    {title:ic('money')+' Keuangan', rows:[
+      ['DP', fmtRp(j.dp)],
+      ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
+      ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
+      ['Biaya Cetak', fmtRp(j.biayaCetak)],
+      ['Honor Tim', fmtRp(j.honorTim)],
+      ['Diskon', fmtRp(j.diskon)],
+      ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
+      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
+      ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
+    ]},
+  ];
+  if((j.catatan||'').trim()){
+    groups.push({title:ic('note')+' Catatan', rows:[[null, j.catatan.trim()]]});
+  }
+
+  const line = (label,val)=> label ? `${label}: ${val}` : val;
+
+  const text = [
+    `${ic('camera')} Kaone Motret — Detail Job #${getJobNo(j.id)}`,
+    `${j.namaKlien||'Tanpa Nama'}`,
+    '',
+    ...groups.flatMap(g=>[
+      g.title,
+      ...g.rows.map(([l,v])=>line(l,v)),
+      ''
+    ]),
+    `Dicetak ${printedAt} dari Buku Job Kaone Motret`,
+  ].join('\n').replace(/\n+$/,'');
+
+  copyToClipboard(text, 'Detail job disalin ke clipboard');
+}
+
+/* ---------- JEJAK KWITANSI USANG ----------
+   Setiap kali kwitansi (PDF atau Gambar) dicetak, disimpan "snapshot" nilai
+   Harga Paket/Diskon/DP saat itu (j.kwitansiPrinted). Kalau salah satu nilai itu
+   diedit lagi setelahnya, snapshot lama jadi tidak cocok dengan data job
+   sekarang — itu tandanya kwitansi yang sudah dicetak sebelumnya sudah USANG
+   (klien mungkin pegang kwitansi dengan angka yang sudah tidak berlaku). Status
+   ini ditampilkan di modal Detail Job supaya Admin sadar perlu cetak ulang. */
+function markKwitansiPrinted(j){
+  j.kwitansiPrinted = {
+    at: Date.now(),
+    penghasilan: Number(j.penghasilan)||0,
+    diskon: Number(j.diskon)||0,
+    dp: Number(j.dp)||0,
+  };
+  saveJobs();
+}
+function isKwitansiOutdated(j){
+  const kp = j.kwitansiPrinted;
+  if(!kp) return false;
+  return (Number(j.penghasilan)||0)!==kp.penghasilan
+    || (Number(j.diskon)||0)!==kp.diskon
+    || (Number(j.dp)||0)!==kp.dp;
+}
+function fmtKwitansiPrintedAt(j){
+  const kp = j.kwitansiPrinted;
+  if(!kp || !kp.at) return '-';
+  try{
+    return new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'}).format(new Date(kp.at)) + ' WIB';
+  }catch(e){ return '-'; }
+}
+function kwitansiStatusHtml(j){
+  const kp = j.kwitansiPrinted;
+  if(!kp) return '';
+  if(isKwitansiOutdated(j)){
+    return `<div class="kwitansi-status-box outdated">${ic('warning')} Kwitansi terakhir dicetak ${fmtKwitansiPrintedAt(j)} sudah <b>usang</b> — Harga Paket/Diskon/DP berubah sejak itu. Cetak ulang sebelum dikirim ke klien.</div>`;
+  }
+  return `<div class="kwitansi-status-box">${ic('check-circle')} Kwitansi terakhir dicetak ${fmtKwitansiPrintedAt(j)} &middot; masih sesuai data terbaru.</div>`;
+}
+
+/* ---------- KWITANSI / INVOICE PDF ----------
+   Berbeda dari Detail Job / Salin Detail (yang untuk catatan internal Admin & Tim),
+   kwitansi ini dibuat untuk diberikan ke KLIEN — jadi sengaja HANYA memuat info yang
+   relevan buat klien (harga paket, diskon, DP, sisa, status bayar) dan TIDAK memuat
+   biaya/keuntungan internal (Biaya Cetak, Honor Tim, Sedekah, Penghasilan Bersih). */
+function downloadKwitansiPdf(jobId){
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  if(typeof window.jspdf === 'undefined'){
+    alert('Pustaka pembuat PDF belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a5'});
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginX = 14;
+  let y = 16;
+
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
+  const hargaPaket = Number(j.penghasilan)||0;
+  const diskon = Number(j.diskon)||0;
+  const totalTagihan = hargaPaket - diskon;
+  const dp = Number(j.dp)||0;
+  const sisa = hitungSisaPembayaran(j);
+  const noKwitansi = `KWT-${String(getJobNo(j.id)).padStart(3,'0')}-${(j.tanggalAcara||'').replace(/-/g,'')}`;
+  const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(20);
+  doc.text('KAONE MOTRET', marginX, y);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110);
+  doc.text('Buku Job Fotografer', marginX, y+5);
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(20);
+  doc.text('KWITANSI', pageW-marginX, y, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(110);
+  doc.text(noKwitansi, pageW-marginX, y+5, {align:'right'});
+  y += 11;
+  doc.setDrawColor(190); doc.setLineWidth(0.4);
+  doc.line(marginX, y, pageW-marginX, y);
+  y += 8;
+
+  const infoRows = [
+    ['Diterima dari', j.namaKlien||'-'],
+    ['No. WhatsApp', j.noWhatsapp||'-'],
+    ['Tanggal Acara', fmtTglJob(j)],
+    ['Jenis Acara', jenis],
+    ['Paket', j.paket||'-'],
+  ];
+  doc.setFontSize(10);
+  infoRows.forEach(([label,val])=>{
+    doc.setFont('helvetica','normal'); doc.setTextColor(110);
+    doc.text(label, marginX, y);
+    doc.setFont('helvetica','bold'); doc.setTextColor(25);
+    const valLines = doc.splitTextToSize(String(val), pageW-marginX-38-marginX);
+    doc.text(valLines, marginX+38, y);
+    y += 6*valLines.length;
+  });
+  y += 3;
+  doc.setDrawColor(225); doc.line(marginX, y, pageW-marginX, y);
+  y += 8;
+
+  const rincian = [
+    ['Harga Paket', fmtRp(hargaPaket), false],
+    ...(diskon>0 ? [['Diskon', '- ' + fmtRp(diskon), false]] : []),
+    ['Total Tagihan', fmtRp(totalTagihan), true],
+    ['DP / Sudah Dibayar', fmtRp(dp), false],
+    ['Sisa Pembayaran', fmtRp(sisa), true],
+  ];
+  rincian.forEach(([label,val,bold])=>{
+    doc.setFont('helvetica', bold?'bold':'normal');
+    doc.setFontSize(bold?11:10);
+    doc.setTextColor(bold?20:70);
+    doc.text(label, marginX, y);
+    doc.text(String(val), pageW-marginX, y, {align:'right'});
+    y += bold ? 8 : 6.5;
+    if(label==='Total Tagihan'){ doc.setDrawColor(225); doc.line(marginX,y-3,pageW-marginX,y-3); }
+  });
+
+  y += 5;
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(20);
+  doc.text('Status Pembayaran', marginX, y);
+  doc.text(String(j.statusPembayaran||'-'), pageW-marginX, y, {align:'right'});
+  y += 11;
+
+  if((j.catatan||'').trim()){
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(110);
+    const catatanLines = doc.splitTextToSize(`Catatan: ${j.catatan.trim()}`, pageW-marginX*2);
+    doc.text(catatanLines, marginX, y);
+    y += catatanLines.length*4.3 + 6;
+  }
+
+  const footY = Math.max(y+10, pageH-22);
+  doc.setDrawColor(225); doc.line(marginX, footY-8, pageW-marginX, footY-8);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(130);
+  doc.text(`Dicetak ${printedAt} · Kaone Motret`, marginX, footY);
+  doc.setFont('helvetica','italic');
+  doc.text('Terima kasih atas kepercayaannya', pageW-marginX, footY, {align:'right'});
+
+  markKwitansiPrinted(j);
+  doc.save(`Kwitansi-${(j.namaKlien||'kaonemotret').replace(/\s+/g,'_')}-${j.tanggalAcara}.pdf`);
+  if(document.getElementById('jobDetailCard')) openJobDetailModal(j.id);
+}
+/* ---------- KWITANSI (GAMBAR PNG, didesain seperti poster resmi) ----------
+   Isinya sengaja SAMA dengan versi PDF di atas (hanya info relevan buat klien,
+   tanpa data keuangan internal) — cuma bentuk file & tampilannya berbeda, supaya
+   Admin bisa pilih mau kirim sebagai PDF atau sebagai gambar (lebih mudah dibuka
+   & dikirim ulang lewat WhatsApp). */
+function buildKwitansiPosterHtml(j){
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
+  const col = jenisAcaraColor(j.jenisAcara);
+  const hargaPaket = Number(j.penghasilan)||0;
+  const diskon = Number(j.diskon)||0;
+  const totalTagihan = hargaPaket - diskon;
+  const dp = Number(j.dp)||0;
+  const sisa = hitungSisaPembayaran(j);
+  const noKwitansi = `KWT-${String(getJobNo(j.id)).padStart(3,'0')}-${(j.tanggalAcara||'').replace(/-/g,'')}`;
+  const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
+
+  const rows = [
+    ['Harga Paket', fmtRp(hargaPaket), false],
+    ...(diskon>0 ? [['Diskon', '- '+fmtRp(diskon), false]] : []),
+    ['Total Tagihan', fmtRp(totalTagihan), true],
+    ['DP / Sudah Dibayar', fmtRp(dp), false],
+    ['Sisa Pembayaran', fmtRp(sisa), true],
+  ];
+
+  return `
+    <div id="kwitansiPosterExport" class="kwitansi-poster" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
+      <div class="kw-watermark"></div>
+      <div class="kw-topbar">
+        <div class="kw-badge">KM</div>
+        <div>
+          <div class="kw-brand-name">Kaone Motret</div>
+          <div class="kw-brand-tag">Buku Job Fotografer</div>
+        </div>
+        <div class="kw-doc-badge">
+          <div class="kw-doc-title">KWITANSI</div>
+          <div class="kw-doc-no">${escapeHtml(noKwitansi)}</div>
+        </div>
+      </div>
+      <div class="kw-rule"></div>
+      <div class="kw-client-block">
+        <div class="kw-kicker">Diterima dari</div>
+        <div class="kw-client-name">${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
+        <div class="kw-meta-row">
+          <span>${escapeHtml(fmtTglJob(j))}</span>
+          <span class="sep"></span><span>${escapeHtml(jenis)}</span>
+          ${j.paket?`<span class="sep"></span><span>${escapeHtml(j.paket)}</span>`:''}
+        </div>
+      </div>
+      <div class="kw-body">
+        ${rows.map(([label,val,highlight])=>`
+          <div class="kw-row${highlight?' kw-highlight':''}">
+            <span class="kw-label">${escapeHtml(label)}</span>
+            <span class="kw-value">${escapeHtml(val)}</span>
+          </div>
+        `).join('')}
+        <div class="kw-status-row">
+          <span class="kw-status-label">Status Pembayaran</span>
+          <span class="kw-status-badge">${escapeHtml(j.statusPembayaran||'-')}</span>
+        </div>
+        ${(j.catatan||'').trim() ? `<div class="kw-note">Catatan: ${escapeHtml(truncateText(j.catatan,140))}</div>` : ''}
+      </div>
+      <div class="kw-footer">
+        <div class="kw-footer-line"></div>
+        <div class="kw-footer-brand">Kaone Motret</div>
+        <div class="kw-footer-text">Dicetak ${printedAt} &middot; Terima kasih atas kepercayaannya</div>
+      </div>
+      <div class="kw-bottom-bar"></div>
+    </div>
+  `;
+}
+function downloadKwitansiImage(jobId){
+  if(typeof html2canvas === 'undefined'){
+    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  toast('Menyiapkan gambar kwitansi...');
+
+  // Sama seperti poster Detail Job/Story: dirender di luar tampilan (opacity:0) hanya
+  // untuk keperluan pengambilan gambar, lalu dihapus lagi begitu selesai diunduh.
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;z-index:-1;';
+  holder.innerHTML = buildKwitansiPosterHtml(j);
+  document.body.appendChild(holder);
+  const posterEl = holder.querySelector('#kwitansiPosterExport');
+
+  const capture = ()=>{
+    html2canvas(posterEl, {width:1080, height:1350, scale:1, backgroundColor:'#fffdf6'}).then(canvas=>{
+      holder.remove();
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `Kwitansi-${(j.namaKlien||'kaonemotret').replace(/\s+/g,'_')}-${j.tanggalAcara}.png`;
+      markKwitansiPrinted(j);
+      a.click();
+      if(document.getElementById('jobDetailCard')) openJobDetailModal(j.id);
+    }).catch(()=>{
+      holder.remove();
+      alert('Gagal membuat gambar kwitansi. Coba lagi.');
+    });
+  };
+  // Tunggu font kustom (Fraunces/Poppins) selesai dimuat dulu, supaya teks di gambar
+  // tidak sempat ter-capture memakai font fallback sistem.
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(capture).catch(capture);
+  } else {
+    setTimeout(capture, 60);
+  }
+}
+function isoDateCompact(iso){ return (iso||'').replace(/-/g,''); }
+// PENTING: jangan pakai toISOString() untuk mengambil tanggal dari objek Date di sini.
+// toISOString() selalu mengonversi ke UTC, jadi untuk pengguna di zona waktu +N (mis. WIB/WITA/WIT),
+// tanggal lokal tengah malam bisa "mundur" satu hari saat dikonversi ke UTC — akibatnya DTEND
+// event kalender jadi sama dengan DTSTART (durasi nol) dan tidak terbaca di aplikasi kalender.
+// Solusi: ambil tahun/bulan/tanggal dari komponen LOKAL objek Date, bukan dari toISOString().
+function localDateCompact(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}${m}${day}`;
+}
+function nextDayCompact(iso){
+  const d = new Date(iso+'T00:00:00');
+  d.setDate(d.getDate()+1);
+  return localDateCompact(d);
+}
+function jobEventDetails(j){
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Acara') : (j.jenisAcara||'Acara');
+  const lokasiSingkat = j.desa || '-'; // cukup nama desa saja
+  const title = `${ic('camera')} ${lokasiSingkat} - ${jenis}`;
+  const location = lokasiSingkat;
+  // Gabungkan nama paket & deskripsi paket menjadi catatan acara di Google Calendar / ICS
+  const detailLines = [];
+  if((j.paket||'').trim()) detailLines.push(`Paket: ${j.paket.trim()}`);
+  if((j.deskripsiPaket||'').trim()) detailLines.push(`Deskripsi Paket: ${j.deskripsiPaket.trim()}`);
+  if(j.namaKlien) detailLines.push(`Klien: ${j.namaKlien}`);
+  if(j.noWhatsapp) detailLines.push(`WhatsApp: ${j.noWhatsapp}`);
+  const details = detailLines.length ? detailLines.join('\n') : '-';
+  return {title, location, details};
+}
+// Escape teks sesuai aturan RFC 5545 (ICS): backslash, titik koma, koma, dan baris baru
+// wajib di-escape agar file .ics valid dan tidak merusak field sesudahnya di aplikasi kalender.
+function escapeIcsText(s){
+  return String(s||'')
+    .replace(/\\/g,'\\\\')
+    .replace(/;/g,'\\;')
+    .replace(/,/g,'\\,')
+    .replace(/\r\n|\r|\n/g,'\\n');
+}
+// Line folding sesuai RFC 5545: setiap baris fisik dalam file .ics maksimal 75 OKTET
+// (bukan 75 karakter — emoji/karakter non-ASCII bisa memakai lebih dari 1 byte per
+// karakter). Baris yang lebih panjang harus dipecah dengan CRLF diikuti satu spasi di
+// awal baris lanjutan. Tanpa ini, baris SUMMARY/DESCRIPTION yang panjang (mis. berisi
+// deskripsi paket) menyalahi spesifikasi walau kebanyakan aplikasi kalender masih toleran.
+function foldIcsLine(line){
+  const enc = new TextEncoder();
+  if(enc.encode(line).length <= 75) return line;
+  const chars = Array.from(line); // pakai Array.from supaya karakter multi-code-unit (emoji) tidak terpotong di tengah
+  let result = '';
+  let i = 0;
+  let limit = 75; // baris pertama: 75 oktet
+  while(i < chars.length){
+    let byteCount = 0;
+    let j = i;
+    while(j < chars.length){
+      const charBytes = enc.encode(chars[j]).length;
+      if(byteCount + charBytes > limit) break;
+      byteCount += charBytes;
+      j++;
+    }
+    if(j === i) j = i + 1; // jaga-jaga: pastikan selalu maju minimal 1 karakter
+    result += (i===0 ? '' : '\r\n ') + chars.slice(i,j).join('');
+    i = j;
+    limit = 74; // baris lanjutan diawali 1 spasi wajib, jadi sisa muatan maks 74 oktet
+  }
+  return result;
+}
+function openGoogleCalendar(jobId){
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  const {title, location, details} = jobEventDetails(j);
+  // Google Calendar quick-add link ternyata SAMA dengan aturan ICS: tanggal akhir bersifat
+  // "eksklusif" (harus H+1 dari hari TERAKHIR acara). Kalau start & end dibuat sama (H saja),
+  // Google malah menghitungnya mundur (menampilkan H sampai H-1) karena tetap dianggap eksklusif
+  // di balik layar. Jadi end HARUS pakai nextDayCompact dari hari terakhir job (getJobFinishDate),
+  // bukan dari tanggalAcara saja — supaya job berdurasi 2 hari atau lebih ikut tertandai penuh
+  // rentang harinya di Google Calendar, persis seperti file .ics.
+  const start = isoDateCompact(j.tanggalAcara);
+  const end = nextDayCompact(getJobFinishDate(j) || j.tanggalAcara);
+  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+  window.open(url,'_blank');
+}
+function downloadIcs(jobId){
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  const {title, location, details} = jobEventDetails(j);
+  const start = j.tanggalAcara.replace(/-/g,'');
+  // DTEND wajib H+1 dari hari TERAKHIR job (bukan dari tanggalAcara saja), supaya job
+  // berdurasi 2 hari atau lebih ikut ditandai penuh rentang harinya di aplikasi kalender
+  // (Google Calendar, Apple Calendar, Outlook, dll), bukan cuma 1 hari.
+  const end = nextDayCompact(getJobFinishDate(j) || j.tanggalAcara);
+
+  // Pengingat: sehari sebelum tanggal acara, pukul 09.00
+  const reminderDate = new Date(j.tanggalAcara+'T00:00:00');
+  reminderDate.setDate(reminderDate.getDate()-1);
+  const reminderStr = localDateCompact(reminderDate) + 'T090000';
+
+  const ics = [
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Kaone Motret//Buku Job//ID','CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `UID:${j.id}@kaonemotret`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g,'').split('.')[0]}Z`,
+    `DTSTART;VALUE=DATE:${start}`,
+    `DTEND;VALUE=DATE:${end}`,
+    `SUMMARY:${escapeIcsText(title)}`,
+    `LOCATION:${escapeIcsText(location)}`,
+    `DESCRIPTION:${escapeIcsText(details)}`,
+    'BEGIN:VALARM',
+    'ACTION:DISPLAY',
+    `DESCRIPTION:${escapeIcsText('Pengingat — ' + title)}`,
+    `TRIGGER;VALUE=DATE-TIME:${reminderStr}`,
+    'END:VALARM',
+    'END:VEVENT','END:VCALENDAR'
+  ].map(foldIcsLine).join('\r\n');
+  const blob = new Blob([ics], {type:'text/calendar'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const [tglY,tglM,tglD] = j.tanggalAcara.split('-');
+  a.download = `job-${(j.namaKlien||'kaonemotret').replace(/\s+/g,'-')}-${tglD}-${tglM}-${tglY}.ics`;
+  a.click();
+}
+
+
+/* =========================================================
+   PEMBAGIAN TUGAS TIM
+========================================================= */
+function taskEligibleAccounts(){
+  return (akunList||[]).filter(a=>a.role==='tim');
+}
+function taskJobOptions(){
+  return [...jobs].sort((a,b)=>{
+    const da=new Date(a.tanggalAcara||'9999-12-31'), db=new Date(b.tanggalAcara||'9999-12-31');
+    return da-db || (a.createdAt||0)-(b.createdAt||0);
+  });
+}
+function viewTugas(){
+  const mine = !isAdmin();
+  const visibleTasks = mine
+    ? tasks.filter(t=>String(t.userId)===String(currentUserId) || t.username===currentUsername)
+    : tasks;
+  const upcoming = visibleTasks.filter(t=>getTaskDate(t) && new Date(getTaskDate(t)+'T00:00:00') >= new Date(new Date().toDateString())).length;
+  const done = visibleTasks.filter(t=>t.status==='Selesai').length;
+  const totalHours = visibleTasks.reduce((s,t)=>s+taskHours(t),0);
+
+  const people = isAdmin() ? taskEligibleAccounts() : [];
+  // Total bonus: Admin melihat gabungan seluruh akun Tim, akun Tim hanya melihat bonus miliknya sendiri.
+  const totalBonusRupiah = isAdmin()
+    ? people.reduce((s,a)=>s+userBonusRupiah(a.id),0)
+    : (currentUserId ? userBonusRupiah(currentUserId) : 0);
+  // Klaim bonus milik akun Tim ini sendiri (kalau ada yang sedang menunggu dicairkan Admin).
+  const myPendingClaim = (mine && currentUserId) ? userPendingBonusClaim(currentUserId) : null;
+  // Nominal bonus milik akun Tim ini yang SUDAH lewat masa tunggu & boleh diklaim sekarang,
+  // serta info bulan berikutnya yang masih menunggu (kalau ada) — dipakai supaya tombol
+  // "Klaim Bonus" hanya tampil kalau memang sudah ada yang bisa diajukan.
+  const myClaimableRp = (mine && currentUserId) ? userClaimableBonusRupiah(currentUserId) : 0;
+  const myNextClaim = (mine && currentUserId) ? userNextClaimInfo(currentUserId) : null;
+  // Seluruh klaim bonus dari akun Tim yang masih menunggu dicairkan — khusus Admin.
+  const pendingClaimsList = isAdmin() ? pendingBonusClaims() : [];
+  // Penghasilan dari Honor Tim per-job (rincian yang diisi Admin di form job) — khusus akun
+  // Tim sendiri, lengkap daftar job penyumbangnya, diurutkan dari yang terbaru.
+  const honorJobList = (mine && currentUserId) ? jobs
+    .filter(j=>honorTimUntukAkun(j, currentUserId) > 0)
+    .map(j=>({namaKlien:j.namaKlien, tanggalAcara:j.tanggalAcara, nominal:honorTimUntukAkun(j, currentUserId)}))
+    .sort((a,b)=>new Date(b.tanggalAcara)-new Date(a.tanggalAcara)) : [];
+  const totalHonorSaya = honorJobList.reduce((s,x)=>s+x.nominal,0);
+  const jobOpts = taskJobOptions();
+  // Catatan: form "Bagi Tugas" / "Edit Tugas" sekarang dibuka lewat modal popup
+  // (lihat openTaskFormModal & buildTaskFormHtml), bukan lagi kartu inline di
+  // halaman ini — jobOpts di atas tetap dipakai untuk cek "Belum ada job" pada
+  // tombol Bagi Tugas di toolbar.
+  const filterUser = taskRekapFilter.userId || '';
+  const filterRole = taskRekapFilter.role || '';
+  const filterStatus = taskRekapFilter.status || '';
+  const filterFrom = taskRekapFilter.from || '';
+  const filterTo = taskRekapFilter.to || '';
+
+  let filtered = visibleTasks.filter(t=>{
+    const d=getTaskDate(t);
+    return (!filterUser || String(t.userId)===String(filterUser))
+      && (!filterRole || t.role===filterRole)
+      && (!filterStatus || (t.status||'Belum')===filterStatus)
+      && (!filterFrom || d>=filterFrom)
+      && (!filterTo || d<=filterTo);
+  }).sort((a,b)=>(getTaskDate(a)||'').localeCompare(getTaskDate(b)||'') || (getTaskSlots(a)[0]?.mulai||'').localeCompare(getTaskSlots(b)[0]?.mulai||''));
+
+  const personRows = isAdmin() ? people.map(a=>{
+    const list=tasks.filter(t=>String(t.userId)===String(a.id));
+    const hrs=list.reduce((s,t)=>s+taskHours(t),0);
+    const adjustHrs = userBonusAdjustHours(a.id);
+    const totalBonusHrs = hrs + adjustHrs;
+    const bonusRp = userBonusRupiah(a.id);
+    const claimableRp = userClaimableBonusRupiah(a.id);
+    const claimableBulan = userClaimableBulanList(a.id);
+    const nextClaimInfo = userNextClaimInfo(a.id);
+    return `<div class="task-person-card">
+      <div class="task-person-head">
+        <div><div class="task-person-name">${ic('user')} ${escapeHtml(a.username)}</div>
+        <div class="task-person-meta">Akun Tim · ${list.length} tugas</div></div>
+        <span class="pill">${fmtTaskHours(hrs)} total</span>
+      </div>
+      <div class="task-person-stats">
+        <span class="task-mini-stat">${ic('clipboard')} ${list.length} tugas</span>
+        <span class="task-mini-stat">${ic('check-circle')} ${list.filter(t=>t.status==='Selesai').length} selesai</span>
+        <span class="task-mini-stat">${ic('hourglass')} ${list.filter(t=>(t.status||'Belum')!=='Selesai').length} belum selesai</span>
+        <span class="task-mini-stat">${ic('camera')} ${list.filter(t=>t.role==='Fotografer').length} fotografer</span>
+        <span class="task-mini-stat">${ic('video')} ${list.filter(t=>t.role==='Videografer').length} videografer</span>
+        <span class="task-mini-stat">${ic('money')} ${fmtRp(totalHonorTimAkun(a.id, jobs))} honor job</span>
+      </div>
+      <div class="task-bonus-box">
+        <div class="task-bonus-row">
+          <div>
+            <div class="task-bonus-label">${ic('money')} Bonus Tim (${fmtRp(BONUS_PER_JAM)}/jam)</div>
+            <div class="task-bonus-amount">${fmtRp(bonusRp)}</div>
+          </div>
+          <button type="button" class="bonus-adjust-btn" data-bonus-adjust="${escapeHtml(a.id)}">${ic('settings')} Atur Bonus</button>
+        </div>
+        <div class="task-bonus-detail">
+          Jam kerja: <b>${fmtTaskHours(hrs)}</b>
+          ${adjustHrs ? ` &nbsp;${adjustHrs>0?'+':'−'} penyesuaian: <b>${fmtTaskHours(Math.abs(adjustHrs))}</b>` : ''}
+          &nbsp;${ic('arrow-right')} Total: <b>${fmtTaskHours(Math.max(0,totalBonusHrs))}</b>
+        </div>
+        <div class="task-bonus-detail" style="margin-top:4px;">
+          ${claimableRp>0
+            ? `${ic('check-circle')} Sudah bisa diklaim: <b>${fmtRp(claimableRp)}</b> <span style="color:var(--ink-soft);">(bulan: ${claimableBulan.map(fmtBulanLabel).join(', ')})</span>`
+            : (nextClaimInfo
+              ? `${ic('hourglass')} Belum bisa diklaim — bonus bulan ${fmtBulanLabel(nextClaimInfo.bulan)} baru bisa diklaim mulai ${nextClaimInfo.tanggalMulai}.`
+              : `${ic('hourglass')} Belum ada bonus yang bisa diklaim.`)}
+        </div>
+      </div>
+    </div>`;
+  }).join('') : '';
+
+  return `
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <h2 style="margin:0;">${ic('folder')} ${mine ? 'Tugas Saya' : 'Pembagian Tugas Tim'}</h2>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">
+          ${mine ? 'Tugas untukmu dari Admin.' : 'Bagi tugas per akun & jam kerja.'}
+        </div>
+      </div>
+      ${isAdmin()?`<button class="btn btn-primary" id="btnOpenTaskForm">＋ Bagi Tugas</button>`:''}
+      <button type="button" class="btn btn-outline" id="btnRefreshTugas">${ic('refresh')} Refresh</button>
+    </div>
+
+    <div class="task-summary-grid">
+      <div class="task-stat gold"><div class="ts-label">Total Tugas</div><div class="ts-value">${visibleTasks.length}</div></div>
+      <div class="task-stat"><div class="ts-label">Selesai</div><div class="ts-value">${done}</div></div>
+      <div class="task-stat"><div class="ts-label">Belum Selesai</div><div class="ts-value">${visibleTasks.length-done}</div></div>
+      <div class="task-stat"><div class="ts-label">Total Jam</div><div class="ts-value">${fmtTaskHours(totalHours)}</div></div>
+      <div class="task-stat"><div class="ts-label">Job Mendatang</div><div class="ts-value">${upcoming}</div></div>
+      <div class="task-stat green"><div class="ts-label">${mine?'Bonus Saya':'Total Bonus Tim'}</div><div class="ts-value">${fmtRp(totalBonusRupiah)}</div></div>
+    </div>
+
+    ${mine ? `
+    <div class="task-bonus-box" style="margin:0 0 18px;">
+      <div class="task-bonus-row">
+        <div>
+          <div class="task-bonus-label">${ic('money')} Bonus Saya (${fmtRp(BONUS_PER_JAM)}/jam)</div>
+          <div class="task-bonus-amount">${fmtRp(userBonusRupiah(currentUserId))}</div>
+        </div>
+        ${myPendingClaim
+          ? `<span class="bonus-claim-pending">${ic('hourglass')} Menunggu ${claimVerbMenunggu(myPendingClaim)==='diproses'?'Diproses':'Dicairkan'}</span>`
+          : `<button type="button" class="bonus-claim-btn" id="btnClaimBonus" ${myClaimableRp>=Math.min(MIN_KLAIM_TUNAI,MIN_KLAIM_WDP)?'':'disabled'} title="${myClaimableRp>=Math.min(MIN_KLAIM_TUNAI,MIN_KLAIM_WDP)?'Ajukan klaim bonus':escapeHtml(myNextClaim?`Belum bisa diklaim — bonus bulan ${myNextClaim.label} baru bisa diklaim mulai ${myNextClaim.tanggalMulai}`:(myClaimableRp>0?`Bonus terkumpul ${fmtRp(myClaimableRp)}, belum mencapai syarat minimal klaim (Tunai min. ${fmtRp(MIN_KLAIM_TUNAI)}, WDP min. ${fmtRp(MIN_KLAIM_WDP)})`:'Belum ada bonus yang bisa diklaim'))}">${ic('phone')} Klaim Bonus</button>`}
+      </div>
+      <div class="task-bonus-detail">
+        Jam kerja dari tugas: <b>${fmtTaskHours(userTaskHours(currentUserId))}</b>
+        ${userBonusAdjustHours(currentUserId) ? ` &nbsp;${userBonusAdjustHours(currentUserId)>0?'+':'−'} penyesuaian Admin: <b>${fmtTaskHours(Math.abs(userBonusAdjustHours(currentUserId)))}</b>` : ''}
+        &nbsp;${ic('arrow-right')} Total jam bonus: <b>${fmtTaskHours(Math.max(0,userTotalBonusHours(currentUserId)))}</b>
+      </div>
+      ${myPendingClaim ? `
+      <div class="bonus-claim-alert">
+        <span><span class="claim-type-badge ${myPendingClaim.jenis==='WDP'?'wdp':'tunai'}">${myPendingClaim.jenis==='WDP'?ic('sparkle'):ic('money')} ${claimJenisLabel(myPendingClaim)}</span> klaim sebesar <b>${fmtRp(myPendingClaim.jumlah)}</b> diajukan ${escapeHtml(formatCommentTime(myPendingClaim.createdAt))} — sudah dikirim ke WhatsApp Admin, menunggu ${claimVerbMenunggu(myPendingClaim)}.${myPendingClaim.jenis==='WDP'?` (ID Game: ${escapeHtml(myPendingClaim.mlId||'-')}, Server: ${escapeHtml(myPendingClaim.mlZone||'-')})`:''}</span>
+      </div>` : (!myPendingClaim && myNextClaim ? `
+      <div class="task-bonus-detail" style="margin-top:4px;">
+        ${ic('hourglass')} Bonus bulan <b>${escapeHtml(myNextClaim.label)}</b> baru bisa mulai diklaim tanggal <b>${escapeHtml(myNextClaim.tanggalMulai)}</b>.
+      </div>` : '')}
+      ${userBonusAdjustments(currentUserId).length ? `
+      <div class="bonus-adjust-list">
+        ${userBonusAdjustments(currentUserId).map(b=>`
+          <div class="bonus-adjust-item">
+            <div>
+              <div class="bonus-adjust-note">${escapeHtml(b.catatan||(b.jam>=0?'Penambahan bonus':'Pemotongan bonus'))}</div>
+              <div class="bonus-adjust-meta">${escapeHtml(formatCommentTime(b.createdAt))} · oleh ${escapeHtml(b.byName||'Admin')}</div>
+            </div>
+            <div class="bonus-adjust-jam ${b.jam>=0?'plus':'minus'}">${b.jam>=0?'+':'−'}${fmtTaskHours(Math.abs(b.jam))}</div>
+          </div>
+        `).join('')}
+      </div>` : ''}
+    </div>
+
+    <div class="task-bonus-box" style="margin:0 0 18px;">
+      <div class="task-bonus-row">
+        <div>
+          <div class="task-bonus-label">${ic('money')} Penghasilan Job Saya</div>
+          <div class="task-bonus-amount">${fmtRp(totalHonorSaya)}</div>
+        </div>
+      </div>
+      <div class="task-bonus-detail">
+        Total honor dari semua job.
+      </div>
+      ${honorJobList.length ? `
+      <div class="bonus-adjust-list">
+        ${honorJobList.map(x=>`
+          <div class="bonus-adjust-item">
+            <div>
+              <div class="bonus-adjust-note">${escapeHtml(x.namaKlien||'Tanpa Nama')}</div>
+              <div class="bonus-adjust-meta">${fmtTgl(x.tanggalAcara)}</div>
+            </div>
+            <div class="bonus-adjust-jam plus">${fmtRp(x.nominal)}</div>
+          </div>
+        `).join('')}
+      </div>` : `<div class="field-hint" style="margin-top:6px;">Belum ada honor dibagikan.</div>`}
+    </div>` : ''}
+
+    ${isAdmin()?`
+    <div class="task-bonus-box" style="margin:0 0 18px;">
+      <div class="task-bonus-row">
+        <div>
+          <div class="task-bonus-label">${ic('settings')} Pengaturan Bonus</div>
+          <div class="task-bonus-amount">${fmtRp(BONUS_PER_JAM)} / jam</div>
+        </div>
+        <button type="button" class="bonus-adjust-btn" id="btnEditBonusRate">${ic('edit')} Atur</button>
+      </div>
+      <div class="task-bonus-detail">
+        Bonus dihitung otomatis dari jam kerja. Syarat minimal klaim: Tunai <b>${fmtRp(MIN_KLAIM_TUNAI)}</b>, WDP <b>${fmtRp(MIN_KLAIM_WDP)}</b>.
+      </div>
+    </div>
+
+    <div class="task-bonus-box" style="margin:0 0 18px;">
+      <div class="task-bonus-row">
+        <div>
+          <div class="task-bonus-label">${ic('trend-down')} Bonus Sudah Diklaim (Bulan Ini)</div>
+          <div class="task-bonus-amount">${fmtRp(totalBonusDiklaimBulanIni())}</div>
+        </div>
+      </div>
+      <div class="task-bonus-detail">
+        Mengurangi Penghasilan Bersih Admin otomatis.
+      </div>
+    </div>
+
+    ${pendingClaimsList.length ? `
+    <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;border:1.5px solid var(--gold-light);">
+      <div class="section-title" style="margin-top:0;">${ic('phone')} Klaim Bonus Menunggu Diproses (${pendingClaimsList.length})</div>
+      <div class="bonus-adjust-list">
+        ${pendingClaimsList.map(c=>{ const isWdp = c.jenis==='WDP'; return `
+          <div class="bonus-adjust-item">
+            <div>
+              <div class="bonus-adjust-note"><b>${escapeHtml(c.username)}</b> mengajukan klaim <span class="claim-type-badge ${isWdp?'wdp':'tunai'}">${isWdp?ic('sparkle'):ic('money')} ${claimJenisLabel(c)}</span></div>
+              <div class="bonus-adjust-meta">${escapeHtml(formatCommentTime(c.createdAt))} · ${fmtTaskHours(c.jam||0)} jam kerja</div>
+              ${isWdp ? `<div class="claim-ml-info">${ic('user')} ID Game: <b>${escapeHtml(c.mlId||'-')}</b> &middot; Server: <b>${escapeHtml(c.mlZone||'-')}</b>
+                <button type="button" class="claim-copy-btn" data-copy-ml="${escapeHtml((c.mlId||'-')+' (Server '+(c.mlZone||'-')+')')}">${ic('clipboard')} Salin</button></div>` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="bonus-adjust-jam plus">${fmtRp(c.jumlah)}</div>
+              <button type="button" class="bonus-cair-btn" data-cairkan-bonus="${escapeHtml(c.id)}">${ic('check-circle')} ${isWdp?'Tandai Terkirim':'Cairkan'}</button>
+            </div>
+          </div>
+        `; }).join('')}
+      </div>
+    </div>` : ''}
+
+    <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;">
+      <div class="section-title" style="margin-top:0;">${ic('chart')} Rekap Per Akun Tim</div>
+      ${personRows || `<div class="empty-state" style="padding:25px;">Belum ada akun Tim.</div>`}
+    </div>`:''}
+
+    <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;">
+      <div class="toolbar" style="margin-bottom:12px;">
+        <div>
+          <div class="section-title" style="margin:0;">${ic('search')} Rekap Tugas Detail</div>
+          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:3px;">${isAdmin()?'Filter semua tugas tim.':'Filter tugas akun ini.'}</div>
+        </div>
+        <button type="button" class="btn btn-outline" id="btnResetTaskFilter">Reset Filter</button>
+      </div>
+      <div class="form-grid" style="gap:10px 14px;">
+        ${isAdmin()?`<div><label>Akun Tim</label><select id="taskFilterUser"><option value="">Semua Akun Tim</option>${people.map(a=>`<option value="${escapeHtml(a.id)}" ${String(filterUser)===String(a.id)?'selected':''}>${escapeHtml(a.username)}</option>`).join('')}</select></div>`:''}
+        <div><label>Role</label><select id="taskFilterRole"><option value="">Semua Role</option><option value="Fotografer" ${filterRole==='Fotografer'?'selected':''}>${ic('camera')} Fotografer</option><option value="Videografer" ${filterRole==='Videografer'?'selected':''}>${ic('video')} Videografer</option></select></div>
+        <div><label>Status</label><select id="taskFilterStatus"><option value="">Semua Status</option><option value="Belum" ${filterStatus==='Belum'?'selected':''}>Belum</option><option value="Selesai" ${filterStatus==='Selesai'?'selected':''}>Selesai</option></select></div>
+        <div><label>Dari Tanggal</label><input type="date" id="taskFilterFrom" value="${escapeHtml(filterFrom)}"></div>
+        <div><label>Sampai Tanggal</label><input type="date" id="taskFilterTo" value="${escapeHtml(filterTo)}"></div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      ${filtered.length ? `<table class="jobtable task-table">
+        <thead><tr><th>Tanggal</th><th>Akun Tim</th><th>Role</th><th>Job</th><th>Jam Kerja</th><th>Keterangan</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody>${filtered.map(t=>{
+          const status=t.status||'Belum';
+          const job=getTaskJob(t);
+          return `<tr>
+            <td class="task-date">${escapeHtml(formatTaskDate(getTaskDate(t)))}${(job && getJobDurasiHari(job)>1)?`<div style="font-size:10px;color:var(--ink-soft);font-weight:400;">s/d ${escapeHtml(formatTaskDate(getJobFinishDate(job)))} (${getJobDurasiHari(job)} hari)</div>`:''}</td>
+            <td><b>${escapeHtml(getTaskPerson(t))}</b></td>
+            <td><span class="task-role-badge">${t.role==='Fotografer'?ic('camera'):ic('video')} ${escapeHtml(t.role||'-')}</span></td>
+            <td><b>${escapeHtml(getTaskJobLabel(t))}</b>${job?.jenisAcara?`<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(job.jenisAcara)}</div>`:''}</td>
+            <td class="task-time">${getTaskSlots(t).map(s=>`${escapeHtml(s.mulai||'-')} – ${escapeHtml(s.selesai||'-')}`).join('<br>')||'-'}<div style="font-size:10.5px;color:var(--ink-soft);font-weight:400;">${fmtTaskHours(taskHours(t))}</div></td>
+            <td><div class="task-ket">${escapeHtml(t.keterangan||'-')}</div></td>
+            <td><span class="task-status-badge ${status==='Selesai'?'task-status-selesai':'task-status-belum'}" ${t.autoCompleted?'title="Selesai otomatis"':''}>${status==='Selesai'?(t.autoCompleted?ic('check')+' Selesai (Otomatis)':ic('check')+' Selesai'):ic('hourglass')+' Belum'}</span></td>
+            <td><div class="row-actions">
+              ${(isAdmin() || String(t.userId)===String(currentUserId))?`<button type="button" class="icon-btn" data-task-toggle="${escapeHtml(t.id)}" title="Ubah status">${status==='Selesai'?ic('undo'):ic('check')}</button>`:''}
+              ${(isAdmin() || String(t.userId)===String(currentUserId))?`<button type="button" class="icon-btn task-comment-btn" data-task-comment="${escapeHtml(t.id)}" title="Komentar tugas">${ic('chat')}${taskComments(t).length?`<span class="task-comment-count">${taskComments(t).length}</span>`:''}${taskHasUnreadComment(t)?'<span class="task-comment-dot"></span>':''}</button>`:''}
+              ${isAdmin()?`<button type="button" class="icon-btn" data-task-edit="${escapeHtml(t.id)}" title="Edit tugas">${ic('edit')}</button>`:''}
+              ${isAdmin()?`<button type="button" class="icon-btn icon-btn-danger" data-task-delete="${escapeHtml(t.id)}" title="Hapus tugas">${ic('trash')}</button>`:''}
+            </div></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>` : `<div class="empty-state"><div class="em">${ic('folder')}</div>Belum ada tugas yang sesuai filter.</div>`}
+    </div>
+  </div>
+  `;
+}
+/* Markup form Bagi Tugas / Edit Tugas — dipakai di dalam modal popup (lihat
+   openTaskFormModal) supaya proses isi tugas tidak lagi berbagi DOM dengan
+   #app (yang di-render ulang tiap 20 detik oleh auto-refresh cloud saat
+   Admin membuka menu Pembagian Tugas). Karena modal ditaruh terpisah di luar
+   #app, render ulang #app itu tidak lagi ikut menutup/mereset form ini. */
+/* ---------- Akun Tim + Role + Jam Kerja sendiri-sendiri di form "Bagi Tugas Baru" ----------
+   State ini hanya dipakai saat menambah tugas baru (bukan mode edit, yang tetap satu
+   akun/role/jam saja). Tiap akun Tim yang dicentang punya entri sendiri, sehingga role
+   dan jam kerjanya bisa diatur berbeda-beda per akun. */
+let taskFormAkunTugas = []; // [{userId, username, role, slots:[{mulai,selesai}]}, ...]
+function renderTaskAkunListHtml(){
+  const people = taskEligibleAccounts();
+  return people.map(a=>{
+    const sel = taskFormAkunTugas.find(x=>String(x.userId)===String(a.id));
+    return `
+    <div class="task-akun-block">
+      <label class="honor-tim-check" style="cursor:pointer;">
+        <input type="checkbox" data-task-akun="${escapeHtml(a.id)}" data-task-akun-nama="${escapeHtml(a.username)}" ${sel?'checked':''} onchange="toggleTaskAkun(this)">
+        <span>${ic('user')} ${escapeHtml(a.username)}</span>
+      </label>
+      ${sel ? `
+      <div class="task-akun-detail">
+        <div>
+          <label>Role Tugas *</label>
+          <select data-task-akun-role="${escapeHtml(a.id)}" onchange="onTaskAkunRoleChange(this)" required>
+            <option value="">Pilih role...</option>
+            <option value="Fotografer" ${sel.role==='Fotografer'?'selected':''}>${ic('camera')} Fotografer</option>
+            <option value="Videografer" ${sel.role==='Videografer'?'selected':''}>${ic('video')} Videografer</option>
+          </select>
+        </div>
+        <div>
+          <label>Jam Kerja *</label>
+          <div class="task-akun-slots">
+            ${sel.slots.map((s,idx)=>`
+            <div class="task-slot-row">
+              <input type="time" required value="${escapeHtml(s.mulai||'08:00')}" onchange="onTaskAkunSlotChange(this,'${escapeHtml(a.id)}',${idx},'mulai')">
+              <span class="task-slot-sep">–</span>
+              <input type="time" required value="${escapeHtml(s.selesai||'10:00')}" onchange="onTaskAkunSlotChange(this,'${escapeHtml(a.id)}',${idx},'selesai')">
+              <button type="button" class="icon-btn icon-btn-danger" title="Hapus sesi jam ini" onclick="removeTaskAkunSlot('${escapeHtml(a.id)}',${idx})">${ic('trash')}</button>
+            </div>`).join('')}
+          </div>
+          <button type="button" class="btn btn-outline" style="margin-top:2px;" onclick="addTaskAkunSlot('${escapeHtml(a.id)}')">${ic('plus')} Tambah Jam</button>
+        </div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+function refreshTaskAkunList(){
+  const wrap = document.getElementById('taskAkunList');
+  if(wrap) wrap.innerHTML = renderTaskAkunListHtml();
+}
+function toggleTaskAkun(cb){
+  const id = cb.dataset.taskAkun;
+  const username = cb.dataset.taskAkunNama || '';
+  if(cb.checked){
+    if(!taskFormAkunTugas.find(x=>String(x.userId)===String(id))){
+      taskFormAkunTugas.push({userId:id, username, role:'', slots:[{mulai:'08:00',selesai:'10:00'}]});
+    }
+  } else {
+    taskFormAkunTugas = taskFormAkunTugas.filter(x=>String(x.userId)!==String(id));
+  }
+  refreshTaskAkunList();
+}
+function onTaskAkunRoleChange(sel){
+  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(sel.dataset.taskAkunRole));
+  if(item) item.role = sel.value;
+}
+function onTaskAkunSlotChange(inp, userId, idx, field){
+  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(userId));
+  if(item && item.slots[idx]) item.slots[idx][field] = inp.value;
+}
+function addTaskAkunSlot(userId){
+  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(userId));
+  if(!item) return;
+  item.slots.push({mulai:'08:00', selesai:'10:00'});
+  refreshTaskAkunList();
+}
+function removeTaskAkunSlot(userId, idx){
+  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(userId));
+  if(!item) return;
+  if(item.slots.length<=1){ toast('Minimal harus ada satu sesi jam kerja.'); return; }
+  item.slots.splice(idx,1);
+  refreshTaskAkunList();
+}
+/* ---------- Dropdown kustom Job / Tanggal Acara ----------
+   Dipakai (bukan <select> bawaan) supaya opsi "Tampilkan job yang sudah lewat" bisa
+   langsung menambah daftar job lewat DI DALAM panel yang sedang terbuka, tanpa perlu
+   menutup dropdown-nya dulu (yang tidak mungkin dilakukan dengan <select> native).
+   "Sudah lewat" dihitung dari tanggal SELESAI job (bukan tanggal mulai), supaya job yang
+   masih berlangsung beberapa hari tidak ikut disembunyikan. Job yang sudah lewat lebih
+   dari 2 bulan tidak pernah ditampilkan sama sekali (dianggap sudah terlalu lama). */
+function isJobPast(job){
+  const finish = getJobFinishDate(job);
+  if(!finish) return false;
+  return new Date(finish+'T00:00:00') < new Date(new Date().toDateString());
+}
+function taskJobPastLimitDate(){
+  const d = new Date(new Date().toDateString());
+  d.setMonth(d.getMonth()-2);
+  return d;
+}
+function isJobPastWithinTwoMonths(job){
+  if(!isJobPast(job)) return false;
+  return new Date(getJobFinishDate(job)+'T00:00:00') >= taskJobPastLimitDate();
+}
+let taskFormShowPastJobs = false;   // sedang menampilkan job yang sudah lewat di dalam panel atau tidak
+let taskFormEditingJobId = null;    // job yang lagi dipilih/diedit, supaya tetap terlihat di daftar
+let taskFormJobDropdownOpen = false; // status buka/tutup panel dropdown Job
+let taskJobPickerOutsideHandler = null; // listener klik-di-luar-dropdown, dipasang ulang tiap form dibuka
+function taskJobOptionLabel(j){
+  return `${formatTaskDate(j.tanggalAcara)}${getJobDurasiHari(j)>1?` (s/d ${formatTaskDate(getJobFinishDate(j))})`:''} · #${getJobNo(j.id)} · ${j.namaKlien||'Tanpa Nama'}`;
+}
+function renderTaskJobOptionHtml(j){
+  return `<div class="task-job-option${String(taskFormEditingJobId)===String(j.id)?' selected':''}" onclick="selectTaskJob('${escapeHtml(j.id)}')">
+    <div>${escapeHtml(taskJobOptionLabel(j))}${isJobPast(j)?' · <span style="color:var(--ink-soft);">sudah lewat</span>':''}</div>
+    ${j.jenisAcara?`<div class="task-job-option-sub">${escapeHtml(j.jenisAcara)}</div>`:''}
+  </div>`;
+}
+function renderTaskJobDropdownPanelHtml(){
+  const allJobOpts = taskJobOptions();
+  const upcomingJobOpts = allJobOpts.filter(j=>!isJobPast(j));
+  const pastJobOptsAvailable = allJobOpts.filter(isJobPastWithinTwoMonths)
+    .sort((a,b)=> new Date(getJobFinishDate(b)+'T00:00:00') - new Date(getJobFinishDate(a)+'T00:00:00'));
+  let html = upcomingJobOpts.length
+    ? upcomingJobOpts.map(renderTaskJobOptionHtml).join('')
+    : `<div class="task-job-option-empty">Belum ada job yang akan datang.</div>`;
+  if(pastJobOptsAvailable.length){
+    html += `<div class="task-job-option-toggle" onclick="event.stopPropagation(); toggleTaskFormPastJobsInline()">${taskFormShowPastJobs ? ic('eye-off')+' Sembunyikan job yang sudah lewat' : `${ic('clock')} Tampilkan job yang sudah lewat (${pastJobOptsAvailable.length}, 2 bulan terakhir)`}</div>`;
+    if(taskFormShowPastJobs) html += pastJobOptsAvailable.map(renderTaskJobOptionHtml).join('');
+  }
+  return html;
+}
+function renderTaskJobSectionHtml(){
+  const editJob = jobs.find(j=>String(j.id)===String(taskFormEditingJobId));
+  return `
+    <label>Job / Tanggal Acara *</label>
+    <div class="task-job-picker" id="taskJobPicker">
+      <button type="button" class="task-job-picker-btn${editJob?'':' placeholder'}" onclick="event.stopPropagation(); toggleTaskJobDropdown();">
+        <span>${escapeHtml(editJob ? taskJobOptionLabel(editJob) : 'Pilih job yang sudah ada...')}</span>
+        <span class="task-job-picker-caret">▾</span>
+      </button>
+      <input type="hidden" id="taskJobId" value="${escapeHtml(taskFormEditingJobId||'')}">
+      ${taskFormJobDropdownOpen ? `<div class="task-job-dropdown-panel" id="taskJobDropdownPanel" onclick="event.stopPropagation()">${renderTaskJobDropdownPanelHtml()}</div>` : ''}
+    </div>
+    <div class="field-hint">Tanggal ikut tanggal acara job.</div>
+  `;
+}
+function refreshTaskJobSection(){
+  const wrap = document.getElementById('taskJobSection');
+  if(wrap) wrap.innerHTML = renderTaskJobSectionHtml();
+}
+function toggleTaskJobDropdown(){
+  taskFormJobDropdownOpen = !taskFormJobDropdownOpen;
+  refreshTaskJobSection();
+}
+function selectTaskJob(jobId){
+  taskFormEditingJobId = jobId;
+  taskFormJobDropdownOpen = false;
+  refreshTaskJobSection();
+}
+// Menyalakan/mematikan daftar job yang sudah lewat DI DALAM panel yang sama, tanpa
+// mengubah status buka/tutup dropdown-nya — jadi dropdown tetap terbuka dan daftar
+// job yang sudah lewat langsung tampil di bawah, tidak perlu klik dua kali.
+function toggleTaskFormPastJobsInline(){
+  taskFormShowPastJobs = !taskFormShowPastJobs;
+  refreshTaskJobSection();
+}
+function bindTaskJobPickerOutsideClick(scopeEl){
+  if(taskJobPickerOutsideHandler) document.removeEventListener('click', taskJobPickerOutsideHandler);
+  taskJobPickerOutsideHandler = (e)=>{
+    if(!taskFormJobDropdownOpen) return;
+    const picker = scopeEl.querySelector('#taskJobPicker');
+    if(picker && !picker.contains(e.target)){
+      taskFormJobDropdownOpen = false;
+      refreshTaskJobSection();
+    }
+  };
+  document.addEventListener('click', taskJobPickerOutsideHandler);
+}
+function buildTaskFormHtml(editTask){
+  const people = taskEligibleAccounts();
+  const editSlots = editTask ? getTaskSlots(editTask) : [];
+  if(!editTask) taskFormAkunTugas = []; // reset tiap kali form "Bagi Tugas Baru" dibuka
+  taskFormEditingJobId = editTask ? editTask.jobId : null;
+  taskFormJobDropdownOpen = false;
+  // Kalau job milik tugas yang sedang diedit sudah lewat, otomatis nyalakan status
+  // "tampilkan job yang sudah lewat" supaya job itu tetap muncul & tersorot di daftar
+  // (bukan malah hilang saat form dibuka).
+  taskFormShowPastJobs = editTask ? isJobPastWithinTwoMonths(jobs.find(j=>String(j.id)===String(editTask.jobId)) || {}) : false;
+  return `
+    <h2 style="margin-top:0;">${editTask?ic('edit')+' Edit Pembagian Tugas':ic('plus')+' Bagi Tugas Baru'}</h2>
+    <div style="font-size:12px;color:var(--ink-soft);margin-top:-6px;margin-bottom:10px;">Terhubung ke job tercatat.</div>
+    ${!people.length?`<div class="task-form-note">${ic('warning')} Belum ada akun dengan peran <b>Tim</b>. Buat/daftarkan akun Tim terlebih dahulu.</div>`:''}
+    <form id="taskForm" class="form-grid">
+      ${editTask ? `
+      <div>
+        <label>Akun Tim *</label>
+        <select id="taskUserId" required ${people.length?'':'disabled'}>
+          <option value="">Pilih akun tim...</option>
+          ${people.map(a=>`<option value="${escapeHtml(a.id)}" ${String(editTask.userId)===String(a.id)?'selected':''}>${escapeHtml(a.username)}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label>Role Tugas *</label>
+        <select id="taskRole" required><option value="">Pilih role...</option><option value="Fotografer" ${editTask?.role==='Fotografer'?'selected':''}>${ic('camera')} Fotografer</option><option value="Videografer" ${editTask?.role==='Videografer'?'selected':''}>${ic('video')} Videografer</option></select>
+      </div>` : `
+      <div class="full">
+        <label>Akun Tim, Role &amp; Jam Kerja *</label>
+        <div class="honor-tim-list" id="taskAkunList">
+          ${renderTaskAkunListHtml()}
+        </div>
+      </div>`}
+      <div class="full" id="taskJobSection">
+        ${renderTaskJobSectionHtml()}
+      </div>
+      ${editTask ? `
+      <div class="full">
+        <label>Jam Kerja *</label>
+        <div id="taskTimeSlots">
+          ${(editSlots.length?editSlots:[{mulai:'08:00',selesai:'10:00'}]).map(s=>`
+          <div class="task-slot-row" data-slot-row>
+            <input type="time" class="task-slot-start" required value="${escapeHtml(s.mulai||'08:00')}">
+            <span class="task-slot-sep">–</span>
+            <input type="time" class="task-slot-end" required value="${escapeHtml(s.selesai||'10:00')}">
+            <button type="button" class="icon-btn icon-btn-danger task-slot-remove" title="Hapus sesi jam ini">${ic('trash')}</button>
+          </div>`).join('')}
+        </div>
+        <button type="button" class="btn btn-outline" id="btnAddTaskSlot" style="margin-top:8px;">${ic('plus')} Tambah Jam</button>
+      </div>` : ''}
+      <div class="full">
+        <label>Keterangan</label>
+        <textarea id="taskNote" rows="4" placeholder="Contoh: Foto akad, ambil detail dekorasi, backup file setelah acara...">${escapeHtml(editTask?.keterangan||'')}</textarea>
+      </div>
+      <div class="full">
+        <div class="task-form-note">${ic('pin')} Tim hanya lihat tugas sendiri.</div>
+      </div>
+      <div class="form-actions full">
+        <button type="button" class="btn btn-outline" id="btnCancelTask">Batal</button>
+        <button type="submit" class="btn btn-primary" ${people.length&&taskJobOptions().length?'':'disabled'}>${editTask?ic('save')+' Simpan Perubahan':ic('save')+' Simpan Pembagian Tugas'}</button>
+      </div>
+    </form>
+  `;
+}
+/* Membuka form Bagi Tugas / Edit Tugas sebagai POPUP modal (bukan kartu di
+   tengah halaman lagi). Modal ini ditaruh di document.body (lewat showModal),
+   terpisah dari #app, jadi auto-refresh cloud tiap 20 detik di menu Pembagian
+   Tugas (yang hanya me-render ulang #app) tidak akan menutup atau mereset
+   isian yang sedang diketik Admin di sini. */
+function openTaskFormModal(taskId){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa membagi tugas.'); return; }
+  editingTaskId = taskId || null;
+  const editTask = editingTaskId ? tasks.find(x=>String(x.id)===String(editingTaskId)) : null;
+  if(taskId && !editTask){ alert('Tugas tidak ditemukan (mungkin sudah dihapus).'); editingTaskId=null; return; }
+  showModal(`
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    ${buildTaskFormHtml(editTask)}
+  `);
+  const ov = document.getElementById('modalOverlay');
+  bindTaskFormEvents(ov, ()=>{
+    closeModal();
+    editingTaskId = null;
+    refreshView();
+  });
+}
+/* Pasang event handler form Bagi Tugas di dalam scope tertentu (modal
+   overlay-nya) — dipisah dari bindTaskHandlers() supaya bisa dipasang ulang
+   tiap kali modal dibuka, tanpa bentrok dengan handler tabel/filter Tugas
+   yang tetap hidup di #app. */
+function bindTaskFormEvents(scopeEl, onDone){
+  const form = scopeEl.querySelector('#taskForm');
+  if(!form) return;
+  bindTaskJobPickerOutsideClick(scopeEl);
+  scopeEl.querySelector('#btnCancelTask')?.addEventListener('click',()=>{
+    editingTaskId = null;
+    closeModal();
+  });
+  scopeEl.querySelector('#btnAddTaskSlot')?.addEventListener('click',()=>{
+    const container=scopeEl.querySelector('#taskTimeSlots');
+    if(!container) return;
+    const row=document.createElement('div');
+    row.className='task-slot-row';
+    row.setAttribute('data-slot-row','');
+    row.innerHTML=`
+      <input type="time" class="task-slot-start" required>
+      <span class="task-slot-sep">–</span>
+      <input type="time" class="task-slot-end" required>
+      <button type="button" class="icon-btn icon-btn-danger task-slot-remove" title="Hapus sesi jam ini">${ic('trash')}</button>
+    `;
+    container.appendChild(row);
+    row.querySelector('.task-slot-start')?.focus();
+  });
+  scopeEl.querySelector('#taskTimeSlots')?.addEventListener('click',(e)=>{
+    const btn=e.target.closest('.task-slot-remove');
+    if(!btn) return;
+    const container=scopeEl.querySelector('#taskTimeSlots');
+    const rows=container?.querySelectorAll('[data-slot-row]');
+    if(!rows || rows.length<=1){ toast('Minimal harus ada satu sesi jam kerja.'); return; }
+    btn.closest('[data-slot-row]')?.remove();
+  });
+  form.addEventListener('submit',(e)=>{
+    e.preventDefault();
+    if(!isAdmin()) return;
+    const jobId=scopeEl.querySelector('#taskJobId')?.value;
+    const keterangan=(scopeEl.querySelector('#taskNote')?.value||'').trim();
+    const job=jobs.find(j=>String(j.id)===String(jobId));
+    if(!job){alert('Pilih job yang sudah ada.');return;}
+
+    if(editingTaskId){
+      // Mode edit: satu tugas yang sudah ada tetap terikat ke SATU akun, SATU role, dan
+      // SATU set jam kerja saja (pilihan beberapa tim/role dengan jam sendiri-sendiri
+      // hanya berlaku saat membuat tugas baru — lihat cabang di bawah).
+      const role=scopeEl.querySelector('#taskRole')?.value;
+      if(!role){alert('Pilih role tugas.');return;}
+      const userId=scopeEl.querySelector('#taskUserId')?.value;
+      const akun=taskEligibleAccounts().find(a=>String(a.id)===String(userId));
+      if(!akun){alert('Pilih akun Tim yang valid.');return;}
+
+      const slotRows=Array.from(scopeEl.querySelectorAll('#taskTimeSlots [data-slot-row]'));
+      const slots=[];
+      for(const row of slotRows){
+        const mulai=row.querySelector('.task-slot-start')?.value;
+        const selesai=row.querySelector('.task-slot-end')?.value;
+        if(!mulai || !selesai){alert('Jam mulai dan jam selesai wajib diisi di setiap sesi jam.');return;}
+        if(mulai===selesai){alert('Jam mulai dan jam selesai tidak boleh sama pada satu sesi jam.');return;}
+        slots.push({mulai, selesai});
+      }
+      if(!slots.length){alert('Tambahkan minimal satu sesi jam kerja.');return;}
+
+      const t = tasks.find(x=>String(x.id)===String(editingTaskId));
+      if(!t){ alert('Tugas yang diedit sudah tidak ditemukan (mungkin sudah dihapus).'); editingTaskId=null; onDone(); return; }
+      t.userId=akun.id; t.username=akun.username; t.role=role;
+      t.jobId=job.id; t.jobName=job.namaKlien||'Tanpa Nama'; t.tanggal=job.tanggalAcara;
+      t.slots=slots; t.keterangan=keterangan;
+      t.updatedAt=Date.now(); t.updatedBy=currentUserId;
+      saveTasks();
+      toast('Perubahan tugas berhasil disimpan');
+      onDone();
+      return;
+    }
+
+    // Mode tambah baru: boleh centang lebih dari satu akun Tim sekaligus, dan tiap akun
+    // punya role serta jam kerjanya SENDIRI-SENDIRI (lihat taskFormAkunTugas, diisi lewat
+    // toggleTaskAkun/onTaskAkunRoleChange/onTaskAkunSlotChange). Job dan keterangan tetap
+    // sama untuk semua akun karena satu pembagian tugas ini merujuk ke satu job yang sama.
+    if(!taskFormAkunTugas.length){alert('Pilih minimal satu akun Tim.');return;}
+    for(const item of taskFormAkunTugas){
+      if(!item.role){alert(`Pilih role tugas untuk akun ${item.username}.`);return;}
+      if(!item.slots.length){alert(`Tambahkan minimal satu sesi jam kerja untuk akun ${item.username}.`);return;}
+      for(const s of item.slots){
+        if(!s.mulai || !s.selesai){alert(`Jam mulai dan jam selesai wajib diisi untuk akun ${item.username}.`);return;}
+        if(s.mulai===s.selesai){alert(`Jam mulai dan jam selesai tidak boleh sama pada satu sesi jam (akun ${item.username}).`);return;}
       }
     }
-    const target = new URL(SHELL_URL);
-    if (data.view) target.searchParams.set('v', data.view);
-    return self.clients.openWindow(target.href);
-  })());
+
+    taskFormAkunTugas.forEach(item=>{
+      const akun=taskEligibleAccounts().find(a=>String(a.id)===String(item.userId));
+      if(!akun) return;
+      tasks.push({
+        id:'task_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+        userId:akun.id, username:akun.username, role:item.role,
+        jobId:job.id, jobName:job.namaKlien||'Tanpa Nama', tanggal:job.tanggalAcara,
+        slots:item.slots.map(s=>({mulai:s.mulai, selesai:s.selesai})), keterangan, status:'Belum',
+        createdAt:Date.now(), createdBy:currentUserId
+      });
+    });
+    saveTasks();
+    toast(taskFormAkunTugas.length>1 ? `Pembagian tugas untuk ${taskFormAkunTugas.length} akun berhasil disimpan` : 'Pembagian tugas berhasil disimpan');
+    taskFormAkunTugas = [];
+    onDone();
+  });
+}
+
+
+function applyTaskFilters(){
+  taskRekapFilter = {
+    userId: document.getElementById('taskFilterUser')?.value || '',
+    role: document.getElementById('taskFilterRole')?.value || '',
+    status: document.getElementById('taskFilterStatus')?.value || '',
+    from: document.getElementById('taskFilterFrom')?.value || '',
+    to: document.getElementById('taskFilterTo')?.value || ''
+  };
+  refreshView();
+}
+function toggleTaskStatus(id){
+  const t=tasks.find(x=>String(x.id)===String(id));
+  if(!t) return;
+  if(!isAdmin() && String(t.userId)!==String(currentUserId)) return;
+  t.status=(t.status||'Belum')==='Selesai'?'Belum':'Selesai';
+  t.manualStatusSet = true; // sejak diubah manual, jangan pernah ditimpa lagi oleh auto-selesai
+  t.autoCompleted = false;
+  t.updatedAt=Date.now();
+  saveTasks();
+  toast(t.status==='Selesai'?'Tugas ditandai selesai':'Status tugas dikembalikan');
+  refreshView();
+}
+function deleteTask(id){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa menghapus tugas.'); return; }
+  const t=tasks.find(x=>String(x.id)===String(id));
+  if(!t) return;
+  if(!confirm(`Hapus tugas ${getTaskPerson(t)} — ${getTaskJobLabel(t)}?`)) return;
+  tasks=tasks.filter(x=>String(x.id)!==String(id));
+  saveTasks();
+  toast('Tugas dihapus');
+  if(editingTaskId && String(editingTaskId)===String(id)) editingTaskId=null;
+  refreshView();
+}
+function bindTaskHandlers(){
+  document.getElementById('btnOpenTaskForm')?.addEventListener('click',()=>{
+    openTaskFormModal(null);
+  });
+  ['taskFilterUser','taskFilterRole','taskFilterStatus','taskFilterFrom','taskFilterTo'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('change',applyTaskFilters);
+  });
+  document.getElementById('btnResetTaskFilter')?.addEventListener('click',()=>{
+    taskRekapFilter={userId:'',role:'',status:'',from:'',to:''}; refreshView();
+  });
+  document.querySelectorAll('[data-task-toggle]').forEach(btn=>btn.addEventListener('click',()=>toggleTaskStatus(btn.dataset.taskToggle)));
+  document.querySelectorAll('[data-task-edit]').forEach(btn=>btn.addEventListener('click',()=>openTaskFormModal(btn.dataset.taskEdit)));
+  document.querySelectorAll('[data-task-delete]').forEach(btn=>btn.addEventListener('click',()=>deleteTask(btn.dataset.taskDelete)));
+  document.querySelectorAll('[data-task-comment]').forEach(btn=>btn.addEventListener('click',()=>openTaskCommentModal(btn.dataset.taskComment)));
+  document.querySelectorAll('[data-bonus-adjust]').forEach(btn=>btn.addEventListener('click',()=>openBonusAdjustModal(btn.dataset.bonusAdjust)));
+  document.getElementById('btnEditBonusRate')?.addEventListener('click', openBonusRateModal);
+  document.getElementById('btnClaimBonus')?.addEventListener('click', claimBonus);
+  document.querySelectorAll('[data-cairkan-bonus]').forEach(btn=>btn.addEventListener('click',()=>cairkanBonusClaim(btn.dataset.cairkanBonus)));
+  document.querySelectorAll('[data-copy-ml]').forEach(btn=>btn.addEventListener('click', async ()=>{
+    const val = btn.dataset.copyMl || '';
+    try{
+      await navigator.clipboard.writeText(val);
+    }catch(e){
+      // Fallback untuk browser/HP yang tidak dukung Clipboard API langsung
+      const ta = document.createElement('textarea');
+      ta.value = val; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); }catch(e2){}
+      ta.remove();
+    }
+    toast('ID Game & Server disalin');
+  }));
+}
+function openEditTaskForm(id){
+  openTaskFormModal(id);
+}
+
+/* ---------- Modal Komentar Tugas (Admin mengirim komentar/arahan ke Tim) ---------- */
+function taskCommentModalHtml(task){
+  const comments = taskComments(task);
+  const listHtml = comments.length
+    ? comments.map(c=>`
+        <div class="comment-bubble ${c.byRole==='admin'?'from-admin':''}">
+          <div class="cb-head">
+            <span class="cb-author">${c.byRole==='admin'?ic('crown')+' ':ic('user')+' '}${escapeHtml(c.by||'-')}</span>
+            <span class="cb-time">${escapeHtml(formatCommentTime(c.createdAt))}</span>
+          </div>
+          <div class="cb-text">${escapeHtml(c.text)}</div>
+        </div>`).join('')
+    : `<div class="comment-empty">Belum ada komentar pada tugas ini.</div>`;
+
+  return `
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('chat')} Komentar Tugas</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">
+      ${escapeHtml(getTaskPerson(task))} · ${escapeHtml(getTaskJobLabel(task))}
+    </div>
+    <div class="comment-thread" id="taskCommentThread">${listHtml}</div>
+    ${isAdmin() ? `
+    <form id="taskCommentForm" class="comment-form">
+      <label for="taskCommentInput">Kirim komentar ke ${escapeHtml(getTaskPerson(task))}</label>
+      <textarea id="taskCommentInput" placeholder="Contoh: Tolong datang 30 menit lebih awal, dan pastikan bawa lensa cadangan." required></textarea>
+      <div class="form-actions" style="margin-top:10px;">
+        <button type="submit" class="btn btn-primary">${ic('mail')} Kirim Komentar</button>
+      </div>
+    </form>` : `<div class="task-form-note">${ic('pin')} Komentar dari Admin.</div>`}
+  `;
+}
+function openTaskCommentModal(taskId){
+  const task = tasks.find(x=>String(x.id)===String(taskId));
+  if(!task){ alert('Tugas tidak ditemukan.'); return; }
+  if(!isAdmin() && String(task.userId)!==String(currentUserId)){ alert('Anda tidak punya akses ke komentar tugas ini.'); return; }
+
+  // Begitu tugas dibuka, tandai semua komentar Admin di tugas ini sebagai
+  // sudah dibaca (khusus untuk Tim), supaya titik merah & badge notifikasi hilang.
+  if(!isAdmin()){
+    const read = loadNotifRead();
+    let changed = false;
+    taskComments(task).forEach(c=>{
+      if(c.byRole==='admin'){
+        const nid = taskCommentNotifId(task.id, c.id);
+        if(!read.has(nid)){ read.add(nid); changed = true; }
+      }
+    });
+    if(changed){ saveNotifRead(read); renderNotifBadge(); }
+  }
+
+  showModal(taskCommentModalHtml(task));
+  const ov = document.getElementById('modalOverlay');
+  const thread = ov?.querySelector('#taskCommentThread');
+  if(thread) thread.scrollTop = thread.scrollHeight;
+
+  ov?.querySelector('#taskCommentForm')?.addEventListener('submit',(e)=>{
+    e.preventDefault();
+    if(!isAdmin()) return;
+    const input = document.getElementById('taskCommentInput');
+    const text = (input?.value||'').trim();
+    if(!text) return;
+    const t = tasks.find(x=>String(x.id)===String(taskId));
+    if(!t) return;
+    if(!Array.isArray(t.comments)) t.comments = [];
+    t.comments.push({
+      id:'cmt_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+      text, by:currentUsername, byId:currentUserId, byRole:'admin',
+      createdAt:Date.now()
+    });
+    saveTasks();
+    toast('Komentar terkirim ke ' + getTaskPerson(t));
+    render();
+    openTaskCommentModal(taskId);
+  });
+}
+
+/* ---------- Modal Atur Bonus Tim (Admin menambah/memotong bonus dalam sistem jam) ---------- */
+function bonusAdjustModalHtml(akun){
+  const jamKerja = userTaskHours(akun.id);
+  const jamPenyesuaian = userBonusAdjustHours(akun.id);
+  const jamTotal = Math.max(0, jamKerja + jamPenyesuaian);
+  const rpTotal = userBonusRupiah(akun.id);
+  const list = userBonusAdjustments(akun.id);
+  const listHtml = list.length
+    ? list.map(b=>`
+        <div class="bonus-adjust-item">
+          <div>
+            <div class="bonus-adjust-note">${escapeHtml(b.catatan||(b.jam>=0?'Penambahan bonus':'Pemotongan bonus'))}</div>
+            <div class="bonus-adjust-meta">${escapeHtml(formatCommentTime(b.createdAt))} · oleh ${escapeHtml(b.byName||'Admin')}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="bonus-adjust-jam ${b.jam>=0?'plus':'minus'}">${b.jam>=0?'+':'−'}${fmtTaskHours(Math.abs(b.jam))}</div>
+            <button type="button" class="icon-btn icon-btn-danger" data-bonus-delete="${escapeHtml(b.id)}" title="Hapus penyesuaian ini">${ic('trash')}</button>
+          </div>
+        </div>`).join('')
+    : `<div class="comment-empty">Belum ada penyesuaian bonus.</div>`;
+
+  return `
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('settings')} Atur Bonus — ${escapeHtml(akun.username)}</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">
+      Bonus dihitung otomatis dari jam kerja tugas (${fmtRp(BONUS_PER_JAM)}/jam). Admin bisa menambah atau memotong bonus ini dalam sistem jam, misalnya sebagai reward atau pemotongan karena keterlambatan.
+    </div>
+
+    <div class="bonus-modal-current">
+      <div class="bmc-box"><div class="bmc-label">Jam Kerja</div><div class="bmc-value">${fmtTaskHours(jamKerja)}</div></div>
+      <div class="bmc-box"><div class="bmc-label">Penyesuaian</div><div class="bmc-value">${jamPenyesuaian>=0?'+':'−'}${fmtTaskHours(Math.abs(jamPenyesuaian))}</div></div>
+      <div class="bmc-box"><div class="bmc-label">Total Jam</div><div class="bmc-value">${fmtTaskHours(jamTotal)}</div></div>
+      <div class="bmc-box"><div class="bmc-label">Total Bonus</div><div class="bmc-value">${fmtRp(rpTotal)}</div></div>
+    </div>
+
+    <form id="bonusAdjustForm" class="form-grid" style="margin-top:4px;">
+      <div class="full">
+        <label>Jenis Penyesuaian</label>
+        <div class="bonus-type-toggle">
+          <button type="button" id="btnBonusTypeAdd" class="active-add">${ic('plus')} Tambah Jam</button>
+          <button type="button" id="btnBonusTypeSub">${ic('minus')} Potong Jam</button>
+        </div>
+        <input type="hidden" id="bonusAdjustType" value="add">
+      </div>
+      <div>
+        <label>Jumlah Jam *</label>
+        <input type="number" id="bonusAdjustJam" min="0.25" step="0.25" placeholder="Contoh: 1" required>
+      </div>
+      <div class="full">
+        <label>Catatan</label>
+        <input type="text" id="bonusAdjustNote" placeholder="Contoh: Bonus datang lebih awal / Potongan karena terlambat 1 jam">
+      </div>
+      <div class="form-actions full">
+        <button type="submit" class="btn btn-primary">${ic('save')} Simpan Penyesuaian</button>
+      </div>
+    </form>
+
+    <div class="section-title" style="margin-top:18px;">${ic('receipt')} Riwayat Penyesuaian</div>
+    <div class="bonus-adjust-list">${listHtml}</div>
+  `;
+}
+function openBonusAdjustModal(userId){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengatur bonus tim.'); return; }
+  const akun = taskEligibleAccounts().find(a=>String(a.id)===String(userId));
+  if(!akun){ alert('Akun tim tidak ditemukan.'); return; }
+
+  showModal(bonusAdjustModalHtml(akun));
+  const ov = document.getElementById('modalOverlay');
+
+  const typeInput = ov?.querySelector('#bonusAdjustType');
+  const btnAdd = ov?.querySelector('#btnBonusTypeAdd');
+  const btnSub = ov?.querySelector('#btnBonusTypeSub');
+  function setType(type){
+    if(typeInput) typeInput.value = type;
+    btnAdd?.classList.toggle('active-add', type==='add');
+    btnSub?.classList.toggle('active-sub', type==='sub');
+  }
+  btnAdd?.addEventListener('click',()=>setType('add'));
+  btnSub?.addEventListener('click',()=>setType('sub'));
+
+  ov?.querySelector('#bonusAdjustForm')?.addEventListener('submit',(e)=>{
+    e.preventDefault();
+    if(!isAdmin()) return;
+    const type = typeInput?.value === 'sub' ? 'sub' : 'add';
+    const jamInput = document.getElementById('bonusAdjustJam');
+    const jamRaw = Number(jamInput?.value);
+    if(!Number.isFinite(jamRaw) || jamRaw<=0){ alert('Masukkan jumlah jam yang valid (lebih dari 0).'); return; }
+    const catatan = (document.getElementById('bonusAdjustNote')?.value||'').trim();
+    const jam = type==='sub' ? -jamRaw : jamRaw;
+
+    bonusAdjustments.push({
+      id:'bns_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+      userId:akun.id, username:akun.username,
+      jam, catatan,
+      byId:currentUserId, byName:currentUsername,
+      createdAt:Date.now()
+    });
+    saveBonusAdjustments();
+    toast(type==='sub' ? `Bonus ${escapeHtml(akun.username)} dipotong ${fmtTaskHours(jamRaw)}` : `Bonus ${escapeHtml(akun.username)} ditambah ${fmtTaskHours(jamRaw)}`);
+    render();
+    openBonusAdjustModal(userId);
+  });
+
+  ov?.querySelectorAll('[data-bonus-delete]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(!confirm('Hapus penyesuaian bonus ini?')) return;
+      bonusAdjustments = bonusAdjustments.filter(b=>String(b.id)!==String(btn.dataset.bonusDelete));
+      saveBonusAdjustments();
+      toast('Penyesuaian bonus dihapus');
+      render();
+      openBonusAdjustModal(userId);
+    });
+  });
+}
+
+/* ---------- Modal Pengaturan Bonus (Admin mengubah tarif/jam & syarat minimal kedua jenis klaim) ---------- */
+function bonusRateModalHtml(){
+  return `
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('settings')} Pengaturan Bonus</h3>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">
+      Berlaku untuk seluruh akun Tim. Tarif saat ini: <b>${fmtRp(BONUS_PER_JAM)}/jam</b>.
+    </div>
+    <form id="bonusRateForm" class="form-grid">
+      <div class="full">
+        <label>Tarif Bonus/Jam *</label>
+        <input type="number" id="bonusRateInput" min="0" step="1" value="${BONUS_PER_JAM}" required>
+      </div>
+      <div>
+        <label>${ic('money')} Syarat Minimal Klaim Tunai *</label>
+        <input type="number" id="minKlaimTunaiInput" min="0" step="1000" value="${MIN_KLAIM_TUNAI}" required>
+      </div>
+      <div>
+        <label>${ic('sparkle')} Syarat Minimal Klaim WDP *</label>
+        <input type="number" id="minKlaimWdpInput" min="0" step="1000" value="${MIN_KLAIM_WDP}" required>
+      </div>
+      <div class="full field-hint">${ic('bulb')} Akun Tim baru bisa mengajukan klaim jenis tersebut kalau bonus terkumpulnya sudah mencapai angka ini.</div>
+      <div class="form-actions full">
+        <button type="submit" class="btn btn-primary">${ic('save')} Simpan Pengaturan</button>
+      </div>
+    </form>
+  `;
+}
+function openBonusRateModal(){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah pengaturan bonus.'); return; }
+  showModal(bonusRateModalHtml());
+  const ov = document.getElementById('modalOverlay');
+  ov?.querySelector('#bonusRateForm')?.addEventListener('submit',(e)=>{
+    e.preventDefault();
+    if(!isAdmin()) return;
+    const rateVal = document.getElementById('bonusRateInput')?.value;
+    const tunaiVal = document.getElementById('minKlaimTunaiInput')?.value;
+    const wdpVal = document.getElementById('minKlaimWdpInput')?.value;
+    if(!setBonusRate(rateVal)){ alert('Tarif harus berupa angka 0 atau lebih.'); return; }
+    if(!setMinKlaimTunai(tunaiVal)){ alert('Syarat minimal klaim Tunai harus berupa angka 0 atau lebih.'); return; }
+    if(!setMinKlaimWdp(wdpVal)){ alert('Syarat minimal klaim WDP harus berupa angka 0 atau lebih.'); return; }
+    toast('Pengaturan bonus berhasil diperbarui');
+    closeModal();
+    render();
+  });
+}
+
+
+/* =========================================================
+   LAPORAN TIM
+   Akun Tim bisa melaporkan akun Tim lain (mis. masalah kerja sama di lapangan)
+   lewat menu ini. Laporan langsung terkirim ke Admin untuk ditindaklanjuti.
+   Daftar LENGKAP laporan (siapa melapor, siapa dilaporkan, isi laporan) HANYA
+   ditampilkan di menu ini untuk akun berperan Admin. Akun Tim yang mengirim
+   laporan hanya bisa melihat riwayat laporan miliknya SENDIRI (untuk memantau
+   status tindak lanjut) — tidak bisa melihat laporan akun Tim lain sama sekali.
+========================================================= */
+const REPORT_STATUS_LABELS = { 'Baru':ic('new-badge')+' Baru', 'Diproses':ic('hourglass')+' Diproses', 'Selesai':ic('check-circle')+' Selesai' };
+function reportStatusBadgeClass(status){
+  if(status==='Diproses') return 'report-status-proses';
+  if(status==='Selesai') return 'report-status-selesai';
+  return 'report-status-baru';
+}
+function formatReportTime(ts){
+  if(!ts) return '-';
+  return new Date(ts).toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+}
+function viewLaporan(){
+  return isAdmin() ? viewLaporanAdmin() : viewLaporanTim();
+}
+
+/* ---------- Tampilan Admin: lihat & tindak lanjuti SEMUA laporan ---------- */
+function viewLaporanAdmin(){
+  const all = [...reports].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const total = all.length;
+  const baru = all.filter(r=>(r.status||'Baru')==='Baru').length;
+  const proses = all.filter(r=>r.status==='Diproses').length;
+  const selesai = all.filter(r=>r.status==='Selesai').length;
+  const filtered = reportsFilterStatus ? all.filter(r=>(r.status||'Baru')===reportsFilterStatus) : all;
+
+  return `
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <h2 style="margin:0;">${ic('alert')} Laporan Tim</h2>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">
+          Laporan antar akun Tim.
+        </div>
+      </div>
+    </div>
+
+    <div class="task-summary-grid">
+      <div class="task-stat gold"><div class="ts-label">Total Laporan</div><div class="ts-value">${total}</div></div>
+      <div class="task-stat"><div class="ts-label">Baru</div><div class="ts-value">${baru}</div></div>
+      <div class="task-stat"><div class="ts-label">Diproses</div><div class="ts-value">${proses}</div></div>
+      <div class="task-stat"><div class="ts-label">Selesai</div><div class="ts-value">${selesai}</div></div>
+    </div>
+
+    <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;">
+      <div class="toolbar" style="margin-bottom:0;">
+        <div><label style="margin:0 0 5px;">Filter Status</label>
+          <select id="reportFilterStatus">
+            <option value="">Semua Status</option>
+            <option value="Baru" ${reportsFilterStatus==='Baru'?'selected':''}>${ic('new-badge')} Baru</option>
+            <option value="Diproses" ${reportsFilterStatus==='Diproses'?'selected':''}>${ic('hourglass')} Diproses</option>
+            <option value="Selesai" ${reportsFilterStatus==='Selesai'?'selected':''}>${ic('check-circle')} Selesai</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    ${filtered.length ? `<div class="report-list">${filtered.map(r=>reportCardHtml(r, true)).join('')}</div>`
+      : `<div class="empty-state"><div class="em">${ic('alert')}</div>Belum ada laporan${reportsFilterStatus?' dengan status ini':''}.</div>`}
+  </div>
+  `;
+}
+
+/* ---------- Tampilan akun Tim: form buat laporan + riwayat laporan MILIK SENDIRI ---------- */
+function viewLaporanTim(){
+  const targets = (teamAccountsPublic||[]).filter(a=>String(a.id)!==String(currentUserId));
+  const myReports = reports.filter(r=>String(r.reporterId)===String(currentUserId)).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+
+  return `
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <h2 style="margin:0;">${ic('alert')} Laporkan Akun Tim</h2>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">
+          Laporkan masalah ke Admin.
+        </div>
+      </div>
+    </div>
+
+    ${!cloudSyncEnabled ? `<div class="info-box">${ic('warning')} Sinkronisasi cloud belum aktif.</div>` : ''}
+
+    <form id="reportForm" class="form-grid" style="margin-top:16px;">
+      <div class="full">
+        <label>Laporkan Akun Tim *</label>
+        <select id="reportTargetId" required ${targets.length?'':'disabled'}>
+          <option value="">Pilih akun Tim yang dilaporkan...</option>
+          ${targets.map(a=>`<option value="${escapeHtml(a.id)}">${escapeHtml(a.username)}</option>`).join('')}
+        </select>
+        ${!targets.length?`<div class="field-hint">Belum ada akun untuk dilaporkan.</div>`:''}
+      </div>
+      <div class="full">
+        <label>Isi Laporan *</label>
+        <textarea id="reportIsi" rows="5" placeholder="Jelaskan kejadian atau masalahnya secara singkat dan jelas..." required></textarea>
+      </div>
+      <div class="form-actions full">
+        <button type="submit" class="btn btn-primary" ${targets.length?'':'disabled'}>${ic('mail')} Kirim Laporan ke Admin</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">${ic('receipt')} Laporan Saya</h2>
+    <div style="font-size:12px;color:var(--ink-soft);margin:-6px 0 4px;">Riwayat laporanmu.</div>
+    ${myReports.length ? `<div class="report-list">${myReports.map(r=>reportCardHtml(r, false)).join('')}</div>`
+      : `<div class="empty-state"><div class="em">${ic('receipt')}</div>Anda belum pernah mengirim laporan.</div>`}
+  </div>
+  `;
+}
+
+function reportCardHtml(r, adminView){
+  const status = r.status || 'Baru';
+  return `
+  <div class="report-card">
+    <div class="report-card-top">
+      <div class="report-parties">${escapeHtml(r.reporterName||'-')}<span class="arrow">${ic('arrow-right')}</span>${escapeHtml(r.targetName||'-')}</div>
+      <div class="report-date">${escapeHtml(formatReportTime(r.createdAt))}</div>
+    </div>
+    <span class="report-status-badge ${reportStatusBadgeClass(status)}">${REPORT_STATUS_LABELS[status]||status}</span>
+    <div class="report-text">${escapeHtml(r.isi||'-')}</div>
+    ${r.catatanAdmin ? `<div class="report-admin-note">${ic('pin')} Catatan Admin: ${escapeHtml(r.catatanAdmin)}</div>` : ''}
+    ${adminView ? `
+    <div class="report-actions">
+      ${status!=='Baru'?`<button type="button" class="btn btn-outline" data-report-status="${escapeHtml(r.id)}" data-status-to="Baru">${ic('new-badge')} Tandai Baru</button>`:''}
+      ${status!=='Diproses'?`<button type="button" class="btn btn-outline" data-report-status="${escapeHtml(r.id)}" data-status-to="Diproses">${ic('hourglass')} Tandai Diproses</button>`:''}
+      ${status!=='Selesai'?`<button type="button" class="btn btn-primary" data-report-status="${escapeHtml(r.id)}" data-status-to="Selesai">${ic('check-circle')} Tandai Selesai</button>`:''}
+      <button type="button" class="icon-btn icon-btn-danger" data-report-delete="${escapeHtml(r.id)}" title="Hapus laporan">${ic('trash')} Hapus</button>
+    </div>
+    <form class="report-note-form" data-report-note-form="${escapeHtml(r.id)}">
+      <textarea rows="2" placeholder="Tulis/ubah catatan tindak lanjut untuk laporan ini...">${escapeHtml(r.catatanAdmin||'')}</textarea>
+      <button type="submit" class="btn btn-outline">${ic('save')} Simpan Catatan</button>
+    </form>
+    ` : ''}
+  </div>`;
+}
+
+function submitReport(targetId, isi){
+  if(isAdmin()) return;
+  const akun = (teamAccountsPublic||[]).find(a=>String(a.id)===String(targetId));
+  if(!akun){ alert('Pilih akun Tim yang valid untuk dilaporkan.'); return; }
+  if(String(akun.id)===String(currentUserId)){ alert('Anda tidak bisa melaporkan akun sendiri.'); return; }
+  const text = (isi||'').trim();
+  if(!text){ alert('Isi laporan tidak boleh kosong.'); return; }
+
+  reports.push({
+    id:'rpt_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+    reporterId:currentUserId, reporterName:currentUsername,
+    targetId:akun.id, targetName:akun.username,
+    isi:text, status:'Baru', catatanAdmin:'',
+    createdAt:Date.now(), updatedAt:Date.now()
+  });
+  saveReports();
+  toast('Laporan berhasil dikirim ke Admin');
+  navigate('laporan');
+}
+function updateReportStatus(id, status){
+  if(!isAdmin()) return;
+  const r = reports.find(x=>String(x.id)===String(id));
+  if(!r) return;
+  r.status = status;
+  r.updatedAt = Date.now();
+  saveReports();
+  toast('Status laporan diperbarui');
+  navigate('laporan');
+}
+function saveReportAdminNote(id, note){
+  if(!isAdmin()) return;
+  const r = reports.find(x=>String(x.id)===String(id));
+  if(!r) return;
+  r.catatanAdmin = (note||'').trim();
+  r.updatedAt = Date.now();
+  saveReports();
+  toast('Catatan tindak lanjut disimpan');
+  navigate('laporan');
+}
+function deleteReport(id){
+  if(!isAdmin()) return;
+  const r = reports.find(x=>String(x.id)===String(id));
+  if(!r) return;
+  if(!confirm(`Hapus laporan dari ${r.reporterName} tentang ${r.targetName}?`)) return;
+  reports = reports.filter(x=>String(x.id)!==String(id));
+  saveReports();
+  toast('Laporan dihapus');
+  navigate('laporan');
+}
+function bindLaporanHandlers(){
+  document.getElementById('reportForm')?.addEventListener('submit',(e)=>{
+    e.preventDefault();
+    const targetId = document.getElementById('reportTargetId')?.value;
+    const isi = document.getElementById('reportIsi')?.value;
+    submitReport(targetId, isi);
+  });
+  document.getElementById('reportFilterStatus')?.addEventListener('change',(e)=>{
+    reportsFilterStatus = e.target.value;
+    navigate('laporan');
+  });
+  document.querySelectorAll('[data-report-status]').forEach(btn=>{
+    btn.addEventListener('click', ()=>updateReportStatus(btn.dataset.reportStatus, btn.dataset.statusTo));
+  });
+  document.querySelectorAll('[data-report-delete]').forEach(btn=>{
+    btn.addEventListener('click', ()=>deleteReport(btn.dataset.reportDelete));
+  });
+  document.querySelectorAll('[data-report-note-form]').forEach(form=>{
+    form.addEventListener('submit',(e)=>{
+      e.preventDefault();
+      const id = form.dataset.reportNoteForm;
+      const note = form.querySelector('textarea')?.value || '';
+      saveReportAdminNote(id, note);
+    });
+  });
+}
+
+
+/* =========================================================
+   REKAP
+========================================================= */
+function viewRekap(){
+  const admin = isAdmin();
+  // Jaga-jaga: kalau rekapSection/rekapTab tersisa dari state yang sudah tidak
+  // valid untuk role/section saat ini (misal Tim tersambung ke state 'keuangan'
+  // dari sesi Admin sebelumnya di browser yang sama), otomatis dikembalikan ke
+  // pilihan default yang aman, supaya halaman tidak pernah kosong/rusak.
+  if(rekapSection==='keuangan' && !admin) rekapSection='ringkasan';
+  if(rekapSection==='tren' && !['bulan','tahun'].includes(rekapTab)) rekapTab='bulan';
+  if(rekapSection==='kategori' && !['jenis','wilayah'].includes(rekapTab)) rekapTab='jenis';
+
+  const sections = [
+    ['ringkasan','Ringkasan'],
+    ['tren','Tren'],
+    ['kategori','Kategori'],
+    ...(admin ? [['keuangan','Keuangan']] : []),
+  ];
+  return `
+  <div class="card">
+    <div class="toolbar">
+      <h2 style="margin:0;">${ic('chart')} Rekap Job</h2>
+      <button class="btn btn-primary" id="btnDownloadRekap">${ic('download')} Unduh Rekap sebagai Gambar</button>
+    </div>
+    <div class="rekap-tabs" id="rekapSectionTabs">
+      ${sections.map(([k,l])=>`<button data-rsection="${k}" class="${rekapSection===k?'active':''}">${l}</button>`).join('')}
+    </div>
+    <div id="rekapPoster">
+      <div class="rp-head">
+        <div class="b">Kaone Motret</div>
+        <h2>Rekap Job${admin?' &amp; Analisis Bisnis':''}</h2>
+      </div>
+      ${renderRekapSection(admin)}
+    </div>
+  </div>
+  `;
+}
+/* Router internal Rekap — tiap section fokus pada satu topik supaya halaman
+   tidak lagi jadi satu scroll panjang tanpa henti seperti sebelumnya:
+   - Ringkasan: angka-angka inti + insight cepat + status operasional
+   - Tren: perkembangan dari waktu ke waktu (per bulan/tahun)
+   - Kategori: dikelompokkan per Jenis Acara atau per Wilayah
+   - Keuangan (Admin saja): Top Klien, Status Pembayaran, per Vendor */
+function renderRekapSection(admin){
+  if(rekapSection==='tren') return renderRekapTren(admin);
+  if(rekapSection==='kategori') return renderRekapKategori();
+  if(rekapSection==='keuangan' && admin) return renderRekapKeuangan();
+  return renderRekapRingkasan();
+}
+function renderRekapRingkasan(){
+  return `
+  <div class="rekap-block">
+    <div class="section-title" style="margin-top:0;">${ic('clipboard')} Ringkasan Keseluruhan</div>
+    ${buildRekapSummaryHtml()}
+  </div>
+  <div class="rekap-block">
+    <div class="section-title" style="margin-top:0;">${ic('star')} Insight Cepat</div>
+    ${buildQuickInsightsHtml()}
+  </div>
+  <div class="rekap-block">
+    <div class="section-title" style="margin-top:0;">${ic('check-circle')} Status Operasional</div>
+    ${buildOperationalStatusHtml()}
+  </div>`;
+}
+function renderRekapTren(admin){
+  const aggs = admin ? monthlyAggregates() : [];
+  let html = `
+  <div class="rekap-block">
+    <div class="section-title" style="margin-top:0;">${ic('chart')} Tren Jumlah Job per Bulan</div>
+    ${buildJobCountBarChart()}
+  </div>`;
+  if(admin){
+    html += `
+    <div class="rekap-block">
+      <div class="section-title" style="margin-top:0;">${ic('money')} Tren Omzet &amp; Laba Bersih</div>
+      ${buildMonthComparisonHtml(aggs)}
+      ${buildMonthlyBarChart(aggs)}
+      ${buildYearComparisonHtml()}
+    </div>`;
+  }
+  html += `
+    <div class="rekap-sublevel">
+      ${[['bulan','Per Bulan'],['tahun','Per Tahun']].map(([k,l])=>`<button data-rtab="${k}" class="${rekapTab===k?'active':''}">${l}</button>`).join('')}
+    </div>
+    <div class="section-title">${ic('folder')} ${rekapTitle()}</div>
+    ${renderRekapTable()}`;
+  return html;
+}
+function renderRekapKategori(){
+  let html = `
+    <div class="rekap-sublevel">
+      ${[['jenis','Jenis Acara'],['wilayah','Wilayah']].map(([k,l])=>`<button data-rtab="${k}" class="${rekapTab===k?'active':''}">${l}</button>`).join('')}
+    </div>`;
+  if(rekapTab==='wilayah'){
+    html += `
+    <div class="rekap-sublevel" id="rekapWilayahLevel">
+      ${[['desa','Desa'],['kecamatan','Kecamatan'],['kabupaten','Kabupaten'],['provinsi','Provinsi']]
+        .map(([k,l])=>`<button data-rwlevel="${k}" class="${rekapWilayahLevel===k?'active':''}">${l}</button>`).join('')}
+    </div>`;
+  }
+  html += `
+    <div class="section-title" style="margin-top:0;">${ic('folder')} ${rekapTitle()}</div>
+    ${renderRekapTable()}`;
+  return html;
+}
+function buildSedekahRecapHtml(){
+  const cfg = STATUS_LIST_CONFIG.sedekahStatus;
+  const sudah = jobs.filter(j=>j.sedekahStatus==='Sudah');
+  const belum = jobs.filter(j=>j.sedekahStatus!=='Sudah');
+  if(sudah.length+belum.length===0) return '';
+  const totalSudah = sudah.reduce((s,j)=>s+cfg.getAmount(j),0);
+  const totalBelum = belum.reduce((s,j)=>s+cfg.getAmount(j),0);
+  return `
+  <div class="section-title">${ic('hands')} Ringkasan Sedekah</div>
+  <div class="stat-grid" style="margin-top:0;">
+    <div class="stat stat-clickable" data-open-value-list="sedekahStatus::Sudah" title="Lihat rincian">
+      <div class="label">Sudah Disedekahkan</div>
+      <div class="value${statValueSizeClass(totalSudah)}">${fmtRp(totalSudah)}</div>
+      <div class="sub">${sudah.length} job</div>
+    </div>
+    <div class="stat stat-clickable" data-open-status-list="sedekahStatus" title="Lihat rincian">
+      <div class="label">Belum Disedekahkan</div>
+      <div class="value${statValueSizeClass(totalBelum)}">${fmtRp(totalBelum)}</div>
+      <div class="sub">${belum.length} job</div>
+    </div>
+  </div>`;
+}
+function renderRekapKeuangan(){
+  return `
+    ${buildTopClientsHtml()}
+    ${buildSedekahRecapHtml()}
+    ${buildPaymentStatusHtml()}
+    ${buildVendorBreakdownHtml()}`;
+}
+
+/* =========================================================
+   ANALISIS BULANAN & RINGKASAN BISNIS (bagian tambahan di Rekap Job)
+   Terpisah dari per-tab table di atas (yang dikelompokkan sesuai tab aktif) —
+   bagian ini SELALU menghitung dari SELURUH data job, apa pun tab yang aktif,
+   supaya "gambaran besar" bisnis selalu terlihat begitu halaman Rekap dibuka.
+========================================================= */
+function monthlyAggregates(){
+  const map = {};
+  jobs.forEach(j=>{
+    if(!j.tanggalAcara) return;
+    const d = new Date(j.tanggalAcara+'T00:00:00');
+    if(isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(!map[key]) map[key] = {key, jobs:[], omzet:0, bersih:0};
+    map[key].jobs.push(j);
+    map[key].omzet += hitungOmzet(j);
+    map[key].bersih += hitungBersih(j);
+  });
+  return Object.values(map).sort((a,b)=> a.key.localeCompare(b.key));
+}
+function monthKeyLabelShort(key){
+  const [y,m] = key.split('-').map(Number);
+  return `${MONTH_NAMES[m-1].slice(0,3)} '${String(y).slice(2)}`;
+}
+/* Ringkasan Keseluruhan — kartu Total Job/Klien Repeat Order/dst selalu tampil untuk semua
+   role, tapi kartu yang berkaitan dengan OMSET/keuangan (Total Omzet, Total Laba
+   Bersih, Rata-rata Omzet, Belum Lunas) HANYA ditampilkan untuk Admin. Akun Tim
+   sengaja tidak diberi akses ke data omset/keuangan internal vendor. */
+function buildRekapSummaryHtml(){
+  if(jobs.length===0) return '';
+  const admin = isAdmin();
+  const total = jobs.length;
+  const klienCounts = {};
+  jobs.forEach(j=>{
+    const nama = (j.namaKlien||'').trim();
+    if(!nama) return;
+    const key = nama.toLowerCase();
+    klienCounts[key] = (klienCounts[key]||0) + 1;
+  });
+  const klienUnik = Object.keys(klienCounts).length;
+  const klienBerulang = Object.values(klienCounts).filter(c=>c>1).length;
+  const bulanAktif = new Set(jobs.filter(j=>j.tanggalAcara).map(j=>j.tanggalAcara.slice(0,7))).size;
+  const rataJobBulan = bulanAktif ? (total/bulanAktif) : 0;
+
+  // cards: [label, val, gold, sub, clickAttr] — clickAttr (opsional) = atribut HTML
+  // data-* yang membuat kartu itu bisa diklik untuk lihat rincian/daftarnya.
+  const cards = [
+    ['Total Job', total, false],
+    ['Klien Repeat Order', klienBerulang, false, `dari ${klienUnik} klien unik`, 'data-open-unique-clients="1"'],
+    ['Rata-rata Job / Bulan', rataJobBulan.toFixed(1), false],
+  ];
+  if(admin){
+    const totalOmzet = jobs.reduce((s,j)=>s+hitungOmzet(j),0);
+    const totalBersih = jobs.reduce((s,j)=>s+hitungBersih(j),0);
+    const rataRata = total ? totalOmzet/total : 0;
+    const margin = totalOmzet>0 ? (totalBersih/totalOmzet*100) : 0;
+    const belumLunas = jobs.filter(j=>j.statusPembayaran!=='Lunas');
+    const totalBelumLunas = belumLunas.reduce((s,j)=>s+Math.max(0,hitungSisaPembayaran(j)),0);
+    cards.push(
+      ['Total Omzet', fmtRp(totalOmzet), true],
+      ['Total Laba Bersih', fmtRp(totalBersih), true],
+      ['Margin Keuntungan', `${margin.toFixed(1)}%`, false, 'Laba Bersih ÷ Omzet'],
+      ['Rata-rata Omzet / Job', fmtRp(rataRata), false],
+      // Sengaja dipisah jadi value (nominal) + sub (jumlah job) — bukan digabung
+      // jadi satu baris teks panjang — supaya tidak mepet/terpotong di kartu kecil.
+      ['Belum Lunas', fmtRp(totalBelumLunas), false, `${belumLunas.length} job belum lunas`, 'data-open-status-list="statusPembayaran"'],
+    );
+  }
+  return `
+  <div class="stat-grid" style="margin-top:0;">
+    ${cards.map(([label,val,gold,sub,clickAttr])=>{
+      const valStr = typeof val==='number' ? val.toLocaleString('id-ID') : String(val);
+      // Kartu dengan nilai uang yang panjang (misal total omzet puluhan juta/miliar)
+      // otomatis dikecilkan fontnya bertahap sesuai jumlah digit — supaya angkanya
+      // SELALU terbaca lengkap (kalau masih kurang muat, CSS akan menurunkannya ke
+      // baris ke-2, bukan memotongnya jadi "...").
+      const longCls = statValueSizeClass(valStr);
+      return `
+      <div class="stat${gold?' gold':''}${clickAttr?' stat-clickable':''}" ${clickAttr||''} ${clickAttr?'title="Lihat rincian"':''}>
+        <div class="label">${escapeHtml(label)}</div>
+        <div class="value${longCls}">${escapeHtml(valStr)}</div>
+        ${sub?`<div class="sub">${escapeHtml(sub)}</div>`:''}
+      </div>
+    `;}).join('')}
+  </div>`;
+}
+/* Status Operasional — progres Edit/Cetak & distribusi status Pengiriman. Sengaja
+   TIDAK memuat apa pun soal uang, jadi aman ditampilkan ke Admin maupun Tim. */
+/* Insight Cepat — sengaja HANYA memuat fakta "yang mana yang terbanyak/tersering"
+   (jumlah job), bukan nominal uang, jadi aman untuk semua role. */
+function buildQuickInsightsHtml(){
+  if(jobs.length===0) return '';
+  const withDate = jobs.filter(j=>j.tanggalAcara);
+  const byMonth = groupBy(withDate, j=>{
+    const d = new Date(j.tanggalAcara+'T00:00:00');
+    return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+  });
+  const bulanTersibuk = Object.entries(byMonth).sort((a,b)=>b[1].length-a[1].length)[0];
+
+  const byJenis = groupBy(jobs, j=> j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : j.jenisAcara);
+  const jenisTerpopuler = Object.entries(byJenis).sort((a,b)=>b[1].length-a[1].length)[0];
+
+  const byKec = groupBy(jobs.filter(j=>(j.kecamatan||'').trim()), j=>j.kecamatan.trim());
+  const kecTersering = Object.entries(byKec).sort((a,b)=>b[1].length-a[1].length)[0];
+
+  const HARI_NAMES = ['Minggu','Senin','Selasa','Rabu','Kamis',"Jum'at",'Sabtu'];
+  const byHari = groupBy(withDate, j=> HARI_NAMES[new Date(j.tanggalAcara+'T00:00:00').getDay()]);
+  const hariFavorit = Object.entries(byHari).sort((a,b)=>b[1].length-a[1].length)[0];
+
+  const byVendor = groupBy(jobs, j=>vendorDisplay(j)||'Kaone Motret');
+  const vendorTersibuk = Object.keys(byVendor).length>1 ? Object.entries(byVendor).sort((a,b)=>b[1].length-a[1].length)[0] : null;
+
+  const items = [
+    bulanTersibuk && ['Bulan Tersibuk', bulanTersibuk[0], `${bulanTersibuk[1].length} job`],
+    jenisTerpopuler && ['Jenis Acara Terpopuler', jenisTerpopuler[0], `${jenisTerpopuler[1].length} job`],
+    kecTersering && ['Kecamatan Paling Sering', kecTersering[0], `${kecTersering[1].length} job`],
+    hariFavorit && ['Hari Favorit Acara', hariFavorit[0], `${hariFavorit[1].length} job jatuh di hari ini`],
+    vendorTersibuk && ['Vendor Paling Aktif', vendorTersibuk[0], `${vendorTersibuk[1].length} job`],
+  ].filter(Boolean);
+  if(items.length===0) return '';
+  return `
+  <div class="stat-grid" style="margin-top:0;">
+    ${items.map(([label,val,sub])=>`
+      <div class="stat">
+        <div class="label">${escapeHtml(label)}</div>
+        <div class="value">${escapeHtml(String(val))}</div>
+        <div class="sub">${escapeHtml(sub)}</div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+function buildOperationalStatusHtml(){
+  if(jobs.length===0) return '';
+  const total = jobs.length;
+  const editSelesai = jobs.filter(j=>j.prosesEdit==='Selesai').length;
+  const cetakSelesai = jobs.filter(j=>j.prosesCetak==='Selesai').length;
+  const pctEdit = total ? (editSelesai/total*100) : 0;
+  const pctCetak = total ? (cetakSelesai/total*100) : 0;
+  const pengGroup = groupBy(jobs, j=>j.pengiriman);
+  const pengKeys = Object.keys(pengGroup).sort((a,b)=>pengGroup[b].length-pengGroup[a].length);
+
+  return `
+  <div class="op-bar-row op-bar-clickable" data-open-status-list="prosesEdit" title="Lihat job yang belum selesai">
+    <div class="op-bar-label"><span>${ic('edit')} Proses Edit Selesai</span><span>${editSelesai}/${total} · ${pctEdit.toFixed(0)}%</span></div>
+    <div class="op-bar-track"><div class="op-bar-fill" style="width:${pctEdit.toFixed(1)}%"></div></div>
+  </div>
+  <div class="op-bar-row op-bar-clickable" data-open-status-list="prosesCetak" title="Lihat job yang belum selesai">
+    <div class="op-bar-label"><span>${ic('image')} Proses Cetak Selesai</span><span>${cetakSelesai}/${total} · ${pctCetak.toFixed(0)}%</span></div>
+    <div class="op-bar-track"><div class="op-bar-fill" style="width:${pctCetak.toFixed(1)}%"></div></div>
+  </div>
+  <div class="op-bar-label" style="margin-bottom:8px;"><span>${ic('truck')} Status Pengiriman</span><span></span></div>
+  <div class="op-pengiriman-list">
+    ${pengKeys.map(k=>`<div class="op-peng-item" data-open-value-list="pengiriman::${escapeHtml(k)}" title="Lihat daftar job"><span class="op-peng-lbl">${escapeHtml(k)}</span><span class="op-peng-cnt">${pengGroup[k].length}</span></div>`).join('')}
+  </div>`;
+}
+/* Rekap tahunan (Analisis Bulanan versi tahun) — ADMIN SAJA, karena membandingkan Omzet. */
+function yearlyAggregates(){
+  const map = {};
+  jobs.forEach(j=>{
+    if(!j.tanggalAcara) return;
+    const d = new Date(j.tanggalAcara+'T00:00:00');
+    if(isNaN(d)) return;
+    const y = d.getFullYear();
+    if(!map[y]) map[y] = {year:y, jobs:[], omzet:0, bersih:0};
+    map[y].jobs.push(j);
+    map[y].omzet += hitungOmzet(j);
+    map[y].bersih += hitungBersih(j);
+  });
+  return Object.values(map).sort((a,b)=>a.year-b.year);
+}
+function buildYearComparisonHtml(){
+  if(!isAdmin()) return '';
+  const yrs = yearlyAggregates();
+  if(yrs.length===0) return '';
+  const latest = yrs[yrs.length-1];
+  const before = yrs.length>1 ? yrs[yrs.length-2] : null;
+  const diffPct = (before && before.omzet>0) ? ((latest.omzet-before.omzet)/before.omzet*100) : null;
+  const naik = diffPct!==null && diffPct>=0;
+  const diffTxt = diffPct===null
+    ? 'Belum ada data tahun sebelumnya untuk dibandingkan'
+    : `${naik?'▲':'▼'} ${Math.abs(diffPct).toFixed(1)}% dibanding tahun ${before.year}`;
+  return `
+  <div class="month-compare-card" style="margin-top:12px;">
+    <div class="mcc-top">
+      <div>
+        <div class="mcc-label">Tahun Ini — ${latest.year}</div>
+        <div class="mcc-val">${fmtRp(latest.omzet)}</div>
+      </div>
+      <div class="mcc-diff${diffPct===null?'':(naik?' up':' down')}">${diffTxt}</div>
+    </div>
+    <div class="mcc-sub">${latest.jobs.length} job &middot; Laba Bersih ${fmtRp(latest.bersih)}</div>
+  </div>`;
+}
+/* Rincian Status Pembayaran & per Vendor — ADMIN SAJA (data keuangan internal). */
+function buildPaymentStatusHtml(){
+  if(!isAdmin() || jobs.length===0) return '';
+  const grouped = groupBy(jobs, j=>j.statusPembayaran);
+  const keys = Object.keys(grouped).sort((a,b)=>grouped[b].length-grouped[a].length);
+  return `
+  <div class="section-title">${ic('money')} Status Pembayaran</div>
+  <div class="rekap-table-wrap">
+  <table class="rekaptable">
+    <thead><tr><th>Status</th><th>Jumlah Job</th><th>Total Sisa Tertahan</th></tr></thead>
+    <tbody>${keys.map(k=>{
+      const list = grouped[k];
+      const sisa = list.reduce((s,j)=>s+Math.max(0,hitungSisaPembayaran(j)),0);
+      return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${fmtRp(sisa)}</td></tr>`;
+    }).join('')}</tbody>
+  </table>
+  </div>`;
+}
+function buildVendorBreakdownHtml(){
+  if(!isAdmin() || jobs.length===0) return '';
+  const grouped = groupBy(jobs, j=> vendorDisplay(j) || 'Kaone Motret');
+  const keys = Object.keys(grouped).sort((a,b)=>grouped[b].length-grouped[a].length);
+  if(keys.length<=1) return ''; // tidak berguna kalau semua job cuma 1 vendor
+  return `
+  <div class="section-title">${ic('folder')} Rekap per Vendor</div>
+  <div class="rekap-table-wrap">
+  <table class="rekaptable">
+    <thead><tr><th>Vendor</th><th>Jumlah Job</th><th>Total Omzet</th><th>Total Laba Bersih</th></tr></thead>
+    <tbody>${keys.map(k=>{
+      const list = grouped[k];
+      const omzet = list.reduce((s,j)=>s+hitungOmzet(j),0);
+      const bersih = list.reduce((s,j)=>s+hitungBersih(j),0);
+      return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${fmtRp(omzet)}</td><td>${fmtRp(bersih)}</td></tr>`;
+    }).join('')}</tbody>
+  </table>
+  </div>`;
+}
+function buildMonthComparisonHtml(aggs){
+  if(aggs.length===0) return '';
+  const latest = aggs[aggs.length-1];
+  const before = aggs.length>1 ? aggs[aggs.length-2] : null;
+  const diffPct = (before && before.omzet>0) ? ((latest.omzet-before.omzet)/before.omzet*100) : null;
+  const naik = diffPct!==null && diffPct>=0;
+  const diffTxt = diffPct===null
+    ? 'Belum ada data bulan sebelumnya untuk dibandingkan'
+    : `${naik?'▲':'▼'} ${Math.abs(diffPct).toFixed(1)}% dibanding ${monthKeyLabelShort(before.key)}`;
+  return `
+  <div class="month-compare-card">
+    <div class="mcc-top">
+      <div>
+        <div class="mcc-label">Bulan Terbaru — ${escapeHtml(monthKeyLabel(latest.key))}</div>
+        <div class="mcc-val">${fmtRp(latest.omzet)}</div>
+      </div>
+      <div class="mcc-diff${diffPct===null?'':(naik?' up':' down')}">${diffTxt}</div>
+    </div>
+    <div class="mcc-sub">${latest.jobs.length} job &middot; Laba Bersih ${fmtRp(latest.bersih)}</div>
+  </div>`;
+}
+/* Tren jumlah job per bulan — sengaja dibuat TERPISAH dari grafik Omzet/Laba di
+   atas (yang admin-only) karena ini cuma menghitung JUMLAH job, bukan uang, jadi
+   aman ditampilkan ke Tim maupun Admin. */
+function buildJobCountBarChart(){
+  const aggs = monthlyAggregates();
+  if(aggs.length===0) return '';
+  const show = aggs.slice(-12);
+  const maxVal = Math.max(1, ...show.map(a=>a.jobs.length));
+  // topPad sengaja dibuat cukup lebar (bukan cuma 8px) supaya label angka di atas
+  // balok tertinggi (yang tingginya bisa menyentuh batas atas chartH) selalu punya
+  // ruang penuh dan TIDAK kepotong oleh tepi SVG (SVG default memotong apa pun yang
+  // posisinya keluar dari area viewBox-nya sendiri).
+  const chartH = 130, barW = 26, groupGap = 14, leftPad = 4, topPad = 22, botPad = 22;
+  const groupW = barW;
+  const svgW = leftPad + show.length*(groupW+groupGap);
+  const svgH = topPad+chartH+botPad;
+  const bars = show.map((a,i)=>{
+    const x = leftPad + i*(groupW+groupGap);
+    const cnt = a.jobs.length;
+    const h = cnt>0 ? Math.max(3, (cnt/maxVal)*chartH) : 0;
+    const y = topPad+chartH-h;
+    return `
+      <g>
+        <text x="${x+groupW/2}" y="${y-6}" text-anchor="middle" font-family="'Poppins',sans-serif" font-weight="600" font-size="11" fill="#5c4a12">${cnt}</text>
+        <rect x="${x}" y="${y.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" rx="4" fill="#D4AF00"/>
+        <text x="${x+groupW/2}" y="${topPad+chartH+16}" text-anchor="middle" font-family="'Poppins',sans-serif" font-size="10.5" fill="#8a7c40">${escapeHtml(monthKeyLabelShort(a.key))}</text>
+      </g>`;
+  }).join('');
+  return `
+  <div class="monthly-chart-wrap">
+    <div class="monthly-chart-scroll">
+      <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">
+        <line x1="0" y1="${topPad+chartH}" x2="${svgW}" y2="${topPad+chartH}" stroke="#e4d9b0" stroke-width="1"/>
+        ${bars}
+      </svg>
+    </div>
+  </div>`;
+}
+function buildMonthlyBarChart(aggs){
+  if(aggs.length===0) return '';
+  const show = aggs.slice(-12); // 12 bulan terbaru yang ada datanya, biar grafik tetap enak dibaca
+  const maxVal = Math.max(1, ...show.map(a=>Math.max(a.omzet,a.bersih)));
+  const chartH = 130, barW = 20, barGap = 5, groupGap = 16, leftPad = 4, topPad = 8, botPad = 22;
+  const groupW = barW*2+barGap;
+  const svgW = leftPad + show.length*(groupW+groupGap);
+  const svgH = topPad+chartH+botPad;
+  const bars = show.map((a,i)=>{
+    const x = leftPad + i*(groupW+groupGap);
+    const hOmzet = a.omzet>0 ? Math.max(3, (a.omzet/maxVal)*chartH) : 0;
+    const hBersih = a.bersih>0 ? Math.max(3, (a.bersih/maxVal)*chartH) : 0;
+    const yOmzet = topPad+chartH-hOmzet;
+    const yBersih = topPad+chartH-hBersih;
+    return `
+      <g>
+        <rect x="${x}" y="${yOmzet.toFixed(1)}" width="${barW}" height="${hOmzet.toFixed(1)}" rx="3" fill="#D4AF00"><title>${monthKeyLabel(a.key)} · Omzet: ${fmtRp(a.omzet)}</title></rect>
+        <rect x="${x+barW+barGap}" y="${yBersih.toFixed(1)}" width="${barW}" height="${hBersih.toFixed(1)}" rx="3" fill="#8B6F1F"><title>${monthKeyLabel(a.key)} · Laba Bersih: ${fmtRp(a.bersih)}</title></rect>
+        <text x="${x+groupW/2}" y="${topPad+chartH+16}" text-anchor="middle" font-family="'Poppins',sans-serif" font-size="10.5" fill="#8a7c40">${escapeHtml(monthKeyLabelShort(a.key))}</text>
+      </g>`;
+  }).join('');
+  return `
+  <div class="monthly-chart-wrap">
+    <div class="monthly-chart-legend">
+      <span><span class="dot" style="background:#D4AF00"></span> Omzet</span>
+      <span><span class="dot" style="background:#8B6F1F"></span> Laba Bersih</span>
+    </div>
+    <div class="monthly-chart-hint">${ic('bulb')} Sentuh/hover balok untuk lihat nominal pastinya · angka lengkap juga ada di tabel di bawah</div>
+    <div class="monthly-chart-scroll">
+      <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">
+        <line x1="0" y1="${topPad+chartH}" x2="${svgW}" y2="${topPad+chartH}" stroke="#e4d9b0" stroke-width="1"/>
+        ${bars}
+      </svg>
+    </div>
+  </div>`;
+}
+function buildTopClientsHtml(){
+  const map = {};
+  jobs.forEach(j=>{
+    const nama = (j.namaKlien||'').trim();
+    if(!nama) return;
+    if(!map[nama]) map[nama] = {nama, count:0, omzet:0};
+    map[nama].count++;
+    map[nama].omzet += hitungOmzet(j);
+  });
+  const list = Object.values(map).sort((a,b)=>b.omzet-a.omzet).slice(0,5);
+  if(list.length===0) return '';
+  return `
+  <div class="section-title">${ic('star')} Top ${list.length} Klien (berdasarkan Omzet)</div>
+  <div class="rekap-table-wrap">
+  <table class="rekaptable">
+    <thead><tr><th>#</th><th>Klien</th><th>Jumlah Job</th><th>Total Omzet</th></tr></thead>
+    <tbody>${list.map((c,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(c.nama)}</td><td>${c.count}</td><td>${fmtRp(c.omzet)}</td></tr>`).join('')}</tbody>
+  </table>
+  </div>
+  <button type="button" class="btn btn-outline" style="margin-top:10px;" data-open-unique-clients="1">${ic('user')} Lihat Klien Repeat Order</button>`;
+}
+function rekapTitle(){
+  if(rekapTab==='wilayah'){
+    return {desa:'Rekap Per Desa', kecamatan:'Rekap Per Kecamatan', kabupaten:'Rekap Per Kabupaten', provinsi:'Rekap Per Provinsi'}[rekapWilayahLevel];
+  }
+  return {
+    bulan:'Rekap Per Bulan', tahun:'Rekap Per Tahun', jenis:'Rekap Per Jenis Acara',
+  }[rekapTab];
+}
+function groupBy(list, keyFn){
+  const map = {};
+  list.forEach(j=>{
+    let k = keyFn(j);
+    // String kosong/spasi-saja dianggap "(Tidak diisi)"; spasi di awal/akhir teks (mis. "Portibi "
+    // vs "Portibi") diabaikan supaya tidak dihitung sebagai grup/kategori yang berbeda.
+    if(typeof k === 'string') k = k.trim();
+    k = k || '(Tidak diisi)';
+    if(!map[k]) map[k] = [];
+    map[k].push(j);
+  });
+  return map;
+}
+const DONUT_COLORS = ['#D4AF00','#8B6F1F','#E8C547','#6E5A1A','#C9A227','#4A3B10','#F0D77B','#B8860B','#DDBB55','#5C4A12'];
+function buildDonutChart(keys, grouped, totalJob, keyLabel){
+  if(totalJob<=0) return '';
+  const r=80, cx=110, cy=110, sw=32;
+  const circumference = 2*Math.PI*r;
+
+  // Batasi jadi 7 kategori terbesar + gabungkan sisanya sebagai "Lainnya" agar grafik tetap terbaca
+  let chartKeys = keys;
+  let extraCount = 0;
+  if(keys.length > 8){
+    chartKeys = keys.slice(0,7);
+    extraCount = keys.slice(7).reduce((s,k)=>s+grouped[k].length,0);
+  }
+
+  let cum = 0;
+  const arcs = chartKeys.map((k,i)=>{
+    const count = grouped[k].length;
+    const pct = count/totalJob;
+    const len = pct*circumference;
+    const dashoffset = -cum;
+    cum += len;
+    return {label:String(k), count, pct, len, dashoffset, color:DONUT_COLORS[i % DONUT_COLORS.length]};
+  });
+  if(extraCount>0){
+    const pct = extraCount/totalJob;
+    const len = pct*circumference;
+    arcs.push({label:'Lainnya', count:extraCount, pct, len, dashoffset:-cum, color:DONUT_COLORS[7]});
+  }
+
+  const circles = arcs.map(a=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${a.color}" stroke-width="${sw}"
+    stroke-dasharray="${a.len.toFixed(2)} ${(circumference-a.len).toFixed(2)}" stroke-dashoffset="${a.dashoffset.toFixed(2)}"
+    transform="rotate(-90 ${cx} ${cy})"/>`).join('');
+
+  const legend = arcs.map(a=>`
+    <div class="donut-legend-item">
+      <span class="dot" style="background:${a.color}"></span>
+      <span class="lbl">${escapeHtml(a.label)}</span>
+      <span class="pct">${(a.pct*100).toFixed(1)}%</span>
+      <span class="cnt">${a.count} job</span>
+    </div>`).join('');
+
+  return `
+  <div class="donut-wrap">
+    <svg width="220" height="220" viewBox="0 0 220 220">
+      ${circles}
+      <text x="110" y="103" text-anchor="middle" font-family="'Fraunces',serif" font-weight="700" font-size="32" fill="#241f0f">${totalJob}</text>
+      <text x="110" y="126" text-anchor="middle" font-family="'Poppins',sans-serif" font-size="11" letter-spacing="1" fill="#8a7c40">TOTAL JOB</text>
+    </svg>
+    <div class="donut-legend">
+      <div class="donut-legend-title">Persentase per ${keyLabel}</div>
+      ${legend}
+    </div>
+  </div>`;
+}
+function renderRekapTable(){
+  let keyFn, keyLabel;
+  const geoLevel = rekapTab==='wilayah' ? rekapWilayahLevel : rekapTab;
+  if(rekapTab==='bulan'){
+    keyFn = j=>{ const d=new Date(j.tanggalAcara+'T00:00:00'); return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`; };
+    keyLabel='Bulan';
+  } else if(rekapTab==='tahun'){
+    keyFn = j=> new Date(j.tanggalAcara+'T00:00:00').getFullYear();
+    keyLabel='Tahun';
+  } else if(rekapTab==='jenis'){
+    keyFn = j=> j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : j.jenisAcara;
+    keyLabel='Jenis Acara';
+  } else if(geoLevel==='desa'){
+    // Nama desa di Indonesia hanya unik DI DALAM satu kecamatan, bukan unik
+    // se-Indonesia (banyak desa berbeda lokasi tapi kebetulan namanya sama).
+    // Kalau dikelompokkan pakai nama desa saja, desa-desa berbeda lokasi itu
+    // akan salah tergabung jadi satu baris rekap. Makanya kelompokkan
+    // berdasarkan kombinasi Desa + Kecamatan + Kabupaten supaya desa yang
+    // namanya kebetulan sama tapi lokasinya beda tetap terpisah barisnya.
+    // Nama Dusun (kalau diisi) ikut disertakan di depan supaya dusun berbeda
+    // dalam desa yang sama juga tetap terpisah barisnya di rekap.
+    keyFn = j => `${(desaDisplay(j)||'-').trim()} — Kec. ${(j.kecamatan||'-').trim()}, ${(j.kabupaten||'-').trim()}`;
+    keyLabel='Desa';
+  }
+  else if(geoLevel==='kecamatan'){
+    // Sama seperti Desa: nama kecamatan hanya unik DI DALAM satu kabupaten,
+    // bukan unik se-Indonesia (kemungkinannya jauh lebih kecil dibanding nama
+    // desa, tapi tetap bisa terjadi ada 2 kecamatan berbeda kabupaten yang
+    // kebetulan namanya sama). Supaya tidak salah tergabung jadi satu baris,
+    // kelompokkan berdasarkan kombinasi Kecamatan + Kabupaten.
+    keyFn = j => `${(j.kecamatan||'-').trim()} — Kab. ${(j.kabupaten||'-').trim()}`;
+    keyLabel='Kecamatan';
+  }
+  else if(geoLevel==='kabupaten'){ keyFn = j=>j.kabupaten; keyLabel='Kabupaten'; }
+  else if(geoLevel==='provinsi'){ keyFn = j=>j.provinsi; keyLabel='Provinsi'; }
+
+  const grouped = groupBy(jobs, keyFn);
+  let keys = Object.keys(grouped);
+  // urutkan: bulan/tahun secara kronologis jika memungkinkan, lainnya berdasar jumlah job terbanyak
+  if(rekapTab==='tahun') keys.sort((a,b)=>a-b);
+  else if(rekapTab==='bulan') keys.sort((a,b)=> new Date(grouped[a][0].tanggalAcara) - new Date(grouped[b][0].tanggalAcara));
+  else keys.sort((a,b)=> grouped[b].length - grouped[a].length);
+
+  if(keys.length===0){
+    return `<div class="empty-state"><div class="em">${ic('mailbox-empty')}</div>Belum ada data untuk direkap.</div>`;
+  }
+
+  let totalJob=0, totalPenghasilan=0, totalBersih=0;
+  keys.forEach(k=>{
+    const list = grouped[k];
+    totalJob += list.length;
+    totalPenghasilan += list.reduce((s,j)=>s+hitungOmzet(j),0);
+    totalBersih += list.reduce((s,j)=>s+hitungBersih(j),0);
+  });
+
+  const PIE_TABS = ['jenis','wilayah'];
+  const chartHtml = PIE_TABS.includes(rekapTab) ? buildDonutChart(keys, grouped, totalJob, keyLabel) : '';
+  const admin = isAdmin();
+
+  return `
+  ${chartHtml}
+  <div class="rekap-table-wrap">
+  <table class="rekaptable">
+    <thead><tr><th>${keyLabel}</th><th>Jumlah Job</th><th>%</th>${admin?'<th>Total Penghasilan</th><th>Rata-rata/Job</th><th>Total Bersih</th>':''}</tr></thead>
+    <tbody>${keys.map(k=>{
+      const list = grouped[k];
+      const pct = totalJob ? (list.length/totalJob*100).toFixed(1) : '0.0';
+      if(!admin) return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${pct}%</td></tr>`;
+      const penghasilan = list.reduce((s,j)=>s+hitungOmzet(j),0);
+      const bersih = list.reduce((s,j)=>s+hitungBersih(j),0);
+      const rata = list.length ? penghasilan/list.length : 0;
+      return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${pct}%</td><td>${fmtRp(penghasilan)}</td><td>${fmtRp(rata)}</td><td>${fmtRp(bersih)}</td></tr>`;
+    }).join('')}</tbody>
+    <tfoot><tr><td>TOTAL</td><td>${totalJob}</td><td>100%</td>${admin?`<td>${fmtRp(totalPenghasilan)}</td><td>${fmtRp(totalJob?totalPenghasilan/totalJob:0)}</td><td>${fmtRp(totalBersih)}</td>`:''}</tr></tfoot>
+  </table>
+  </div>
+  `;
+}
+
+/* =========================================================
+   SARAN & PENILAIAN (testimoni klien)
+========================================================= */
+function starsHtml(rating){
+  const r = Math.max(0, Math.min(5, Math.round(Number(rating)||0)));
+  let out = '';
+  for(let i=1;i<=5;i++){ out += `<span class="${i<=r?'on':''}">${ic('star')}</span>`; }
+  return out;
+}
+function fmtUlasanDate(iso){
+  if(!iso) return '-';
+  try{
+    return new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date(iso));
+  }catch(e){ return '-'; }
+}
+function viewUlasan(){
+  const total = ulasanList.length;
+  const avg = total ? (ulasanList.reduce((s,u)=>s+(Number(u.rating)||0),0) / total) : 0;
+  return `
+  <div class="card">
+    <div class="cal-controls">
+      <h2 style="margin:0;">${ic('star')} Saran &amp; Penilaian Klien</h2>
+      <button type="button" class="btn btn-outline" id="btnRefreshUlasan">${ulasanLoading?ic('hourglass')+' Memuat...':ic('refresh')+' Muat Ulang'}</button>
+    </div>
+    <p style="color:var(--ink-soft); font-size:12.5px; margin:-6px 0 18px;">
+      Ulasan klien dari halaman pricelist.
+    </p>
+    ${!cloudSyncEnabled ? `
+      <div class="info-box">${ic('warning')} Sinkronisasi cloud belum aktif.</div>
+    ` : ''}
+    <div class="stat-grid" style="margin-top:0;">
+      <div class="stat gold">
+        <div class="label">Total Ulasan</div>
+        <div class="value">${total}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Rata-rata Bintang</div>
+        <div class="value">${total ? avg.toFixed(1)+' '+ic('star') : '-'}</div>
+      </div>
+    </div>
+
+    ${(!ulasanLoading && total===0) ? `
+      <div class="empty-state">
+        <div class="em">${ic('chat')}</div>
+        Belum ada penilaian klien.
+      </div>
+    ` : `
+    <div class="ulasan-list">
+      ${ulasanList.map(u=>{
+        const targets = getUlasanTargets(u);
+        const badge = targets.length
+          ? `<span class="badge badge-ok">Terpublikasi: ${escapeHtml(ulasanTargetLabels(targets))}</span>`
+          : `<span class="badge badge-warn">Belum Dipublikasi</span>`;
+        return `
+        <div class="ulasan-card">
+          <div class="ulasan-card-top">
+            <div>
+              <div class="ulasan-name">${escapeHtml(u.nama_klien||'Klien')} ${badge}</div>
+              <div class="ulasan-sub">${escapeHtml(ulasanSourceLabel(u))}</div>
+              <div class="ulasan-stars">${starsHtml(u.rating)}</div>
+            </div>
+            <div class="ulasan-date">${fmtUlasanDate(u.created_at)}</div>
+          </div>
+          <div class="ulasan-comment">${escapeHtml(u.komentar || '(Tidak ada komentar tertulis)')}</div>
+          <div class="ulasan-actions">
+            <button type="button" class="btn btn-primary admin-only" data-ulasan-publish-manage="${u.id}">${ic('megaphone')} Kelola Publikasi</button>
+            <button type="button" class="btn btn-outline" data-ulasan-image="${u.id}">${ic('image')} Buat Gambar</button>
+            <button type="button" class="icon-btn icon-btn-danger admin-only" data-ulasan-delete="${u.id}">${ic('trash')} Hapus</button>
+          </div>
+        </div>
+      `;}).join('')}
+    </div>
+    `}
+  </div>
+  `;
+}
+
+/* ---------- Desain POSTER TESTIMONI untuk file unduhan (1080x1920, Story IG) ----------
+   Dibuat terpisah dari kartu ulasan di layar supaya hasil unduhan terasa seperti materi
+   promosi resmi yang elegan — cocok langsung diposting ke Instagram Story. */
+function buildUlasanPosterHtml(u){
+  const rating = Math.max(0, Math.min(5, Math.round(Number(u.rating)||0)));
+  const komentar = truncateText(u.komentar, 220) || 'Terima kasih atas kepercayaannya kepada Kaone Motret.';
+  let quoteSize = 44;
+  if(komentar.length>170) quoteSize = 32;
+  else if(komentar.length>110) quoteSize = 37;
+  const starsMarkup = Array.from({length:5}).map((_,i)=>`<span class="${i<rating?'on':''}">${ic('star')}</span>`).join('');
+
+  return `
+    <div id="ulasanPosterExport" class="ulasan-poster">
+      <div class="up-glow"></div>
+      <div class="up-frame"></div>
+      <div class="up-frame-inner"></div>
+      <div class="up-corner tl"></div><div class="up-corner tr"></div>
+      <div class="up-corner bl"></div><div class="up-corner br"></div>
+      <div class="up-top">
+        <div class="up-badge">KM</div>
+        <div class="up-brand">KAONE MOTRET</div>
+        <div class="up-tag">Wedding &amp; Event Photography</div>
+      </div>
+      <div class="up-stars">${starsMarkup}</div>
+      <div class="up-quotemark">&ldquo;</div>
+      <div class="up-quote-wrap">
+        <div class="up-quote" style="font-size:${quoteSize}px;">${escapeHtml(komentar)}</div>
+      </div>
+      <div class="up-name-wrap">
+        <div class="up-namerule"></div>
+        <div class="up-name">${escapeHtml(u.nama_klien||'Klien Kaone Motret')}</div>
+        <div class="up-sub">Klien Kaone Motret</div>
+      </div>
+      <div class="up-footer">
+        <div class="up-footer-line"></div>
+        <div class="up-cta">Dipercaya menemani &amp; mengabadikan momen berharga</div>
+        <div class="up-contact">wa.me/6285117071704 &middot; @kaonemotret</div>
+      </div>
+      <div class="up-bottom-bar"></div>
+    </div>
+  `;
+}
+function downloadUlasanImage(id){
+  if(typeof html2canvas === 'undefined'){
+    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const u = ulasanList.find(x=>String(x.id)===String(id));
+  if(!u) return;
+  toast('Menyiapkan gambar testimoni...');
+
+  // Poster dirender di luar tampilan (opacity:0) khusus untuk pengambilan gambar, supaya
+  // hasil unduhannya selalu presisi 1080x1920 apa pun ukuran layar penggunanya.
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;z-index:-1;';
+  holder.innerHTML = buildUlasanPosterHtml(u);
+  document.body.appendChild(holder);
+  const posterEl = holder.querySelector('#ulasanPosterExport');
+
+  const capture = ()=>{
+    html2canvas(posterEl, {width:1080, height:1920, scale:1, backgroundColor:'#14120a'}).then(canvas=>{
+      holder.remove();
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `testimoni-${(u.nama_klien||'kaonemotret').replace(/\s+/g,'_')}.png`;
+      a.click();
+    }).catch(()=>{
+      holder.remove();
+      alert('Gagal membuat gambar. Coba lagi.');
+    });
+  };
+  // Tunggu font kustom (Fraunces/Poppins) selesai dimuat dulu, supaya teks di gambar
+  // tidak sempat ter-capture memakai font fallback sistem.
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(capture).catch(capture);
+  } else {
+    setTimeout(capture, 60);
+  }
+}
+
+/* =========================================================
+   PENGATURAN
+========================================================= */
+function viewPengaturan(){
+  const backupDays = daysSinceLastBackup();
+  const lastBackupText = backupDays===null ? 'Belum pernah dicadangkan' : (backupDays===0 ? 'Hari ini' : `${backupDays} hari yang lalu`);
+  return `
+  ${isAdmin()?hargaCetakCardHtml()+pesanSelesaiCardHtml():''}
+  <div class="card">
+    <h2 style="margin-top:0;">${ic('lock')} Akun Saya</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;">
+      Kamu login sebagai <b>${escapeHtml(currentUsername||'')}</b> (peran: <b>${isAdmin()?'Admin':'Tim'}</b>). Hanya kamu bisa ubah ini.
+    </p>
+    <form id="akunSayaForm" class="form-grid">
+      <div>
+        <label>Nama Lengkap</label>
+        <input type="text" id="akunNamaLengkap" value="${escapeHtml(currentNamaLengkap||'')}" required>
+      </div>
+      <div>
+        <label>Username</label>
+        <input type="text" id="akunUsername" value="${escapeHtml(currentUsername||'')}" required>
+      </div>
+      <div>
+        <label>Password Baru</label>
+        <div class="pw-wrap">
+          <input type="password" id="akunPassword" autocomplete="new-password" minlength="4" placeholder="••••••••">
+          <button type="button" class="pw-toggle" data-pw-target="akunPassword" aria-label="Lihat/sembunyikan password">${ic('eye')}</button>
+        </div>
+      </div>
+      <div class="full">
+        <button type="submit" class="btn btn-primary">${ic('save')} Simpan Perubahan Akun</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card admin-only">
+    <h2 style="margin-top:0;">${ic('folder')} Kelola Akun (Admin)</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;">
+      Admin hanya bisa melihat.
+    </p>
+    ${akunLoading ? `<div class="info-box">${ic('hourglass')} Memuat daftar akun...</div>` : `
+    <div style="overflow-x:auto;">
+      <table class="rekaptable akun-table">
+        <thead><tr><th>Nama Lengkap</th><th>Username</th><th>Password</th><th>Peran</th><th>Terdaftar</th></tr></thead>
+        <tbody>
+          ${akunList.length ? akunList.map(a=>`
+            <tr class="${a.id===currentUserId ? 'akun-me' : ''}">
+              <td>${escapeHtml(a.nama_lengkap || '-')}</td>
+              <td>${escapeHtml(a.username)}${a.id===currentUserId?' <span class="pill">Kamu</span>':''}</td>
+              <td class="akun-pw">${escapeHtml(a.password)}</td>
+              <td>${a.role==='admin' ? 'Admin' : 'Tim'}</td>
+              <td>${a.created_at ? new Date(a.created_at).toLocaleDateString('id-ID') : '-'}</td>
+            </tr>
+          `).join('') : `<tr><td colspan="5">Belum ada akun terdaftar.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+    <button type="button" class="btn btn-outline" id="btnRefreshAkun" style="margin-top:12px;">${ic('refresh')} Muat Ulang Daftar Akun</button>
+    `}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">${ic('settings')} Pengaturan &amp; Cadangan Data</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;">
+      Data tersinkron otomatis ke cloud.
+    </p>
+    <p style="color:var(--ink-soft);font-size:13.5px;">
+      Disarankan cadangkan data rutin. Status cadangan terakhir: <b>${lastBackupText}</b>.
+    </p>
+    <div class="backup-row">
+      <button class="btn btn-primary" id="btnExportBackup">${ic('download')} Cadangkan Data (.json)</button>
+      <label class="btn btn-outline admin-only" style="display:inline-flex;align-items:center;gap:8px;">
+        ${ic('arrow-up')} Pulihkan Data (.json)
+        <input type="file" id="importFile" accept=".json" style="display:none;">
+      </label>
+      <button class="btn btn-danger admin-only" id="btnResetAll">${ic('trash')} Hapus Semua Data</button>
+    </div>
+
+    <div class="section-title">${ic('inbox')} Import Job dari Excel</div>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">
+      Unduh template, isi, lalu unggah.
+    </p>
+    <div class="backup-row">
+      <button class="btn btn-outline" id="btnDownloadTemplate">${ic('download')} Unduh Template Excel</button>
+      <label class="btn btn-primary admin-only" style="display:inline-flex;align-items:center;gap:8px;">
+        ${ic('arrow-up')} Import Job dari Excel
+        <input type="file" id="importExcelInput" accept=".xlsx,.xls" style="display:none;">
+      </label>
+    </div>
+    <div class="info-box">
+      ℹ️ Jangan ubah judul kolom pertama.
+    </div>
+
+    <div class="section-title">${ic('calendar')} Google Calendar</div>
+    <div class="info-box">
+      Tambah manual ke Google Calendar.
+    </div>
+  </div>
+  `;
+}
+function exportBackup(){
+  const backup = {
+    backupVersion: 4,
+    exportedAt: new Date().toISOString(),
+    jobs,
+    tasks,
+    bonusAdjustments,
+    bonusClaims,
+    bonusRate: BONUS_PER_JAM,
+    minKlaimTunai: MIN_KLAIM_TUNAI,
+    minKlaimWdp: MIN_KLAIM_WDP,
+    reports,
+    thanksOverrides,
+    thanksFontSize,
+    posterThemeOverrides,
+    layoutOverrides
+  };
+  const blob = new Blob([JSON.stringify(backup,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `kaone-motret-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  localStorage.setItem('kaoneMotret_lastBackup_v1', String(Date.now()));
+  toast('Cadangan data job + tugas berhasil diunduh');
+  renderNotifBadge();
+}
+function daysSinceLastBackup(){
+  const raw = localStorage.getItem('kaoneMotret_lastBackup_v1');
+  if(!raw) return null; // belum pernah cadangkan sama sekali
+  return Math.floor((Date.now() - Number(raw)) / 86400000);
+}
+function importBackup(file){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa memulihkan data.'); return; }
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      // Tetap mendukung backup lama yang isinya hanya array jobs.
+      if(Array.isArray(data)){
+        jobs = normalizeJobsWhitespace(data);
+      }else if(data && Array.isArray(data.jobs)){
+        jobs = normalizeJobsWhitespace(data.jobs);
+        if(Array.isArray(data.tasks)) tasks = data.tasks;
+        if(Array.isArray(data.bonusAdjustments)) bonusAdjustments = data.bonusAdjustments;
+        if(Array.isArray(data.bonusClaims)) bonusClaims = data.bonusClaims;
+        if(typeof data.bonusRate==='number' && Number.isFinite(data.bonusRate) && data.bonusRate>=0) BONUS_PER_JAM = data.bonusRate;
+        if(typeof data.minKlaimTunai==='number' && Number.isFinite(data.minKlaimTunai) && data.minKlaimTunai>=0) MIN_KLAIM_TUNAI = data.minKlaimTunai;
+        if(typeof data.minKlaimWdp==='number' && Number.isFinite(data.minKlaimWdp) && data.minKlaimWdp>=0) MIN_KLAIM_WDP = data.minKlaimWdp;
+        if(Array.isArray(data.reports)) reports = data.reports;
+        if(data.thanksOverrides) thanksOverrides = data.thanksOverrides;
+        if(data.thanksFontSize) thanksFontSize = data.thanksFontSize;
+        if(data.posterThemeOverrides) posterThemeOverrides = data.posterThemeOverrides;
+        if(data.layoutOverrides) layoutOverrides = data.layoutOverrides;
+      }else{
+        throw new Error('format salah');
+      }
+      saveJobsLocal();
+      saveTasksLocal();
+      saveBonusAdjustmentsLocal();
+      saveBonusClaimsLocal();
+      saveBonusRateLocal();
+      saveReportsLocal();
+      pushToCloud();
+      localStorage.setItem('kaoneMotret_lastBackup_v1', String(Date.now()));
+      toast('Data job + tugas berhasil dipulihkan');
+      render();
+    }catch(err){
+      console.error(err);
+      alert('Gagal memulihkan data: file tidak valid.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- Import / Template Excel (SheetJS) ---------- */
+function downloadExcelTemplate(){
+  if(typeof XLSX==='undefined'){ alert('Pustaka Excel belum termuat. Pastikan koneksi internet aktif lalu coba lagi.'); return; }
+  const headers = EXCEL_FIELD_MAP.map(f=>f.header);
+  const exampleRow = {
+    'Nama Klien':'Rani & Budi',
+    'Tanggal Acara (YYYY-MM-DD)':'2026-08-30',
+    'Jenis Acara':'Margondang 1 Hari',
+    'Jenis Acara Lainnya':'',
+    'No WhatsApp':'0853xxxxxxx',
+    'Paket':'Paket Silver',
+    'Desa':'Sosopan',
+    'Kecamatan':'Padang Bolak',
+    'Kabupaten':'Padang Lawas Utara',
+    'Provinsi':'Sumatera Utara',
+    'Proses Edit (Selesai/Belum Selesai)':'Belum Selesai',
+    'Proses Cetak (Selesai/Belum Selesai)':'Belum Selesai',
+    'Pengiriman':'Belum Diantar',
+    'Status Pembayaran':'DP',
+    'Vendor (Shia Makeup/Kaone Motret/Lainnya)':'Kaone Motret',
+    'Vendor Lainnya (jika Vendor = Lainnya)':'',
+    'DP':1000000,
+    'Penghasilan Dari Klien/Mitra':3000000,
+    'Biaya Cetak':300000,
+    'Honor Tim':500000,
+    'Diskon':0,
+    'Sedekah Nominal (otomatis)':220000,
+    'Status Sedekah (Sudah/Belum)':'Belum',
+    'Harga Paket Vendor':'',
+    'Catatan':''
+  };
+  const ws = XLSX.utils.json_to_sheet([exampleRow], {header:headers});
+  ws['!cols'] = headers.map(h=>({wch: Math.max(16, h.length+2)}));
+  const wsInfo = XLSX.utils.aoa_to_sheet([
+    ['PETUNJUK PENGISIAN TEMPLATE — KAONE MOTRET'],
+    [''],
+    ['1. Jangan mengubah nama kolom pada baris pertama sheet "Data Job".'],
+    ['2. Satu baris = satu job. Hapus / timpa baris contoh dengan data job kamu.'],
+    ['3. Format Tanggal Acara: YYYY-MM-DD, contoh 2026-08-30.'],
+    ['4. Pilihan Jenis Acara: '+JENIS_ACARA_LIST.join(', ')],
+    ['5. Pilihan Proses Edit / Proses Cetak: Selesai, Belum Selesai'],
+    ['6. Pilihan Pengiriman: '+PENGIRIMAN_LIST.join(', ')],
+    ['7. Pilihan Status Pembayaran: '+STATUS_BAYAR_LIST.join(', ')],
+    ['8. Pilihan Status Sedekah: Sudah, Belum'],
+    ['9. Pilihan Vendor: '+VENDOR_LIST.join(', ')+'. Jika Lainnya, isi juga kolom "Vendor Lainnya".'],
+    ['10. Kolom angka (DP, Penghasilan, Biaya Cetak, Honor Tim, Diskon, Sedekah Nominal, Harga Paket Vendor) diisi angka saja, tanpa titik/koma/Rp.'],
+    ['11. Sedekah Nominal otomatis dihitung ulang oleh aplikasi setiap job dibuka/disimpan lewat form (Rp20.000 jika vendor Shia Makeup, atau kelipatan Rp10.000 per Rp100.000 dari Penghasilan-Honor Tim-Biaya Cetak-Diskon). Nilai di Excel hanya dipakai sebagai cadangan awal.'],
+    ['12. Baris tanpa isian Tanggal Acara akan otomatis dilewati saat import.'],
+  ]);
+  wsInfo['!cols'] = [{wch:70}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data Job');
+  XLSX.utils.book_append_sheet(wb, wsInfo, 'Petunjuk');
+  XLSX.writeFile(wb, 'template-import-job-kaonemotret.xlsx');
+  toast('Template Excel berhasil diunduh');
+}
+/* Kunci pencocokan job "sama" saat import Excel: tanggal acara + nama klien + desa
+   (di-trim & disamakan huruf kecil/besarnya). Kombinasi ini cukup unik untuk membedakan
+   job yang benar-benar berbeda, tapi tetap mengenali job yang sama meski diimpor ulang. */
+function excelJobMatchKey(tanggalAcara, namaKlien, desa){
+  const norm = (s)=> (s||'').toString().trim().toLowerCase();
+  return `${norm(tanggalAcara)}|${norm(namaKlien)}|${norm(desa)}`;
+}
+function importExcelFile(file){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengimpor job dari Excel.'); return; }
+  if(typeof XLSX==='undefined'){ alert('Pustaka Excel belum termuat. Pastikan koneksi internet aktif lalu coba lagi.'); return; }
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rowsRaw = XLSX.utils.sheet_to_json(sheet, {defval:''});
+      let imported = 0, updated = 0, skipped = 0;
+      rowsRaw.forEach(row=>{
+        const tglVal = row[EXCEL_FIELD_MAP.find(f=>f.field==='tanggalAcara').header];
+        if(!tglVal){ skipped++; return; }
+        const newJobData = {};
+        EXCEL_FIELD_MAP.forEach(f=>{
+          let v = row[f.header];
+          if(f.field==='tanggalAcara'){
+            if(v instanceof Date){
+              v = v.toISOString().slice(0,10);
+            } else if(typeof v === 'number'){
+              const parsed = XLSX.SSF ? XLSX.SSF.parse_date_code(v) : null;
+              v = parsed ? `${parsed.y}-${String(parsed.m).padStart(2,'0')}-${String(parsed.d).padStart(2,'0')}` : '';
+            } else {
+              v = String(v||'').trim();
+            }
+          }
+          newJobData[f.field] = (v===undefined || v===null) ? '' : (typeof v === 'string' ? v.trim() : v);
+        });
+
+        // Cari job yang sudah ada dengan tanggal + nama klien + desa yang sama persis (mengabaikan
+        // besar/kecil huruf & spasi berlebih). Kalau ketemu -> update job itu. Kalau tidak -> job baru.
+        const matchKey = excelJobMatchKey(newJobData.tanggalAcara, newJobData.namaKlien, newJobData.desa);
+        const existingIdx = jobs.findIndex(j=> excelJobMatchKey(j.tanggalAcara, j.namaKlien, j.desa) === matchKey);
+        if(existingIdx !== -1){
+          jobs[existingIdx] = {...jobs[existingIdx], ...newJobData};
+          updated++;
+        } else {
+          jobs.push({id:uid(), createdAt:Date.now(), ...newJobData});
+          imported++;
+        }
+      });
+      saveJobs();
+      const parts = [];
+      if(imported) parts.push(`${imported} job baru ditambahkan`);
+      if(updated) parts.push(`${updated} job yang sudah ada diperbarui`);
+      if(skipped) parts.push(`${skipped} baris dilewati (tanpa tanggal)`);
+      toast(parts.length ? parts.join(', ') : 'Tidak ada baris yang diimpor');
+      navigate('daftar');
+    }catch(err){
+      console.error(err);
+      alert('Gagal mengimpor file. Pastikan file yang diunggah menggunakan format template yang disediakan.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* =========================================================
+   EVENT HANDLERS (delegated, dipasang ulang tiap render)
+========================================================= */
+function attachHandlers(){
+  // BERANDA
+  document.getElementById('btnInputJob')?.addEventListener('click', ()=>{ editingId=null; navigate('form'); });
+  document.getElementById('btnInputJob2')?.addEventListener('click', ()=>{ editingId=null; navigate('form'); });
+  document.getElementById('btnCopyPerBulan')?.addEventListener('click', openCopyPerBulanModal);
+  // (tombol "Cadangkan Sekarang" di banner beranda sudah dihapus — cadangkan data sekarang
+  // dilakukan lewat menu Pengaturan, karena data utama sudah tersinkron otomatis ke cloud)
+  document.querySelectorAll('[data-goto]').forEach(el=>{
+    el.addEventListener('click', ()=> navigate(el.dataset.goto));
+  });
+  document.querySelectorAll('[data-open-status-list]').forEach(el=>{
+    el.addEventListener('click', ()=> openStatusListModal(el.dataset.openStatusList));
+  });
+  document.querySelectorAll('[data-open-unique-clients]').forEach(el=>{
+    el.addEventListener('click', openUniqueClientsModal);
+  });
+  document.querySelectorAll('[data-open-value-list]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const [field, value] = el.dataset.openValueList.split('::');
+      openValueListModal(field, value);
+    });
+  });
+  if(document.getElementById('dailyQuoteText')){
+    renderDailyQuote();
+    renderDailyAyat();
+  }
+
+  // FORM
+  const form = document.getElementById('jobForm');
+  if(form){
+    bindJobFormEvents(document, (action)=>{
+      if(action==='cancelled'){ navigate(jobs.length?'daftar':'beranda'); }
+      else { navigate('daftar'); }
+    });
+  }
+
+  // DAFTAR
+  if(document.getElementById('daftarTableWrap')){
+    renderDaftarTable();
+    document.getElementById('searchBox')?.addEventListener('input', renderDaftarTable);
+    document.getElementById('filterJenis')?.addEventListener('change', renderDaftarTable);
+    document.getElementById('filterBulan')?.addEventListener('change', renderDaftarTable);
+  }
+
+  // KALENDER
+  if(document.getElementById('posterScaleInner')){
+    setupPosterWatchers();
+    observePosterContainer();
+    schedulePosterRescale();
+    setupCalendarSwipe();
+    document.getElementById('calPrev')?.addEventListener('click', ()=>{ calMonth--; if(calMonth<0){calMonth=11;calYear--;} navigate('kalender'); });
+    document.getElementById('calNext')?.addEventListener('click', ()=>{ calMonth++; if(calMonth>11){calMonth=0;calYear++;} navigate('kalender'); });
+    document.getElementById('btnDownloadPoster')?.addEventListener('click', ()=>downloadPosterImage(false));
+    document.getElementById('btnDownloadPosterKeterangan')?.addEventListener('click', ()=>downloadPosterImage(true));
+
+    document.getElementById('btnSaveThanksText')?.addEventListener('click', ()=>{
+      if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah teks ucapan di poster kalender.'); return; }
+      const val = (document.getElementById('thanksOverrideInput')?.value || '').trim();
+      const key = posterKey(calYear, calMonth);
+      if(val){ thanksOverrides[key] = val; } else { delete thanksOverrides[key]; }
+      saveThanksOverrides();
+      toast(val ? 'Ucapan khusus untuk bulan ini disimpan' : 'Ucapan otomatis dipakai kembali');
+      navigate('kalender');
+    });
+    document.getElementById('btnResetThanksText')?.addEventListener('click', ()=>{
+      if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah teks ucapan di poster kalender.'); return; }
+      const key = posterKey(calYear, calMonth);
+      delete thanksOverrides[key];
+      saveThanksOverrides();
+      toast('Kembali memakai ucapan puitis otomatis');
+      navigate('kalender');
+    });
+    document.getElementById('btnFontMinus')?.addEventListener('click', ()=>{
+      if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah ukuran font di poster kalender.'); return; }
+      thanksFontSize = Math.max(18, thanksFontSize - 2);
+      saveThanksFontSize();
+      navigate('kalender');
+    });
+    document.getElementById('btnFontPlus')?.addEventListener('click', ()=>{
+      if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah ukuran font di poster kalender.'); return; }
+      thanksFontSize = Math.min(48, thanksFontSize + 2);
+      saveThanksFontSize();
+      navigate('kalender');
+    });
+    document.querySelectorAll('.theme-swatch').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah warna desain poster kalender.'); return; }
+        const idx = Number(b.dataset.themeIdx);
+        posterThemeOverrides[posterThemeKey()] = idx;
+        savePosterThemeOverrides();
+        navigate('kalender');
+      });
+    });
+    document.querySelectorAll('.layout-card').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah desain tata letak poster kalender.'); return; }
+        const idx = Number(b.dataset.layoutIdx);
+        layoutOverrides[posterThemeKey()] = idx;
+        saveLayoutOverrides();
+        navigate('kalender');
+      });
+    });
+  }
+
+  // REKAP
+  // Sengaja pakai refreshView() (bukan navigate()) di semua tombol tab Rekap —
+  // navigate() selalu scroll ke atas (dipakai untuk BERPINDAH menu utama), padahal
+  // di sini pengguna cuma ganti tab DI DALAM halaman yang sama, jadi posisi scroll
+  // yang sedang dilihat harus tetap dipertahankan.
+  document.querySelectorAll('[data-rsection]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      rekapSection = b.dataset.rsection;
+      if(rekapSection==='tren' && !['bulan','tahun'].includes(rekapTab)) rekapTab='bulan';
+      if(rekapSection==='kategori' && !['jenis','wilayah'].includes(rekapTab)) rekapTab='jenis';
+      refreshView();
+    });
+  });
+  document.querySelectorAll('[data-rtab]').forEach(b=>{
+    b.addEventListener('click', ()=>{ rekapTab = b.dataset.rtab; refreshView(); });
+  });
+  document.querySelectorAll('[data-rwlevel]').forEach(b=>{
+    b.addEventListener('click', ()=>{ rekapWilayahLevel = b.dataset.rwlevel; refreshView(); });
+  });
+  document.getElementById('btnDownloadRekap')?.addEventListener('click', downloadRekapImage);
+
+  // PEMBAGIAN TUGAS
+  if(document.querySelector('[data-task-toggle]') || document.getElementById('taskForm') || document.getElementById('btnOpenTaskForm')) bindTaskHandlers();
+
+  // LAPORAN TIM
+  if(document.getElementById('reportForm') || document.getElementById('reportFilterStatus') || document.querySelector('[data-report-status]')) bindLaporanHandlers();
+
+  // SARAN & PENILAIAN
+  document.getElementById('btnRefreshUlasan')?.addEventListener('click', pullUlasanFromCloud);
+
+  // PEMBAGIAN TUGAS — tombol refresh manual (dipasang di luar bindTaskHandlers supaya
+  // tetap aktif walau daftar tugas sedang kosong)
+  document.getElementById('btnRefreshTugas')?.addEventListener('click', async (e)=>{
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = '⏳ Memeriksa...';
+    const changed = await pullFromCloud();
+    btn.disabled = false;
+    btn.textContent = original;
+    if(currentView==='tugas') refreshView();
+    toast(changed ? 'Data tugas diperbarui' : 'Gagal memuat pembaruan, periksa koneksi internet');
+  });
+
+  // PENGATURAN
+  document.getElementById('btnExportBackup')?.addEventListener('click', exportBackup);
+  document.getElementById('importFile')?.addEventListener('change', (e)=>{
+    if(e.target.files[0]) importBackup(e.target.files[0]);
+  });
+  document.getElementById('btnDownloadTemplate')?.addEventListener('click', downloadExcelTemplate);
+  document.getElementById('importExcelInput')?.addEventListener('change', (e)=>{
+    if(e.target.files[0]) importExcelFile(e.target.files[0]);
+  });
+  document.getElementById('btnResetAll')?.addEventListener('click', ()=>{
+    if(!isAdmin()){ alert('Hanya Admin yang bisa menghapus semua data.'); return; }
+    if(confirm('Yakin ingin menghapus SEMUA data job? Sebaiknya cadangkan dulu sebelum melanjutkan.')){
+      jobs = [];
+      saveJobs();
+      toast('Semua data dihapus');
+      navigate('beranda');
+    }
+  });
+
+  // AKUN SAYA (ubah username/password akun sendiri — Admin maupun Tim)
+  document.getElementById('akunSayaForm')?.addEventListener('submit', async function(e){
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    const nama = document.getElementById('akunNamaLengkap').value.trim();
+    const u = document.getElementById('akunUsername').value.trim();
+    const p = document.getElementById('akunPassword').value;
+    if(!nama){ alert('Nama lengkap tidak boleh kosong.'); return; }
+    if(!u){ alert('Username tidak boleh kosong.'); return; }
+    if(p && p.length < 4){ alert('Password baru minimal 4 karakter.'); return; }
+    if(btn){ btn.disabled = true; btn.textContent = 'Menyimpan...'; }
+    const res = await updateOwnAccount(u, p, nama);
+    if(btn){ btn.disabled = false; btn.textContent = '💾 Simpan Perubahan Akun'; }
+    if(res.ok){
+      toast('Akun berhasil diperbarui');
+      document.getElementById('akunPassword').value = '';
+      if(isAdmin()) pullAkunFromCloud(); else render();
+    } else if(res.reason==='taken'){
+      alert('Username tersebut sudah dipakai akun lain, coba username lain.');
+    } else if(res.reason==='nochange'){
+      toast('Tidak ada perubahan untuk disimpan');
+    } else if(res.reason==='offline'){
+      alert('Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.');
+    } else {
+      alert('Gagal menyimpan perubahan akun. Coba lagi.');
+    }
+  });
+
+  // KELOLA AKUN (Admin) — lihat ulang daftar akun
+  document.getElementById('btnRefreshAkun')?.addEventListener('click', pullAkunFromCloud);
+}
+
+/* ---------- Export gambar (html2canvas) ---------- */
+// includeKeterangan=false (default) -> gambar polos seperti semula (blok "Keterangan
+// Tanggal" disembunyikan, sama seperti sebelum ada fitur ini). includeKeterangan=true
+// -> blok "Keterangan Tanggal" ([tanggal] - [desa] per job bulan ini) ikut disertakan
+// di gambar, statistik otomatis bergeser ke bawahnya (lihat positionPosterStats).
+function downloadPosterImage(includeKeterangan){
+  if(includeKeterangan===undefined) includeKeterangan = false;
+  if(typeof html2canvas === 'undefined'){
+    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const poster = document.getElementById('calendarPoster');
+  const inner = document.getElementById('posterScaleInner');
+  // Sejak ada jalur swipe, posterScaleInner dibungkus satu lapis tambahan
+  // (.cal-swipe-slide) yang juga overflow:hidden — ikut dilonggarkan sementara
+  // supaya poster ukuran penuh 1080×1920 tidak ikut terpotong saat di-capture.
+  const slide = inner?.closest('.cal-swipe-slide');
+  const restore = ()=>{
+    if(inner){ inner.style.overflow = ''; }
+    if(slide){ slide.style.overflow = ''; }
+    scalePoster(); // scalePoster memasang kembali skala layar + blok keterangan
+  };
+  try{
+    // Selama pengambilan gambar, poster dikembalikan ke ukuran asli 1080×1920 agar
+    // hasil unduhan selalu tajam & presisi — tidak terpengaruh ukuran layar HP.
+    poster.style.transform = 'none';
+    poster.style.zoom = '';
+    if(inner){ inner.style.overflow = 'visible'; }
+    if(slide){ slide.style.overflow = 'visible'; }
+    // Kalau includeKeterangan=false: sembunyikan blok keterangan & kembalikan statistik
+    // ke posisi tepat di bawah grid (perilaku tombol unduh biasa, sama seperti semula).
+    // Kalau includeKeterangan=true: blok keterangan ikut ditampilkan & statistik
+    // otomatis digeser ke bawahnya, supaya keduanya ikut ter-capture di gambar.
+    positionPosterStats(poster, includeKeterangan);
+    toast('Menyiapkan gambar kalender...');
+    html2canvas(poster, {width:1080, height:1920, scale:1, backgroundColor:'#fffef9'}).then(canvas=>{
+      restore();
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = includeKeterangan
+        ? `kalender-job-${MONTH_NAMES[calMonth]}-${calYear}-keterangan-tanggal.png`
+        : `kalender-job-${MONTH_NAMES[calMonth]}-${calYear}.png`;
+      a.click();
+    }).catch(()=>{
+      restore();
+      alert('Gagal membuat gambar. Pastikan koneksi internet aktif (untuk memuat font) lalu coba lagi.');
+    });
+  }catch(err){
+    // Jaga-jaga bila html2canvas melempar error secara langsung (bukan lewat Promise),
+    // supaya tampilan poster di layar tidak ikut rusak.
+    restore();
+    alert('Gagal membuat gambar. Pastikan koneksi internet aktif lalu coba lagi.');
+  }
+}
+function downloadRekapImage(){
+  if(typeof html2canvas === 'undefined'){
+    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const el = document.getElementById('rekapPoster');
+  try{
+    toast('Menyiapkan gambar rekap...');
+    html2canvas(el, {scale:2, backgroundColor:'#fffef9'}).then(canvas=>{
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `rekap-${rekapTab}-kaonemotret.png`;
+      a.click();
+    }).catch(()=>{
+      alert('Gagal membuat gambar rekap. Coba lagi.');
+    });
+  }catch(err){
+    alert('Gagal membuat gambar rekap. Coba lagi.');
+  }
+}
+
+/* =========================================================
+   POPUP PEMBARUAN APLIKASI
+   Setiap kali versi APP_VERSION dinaikkan & ditambahkan entri baru
+   di CHANGELOG, pengguna yang sebelumnya sudah pernah membuka app
+   ini (lastSeenVersion tersimpan di device mereka) akan otomatis
+   melihat pop-up "Apa yang baru" saat pertama kali membuka web
+   setelah pembaruan tersebut. Pengguna baru (belum pernah buka
+   sama sekali) TIDAK diberi pop-up ini, karena bukan "pembaruan"
+   bagi mereka — versi langsung dicatat diam-diam.
+
+   ⚠️ WAJIB DIINGAT — SETIAP KALI ADA PERUBAHAN YANG TERLIHAT/TERASA
+   OLEH PENGGUNA DI FILE INI (lihat aturan lengkap & pengecualiannya
+   di paling atas file ini):
+   1. Naikkan APP_VERSION (ikuti semver: patch untuk perbaikan kecil,
+      minor untuk fitur baru, major untuk perubahan besar/breaking) —
+      KECUALI kalau perubahan ini masih di HARI YANG SAMA dengan
+      tanggal entri paling atas di CHANGELOG saat ini; dalam kasus itu
+      nomor versi TETAP SAMA (tidak dinaikkan lagi).
+   2. Tambahkan satu entri BARU di paling ATAS array CHANGELOG (jangan
+      menimpa/menghapus entri versi sebelumnya — itu riwayat) — atau,
+      kalau versi tidak naik sesuai pengecualian di atas, cukup
+      tambahkan satu item baru ke "items" milik entri teratas yang
+      sudah ada.
+   3. Isi "items" dengan bahasa yang mudah dipahami pengguna awam
+      (bukan bahasa teknis programmer), singkat & jelas apa yang
+      berubah/ditambah/diperbaiki dari sudut pandang pengguna.
+   Kalau langkah di atas terlewat, perubahan tetap jalan tapi
+   pengguna TIDAK akan melihat notifikasi pop-up "Apa yang Baru" —
+   jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
+   langkah ini walaupun perubahannya terasa sepele.
+========================================================= */
+const APP_VERSION = '1.9.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+// Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
+// di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
+// dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
+// otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
+const CHANGELOG = [
+  {
+    version: '1.9.0',
+    tanggal: '25 September 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Form Input/Edit Job didesain ulang: tiap bagian (Klien & Acara, Lokasi, Status, Keuangan, Catatan) kini punya kartu sendiri dengan judul dan keterangan singkat, supaya lebih rapi dan mudah diisi.' },
+      { kategori: 'Fitur', teks: 'Sisa Pembayaran dan Penghasilan Bersih kini tampil di bar bawah yang selalu terlihat saat mengisi form, sejajar dengan tombol Simpan.' },
+      { kategori: 'Peningkatan', teks: 'Form otomatis menyesuaikan lebar: jadi 1 kolom saat dibuka sebagai pop-up atau di HP.' },
+      { kategori: 'Fitur', teks: 'Form Input Job punya bagian baru "Hasil Cetak" berisi ceklis (Foto 16", 12", 10", 6", Album, Flashdisk). Pilihanmu otomatis masuk ke Deskripsi Paket dan menghitung Biaya Cetak.' },
+      { kategori: 'Fitur', teks: 'Vendor Shia Makeup: paket Foto 16" + Bingkai, Album 2 roll, dan Foto 12" (atau lebih kecil) otomatis mengisi Harga Paket Vendor Rp350.000 (Rp400.000 jika 12" pakai bingkai), dan otomatis naik mengikuti harga total kalau lebih dari Rp400.000 (dibulatkan ke atas kelipatan Rp50.000).' },
+      { kategori: 'Peningkatan', teks: 'Biaya Cetak otomatis sekarang dibulatkan ke atas kelipatan Rp50.000 (mis. Rp60.000 jadi Rp100.000, Rp110.000 jadi Rp150.000).' },
+      { kategori: 'Peningkatan', teks: 'Kolom No. WhatsApp kini otomatis angka dengan keyboard angka dan awalan +62 yang menyatu di dalam kolom. Semua kolom uang memakai awalan Rp yang menyatu dengan cara yang sama.' },
+      { kategori: 'Peningkatan', teks: 'Susunan kolom di form Input Job dirapikan: tidak ada lagi kolom yang menggantung sendirian di sebelah ruang kosong, dan urutan kolom Keuangan lebih runtut.' },
+      { kategori: 'Fitur', teks: 'Detail Job punya tombol "Kabari Klien" yang muncul saat Proses Edit dan Proses Cetak sudah Selesai (dan foto belum diserahkan). Pesan WhatsApp sudah tersusun (nama, acara, tanggal, sisa pembayaran, ajakan menjemput, link lokasi Kaone Motret di Google Maps), bisa diedit dulu, lalu WhatsApp klien terbuka. Job yang sudah dikabari diberi tanda waktu.' },
+      { kategori: 'Fitur', teks: 'Isi pesan "Foto Selesai" bisa diubah di Pengaturan (Admin).' },
+      { kategori: 'Fitur', teks: 'Menu Pengaturan (Admin) punya kartu "Harga Cetak" untuk mengatur semua harga cetak dan modal Shia Makeup.' },
+      { kategori: 'Fitur', teks: 'Kalender Job sekarang bisa digeser (swipe) dengan jari untuk berpindah bulan — kalender mengikuti gerakan jari secara langsung, lengkap dengan intip sekilas bulan sebelum/sesudahnya, lalu otomatis berpindah kalau geserannya cukup jauh atau kembali ke posisi semula kalau tidak.' },
+    ]
+  },
+  {
+    version: '1.8.0',
+    tanggal: '23 September 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Nilai uang di kartu ringkasan (Rekap Job, Pembagian Tugas) tidak lagi pecah berantakan ke bawah kalau angkanya panjang — sekarang otomatis mengecil agar tetap terbaca dalam satu baris.' },
+      { kategori: 'Perbaikan', teks: 'Tampilan kartu di Daftar Semua Job (mode HP) dirapikan: label dan nilai (harga, DP, sisa bayar, dll) tidak lagi berebut tempat sebaris — sekarang label di atas, nilai di bawah dengan lebar penuh, supaya nilai uang tidak lagi terpotong atau keluar dari kotaknya.' },
+      { kategori: 'Perbaikan', teks: 'Menu utama di Beranda sekarang selalu tersusun 3 kolom di semua perangkat (sebelumnya bisa jadi 2 kolom di sebagian HP Android karena perbedaan lebar layar, sementara di iPhone 3 kolom).' },
+      { kategori: 'Fitur', teks: 'Pop-up saat tanggal di Kalender Job diklik sekarang punya tombol "Buka di Maps" untuk langsung menuju lokasi acara.' },
+      { kategori: 'Peningkatan', teks: 'Rekap Job dirombak total: sekarang terbagi jadi 4 bagian (Ringkasan, Tren, Kategori, dan Keuangan khusus Admin) lewat tab utama, menggantikan tampilan satu halaman scroll panjang sebelumnya — supaya lebih mudah dipahami tanpa mengurangi kedalaman datanya. Bagian "Tren" menggabungkan rekap Per Bulan & Per Tahun (dilengkapi grafik jumlah job per bulan yang bisa dilihat semua role, plus grafik Omzet & Laba khusus Admin), dan bagian "Kategori" menggabungkan Jenis Acara & Wilayah (Wilayah punya sub-pilihan level Desa/Kecamatan/Kabupaten/Provinsi menggantikan 4 tab terpisah yang isinya serupa).' },
+      { kategori: 'Fitur', teks: 'Bagian "Ringkasan" di Rekap Job kini punya kartu "Insight Cepat": Bulan Tersibuk, Jenis Acara Terpopuler, dan Kecamatan Paling Sering — dihitung dari jumlah job saja (bukan uang), jadi aman dilihat semua role.' },
+      { kategori: 'Perbaikan', teks: 'Omzet, Penghasilan Bulan Ini, dan Total Penghasilan per kategori sekarang dihitung dari harga FINAL setelah diskon (bukan harga sebelum diskon lagi) — sesuai uang yang benar-benar diterima.' },
+      { kategori: 'Perbaikan', teks: 'Tombol tab di Rekap Job (Ringkasan/Tren/Kategori/Keuangan, Per Bulan/Tahun, Jenis/Wilayah, dst) sekarang tidak lagi membuat layar otomatis lompat ke atas saat diklik — posisi scroll tetap di tempat.' },
+      { kategori: 'Perbaikan', teks: 'Grafik "Tren Jumlah Job per Bulan": angka di atas balok yang tinggi tidak lagi kepotong oleh tepi grafik.' },
+      { kategori: 'Peningkatan', teks: 'Grafik Omzet & Laba Bersih (khusus Admin) sekarang bisa disentuh/hover per baloknya untuk melihat nominal Rupiah pastinya.' },
+      { kategori: 'Perbaikan', teks: 'Angka Rupiah di kartu Ringkasan Rekap Job tidak akan pernah lagi terpotong "..." — kalau kepanjangan, otomatis turun ke baris ke-2 dan mengecil bertahap supaya tetap terbaca utuh.' },
+      { kategori: 'Fitur', teks: 'Kartu "Klien Repeat Order" di Ringkasan sekarang bisa diklik untuk melihat daftar klien yang sudah booking lebih dari sekali, beserta jumlah booking dan tanggal job terakhirnya.' },
+      { kategori: 'Fitur', teks: 'Kartu "Belum Lunas" (Admin) bisa diklik untuk melihat daftar job yang belum lunas beserta sisa tagihannya.' },
+      { kategori: 'Fitur', teks: 'Setiap status Pengiriman (Sudah/Belum Dijemput/Diantar) dan progres Proses Edit/Cetak di Rekap Job sekarang bisa diklik untuk melihat daftar jobnya, sama seperti di Beranda.' },
+      { kategori: 'Fitur', teks: 'Kartu baru "Margin Keuntungan" (Laba Bersih dibagi Omzet) di Ringkasan, khusus Admin.' },
+      { kategori: 'Fitur', teks: 'Insight Cepat ditambah dua wawasan baru: "Hari Favorit Acara" dan "Vendor Paling Aktif".' },
+      { kategori: 'Fitur', teks: 'Tabel Kategori & Tren (Admin) ditambah kolom "Rata-rata/Job" di samping Total Penghasilan dan Total Bersih.' },
+      { kategori: 'Fitur', teks: 'Bagian Keuangan (Admin) ditambah "Ringkasan Sedekah" (Sudah vs Belum disedekahkan), dan Top 5 Klien punya tombol "Lihat Klien Repeat Order".' },
+      { kategori: 'Perbaikan', teks: 'Tombol lonceng notifikasi tidak lagi "mengambang" lepas dari header (terutama di layar lebar/desktop dan iPhone) — sekarang menyatu rapi di baris header, sama seperti tombol Keluar.' },
+      { kategori: 'Perbaikan', teks: 'Kartu Total Omzet & Total Laba Bersih tidak lagi tampil berantakan di layar lebar (desktop) — kartu ringkasan sekarang punya lebar minimum yang lebih longgar, dan nominal jutaan ke atas otomatis mengecil lebih cepat supaya selalu muat rapi dalam satu-dua baris.' },
+    ]
+  },
+  {
+    version: '1.7.0',
+    tanggal: '22 September 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Notifikasi sekarang muncul secara langsung (real-time). Begitu ada ulasan baru dari klien, laporan baru, klaim bonus baru, tugas baru, komentar dari Admin, atau bonus yang dicairkan, kotak pemberitahuan langsung tampil di layar tanpa perlu menutup dan membuka ulang aplikasi. Halaman yang sedang dibuka ikut diperbarui otomatis, kecuali saat Anda sedang mengetik atau membuka jendela pop-up supaya isian Anda tidak hilang.' },
+      { kategori: 'Fitur', teks: 'Dua notifikasi baru untuk akun Tim: "Tugas baru" saat Admin membagikan tugas kepada Anda, dan "Bonus Anda sudah dicairkan" saat Admin menandai klaim bonus Anda selesai dibayar.' },
+      { kategori: 'Fitur', teks: 'Menu baru "Pengaturan Notifikasi" di bagian bawah panel lonceng: atur suara dan getar, aktifkan notifikasi perangkat (tetap muncul saat aplikasi sedang di latar belakang), lihat status sambungan, dan kirim notifikasi percobaan.' },
+      { kategori: 'Peningkatan', teks: 'Kotak pemberitahuan bisa digeser ke samping untuk ditutup, hilang sendiri setelah beberapa detik, dan kalau ada banyak notifikasi sekaligus akan dirangkum jadi satu supaya layar tidak penuh.' },
+      { kategori: 'Peningkatan', teks: 'Jumlah notifikasi yang belum dibaca kini juga tampil sebagai angka pada ikon aplikasi di layar utama (pada perangkat yang mendukung).' },
+      { kategori: 'Fitur', teks: 'Aplikasi sekarang bisa dipasang ke Layar Utama HP seperti aplikasi biasa, tetap bisa dibuka saat sinyal lemah, dan akan memberi tahu kalau ada versi baru.' },
+      { kategori: 'Fitur', teks: 'Klaim bonus sekarang ada dua jenis: Uang Tunai (minimal Rp50.000, bisa diatur Admin) dan WDP — Weekly Diamond Pass Mobile Legends (minimal Rp32.000, bisa diatur Admin). Kedua syarat minimal ini diatur lewat menu Pembagian Tugas > Pengaturan Bonus.' },
+      { kategori: 'Fitur', teks: 'Saat mengajukan klaim, akun Tim memilih salah satu jenis lewat kotak pilihan; jenis yang belum memenuhi syarat minimal otomatis dinonaktifkan beserta keterangan kurang berapa lagi. Untuk klaim WDP, ID Game dan Server Mobile Legends diminta sekali dan otomatis diingat untuk klaim berikutnya.' },
+      { kategori: 'Fitur', teks: 'Admin melihat jenis klaim (Tunai/WDP) pada daftar klaim menunggu, lengkap dengan ID Game & Server untuk klaim WDP beserta tombol salin, dan tombol prosesnya menyesuaikan ("Cairkan" atau "Tandai Terkirim").' },
+      { kategori: 'Peningkatan', teks: 'Notifikasi klaim bonus (baik ke Admin maupun ke akun Tim saat sudah diproses) kini menyebutkan jenis klaimnya.' },
+      { kategori: 'Peningkatan', teks: 'Kolom pencarian di Daftar Semua Job sekarang juga bisa mencari berdasarkan No. WhatsApp klien (sebagian nomor pun cocok), tidak hanya nama/desa/jenis acara.' },
+      { kategori: 'Fitur', teks: 'Kwitansi klien: tombol baru "Cetak Kwitansi (PDF)" dan "Cetak Kwitansi (Gambar)" di modal Detail Job. Isinya sengaja hanya info yang relevan untuk klien (harga paket, diskon, total tagihan, DP, sisa pembayaran, status bayar) — tanpa data biaya/keuntungan internal (Biaya Cetak, Honor Tim, Sedekah, Penghasilan Bersih).' },
+      { kategori: 'Fitur', teks: 'Jejak kwitansi usang: begitu kwitansi dicetak, aplikasi menyimpan angka Harga Paket/Diskon/DP saat itu. Kalau angka itu diedit lagi setelahnya, modal Detail Job otomatis menampilkan peringatan "kwitansi sudah usang" dan tombol cetaknya berubah jadi "Cetak Ulang Kwitansi", supaya Admin tidak lupa kalau klien mungkin masih pegang kwitansi dengan angka lama.' },
+      { kategori: 'Fitur', teks: 'Rekap Job diperluas jadi jauh lebih detail: Ringkasan Keseluruhan (Total Job, Klien Unik, Rata-rata Job/Bulan, dan untuk Admin ditambah Total Omzet, Total Laba Bersih, Rata-rata Omzet/Job, Belum Lunas), Status Operasional (progres Edit/Cetak selesai & distribusi status Pengiriman), Analisis Bulanan & Tahunan (perbandingan omzet vs bulan/tahun sebelumnya beserta grafik batang 12 bulan terakhir), Top 5 Klien berdasarkan omzet, rincian Status Pembayaran, dan Rekap per Vendor.' },
+      { kategori: 'Peningkatan', teks: 'Akun Tim sekarang TIDAK bisa melihat data omset/keuangan apa pun di Rekap Job (Total Omzet, Total Laba Bersih, Analisis Bulanan & Tahunan, Top Klien, Status Pembayaran, Rekap per Vendor, kolom Total Penghasilan/Total Bersih di tabel per-kategori). Tim hanya melihat data non-keuangan seperti jumlah job dan status operasional.' },
+      { kategori: 'Peningkatan', teks: 'Tampilan halaman Rekap Job dirancang ulang: setiap bagian dikelompokkan jadi kartu-kartu terpisah yang lebih rapi, dan tab kategori (Per Bulan/Jenis/Desa/dst) sekarang jadi baris pil yang bisa digeser ke samping supaya lebih nyaman dilihat di layar HP.' },
+      { kategori: 'Perbaikan', teks: 'Tombol "Input Job Baru" di Beranda sekarang otomatis tersembunyi untuk akun Tim (hanya tampil untuk Admin).' },
+      { kategori: 'Perbaikan', teks: 'Berbagai ukuran teks dan padding (terutama di halaman Rekap Job) dirapikan agar tidak terasa "zoom" atau kebesaran saat dibuka di layar HP, termasuk saat aplikasi dipasang ke Layar Utama sebagai PWA.' },
+    ]
+  },
+  {
+    version: '1.6.0',
+    tanggal: '17 September 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Seluruh ikon emoji di aplikasi (tombol Edit/Hapus/Simpan, kalender, notifikasi, badge status, dsb) diganti dengan ikon SVG bergaya garis minimalis buatan sendiri, supaya tampilannya konsisten di semua perangkat/browser (emoji sering tampil beda-beda tiap HP). Teks di kotak dialog (peringatan, konfirmasi) dan status singkronisasi cloud tetap memakai teks biasa karena tempat itu memang tidak bisa menampilkan ikon.' },
+    ]
+  },
+  {
+    version: '1.5.1',
+    tanggal: '16 September 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Job yang acaranya berlangsung 2 hari atau lebih sekarang ditandai di SEMUA harinya di Kalender Job (sebelumnya hanya hari pertama yang ditandai). Keterangan Tanggal di bawah kalender juga menampilkan setiap tanggalnya, dan mengklik tanggal hari kedua/ketiga dst kini tetap membuka detail job tersebut.' },
+      { kategori: 'Perbaikan', teks: 'Keterangan Tanggal untuk job berdurasi lebih dari 1 hari disederhanakan menjadi satu baris saja (misalnya "5-6 - Desa"), bukan lagi dipecah jadi satu baris per tanggal — karena tetap acara yang sama.' },
+      { kategori: 'Fitur', teks: 'Jenis Acara baru "Patuaekkon" ditambahkan ke pilihan Jenis Acara di form Input/Edit Job.' },
+      { kategori: 'Perbaikan', teks: 'Tombol "Tambahkan ke Google Calendar" dan "Unduh File .ics" sekarang menandai SELURUH rentang hari untuk job berdurasi 2 hari atau lebih (sebelumnya cuma menandai 1 hari, walau job-nya berlangsung beberapa hari).' },
+      { kategori: 'Perbaikan', teks: 'Semua tempat yang menampilkan/menyalin tanggal acara job berdurasi 2 hari atau lebih sekarang konsisten menulis rentangnya (misalnya "22-23 September 2026") — termasuk Daftar Job, Detail Job, tombol Salin Detail Job, gambar Detail Job & Story IG yang diunduh, "Salin Daftar Job per Bulan" (juga otomatis mengelompokkan job yang menyeberang bulan ke kedua bulan terkait), dan notifikasi lonceng (notifikasi "sudah lewat" kini menunggu sampai HARI TERAKHIR acara selesai, bukan langsung sejak hari pertama).' },
+    ]
+  },
+  {
+    version: '1.5.0',
+    tanggal: '15 September 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Pratinjau gambar di menu Kalender Job tidak lagi tampil acak, terpotong, atau bergeser sendiri di iPhone. Ukuran pratinjau sekarang dihitung ulang otomatis saat layar diputar, saat halaman digulir, dan setelah huruf/font selesai dimuat — jadi tampilannya selalu rapi dan sama persis di iPhone maupun Android.' },
+      { kategori: 'Perbaikan', teks: 'Tombol aksi (Ubah Status, Komentar, Edit, Hapus) pada tampilan kartu di menu Rekap Tugas Detail sekarang tersusun rapi 2×2, tidak lagi turun ke bawah satu per satu.' },
+      { kategori: 'Peningkatan', teks: 'Daftar Job di layar HP sekarang ditampilkan sebagai kartu bertumpuk, bukan lagi tabel yang harus digeser ke samping. Setiap keterangan (Tanggal, Klien, Lokasi, Bayar, dan lainnya) punya labelnya sendiri, dan tombol Edit/Lihat/Maps/Hapus dibuat lebih besar agar mudah ditekan.' },
+      { kategori: 'Peningkatan', teks: 'Semua jendela pop-up di HP kini muncul dari bawah layar seperti panel aplikasi pada umumnya — lebih mudah dijangkau ibu jari dan tidak lagi terpotong di layar kecil.' },
+      { kategori: 'Perbaikan', teks: 'Layar tidak lagi ikut membesar sendiri (zoom) saat mulai mengetik di kolom isian pada iPhone.' },
+      { kategori: 'Perbaikan', teks: 'Tampilan menyesuaikan bentuk layar iPhone: bagian atas tidak lagi tertutup poni/kamera, dan bagian bawah tidak tertimpa garis indikator layar.' },
+      { kategori: 'Fitur', teks: 'Tombol "↑" untuk kembali ke atas halaman muncul otomatis saat menggulir jauh — membantu di halaman panjang seperti Daftar Job dan Rekap.' },
+      { kategori: 'Peningkatan', teks: 'Menu utama di HP kini menampilkan penanda halus di tepi kanan saat masih ada menu lain yang belum terlihat, dan menu yang sedang aktif otomatis digeser ke tengah pandangan.' },
+      { kategori: 'Peningkatan', teks: 'Tombol navigasi bulan dan tombol unduh di menu Kalender Job ditata ulang agar lebih lega dan mudah ditekan di layar HP.' },
+      { kategori: 'Peningkatan', teks: 'Tampilan keseluruhan dipoles: warna latar lebih lembut, sudut kartu lebih membulat, bayangan lebih halus, dan jarak antar bagian lebih lega supaya nyaman dipandang lama.' },
+      { kategori: 'Peningkatan', teks: 'Judul kolom pada tabel Rekap kini tetap menempel di atas saat tabel digulir, jadi tidak bingung membaca angka di baris bawah.' },
+      { kategori: 'Peningkatan', teks: 'Semua tombol dan kolom isian di HP diperbesar ke ukuran sentuh yang nyaman, sehingga lebih jarang salah tekan.' },
+    ]
+  },
+  {
+    version: '1.4.0',
+    tanggal: '10 September 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Kartu statistik "Edit Belum Selesai" dan "Cetak Belum Selesai" di Beranda sekarang bisa diklik — menampilkan daftar job yang prosesnya belum tuntas, dan Admin bisa langsung mengubah status Selesai/Belum Selesai dari daftar tersebut.' },
+      { kategori: 'Perbaikan', teks: 'Angka persentase di Poster Kalender sekarang maksimal ditampilkan 2 angka di belakang koma (sebelumnya bisa sampai 4 angka).' },
+      { kategori: 'Peningkatan', teks: 'Judul "Jenis Acara" dan "Kecamatan" di atas daftar statistik Poster Kalender dihilangkan agar tampilan lebih ringkas.' },
+      { kategori: 'Fitur', teks: 'Tombol unduh baru di menu Kalender Job: "Unduh dengan Keterangan Tanggal" — gambar kalender yang diunduh akan menyertakan daftar keterangan tanggal job (format [tanggal] - [desa]) yang sebelumnya hanya tampil di layar saja.' },
+      { kategori: 'Peningkatan', teks: 'Ikon di judul tab navigasi utama (Pembagian Tugas, Laporan, Saran & Penilaian) dihilangkan agar tampilan lebih rapi.' },
+    ]
+  },
+  {
+    version: '1.3.0',
+    tanggal: '08 September 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Kartu statistik baru "Sedekah Belum Selesai" di Beranda — menampilkan total nominal sedekah yang belum tuntas, bisa diklik untuk melihat daftar job dan langsung mengubah status sedekahnya (Belum/Sudah).' },
+      { kategori: 'Peningkatan', teks: 'Kolom Link Maps di form Input/Edit Job dihapus. Sekarang cukup isi Titik Koordinat, lalu pakai tombol "📋 Salin Link Maps" untuk menyalin link Google Maps-nya secara otomatis.' },
+      { kategori: 'Peningkatan', teks: 'Teks di seluruh aplikasi (label, judul, keterangan) dibuat lebih singkat dan mudah dibaca.' },
+      { kategori: 'Fitur', teks: 'Status Pembayaran di menu Daftar Job sekarang otomatis berubah jadi "Lunas" begitu lewat pukul 23.59 di hari job itu (atau hari terakhir untuk job berdurasi lebih dari 1 hari). Kalau Admin sudah pernah mengubah Status Pembayaran secara manual, proses otomatis ini tidak akan menimpanya lagi.' },
+    ]
+  },
+  {
+    version: '1.2.2',
+    tanggal: '06 September 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Menu Pembagian Tugas / Tugas Saya sekarang otomatis menarik data terbaru dari cloud setiap kali dibuka, dan diperiksa ulang otomatis tiap 20 detik selama halaman ini terbuka — supaya tugas baru atau perubahan status dari device lain (Admin maupun Tim) langsung muncul tanpa harus menutup & membuka ulang aplikasi.' },
+      { kategori: 'Fitur', teks: 'Tombol "🔄 Refresh" ditambahkan di halaman Pembagian Tugas / Tugas Saya untuk memeriksa pembaruan data secara langsung kapan saja diinginkan.' },
+      { kategori: 'Fitur', teks: 'Kartu statistik baru "Belum Dijemput/Diantar" di Beranda — bisa diklik untuk melihat daftar lengkap job yang belum dijemput/diantar, dan Admin bisa langsung mengubah status pengirimannya dari daftar tersebut.' },
+      { kategori: 'Perbaikan', teks: 'Rekap per Desa diperbaiki: sebelumnya desa dengan nama yang kebetulan sama tapi lokasinya beda (kecamatan/kabupaten berbeda) ikut tergabung jadi satu baris. Sekarang rekap mengelompokkan berdasarkan kombinasi Desa + Kecamatan + Kabupaten, jadi lokasi yang berbeda tidak lagi tercampur walau nama desanya sama.' },
+      { kategori: 'Perbaikan', teks: 'Rekap per Kecamatan diperbaiki dengan cara yang sama: kecamatan dengan nama yang kebetulan sama tapi beda kabupaten sekarang dikelompokkan terpisah (berdasarkan kombinasi Kecamatan + Kabupaten), tidak lagi tercampur jadi satu baris.' },
+      { kategori: 'Fitur', teks: 'Form Lokasi Acara sekarang punya ceklis "Alamat ini punya Dusun" — kalau dicentang, muncul kolom Nama Dusun. Nama dusun ini otomatis ikut ditampilkan (format "Dusun ..., Desa ...") di daftar job, detail job, pencarian, dan Rekap per Desa, serta ikut ditambahkan sebagai kolom di Excel.' },
+      { kategori: 'Peningkatan', teks: 'Tombol "＋ Bagi Tugas" dan "✏️ Edit" di menu Pembagian Tugas sekarang membuka form dalam bentuk pop-up, bukan lagi kartu yang muncul di tengah halaman.' },
+      { kategori: 'Perbaikan', teks: 'Mengisi form Bagi Tugas/Edit Tugas sekarang tidak lagi terganggu oleh auto-refresh data cloud tiap 20 detik di menu Pembagian Tugas — karena sekarang berbentuk pop-up terpisah, isian yang sedang diketik tidak akan hilang atau tertutup sendiri walau data di halaman belakang diperbarui.' },
+      { kategori: 'Fitur', teks: 'Saat membuat tugas baru, kolom Akun Tim sekarang bisa mencentang lebih dari satu akun sekaligus, dan tiap akun yang dicentang bisa diatur role serta jam kerjanya sendiri-sendiri (misalnya satu akun jadi Fotografer pagi, akun lain jadi Videografer sore) — tidak perlu lagi role dan jam yang sama untuk semua akun.' },
+      { kategori: 'Peningkatan', teks: 'Pilihan Job / Tanggal Acara di form Bagi Tugas/Edit Tugas sekarang secara default hanya menampilkan job yang akan datang, supaya daftar lebih ringkas dan tidak perlu menggulir job lama. Kalau perlu, pilih "Tampilkan job yang sudah lewat" di bagian bawah daftar untuk langsung melihat job yang sudah lewat dalam 2 bulan terakhir — tanpa perlu menutup daftarnya dulu.' },
+    ]
+  },
+  {
+    version: '1.1.1',
+    tanggal: '02 September 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Tampilan di HP: teks dan angka di Beranda serta menu Pembagian Tugas Tim (kartu ringkasan, kartu per-akun, dan kotak bonus) tidak lagi keluar/mepet dari kolom di layar sempit.' },
+      { kategori: 'Peningkatan', teks: 'Jeda klaim bonus tim diperpanjang: bonus satu bulan sekarang baru bisa mulai diklaim 2 bulan setelah bulan tersebut berjalan (mis. bonus bulan September baru bisa diklaim mulai 1 November), supaya ada waktu verifikasi sebelum bonus dicairkan.' },
+      { kategori: 'Peningkatan', teks: 'Tombol "Klaim Bonus" di halaman Tugas Saya sekarang hanya muncul kalau memang sudah ada bonus yang boleh diklaim, lengkap dengan info kapan bonus yang masih menunggu akan mulai bisa diajukan.' },
+      { kategori: 'Peningkatan', teks: 'Admin sekarang juga melihat tanggal pasti kapan bonus tiap akun Tim yang belum bisa diklaim akan mulai bisa diajukan, di kartu per-akun menu Pembagian Tugas.' },
+      { kategori: 'Fitur', teks: 'Riwayat pembaruan (changelog) sekarang menampilkan label kategori tiap perubahan — Fitur, Perbaikan, atau Peningkatan — supaya lebih mudah dipahami sekilas.' },
+      { kategori: 'Perbaikan', teks: 'Jeda klaim bonus tim disesuaikan kembali: bonus satu bulan sekarang bisa mulai diklaim begitu bulan itu selesai (mis. bonus bulan September baru bisa diklaim mulai 1 Oktober), bukan lagi menunggu 2 bulan.' },
+      { kategori: 'Peningkatan', teks: 'Tombol "Klaim Bonus" di halaman Tugas Saya sekarang selalu tampil, tapi otomatis nonaktif (tidak bisa ditekan) selama belum ada bonus yang bisa dicairkan.' },
+    ]
+  },
+  // ⚠️ Ini adalah rilis resmi PERTAMA aplikasi — seluruh riwayat versi/beta
+  // sebelumnya sengaja tidak dicatat lagi di sini. Mulai dari entri 1.0.0 ini,
+  // ikuti kembali aturan: entri baru selalu ditambahkan di PALING ATAS (paling
+  // baru duluan), jangan menimpa/menghapus entri versi resmi sebelumnya.
+  {
+    version: '1.0.0',
+    tanggal: '01 September 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Rilis resmi pertama Kaone Motret Rekap Job.' },
+      { kategori: 'Fitur', teks: 'Admin sekarang bisa mengedit pembagian tugas yang sudah dibuat (tombol ✏️ di tabel Pembagian Tugas), tidak hanya menambah dan menghapus.' },
+      { kategori: 'Fitur', teks: 'Tarif bonus tim (awalnya Rp500/jam) sekarang bisa diatur sendiri oleh Admin lewat tombol "Ubah Tarif" di menu Pembagian Tugas.' },
+      { kategori: 'Perbaikan', teks: 'Menerapkan filter atau menghapus pembagian tugas tidak lagi otomatis menggulung halaman ke atas.' },
+      { kategori: 'Fitur', teks: 'Akun Tim sekarang bisa mengklaim bonus lewat tombol "Klaim Bonus" — otomatis diarahkan ke WhatsApp Admin, dan Admin akan mendapat notifikasi serta tombol "Cairkan" di menu Pembagian Tugas.' },
+    ]
+  }
+];
+const LAST_SEEN_VERSION_KEY = 'kaoneMotret_lastSeenVersion_v1';
+
+/* =========================================================
+   POPUP SELAMAT DATANG — FITUR & KEUNGGULAN APLIKASI
+   Ditampilkan HANYA SATU KALI untuk setiap orang/perangkat yang membuka
+   aplikasi ini, terlepas dia pengguna baru atau pengguna lama (yang
+   sebelumnya sudah pernah pakai versi lebih awal). Setelah muncul sekali
+   dan ditutup dengan cara apa pun, popup ini tidak akan tampil lagi
+   selamanya di perangkat/browser tersebut. Ini TERPISAH dari mekanisme
+   popup "Apa yang Baru" (CHANGELOG) di atas.
+========================================================= */
+const WELCOME_POPUP_SEEN_KEY = 'kaoneMotret_welcomeFiturSeen_v1';
+const WELCOME_FEATURES = [
+  {icon:ic('clipboard'), title:'Kelola Job Lengkap', desc:'Data & status job lengkap.'},
+  {icon:ic('calendar'), title:'Kalender & Rentang Tanggal', desc:'Jadwal bulanan & rentang tanggal.'},
+  {icon:ic('folder'), title:'Pembagian Tugas Tim', desc:'Bagi tugas & jam kerja tim.'},
+  {icon:ic('money'), title:'Hitung Keuangan Otomatis', desc:'Keuangan & sedekah otomatis.'},
+  {icon:ic('road'), title:'Jarak & Transport Otomatis', desc:'Jarak & biaya transport otomatis.'},
+  {icon:ic('chart'), title:'Rekap & Ekspor', desc:'Rekap, cadangkan, ekspor Excel.'},
+];
+function hasSeenWelcomePopup(){
+  try{ return !!localStorage.getItem(WELCOME_POPUP_SEEN_KEY); }
+  catch(e){ return true; } // gagal baca localStorage → anggap sudah dilihat, jangan sampai muncul terus-menerus
+}
+function markWelcomePopupSeen(){
+  try{ localStorage.setItem(WELCOME_POPUP_SEEN_KEY, '1'); }catch(e){}
+}
+function showWelcomePopup(){
+  showModal(`
+    <div class="welcome-modal">
+      <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+      <div class="welcome-hero">
+        <div class="welcome-badge-icon">${ic('camera')}</div>
+        <h3>Selamat Datang</h3>
+        <p>Buku Job digital fotografer/videografer.</p>
+      </div>
+      <ul class="welcome-feature-list">
+        ${WELCOME_FEATURES.map(f=>`<li>
+          <div class="wf-icon">${f.icon}</div>
+          <div><div class="wf-title">${escapeHtml(f.title)}</div><div class="wf-desc">${escapeHtml(f.desc)}</div></div>
+        </li>`).join('')}
+      </ul>
+      <div class="modal-actions" style="justify-content:flex-end; margin-top:18px;">
+        <button type="button" class="btn btn-primary" id="btnWelcomeOk">Mulai Pakai ${ic('rocket')}</button>
+      </div>
+    </div>
+  `);
+  // Langsung tandai "sudah dilihat" begitu popup ditampilkan — supaya benar-benar hanya
+  // muncul sekali walau ditutup lewat tombol ✕, klik di luar modal, tombol Esc, ataupun
+  // kalau tab ditutup sebelum sempat menekan tombol apa pun.
+  markWelcomePopupSeen();
+  document.getElementById('modalOverlay')?.querySelector('#btnWelcomeOk')?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    closeModal();
+  });
+}
+
+function checkAppUpdatePopup(){
+  // Popup selamat datang (fitur & keunggulan) diprioritaskan dan hanya tampil sekali —
+  // kalau belum pernah dilihat, tampilkan itu dulu dan lewati popup "Apa yang Baru" untuk
+  // sesi ini (supaya tidak dobel modal saling tumpuk), sekaligus catat versi saat ini
+  // sebagai sudah dilihat.
+  if(!hasSeenWelcomePopup()){
+    showWelcomePopup();
+    try{ localStorage.setItem(LAST_SEEN_VERSION_KEY, APP_VERSION); }catch(e){}
+    return;
+  }
+  let lastSeen = null;
+  try{ lastSeen = localStorage.getItem(LAST_SEEN_VERSION_KEY); }catch(e){}
+  if(lastSeen === null){
+    // Pengguna baru pertama kali buka — jangan tampilkan pop-up, cukup catat versinya.
+    try{ localStorage.setItem(LAST_SEEN_VERSION_KEY, APP_VERSION); }catch(e){}
+    return;
+  }
+  if(lastSeen !== APP_VERSION){
+    showUpdatePopup();
+  }
+}
+// Kelas CSS badge kategori changelog untuk satu kategori. Kategori di luar tiga yang
+// baku (Fitur/Perbaikan/Peningkatan) otomatis dapat gaya netral .cat-lainnya, supaya
+// menambah kategori baru di CHANGELOG tidak pernah membuat tampilan rusak.
+function changelogCatClass(kategori){
+  const map = {'Fitur':'cat-fitur', 'Perbaikan':'cat-perbaikan', 'Peningkatan':'cat-peningkatan'};
+  return map[kategori] || 'cat-lainnya';
+}
+// Render satu daftar item changelog (dipakai baik di popup "Apa yang Baru" maupun di
+// modal riwayat lengkap) — setiap item menampilkan badge kategori kecil lalu teksnya.
+function renderChangelogItemsHtml(items){
+  return items.map(it=>`<li>
+    <span class="ul-dot">${ic('check')}</span>
+    <span class="ul-body">
+      <span class="ul-cat ${changelogCatClass(it.kategori)}">${escapeHtml(it.kategori || 'Lainnya')}</span>
+      <span>${escapeHtml(it.teks)}</span>
+    </span>
+  </li>`).join('');
+}
+function showUpdatePopup(){
+  const latest = CHANGELOG[0];
+  showModal(`
+    <div class="update-modal">
+      <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+      <div class="update-badge-row">
+        <div class="update-icon-badge">${ic('party')}</div>
+        <div>
+          <div class="update-badge">Versi ${escapeHtml(latest.version)}</div>
+          <div style="font-size:11.5px; color:var(--ink-soft); margin-top:4px;">${escapeHtml(latest.tanggal)}</div>
+        </div>
+      </div>
+      <h3 style="margin-top:14px;">Ada Pembaruan Terbaru ${ic('sparkle')}</h3>
+      <div style="font-size:13px; color:var(--ink-soft);">Berikut yang baru di Kaone Motret:</div>
+      <ul class="update-list">
+        ${renderChangelogItemsHtml(latest.items)}
+      </ul>
+      <div class="modal-actions" style="justify-content:flex-end;">
+        <button type="button" class="btn btn-primary" id="btnUpdateOk">Mengerti, Tutup</button>
+      </div>
+    </div>
+  `);
+  const ov = document.getElementById('modalOverlay');
+  ov.querySelector('#btnUpdateOk')?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    try{ localStorage.setItem(LAST_SEEN_VERSION_KEY, APP_VERSION); }catch(err){}
+    closeModal();
+  });
+  // Jika ditutup lewat tombol ✕ / klik luar / Esc, tetap anggap sudah dilihat.
+  // Dicek juga apakah user sedang menyeleksi teks (bukan sekadar klik), supaya blok teks
+  // yang tak sengaja terseret ke luar modal tidak langsung menandai popup ini "sudah dilihat".
+  ov.addEventListener('click', (e)=>{
+    if(e.target===ov && window.getSelection && String(window.getSelection())) return;
+    try{ localStorage.setItem(LAST_SEEN_VERSION_KEY, APP_VERSION); }catch(err){}
+  }, {once:true});
+}
+
+// Menampilkan riwayat LENGKAP semua versi di array CHANGELOG (bukan cuma yang
+// terbaru seperti showUpdatePopup), supaya pengguna bisa melihat perjalanan
+// pembaruan aplikasi dari waktu ke waktu. Dibuka dari tombol di panel notifikasi.
+function showChangelogHistoryModal(){
+  showModal(`
+    <div class="changelog-modal">
+      <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+      <h3 style="margin-top:0;">${ic('scroll')} Riwayat Pembaruan</h3>
+      <div style="font-size:13px; color:var(--ink-soft); margin-bottom:4px;">
+        Riwayat perubahan aplikasi.
+      </div>
+      <div class="changelog-history">
+        ${CHANGELOG.map((c, idx)=>`
+          <div class="changelog-entry">
+            <div class="changelog-entry-head">
+              <span class="update-badge">Versi ${escapeHtml(c.version)}</span>
+              ${idx===0 ? '<span class="changelog-latest-tag">Terbaru</span>' : ''}
+              <span class="changelog-entry-date">${escapeHtml(c.tanggal)}</span>
+            </div>
+            <ul class="update-list">
+              ${renderChangelogItemsHtml(c.items)}
+            </ul>
+          </div>
+        `).join('')}
+      </div>
+      <div class="modal-actions" style="justify-content:flex-end;">
+        <button type="button" class="btn btn-primary" id="btnChangelogClose">Tutup</button>
+      </div>
+    </div>
+  `);
+  document.getElementById('btnChangelogClose')?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    closeModal();
+  });
+}
+
+/* =========================================================
+   NOTIFIKASI (lonceng di header)
+   Notifikasi dibangkitkan otomatis dari data job yang ada,
+   ditambah entri "apa yang baru" dari versi aplikasi saat ini:
+     - Pembaruan aplikasi terbaru
+     - Job yang jadwal acaranya H-3 s/d hari-H (belum lewat)
+     - Job yang tanggal acaranya sudah lewat tapi status
+       pembayaran belum "Lunas"
+     - Job yang tanggal acaranya sudah lewat tapi proses edit
+       dan/atau cetak masih "Belum Selesai"
+   Status "sudah dibaca" per notifikasi disimpan di localStorage
+   berdasarkan ID unik masing-masing notifikasi, supaya badge
+   angka hanya menghitung yang benar-benar baru.
+========================================================= */
+const NOTIF_READ_KEY = 'kaoneMotret_notifRead_v1';
+function loadNotifRead(){
+  try{ return new Set(JSON.parse(localStorage.getItem(NOTIF_READ_KEY) || '[]')); }
+  catch(e){ return new Set(); }
+}
+function saveNotifRead(set){
+  try{ localStorage.setItem(NOTIF_READ_KEY, JSON.stringify([...set])); }catch(e){}
+}
+function todayMidnight(){
+  const d = new Date(); d.setHours(0,0,0,0); return d;
+}
+function daysBetween(dateIso){
+  const t = todayMidnight();
+  const d = new Date(dateIso+'T00:00:00');
+  return Math.round((d - t) / 86400000);
+}
+function buildNotifications(){
+  const list = [];
+
+  // 1) Pembaruan aplikasi (selalu tampil sebagai info, ID mengikuti versi)
+  const latest = CHANGELOG[0];
+  if(latest){
+    list.push({
+      id: 'update_v' + latest.version,
+      icon: ic('party'),
+      title: `Pembaruan v${latest.version} tersedia`,
+      desc: (latest.items[0] && latest.items[0].teks) || 'Ada pembaruan pada aplikasi.',
+      onClick: ()=>{ closeNotifPanel(); showUpdatePopup(); }
+    });
+  }
+
+  // 1b) Pengingat cadangkan data (.json) — muncul kalau belum pernah backup
+  // sama sekali, atau backup terakhir sudah lebih dari 30 hari. ID dibuat
+  // per "kelipatan 30 hari" supaya kalau sudah dibaca tapi orangnya tetap
+  // menunda backup, notifikasi ini akan muncul lagi sebagai baru tiap
+  // ~30 hari berikutnya (bukan cuma sekali seumur hidup).
+  const BACKUP_REMINDER_DAYS = 30;
+  const backupDays = daysSinceLastBackup();
+  if(isAdmin() && backupDays===null){
+    list.push({
+      id: 'backup_never',
+      icon: ic('save'),
+      title: 'Anda belum pernah mencadangkan data',
+      desc: 'Simpan salinan .json secara berkala supaya data tetap aman.',
+      onClick: ()=>{ closeNotifPanel(); navigate('pengaturan'); }
+    });
+  }else if(isAdmin() && backupDays>=BACKUP_REMINDER_DAYS){
+    const bucket = Math.floor(backupDays/BACKUP_REMINDER_DAYS);
+    list.push({
+      id: 'backup_bucket_' + bucket,
+      icon: ic('save'),
+      title: `Sudah ${backupDays} hari sejak cadangan terakhir`,
+      desc: 'Waktunya cadangkan data (.json) lagi — sebagai jaga-jaga di luar sinkron cloud.',
+      onClick: ()=>{ closeNotifPanel(); navigate('pengaturan'); }
+    });
+  }
+
+  // 1c) Ulasan baru dari klien (Saran & Penilaian)
+  ulasanList.forEach(u=>{
+    list.push({
+      id: 'ulasan_' + u.id,
+      view: 'ulasan',
+      icon: ic('star'),
+      title: `Ulasan baru dari ${u.nama_klien || 'klien'}`,
+      desc: truncateText(u.komentar, 70) || `Memberi ${u.rating||0} bintang`,
+      onClick: ()=>{ closeNotifPanel(); navigate('ulasan'); }
+    });
+  });
+
+  // 1d) Komentar baru dari Admin pada tugas milik akun Tim ini
+  if(!isAdmin()){
+    tasks.forEach(t=>{
+      if(String(t.userId)!==String(currentUserId) && t.username!==currentUsername) return;
+      taskComments(t).forEach(c=>{
+        if(c.byRole!=='admin') return;
+        list.push({
+          id: taskCommentNotifId(t.id, c.id),
+          view: 'tugas',
+          icon: ic('chat'),
+          title: `Komentar baru dari Admin di tugas ${getTaskJobLabel(t)}`,
+          desc: truncateText(c.text, 70) || 'Admin mengirim komentar pada tugas Anda.',
+          onClick: ()=>{ closeNotifPanel(); navigate('tugas'); openTaskCommentModal(t.id); }
+        });
+      });
+    });
+  }
+
+  // 1e) Laporan baru dari akun Tim (khusus Admin) — laporan lain (sudah Diproses/Selesai) tidak lagi memicu notifikasi baru
+  if(isAdmin()){
+    reports.filter(r=>(r.status||'Baru')==='Baru').forEach(r=>{
+      list.push({
+        id: 'laporan_' + r.id,
+        view: 'laporan',
+        icon: ic('alert'),
+        title: `Laporan baru: ${r.reporterName} melaporkan ${r.targetName}`,
+        desc: truncateText(r.isi, 70) || 'Ada laporan baru dari akun Tim.',
+        onClick: ()=>{ closeNotifPanel(); navigate('laporan'); }
+      });
+    });
+  }
+
+  // 1f) Klaim bonus baru dari akun Tim yang masih menunggu diproses (khusus Admin)
+  if(isAdmin()){
+    pendingBonusClaims().forEach(c=>{
+      const isWdp = c.jenis==='WDP';
+      list.push({
+        id: 'bonusclaim_' + c.id,
+        view: 'tugas',
+        icon: isWdp ? ic('sparkle') : ic('money'),
+        title: `Klaim ${claimJenisLabel(c)} dari ${c.username}`,
+        desc: isWdp
+          ? `Mengajukan WDP senilai ${fmtRp(c.jumlah)} (ID Game: ${c.mlId||'-'}) — menunggu diproses.`
+          : `Mengajukan klaim sebesar ${fmtRp(c.jumlah)} — menunggu dicairkan.`,
+        onClick: ()=>{ closeNotifPanel(); navigate('tugas'); }
+      });
+    });
+  }
+
+  // 1g) Tugas baru yang dibagikan kepada akun ini (bukan dibuat sendiri) — tampil 7 hari
+  const RT_NEW_WINDOW_MS = 7*24*60*60*1000;
+  tasks.forEach(t=>{
+    if(String(t.userId)!==String(currentUserId) && t.username!==currentUsername) return;
+    if(String(t.createdBy)===String(currentUserId)) return;
+    if(!t.createdAt || (Date.now()-t.createdAt) > RT_NEW_WINDOW_MS) return;
+    const s0 = Array.isArray(t.slots) && t.slots[0] ? t.slots[0] : null;
+    list.push({
+      id: 'tasknew_' + t.id,
+      view: 'tugas',
+      icon: ic('clipboard'),
+      title: `Tugas baru: ${getTaskJobLabel(t)}`,
+      desc: [formatTaskDate(t.tanggal), s0 ? `${s0.mulai}–${s0.selesai}` : '', t.role || ''].filter(Boolean).join(' • '),
+      onClick: ()=>{ closeNotifPanel(); navigate('tugas'); }
+    });
+  });
+
+  // 1h) Klaim bonus milik akun Tim ini yang baru saja dicairkan Admin — tampil 7 hari
+  if(!isAdmin()){
+    (bonusClaims||[]).forEach(c=>{
+      if(String(c.userId)!==String(currentUserId)) return;
+      if(c.status!=='Dicairkan' || !c.cairAt || (Date.now()-c.cairAt) > RT_NEW_WINDOW_MS) return;
+      const isWdp = c.jenis==='WDP';
+      list.push({
+        id: 'claimpaid_' + c.id,
+        view: 'tugas',
+        icon: isWdp ? ic('sparkle') : ic('money'),
+        title: isWdp ? 'WDP Anda sudah dikirim' : 'Bonus Anda sudah dicairkan',
+        desc: `${fmtRp(c.jumlah)}${(c.bulanList&&c.bulanList.length) ? ' untuk bulan ' + c.bulanList.map(fmtBulanLabel).join(', ') : ''}`,
+        onClick: ()=>{ closeNotifPanel(); navigate('tugas'); }
+      });
+    });
+  }
+
+  jobs.forEach(j=>{
+    if(!j.tanggalAcara) return;
+    const diff = daysBetween(j.tanggalAcara); // hari sampai MULAI acara
+    // Untuk job berdurasi >1 hari, "sudah lewat" harus dihitung dari hari TERAKHIR
+    // acara (bukan hari mulai) — supaya job 2 hari yang baru masuk hari pertama
+    // tidak langsung dianggap "sudah lewat" padahal acaranya masih berlangsung.
+    const diffAkhir = daysBetween(getJobFinishDate(j) || j.tanggalAcara);
+    const nama = j.namaKlien || 'Tanpa Nama';
+
+    // 2) Pengingat job mendekat (H-3 sampai hari-H mulai), atau job berdurasi
+    // >1 hari yang sedang BERLANGSUNG (hari mulainya sudah lewat tapi hari
+    // terakhirnya belum).
+    if(diff>=0 && diff<=3){
+      const kapan = diff===0 ? 'HARI INI' : `${diff} hari lagi`;
+      list.push({
+        id: 'h3_' + j.id + '_' + j.tanggalAcara,
+        icon: ic('calendar'),
+        title: `Job "${nama}" ${kapan}`,
+        desc: `Jadwal acara: ${fmtTglJob(j)}`,
+        onClick: ()=>{ closeNotifPanel(); openJobDetailModal(j.id); }
+      });
+    } else if(diff<0 && diffAkhir>=0){
+      list.push({
+        id: 'h3_' + j.id + '_' + j.tanggalAcara,
+        icon: ic('calendar'),
+        title: `Job "${nama}" SEDANG BERLANGSUNG`,
+        desc: `Jadwal acara: ${fmtTglJob(j)}`,
+        onClick: ()=>{ closeNotifPanel(); openJobDetailModal(j.id); }
+      });
+    }
+
+    // 3) Job (sudah selesai semua harinya) tapi belum lunas
+    if(diffAkhir<0 && j.statusPembayaran!=='Lunas'){
+      list.push({
+        id: 'bayar_' + j.id,
+        icon: ic('money'),
+        title: `Pembayaran "${nama}" belum lunas`,
+        desc: `Status saat ini: ${j.statusPembayaran || 'Belum Bayar'}`,
+        onClick: ()=>{ closeNotifPanel(); openJobDetailModal(j.id); }
+      });
+    }
+
+    // 4) Job (sudah selesai semua harinya) tapi proses edit/cetak belum selesai
+    if(diffAkhir<0 && (j.prosesEdit!=='Selesai' || j.prosesCetak!=='Selesai')){
+      const bagian = [];
+      if(j.prosesEdit!=='Selesai') bagian.push('edit');
+      if(j.prosesCetak!=='Selesai') bagian.push('cetak');
+      list.push({
+        id: 'proses_' + j.id,
+        icon: ic('printer'),
+        title: `Proses ${bagian.join(' & ')} "${nama}" belum selesai`,
+        desc: `Acara sudah lewat (${fmtTglJob(j)})`,
+        onClick: ()=>{ closeNotifPanel(); openJobDetailModal(j.id); }
+      });
+    }
+  });
+
+  return list;
+}
+function renderNotifBadge(){
+  const badge = document.getElementById('notifBadge');
+  const btn = document.getElementById('notifBtn');
+  if(!badge || !btn) return;
+  const read = loadNotifRead();
+  const list = buildNotifications();
+  const unread = list.filter(n=>!read.has(n.id)).length;
+  // Angka juga ditampilkan pada ikon aplikasi di layar utama (PWA), kalau perangkat mendukung
+  try{
+    if(navigator.setAppBadge){
+      (unread>0 ? navigator.setAppBadge(unread) : navigator.clearAppBadge()).catch(()=>{});
+    }
+  }catch(e){}
+  if(unread>0){
+    badge.style.display='flex';
+    badge.textContent = unread>99 ? '99+' : String(unread);
+    btn.classList.add('has-unread');
+  }else{
+    badge.style.display='none';
+    btn.classList.remove('has-unread');
+  }
+}
+function toggleNotifPanel(){
+  const existing = document.getElementById('notifPanel');
+  if(existing){ closeNotifPanel(); return; }
+  openNotifPanel();
+}
+// Menandai SATU notifikasi sebagai sudah dibaca (dipakai saat titik kuning diklik)
+function markNotifRead(id){
+  const read = loadNotifRead();
+  read.add(id);
+  saveNotifRead(read);
+  renderNotifBadge();
+}
+// Menandai SEMUA notifikasi yang sedang tampil sebagai sudah dibaca sekaligus
+function markAllNotifRead(list){
+  const read = loadNotifRead();
+  list.forEach(n=>read.add(n.id));
+  saveNotifRead(read);
+  renderNotifBadge();
+}
+// Render ulang panel di tempat (dipakai setelah tandai dibaca, supaya panel
+// tidak perlu ditutup — pengalaman terasa langsung/real-time)
+function refreshNotifPanel(){
+  if(!document.getElementById('notifPanel')) return;
+  closeNotifPanel();
+  openNotifPanel();
+}
+function openNotifPanel(){
+  const wrap = document.getElementById('notifWrap');
+  if(!wrap) return;
+  const read = loadNotifRead();
+  const list = buildNotifications();
+  const unreadCount = list.filter(n=>!read.has(n.id)).length;
+
+  const panel = document.createElement('div');
+  panel.className = 'notif-panel';
+  panel.id = 'notifPanel';
+  panel.innerHTML = `
+    <div class="notif-panel-head">
+      <span>${ic('bell')} Notifikasi</span>
+      <div class="head-right">
+        ${unreadCount>0 ? `<button type="button" id="btnMarkAllRead" class="notif-markall-btn">${ic('check')} Tandai semua dibaca</button>` : ''}
+        <span class="cnt">${list.length} info</span>
+      </div>
+    </div>
+    <div class="notif-list">
+      ${list.length ? list.map(n=>`
+        <div class="notif-item ${read.has(n.id)?'':'unread'}" data-notif-id="${escapeHtml(n.id)}">
+          <span class="ni-icon">${n.icon}</span>
+          <div class="ni-body">
+            <div class="ni-title">${escapeHtml(n.title)}</div>
+            <div class="ni-desc">${escapeHtml(n.desc)}</div>
+          </div>
+          ${read.has(n.id)?'':`<button type="button" class="ni-dot" data-mark-read="${escapeHtml(n.id)}" title="Tandai sudah dibaca" aria-label="Tandai sudah dibaca"></button>`}
+        </div>
+      `).join('') : `
+        <div class="notif-empty">
+          <div class="em">${ic('check-circle')}</div>
+          Tidak ada notifikasi saat ini.<br>Semua job aman terkendali.
+        </div>
+      `}
+    </div>
+    <div class="notif-panel-foot">
+      <button type="button" id="btnNotifSettings" class="notif-changelog-btn">${ic('settings')} Pengaturan Notifikasi</button>
+      <button type="button" id="btnNotifChangelog" class="notif-changelog-btn">${ic('scroll')} Lihat Riwayat Pembaruan (Changelog)</button>
+    </div>
+  `;
+  wrap.appendChild(panel);
+
+  // Klik pada baris notifikasi → tandai sudah dibaca lalu jalankan aksinya (buka job, dsb.)
+  panel.querySelectorAll('[data-notif-id]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const id = el.dataset.notifId;
+      const n = list.find(x=>x.id===id);
+      markNotifRead(id);
+      if(n && typeof n.onClick==='function') n.onClick();
+    });
+  });
+
+  // Klik pada titik kuning saja → HANYA tandai sudah dibaca, tanpa membuka/navigasi apa pun
+  panel.querySelectorAll('[data-mark-read]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      markNotifRead(el.dataset.markRead);
+      refreshNotifPanel();
+    });
+  });
+
+  // Tombol "Tandai semua dibaca"
+  panel.querySelector('#btnMarkAllRead')?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    markAllNotifRead(list);
+    refreshNotifPanel();
+  });
+
+  // Tombol pengaturan notifikasi (suara, getar, notifikasi perangkat)
+  panel.querySelector('#btnNotifSettings')?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    closeNotifPanel();
+    rtOpenSettings();
+  });
+
+  // Tombol riwayat changelog lengkap
+  panel.querySelector('#btnNotifChangelog')?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    closeNotifPanel();
+    showChangelogHistoryModal();
+  });
+
+  document.addEventListener('click', outsideNotifClick);
+  document.addEventListener('keydown', escCloseNotif);
+}
+function closeNotifPanel(){
+  const panel = document.getElementById('notifPanel');
+  if(panel) panel.remove();
+  document.removeEventListener('click', outsideNotifClick);
+  document.removeEventListener('keydown', escCloseNotif);
+}
+function outsideNotifClick(e){
+  const wrap = document.getElementById('notifWrap');
+  if(wrap && !wrap.contains(e.target)) closeNotifPanel();
+}
+function escCloseNotif(e){
+  if(e.key==='Escape') closeNotifPanel();
+}
+document.getElementById('notifBtn')?.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  toggleNotifPanel();
 });
 
-self.addEventListener('fetch', event => {
-  const req = event.request;
-  if (req.method !== 'GET' || req.headers.has('range')) return;
-  const url = new URL(req.url);
+/* ---------- INIT ---------- */
 
-  if (url.origin === self.location.origin) {
-    if (url.pathname === new URL('sw.js', SCOPE).pathname) return;       // sw.js selalu langsung ke jaringan
-    if (isShellRequest(req, url)) return event.respondWith(shellNetworkFirst(event));
-    return event.respondWith(staleWhileRevalidate(event, SHELL_CACHE));   // ikon, manifest
+// Delegasi klik global — dipasang SEKALI saat aplikasi dimuat, sehingga selalu aktif
+// untuk elemen apa pun yang muncul kemudian (termasuk tombol di dalam pop-up modal
+// yang dibuat di luar alur render() biasa).
+document.addEventListener('click', (e)=>{
+  const closeBtn = e.target.closest('#closeModal');
+  if(closeBtn){ closeModal(); return; }
+
+  const dayBtn = e.target.closest('.cp-daynum.has-job');
+  if(dayBtn){ openDateModal(dayBtn.dataset.calDate); return; }
+
+  const gcalBtn = e.target.closest('[data-gcal]');
+  if(gcalBtn){ openGoogleCalendar(gcalBtn.dataset.gcal); return; }
+
+  const openMapsBtn = e.target.closest('[data-open-maps]');
+  if(openMapsBtn){ openJobMaps(openMapsBtn.dataset.openMaps); return; }
+
+  const icsBtn = e.target.closest('[data-ics]');
+  if(icsBtn){ downloadIcs(icsBtn.dataset.ics); return; }
+
+  const detailDownloadBtn = e.target.closest('[data-detail-download]');
+  if(detailDownloadBtn){ downloadJobDetailImage(detailDownloadBtn.dataset.detailDownload); return; }
+
+  const detailStoryBtn = e.target.closest('[data-detail-story]');
+  if(detailStoryBtn){ downloadJobStoryImage(detailStoryBtn.dataset.detailStory); return; }
+
+  const detailCopyBtn = e.target.closest('[data-detail-copy]');
+  if(detailCopyBtn){ copyJobDetails(detailCopyBtn.dataset.detailCopy); return; }
+
+  const viewJobBtn = e.target.closest('[data-view-job]');
+  if(viewJobBtn){ openJobDetailModal(viewJobBtn.dataset.viewJob); return; }
+
+  const editBtn = e.target.closest('[data-edit]');
+  if(editBtn){ openEditJobModal(editBtn.dataset.edit); return; }
+
+  const ulasanImageBtn = e.target.closest('[data-ulasan-image]');
+  if(ulasanImageBtn){ downloadUlasanImage(ulasanImageBtn.dataset.ulasanImage); return; }
+
+  const ulasanPublishManageBtn = e.target.closest('[data-ulasan-publish-manage]');
+  if(ulasanPublishManageBtn){ openUlasanPublishModal(ulasanPublishManageBtn.dataset.ulasanPublishManage); return; }
+
+  const ulasanDeleteBtn = e.target.closest('[data-ulasan-delete]');
+  if(ulasanDeleteBtn){ deleteUlasanItem(ulasanDeleteBtn.dataset.ulasanDelete); return; }
+
+  const deleteBtn = e.target.closest('[data-delete]');
+  if(deleteBtn){
+    e.stopPropagation();
+    if(!isAdmin()){ alert('Hanya Admin yang bisa menghapus job.'); return; }
+    const id = deleteBtn.dataset.delete;
+    const job = jobs.find(x=>x.id===id);
+    const nama = job ? (job.namaKlien || 'job ini') : 'job ini';
+    if(confirm(`Yakin ingin menghapus job "${nama}"? Tindakan ini tidak bisa dibatalkan.`)){
+      jobs = jobs.filter(x=>x.id!==id);
+      saveJobs();
+      toast('Job dihapus');
+      renderDaftarTable();
+    }
+    return;
   }
-  if (CACHEABLE_HOSTS.includes(url.hostname)) {
-    return event.respondWith(staleWhileRevalidate(event, RUNTIME_CACHE));
-  }
-  // selain itu (Supabase, OSRM, Al-Qur'an API, dll): biarkan lewat normal, tidak di-cache
 });
+
+/* ---------- Jam & tanggal header (selalu tampil, zona WIB / Asia-Jakarta) ---------- */
+function updateHeaderClock(){
+  const el = document.getElementById('headerClock');
+  if(!el) return;
+  const now = new Date();
+  const hari = namaHariID(now, {timeZone:'Asia/Jakarta'});
+  const tgl = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(now); // 23 Agustus 2026
+  const jamColon = new Intl.DateTimeFormat('en-GB', {timeZone:'Asia/Jakarta', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false}).format(now);
+  const jam = jamColon.replaceAll(':', '.'); // format 00.00.00
+  el.textContent = `${hari}, ${tgl} · ${jam} WIB`;
+}
+updateHeaderClock();
+setInterval(updateHeaderClock, 1000);
+
+const copyrightYearEl = document.getElementById('copyrightYear');
+if(copyrightYearEl) copyrightYearEl.textContent = new Date().getFullYear();
+const appVersionTagEl = document.getElementById('appVersionTag');
+if(appVersionTagEl) appVersionTagEl.textContent = 'v' + APP_VERSION;
+
+/* =========================================================
+   NOTIFIKASI REAL-TIME (Supabase Realtime)
+   Cara kerja singkat:
+   - Aplikasi "mendengarkan" perubahan pada tabel data utama (SYNC_TABLE) dan tabel ulasan
+     (ULASAN_TABLE) lewat Supabase Realtime. Begitu ada perubahan dari device/orang lain,
+     datanya langsung dimasukkan ke aplikasi ini.
+   - Notifikasi yang muncul memakai daftar notifikasi lonceng yang sudah ada (buildNotifications):
+     yang dianggap "baru" = ID notifikasi yang sebelumnya belum ada, belum dibaca, dan termasuk
+     jenis kejadian (ulasan, komentar, laporan, klaim bonus, tugas baru, bonus dicairkan) — bukan
+     pengingat berbasis tanggal (H-3, belum lunas, dst) supaya tidak berbunyi tiap pergantian hari.
+   - Perubahan milik device sendiri diabaikan (dikenali lewat rtOwnStamps). Halaman aktif hanya
+     digambar ulang kalau datanya benar-benar berubah, dan DITUNDA selama pengguna sedang
+     mengetik / membuka pop-up supaya isian tidak hilang.
+   - Kalau koneksi putus atau aplikasi kembali dibuka dari latar belakang (HP sering mematikan
+     koneksi di latar belakang), data dikejar ulang (rtCatchUp) dan notifikasi yang terlewat
+     tetap ditampilkan.
+   ⚠️ Perubahan di bagian ini juga wajib dicatat di CHANGELOG + APP_VERSION (lihat aturan di atas).
+========================================================= */
+const RT_PREFS_KEY  = 'kaoneMotret_rtPrefs_v1';
+const RT_PROMPT_KEY = 'kaoneMotret_rtPromptDismissed_v1';
+const RT_EVENT_PREFIXES = ['ulasan_','taskcomment_','laporan_','bonusclaim_','tasknew_','claimpaid_'];
+const RT_LAUNCH_VIEWS = ['beranda','daftar','kalender','rekap','tugas','laporan','ulasan','pengaturan','notif'];
+// Bagian data yang dipakai tiap halaman → halaman hanya digambar ulang kalau bagian ini berubah
+const RT_VIEW_DEPS = {
+  beranda:  ['jobs','tasks','bonusAdjustments','bonusClaims','bonusRate','minKlaimTunai','minKlaimWdp'],
+  daftar:   ['jobs'],
+  kalender: ['jobs','thanksOverrides','thanksFontSize','posterThemeOverrides','layoutOverrides'],
+  rekap:    ['jobs','tasks','bonusAdjustments','bonusClaims','bonusRate','minKlaimTunai','minKlaimWdp'],
+  tugas:    ['jobs','tasks','bonusAdjustments','bonusClaims','bonusRate','minKlaimTunai','minKlaimWdp'],
+  laporan:  ['reports']
+};
+
+let rtPrefs = { sound:false, vibrate:true, system:true };
+try{ Object.assign(rtPrefs, JSON.parse(localStorage.getItem(RT_PREFS_KEY) || '{}')); }catch(e){}
+function rtSavePrefs(){ try{ localStorage.setItem(RT_PREFS_KEY, JSON.stringify(rtPrefs)); }catch(e){} }
+
+let rtChannel = null, rtStarted = false, rtState = 'idle', rtStateSince = Date.now();
+let rtPendingRender = false, rtHiddenCount = 0, rtCatchUpBusy = false, rtCatchUpTimer = null;
+
+/* ---------- status koneksi ---------- */
+function rtSetState(st){
+  rtState = st; rtStateSince = Date.now(); rtPaintStatus();
+}
+function rtPaintStatus(){
+  const dot = document.getElementById('rtDot'), tx = document.getElementById('rtStatusText');
+  if(!dot || !tx) return;
+  const map = {
+    live:         ['live', 'Tersambung — notifikasi masuk secara langsung'],
+    connecting:   ['wait', 'Menyambungkan…'],
+    reconnecting: ['wait', 'Menyambung ulang…'],
+    offline:      ['off',  'Tidak tersambung — notifikasi menyusul saat koneksi kembali'],
+    idle:         ['off',  'Belum aktif']
+  };
+  const m = map[rtState] || map.idle;
+  dot.className = 'rt-dot ' + m[0];
+  tx.textContent = m[1];
+}
+
+/* ---------- membandingkan data lama vs baru ---------- */
+function rtSlices(){
+  return {
+    jobs: JSON.stringify(jobs), tasks: JSON.stringify(tasks),
+    bonusAdjustments: JSON.stringify(bonusAdjustments), bonusClaims: JSON.stringify(bonusClaims),
+    bonusRate: String(BONUS_PER_JAM), minKlaimTunai: String(MIN_KLAIM_TUNAI), minKlaimWdp: String(MIN_KLAIM_WDP),
+    reports: JSON.stringify(reports),
+    thanksOverrides: JSON.stringify(thanksOverrides), thanksFontSize: JSON.stringify(thanksFontSize),
+    posterThemeOverrides: JSON.stringify(posterThemeOverrides), layoutOverrides: JSON.stringify(layoutOverrides)
+  };
+}
+function rtIsEvent(id){ return RT_EVENT_PREFIXES.some(p => String(id).startsWith(p)); }
+function rtEventIds(){
+  return new Set(buildNotifications().filter(n => rtIsEvent(n.id)).map(n => n.id));
+}
+function rtFreshEvents(beforeIds){
+  const read = loadNotifRead();
+  return buildNotifications().filter(n => rtIsEvent(n.id) && !beforeIds.has(n.id) && !read.has(n.id));
+}
+
+/* ---------- menggambar ulang dengan sopan ---------- */
+function rtUserBusy(){
+  if(document.getElementById('modalOverlay')) return true;   // pop-up sedang terbuka
+  if(currentView === 'form') return true;                     // sedang di form input job
+  const a = document.activeElement;
+  return !!(a && a.closest && a.closest('#app') && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+}
+function rtRequestRender(){
+  if(rtUserBusy()){ rtPendingRender = true; return; }
+  rtPendingRender = false;
+  refreshView();
+}
+function rtAfterNotifChange(){
+  renderNotifBadge();
+  if(document.getElementById('notifPanel')) refreshNotifPanel();
+}
+
+/* ---------- menerima data utama dari cloud ---------- */
+function rtIngest(remote){
+  if(!remote || typeof remote !== 'object') return false;
+  // Ada perubahan lokal yang belum terkirim → jangan ditimpa; kejar ulang sesudah terkirim.
+  if(rtPushPending){ rtScheduleCatchUp(1500); return false; }
+  const beforeIds = rtEventIds();
+  const before = rtSlices();
+  applyAllData(remote);
+  const after = rtSlices();
+  const changed = Object.keys(after).filter(k => after[k] !== before[k]);
+  if(!changed.length) return false;
+  persistAllLocal();
+  rtAfterNotifChange();
+  const deps = RT_VIEW_DEPS[currentView];
+  if(deps && changed.some(k => deps.includes(k))) rtRequestRender();
+  rtAlert(rtFreshEvents(beforeIds));
+  return true;
+}
+function rtOnDataEvent(p){
+  const rec = p && p.new;
+  if(!rec) return;
+  if(rtOwnStamps.has(Date.parse(rec.updated_at))) return;     // gema dari simpanan device ini sendiri
+  if(rec.payload && typeof rec.payload === 'object') rtIngest(rec.payload);
+  else rtCatchUp('tanpa-payload');
+}
+
+/* ---------- menerima ulasan klien ---------- */
+function rtCommitUlasan(beforeIds, alertNew){
+  saveUlasanLocalCache();
+  rtAfterNotifChange();
+  if(currentView === 'ulasan') rtRequestRender();
+  if(alertNew) rtAlert(rtFreshEvents(beforeIds));
+}
+function rtOnUlasan(p){
+  const ev = p && p.eventType;
+  if(ev === 'INSERT' && p.new){
+    if(ulasanList.some(x => String(x.id) === String(p.new.id))) return;
+    const beforeIds = rtEventIds();
+    ulasanList.unshift(p.new);
+    ulasanList.sort((a,b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+    rtCommitUlasan(beforeIds, true);
+  }else if(ev === 'UPDATE' && p.new){
+    const i = ulasanList.findIndex(x => String(x.id) === String(p.new.id));
+    if(i === -1) return;
+    const merged = { ...ulasanList[i], ...p.new };
+    if(JSON.stringify(merged) === JSON.stringify(ulasanList[i])) return;
+    ulasanList[i] = merged;
+    rtCommitUlasan(null, false);
+  }else if(ev === 'DELETE' && p.old){
+    if(!ulasanList.some(x => String(x.id) === String(p.old.id))) return;
+    ulasanList = ulasanList.filter(x => String(x.id) !== String(p.old.id));
+    rtCommitUlasan(null, false);
+  }
+}
+function rtMergeUlasan(remoteList){
+  if(JSON.stringify(remoteList) === JSON.stringify(ulasanList)) return;
+  const beforeIds = rtEventIds();
+  ulasanList = remoteList;
+  rtCommitUlasan(beforeIds, true);
+}
+
+/* ---------- mengejar data yang terlewat ---------- */
+function rtScheduleCatchUp(ms){
+  clearTimeout(rtCatchUpTimer);
+  rtCatchUpTimer = setTimeout(()=>rtCatchUp('terjadwal'), ms);
+}
+async function rtCatchUp(reason){
+  if(!supabaseClient || rtCatchUpBusy || !navigator.onLine) return;
+  if(rtPushPending){ rtScheduleCatchUp(1500); return; }
+  rtCatchUpBusy = true;
+  try{
+    const { data, error } = await supabaseClient.from(SYNC_TABLE).select('payload').eq('id', SYNC_ROW_ID).maybeSingle();
+    if(!error && data && data.payload) rtIngest(data.payload);
+    const r2 = await supabaseClient.from(ULASAN_TABLE).select('*').order('created_at', { ascending:false });
+    if(!r2.error && Array.isArray(r2.data)) rtMergeUlasan(r2.data);
+  }catch(e){
+    console.warn('Gagal mengejar data terbaru (' + reason + ')', e);
+  }finally{
+    rtCatchUpBusy = false;
+  }
+}
+
+/* ---------- tampilan: kotak pemberitahuan ---------- */
+function rtToast(o){
+  let stack = document.getElementById('rtStack');
+  if(!stack){
+    stack = document.createElement('div');
+    stack.id = 'rtStack'; stack.className = 'rt-stack';
+    stack.setAttribute('aria-live', 'polite');
+    document.body.appendChild(stack);
+  }
+  const el = document.createElement('div');
+  el.className = 'rt-toast';
+  el.setAttribute('role', 'status');
+  el.innerHTML =
+    `<span class="rt-ic">${o.icon || ic('bell')}</span>` +
+    `<div class="rt-body"><div class="rt-title"></div>${o.desc ? '<div class="rt-desc"></div>' : ''}` +
+    `${o.actionLabel ? '<div class="rt-actions"><button type="button" class="rt-act"></button></div>' : ''}</div>` +
+    `<button type="button" class="rt-x" aria-label="Tutup">${ic('close')}</button>`;
+  el.querySelector('.rt-title').textContent = o.title || '';
+  if(o.desc) el.querySelector('.rt-desc').textContent = o.desc;
+  if(o.actionLabel) el.querySelector('.rt-act').textContent = o.actionLabel;
+
+  let timer = null, moved = false, sx = null, dx = 0;
+  const dismiss = ()=>{ clearTimeout(timer); el.classList.add('out'); setTimeout(()=>el.remove(), 220); };
+  const arm = ()=>{ clearTimeout(timer); if(!o.sticky) timer = setTimeout(dismiss, o.duration || 7000); };
+
+  el.addEventListener('pointerenter', ()=>clearTimeout(timer));
+  el.addEventListener('pointerleave', arm);
+  el.querySelector('.rt-x').addEventListener('click', (e)=>{ e.stopPropagation(); if(o.onDismiss) o.onDismiss(); dismiss(); });
+  el.querySelector('.rt-act')?.addEventListener('click', (e)=>{ e.stopPropagation(); dismiss(); if(o.onAction) o.onAction(); });
+  el.addEventListener('click', ()=>{ if(moved) return; dismiss(); if(o.onClick) o.onClick(); });
+  // geser ke samping untuk menutup (HP)
+  el.addEventListener('touchstart', (e)=>{ sx = e.touches[0].clientX; dx = 0; moved = false; clearTimeout(timer); el.style.transition = 'none'; }, {passive:true});
+  el.addEventListener('touchmove', (e)=>{
+    if(sx === null) return;
+    dx = e.touches[0].clientX - sx;
+    if(Math.abs(dx) > 8) moved = true;
+    el.style.transform = `translateX(${dx}px)`;
+    el.style.opacity = String(Math.max(.2, 1 - Math.abs(dx)/240));
+  }, {passive:true});
+  el.addEventListener('touchend', ()=>{
+    if(sx === null) return;
+    el.style.transition = '';
+    if(Math.abs(dx) > 70){ if(o.onDismiss) o.onDismiss(); dismiss(); }
+    else{ el.style.transform = ''; el.style.opacity = ''; arm(); }
+    sx = null;
+    setTimeout(()=>{ moved = false; }, 60);
+  });
+
+  stack.prepend(el);
+  while(stack.children.length > 3) stack.lastElementChild.remove();
+  arm();
+}
+function rtShowToasts(items){
+  if(items.length > 2){
+    rtToast({
+      icon: ic('bell'),
+      title: `${items.length} notifikasi baru`,
+      desc: items.slice(0, 2).map(n => n.title).join(' • ') + ' …',
+      onClick: ()=>{ if(!document.getElementById('notifPanel')) openNotifPanel(); }
+    });
+    return;
+  }
+  items.forEach(n => rtToast({
+    icon: n.icon, title: n.title, desc: n.desc,
+    onClick: ()=>{ markNotifRead(n.id); if(typeof n.onClick === 'function') n.onClick(); }
+  }));
+}
+
+/* ---------- suara, getar, lonceng bergoyang ---------- */
+let rtAudio = null;
+function rtUnlockAudio(){
+  if(rtAudio) return;
+  try{ rtAudio = new (window.AudioContext || window.webkitAudioContext)(); if(rtAudio.state === 'suspended') rtAudio.resume(); }catch(e){}
+}
+function rtChime(){
+  if(!rtPrefs.sound || !rtAudio) return;
+  try{
+    if(rtAudio.state === 'suspended') rtAudio.resume();
+    const t0 = rtAudio.currentTime;
+    [[880, 0], [1318.5, 0.14]].forEach(([freq, off])=>{
+      const o = rtAudio.createOscillator(), g = rtAudio.createGain();
+      o.type = 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t0 + off);
+      g.gain.exponentialRampToValueAtTime(0.13, t0 + off + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + off + 0.24);
+      o.connect(g); g.connect(rtAudio.destination);
+      o.start(t0 + off); o.stop(t0 + off + 0.26);
+    });
+  }catch(e){}
+}
+function rtRingBell(){
+  const b = document.getElementById('notifBtn');
+  if(!b) return;
+  b.classList.remove('rt-ring'); void b.offsetWidth; b.classList.add('rt-ring');
+  setTimeout(()=>b.classList.remove('rt-ring'), 1000);
+}
+
+/* ---------- notifikasi perangkat (saat aplikasi di latar belakang) ---------- */
+async function rtSystemNotify(items){
+  if(!rtPrefs.system || !('Notification' in window) || Notification.permission !== 'granted') return;
+  const one = items.length === 1 ? items[0] : null;
+  const title = one ? one.title : `${items.length} notifikasi baru`;
+  const opts = {
+    body: one ? (one.desc || '') : items.slice(0, 3).map(n => n.title).join('\n'),
+    icon: 'icons/icon-192.png',
+    tag: one ? one.id : 'kaone-batch',
+    lang: 'id',
+    data: { id: one ? one.id : null, view: one ? (one.view || null) : 'notif' }
+  };
+  try{
+    const reg = await navigator.serviceWorker?.ready;
+    if(reg && reg.showNotification){ await reg.showNotification(title, opts); return; }
+  }catch(e){}
+  try{ new Notification(title, opts); }catch(e){}
+}
+async function rtRequestPermission(){
+  try{
+    const r = await Notification.requestPermission();
+    if(r === 'granted'){ rtPrefs.system = true; rtSavePrefs(); toast('Notifikasi perangkat diaktifkan'); }
+    else toast('Notifikasi perangkat tidak diaktifkan');
+    return r;
+  }catch(e){ return 'default'; }
+}
+function rtMaybePromptPermission(){
+  if(!('Notification' in window) || Notification.permission !== 'default') return;
+  if(document.visibilityState !== 'visible' || document.getElementById('modalOverlay')) return;
+  let last = 0;
+  try{ last = Number(localStorage.getItem(RT_PROMPT_KEY) || 0); }catch(e){}
+  if(last && (Date.now() - last) < 14*24*60*60*1000) return;
+  const mark = ()=>{ try{ localStorage.setItem(RT_PROMPT_KEY, String(Date.now())); }catch(e){} };
+  rtToast({
+    icon: ic('bell'),
+    title: 'Aktifkan notifikasi perangkat?',
+    desc: 'Supaya tugas baru dan info penting tetap muncul walau aplikasi sedang di latar belakang.',
+    actionLabel: 'Aktifkan', sticky: true,
+    onAction: async ()=>{ mark(); await rtRequestPermission(); },
+    onDismiss: mark, onClick: mark
+  });
+}
+
+/* ---------- satu pintu untuk semua peringatan ---------- */
+function rtAlert(items){
+  if(!items || !items.length) return;
+  if(document.visibilityState === 'hidden'){
+    rtHiddenCount += items.length;
+    rtSystemNotify(items);
+    return;
+  }
+  if(rtPrefs.vibrate && navigator.vibrate){ try{ navigator.vibrate([70, 40, 70]); }catch(e){} }
+  rtChime();
+  rtRingBell();
+  rtShowToasts(items);
+}
+
+/* ---------- membuka tujuan dari notifikasi perangkat ---------- */
+function rtOpenById(id){
+  const n = buildNotifications().find(x => x.id === id);
+  if(!n) return false;
+  markNotifRead(n.id);
+  if(typeof n.onClick === 'function') n.onClick();
+  return true;
+}
+function rtGoTo(view){
+  if(view === 'notif'){ if(!document.getElementById('notifPanel')) openNotifPanel(); return; }
+  if(RT_LAUNCH_VIEWS.includes(view)) navigate(view);
+}
+function rtHandleLaunchParam(){
+  try{
+    const u = new URL(location.href);
+    const v = u.searchParams.get('v');
+    if(!v) return;
+    u.searchParams.delete('v');
+    history.replaceState(null, '', u.pathname + u.search + u.hash);
+    setTimeout(()=>rtGoTo(v), 350);
+  }catch(e){}
+}
+
+/* ---------- pengaturan notifikasi (pop-up) ---------- */
+function rtOpenSettings(){
+  const supported = ('Notification' in window);
+  const perm = supported ? Notification.permission : 'unsupported';
+  const canVibrate = !!navigator.vibrate;
+  let sysHint, sysCtl = '';
+  if(perm === 'unsupported'){
+    sysHint = 'Belum didukung di sini. Di iPhone, pasang dulu aplikasi ke Layar Utama (Bagikan → Tambah ke Layar Utama).';
+  }else if(perm === 'denied'){
+    sysHint = 'Sedang diblokir. Izinkan notifikasi untuk situs/aplikasi ini lewat pengaturan browser atau HP Anda.';
+  }else if(perm === 'default'){
+    sysHint = 'Supaya info penting tetap muncul saat aplikasi ada di latar belakang.';
+    sysCtl = '<button type="button" class="btn btn-primary" id="rtBtnPerm">Aktifkan</button>';
+  }else{
+    sysHint = 'Aktif — tampil saat aplikasi tidak sedang Anda lihat.';
+    sysCtl = `<input type="checkbox" class="rt-sw" id="rtSwSystem" aria-label="Notifikasi perangkat" ${rtPrefs.system ? 'checked' : ''}>`;
+  }
+  showModal(`
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('bell')} Pengaturan Notifikasi</h3>
+    <div class="rt-set-status"><span class="rt-dot" id="rtDot"></span><span id="rtStatusText"></span></div>
+    <label class="rt-set-row">
+      <span><b>Suara</b><small>Bunyi singkat saat notifikasi baru masuk.</small></span>
+      <input type="checkbox" class="rt-sw" id="rtSwSound" ${rtPrefs.sound ? 'checked' : ''}>
+    </label>
+    <label class="rt-set-row">
+      <span><b>Getar</b><small>${canVibrate ? 'Getaran singkat saat notifikasi baru masuk.' : 'Tidak didukung oleh perangkat/browser ini.'}</small></span>
+      <input type="checkbox" class="rt-sw" id="rtSwVibrate" ${rtPrefs.vibrate && canVibrate ? 'checked' : ''} ${canVibrate ? '' : 'disabled'}>
+    </label>
+    <div class="rt-set-row">
+      <span><b>Notifikasi perangkat</b><small>${sysHint}</small></span>
+      <span>${sysCtl}</span>
+    </div>
+    <div class="modal-actions" style="justify-content:flex-end; margin-top:14px;">
+      <button type="button" class="btn" id="rtBtnTest">Kirim notifikasi percobaan</button>
+    </div>
+  `);
+  rtPaintStatus();
+  const ov = document.getElementById('modalOverlay');
+  ov?.querySelector('#rtSwSound')?.addEventListener('change', (e)=>{
+    rtPrefs.sound = e.target.checked; rtSavePrefs();
+    if(rtPrefs.sound){ rtUnlockAudio(); rtChime(); }
+  });
+  ov?.querySelector('#rtSwVibrate')?.addEventListener('change', (e)=>{
+    rtPrefs.vibrate = e.target.checked; rtSavePrefs();
+    if(rtPrefs.vibrate && navigator.vibrate){ try{ navigator.vibrate(60); }catch(err){} }
+  });
+  ov?.querySelector('#rtSwSystem')?.addEventListener('change', (e)=>{ rtPrefs.system = e.target.checked; rtSavePrefs(); });
+  ov?.querySelector('#rtBtnPerm')?.addEventListener('click', async ()=>{ await rtRequestPermission(); rtOpenSettings(); });
+  ov?.querySelector('#rtBtnTest')?.addEventListener('click', ()=>{
+    toast('Notifikasi percobaan muncul dalam 4 detik. Anda boleh berpindah aplikasi untuk mencobanya.');
+    closeModal();
+    setTimeout(()=>rtAlert([{
+      id: 'rt_test', view: 'beranda', icon: ic('bell'),
+      title: 'Notifikasi percobaan',
+      desc: 'Jika Anda melihat ini, notifikasi real-time berfungsi.',
+      onClick: ()=>{}
+    }]), 4000);
+  });
+}
+
+/* ---------- menyalakan semuanya ---------- */
+function rtConnect(){
+  try{
+    const ch = supabaseClient.channel('kaone-live-' + Math.random().toString(36).slice(2, 8));
+    rtChannel = ch;
+    ch.on('postgres_changes', { event:'*', schema:'public', table:SYNC_TABLE, filter:'id=eq.' + SYNC_ROW_ID }, rtOnDataEvent)
+      .on('postgres_changes', { event:'*', schema:'public', table:ULASAN_TABLE }, rtOnUlasan)
+      .subscribe((status, err)=>{
+        if(ch !== rtChannel) return;                        // abaikan callback dari channel lama
+        if(status === 'SUBSCRIBED'){ rtSetState('live'); rtCatchUp('tersambung'); }
+        else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){ rtSetState('reconnecting'); if(err) console.warn('Realtime:', err.message || err); }
+        else if(status === 'CLOSED'){ rtSetState(navigator.onLine ? 'reconnecting' : 'offline'); }
+      });
+  }catch(e){
+    console.warn('Gagal memulai notifikasi real-time', e);
+    rtSetState('offline');
+  }
+}
+function rtReconnect(){
+  try{ if(rtChannel) supabaseClient.removeChannel(rtChannel); }catch(e){}
+  rtChannel = null;
+  rtSetState('connecting');
+  rtConnect();
+}
+function rtStart(){
+  if(rtStarted) return;
+  rtStarted = true;
+  rtHandleLaunchParam();
+  if(!cloudSyncEnabled || !supabaseClient){ rtSetState('offline'); return; }
+
+  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, rtUnlockAudio, { once:true, passive:true }));
+  rtSetState('connecting');
+  rtConnect();
+
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState !== 'visible') return;
+    if(rtHiddenCount > 0){
+      const n = rtHiddenCount; rtHiddenCount = 0;
+      rtToast({ icon: ic('bell'), title: `${n} notifikasi baru`, desc: 'Masuk saat Anda tidak sedang melihat layar.',
+                onClick: ()=>{ if(!document.getElementById('notifPanel')) openNotifPanel(); } });
+    }
+    rtCatchUp('kembali-dibuka');
+    if(rtState !== 'live' && (Date.now() - rtStateSince) > 5000) rtReconnect();
+  });
+  window.addEventListener('online',  ()=>{ rtCatchUp('online'); if(rtState !== 'live') rtReconnect(); });
+  window.addEventListener('offline', ()=>rtSetState('offline'));
+
+  // klik notifikasi perangkat saat aplikasi sudah terbuka
+  navigator.serviceWorker?.addEventListener('message', (e)=>{
+    const d = e.data || {};
+    if(d.type !== 'notif-click') return;
+    if(d.id && rtOpenById(d.id)) return;
+    if(d.view) rtGoTo(d.view);
+  });
+
+  // jaring pengaman: kalau koneksi tak kunjung pulih, coba lagi; tunda gambar-ulang yang tertahan
+  setInterval(()=>{
+    if(rtPendingRender && !rtUserBusy()) rtRequestRender();
+    if(document.visibilityState !== 'visible' || !navigator.onLine) return;
+    if(rtState !== 'live'){
+      if((Date.now() - rtStateSince) > 45000) rtReconnect();
+      else rtCatchUp('pengaman');
+    }
+  }, 10000);
+
+  setTimeout(rtMaybePromptPermission, 10000);
+}
+
+// Semua pemanggilan di bawah ini (render tampilan awal, tarik data cloud, dst) baru
+// dijalankan SETELAH login berhasil — lihat pemanggilan initAppAfterAuth() di paling
+// bawah file (dipanggil langsung kalau sesi login tersimpan masih valid, atau dari
+// listener submit form login kalau belum).
+function initAppAfterAuth(){
+  navigate(jobs.length ? 'beranda' : 'beranda');
+
+  // Cek status auto-selesai tugas begitu app dibuka, lalu ulangi tiap 1 menit
+  // supaya tugas yang lewat pukul 23.59 tetap otomatis tertandai selesai meski
+  // aplikasi dibiarkan terbuka tanpa berpindah menu.
+  autoUpdateTaskStatuses();
+  setInterval(()=>{
+    if(autoUpdateTaskStatuses() && currentView==='tugas') navigate('tugas');
+  }, 60000);
+
+  // Cek Status Pembayaran job yang harus otomatis jadi "Lunas" begitu app dibuka,
+  // lalu ulangi tiap 1 menit supaya job yang lewat pukul 23.59 di hari job itu tetap
+  // otomatis tertandai Lunas meski aplikasi dibiarkan terbuka tanpa berpindah menu.
+  autoUpdateJobPaymentStatuses();
+  setInterval(()=>{
+    if(autoUpdateJobPaymentStatuses() && currentView==='daftar') navigate('daftar');
+  }, 60000);
+
+  // Selagi halaman Pembagian Tugas sedang dibuka, tarik ulang data dari cloud secara
+  // berkala supaya tugas baru / perubahan status dari device lain (Admin atau anggota
+  // Tim lain) ikut muncul tanpa harus menutup & membuka ulang aplikasi.
+  // ⚠️ Kalau logika penarikan data tugas di sini diubah lagi (interval waktunya,
+  // caranya, dsb), ingat catat juga di CHANGELOG + naikkan APP_VERSION — lihat
+  // aturan wajib di paling atas file ini.
+  setInterval(()=>{
+    if(currentView==='tugas'){
+      pullFromCloud().then(changed=>{ if(changed && currentView==='tugas') refreshView(); });
+    }
+  }, 20000);
+
+  // Notifikasi: hitung badge begitu app dibuka, lalu cek apakah perlu
+  // menampilkan pop-up "Apa yang Baru" (hanya muncul kalau memang ada
+  // pembaruan versi sejak terakhir kali device ini membuka web).
+  renderNotifBadge();
+  setTimeout(checkAppUpdatePopup, 900);
+
+  // Setelah tampilan awal (dari cache lokal) muncul, tarik versi terbaru dari cloud
+  // supaya data yang diinput dari device lain ikut muncul di sini.
+  pullFromCloud().then((changed)=>{
+    if(changed){ navigate(currentView); renderNotifBadge(); }
+  });
+
+  // Tarik juga daftar Saran & Penilaian dari klien (tabel Supabase terpisah) supaya
+  // badge notifikasi & menu "Saran & Penilaian" langsung menampilkan data terbaru.
+  pullUlasanFromCloud();
+
+  // Nyalakan notifikasi real-time (Supabase Realtime) — lihat bagian "NOTIFIKASI REAL-TIME".
+  rtStart();
+}
+
+// Kalau sesi login sebelumnya masih tersimpan & valid, langsung masuk tanpa perlu
+// login ulang. Kalau belum, gerbang login (#authGate) tetap tampil menunggu submit.
+if(checkAuthSession()){
+  document.getElementById('authGate')?.remove();
+  applyRoleToUI();
+  initAppAfterAuth();
+}
+</script>
+<!-- ========================= PWA (bisa dihapus tanpa mengganggu aplikasi) ========================= -->
+<script>
+(function(){
+  'use strict';
+
+  /* 1) Daftarkan service worker (hanya jalan di HTTPS / localhost) */
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js', {scope:'./'}).catch(function(err){
+        console.warn('Service worker gagal didaftarkan:', err);
+      });
+    });
+  }
+
+  /* 2) Bar kecil di bawah layar (dipakai untuk ajakan pasang & info versi baru) */
+  var css = document.createElement('style');
+  css.textContent =
+    '.pwa-bar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:1000;' +
+    'max-width:520px;margin:0 auto;background:#1c1a12;color:#f4ecd0;border:1px solid rgba(244,217,62,.45);' +
+    'border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;' +
+    'font:500 13px/1.4 Poppins,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.35)}' +
+    '.pwa-bar .pwa-msg{flex:1 1 200px}' +
+    '.pwa-bar button{border:0;border-radius:999px;padding:8px 14px;font:600 12.5px Poppins,sans-serif;cursor:pointer}' +
+    '.pwa-bar .pwa-go{background:linear-gradient(135deg,#F4D93E,#D4AF00);color:#231f0f}' +
+    '.pwa-bar .pwa-no{background:transparent;color:#d8c98a;border:1px solid rgba(255,255,255,.18)}';
+  document.head.appendChild(css);
+
+  function showBar(message, goLabel, onGo, noLabel, onNo){
+    var bar = document.createElement('div');
+    bar.className = 'pwa-bar';
+    bar.setAttribute('role', 'status');
+    var msg = document.createElement('div'); msg.className = 'pwa-msg'; msg.textContent = message;
+    bar.appendChild(msg);
+    if(goLabel){
+      var go = document.createElement('button'); go.type = 'button'; go.className = 'pwa-go'; go.textContent = goLabel;
+      go.addEventListener('click', function(){ bar.remove(); onGo && onGo(); });
+      bar.appendChild(go);
+    }
+    var no = document.createElement('button'); no.type = 'button'; no.className = 'pwa-no'; no.textContent = noLabel || 'Nanti';
+    no.addEventListener('click', function(){ bar.remove(); onNo && onNo(); });
+    bar.appendChild(no);
+    document.body.appendChild(bar);
+    return bar;
+  }
+
+  /* 3) Ajakan "Tambahkan ke Layar Utama" */
+  var DISMISS_KEY = 'kaoneMotret_pwaInstallDismissed_v1';
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  function recentlyDismissed(){
+    try{ var t = Number(localStorage.getItem(DISMISS_KEY)||0); return t && (Date.now()-t) < 14*24*60*60*1000; }
+    catch(e){ return false; }
+  }
+  function markDismissed(){ try{ localStorage.setItem(DISMISS_KEY, String(Date.now())); }catch(e){} }
+
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferredPrompt = e;
+    if(isStandalone || recentlyDismissed()) return;
+    setTimeout(function(){
+      if(!deferredPrompt) return;
+      showBar('Pasang Kaone Motret di layar utama supaya bisa dibuka seperti aplikasi.', 'Pasang', function(){
+        var p = deferredPrompt; deferredPrompt = null;
+        p.prompt();
+        p.userChoice.finally(markDismissed);
+      }, 'Nanti', markDismissed);
+    }, 4000);
+  });
+  window.addEventListener('appinstalled', function(){ deferredPrompt = null; });
+
+  // iPhone/iPad (Safari) tidak punya prompt otomatis → beri petunjuk manual
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if(isIOS && !isStandalone && !recentlyDismissed()){
+    setTimeout(function(){
+      showBar('Untuk memasang: ketuk tombol Bagikan (kotak dengan panah ke atas), lalu pilih "Tambah ke Layar Utama".',
+              null, null, 'Mengerti', markDismissed);
+    }, 5000);
+  }
+
+  /* 4) Info versi baru — membandingkan APP_VERSION di index.html terbaru dengan yang sedang berjalan.
+        Jadi tetap ikuti kebiasaan: naikkan APP_VERSION setiap update. */
+  var lastCheck = 0, updateShown = false;
+  function checkForNewVersion(){
+    if(updateShown || !navigator.onLine || Date.now() - lastCheck < 60*1000) return;
+    lastCheck = Date.now();
+    fetch('index.html?v=' + Date.now(), {cache:'no-store'})
+      .then(function(r){ return r.ok ? r.text() : ''; })
+      .then(function(txt){
+        var m = txt.match(/const\s+APP_VERSION\s*=\s*'([^']+)'/);
+        var current; try{ current = APP_VERSION; }catch(e){ return; }
+        if(m && m[1] !== current){
+          updateShown = true;
+          showBar('Versi baru tersedia (' + m[1] + '). Muat ulang untuk memakainya.', 'Muat Ulang',
+                  function(){ location.reload(); }, 'Nanti');
+        }
+      })
+      .catch(function(){});
+  }
+  setTimeout(checkForNewVersion, 6000);
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible') checkForNewVersion(); });
+  setInterval(checkForNewVersion, 15*60*1000);
+})();
+</script>
+
+</body>
+</html>

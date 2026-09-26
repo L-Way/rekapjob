@@ -1371,10 +1371,13 @@
   html{
     -webkit-text-size-adjust:100%; text-size-adjust:100%;
     scroll-behavior:smooth;
+    overflow-x:hidden;
+    max-width:100%;
   }
   body{
     -webkit-tap-highlight-color:transparent;
     overflow-x:hidden;
+    max-width:100%;
     /* Ruang aman bawah untuk iPhone dengan home-indicator */
     padding-bottom:calc(60px + env(safe-area-inset-bottom, 0px));
   }
@@ -1414,10 +1417,12 @@
     scroll-behavior:smooth; scroll-padding:0 12px;
     background:rgba(255,255,255,.05); border-radius:16px; padding:4px;
     border:1px solid rgba(255,255,255,.07);
+    position:relative;
   }
   nav.mainnav button{
     border:none; background:transparent; color:#ddd0a4;
     scroll-snap-align:center;
+    position:relative; z-index:1;
   }
   nav.mainnav button:focus{outline:none;}
   nav.mainnav button:focus-visible{outline:2px solid var(--gold-light); outline-offset:2px;}
@@ -1429,6 +1434,29 @@
     transform:none;
   }
   nav.mainnav button.active:hover{background:linear-gradient(135deg,var(--gold-light),var(--gold)); color:#231f0f;}
+
+  /* ---------- 2b. INDIKATOR TAB "BERJALAN" + TRANSISI HALAMAN ----------
+     Pil emas kecil yang meluncur dari tombol tab lama ke tombol tab baru
+     tiap kali berpindah menu (bukan cuma berganti warna instan), supaya
+     terasa seperti "berjalan pindah" menyusuri strip menu. Posisinya
+     dihitung & digerakkan oleh updateNavIndicator() di JS. Isi #app
+     sendiri juga masuk dengan animasi geser+pudar searah perpindahan
+     tabnya (lihat playAppTransition() di JS). */
+  .nav-indicator{
+    position:absolute; top:4px; bottom:4px; left:0; width:0;
+    border-radius:999px;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold));
+    box-shadow:0 4px 14px rgba(212,175,0,.35);
+    opacity:0; z-index:0; pointer-events:none;
+    transition:transform .34s cubic-bezier(.22,.68,0,1.01), width .34s cubic-bezier(.22,.68,0,1.01), opacity .2s ease;
+  }
+  .nav-indicator.show{opacity:1;}
+  @keyframes navContentInRight{ from{opacity:0; transform:translateX(26px);} to{opacity:1; transform:translateX(0);} }
+  @keyframes navContentInLeft{ from{opacity:0; transform:translateX(-26px);} to{opacity:1; transform:translateX(0);} }
+  @keyframes navContentInFade{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  #app.nav-anim-right{animation:navContentInRight .34s cubic-bezier(.22,.68,0,1.01) both;}
+  #app.nav-anim-left{animation:navContentInLeft .34s cubic-bezier(.22,.68,0,1.01) both;}
+  #app.nav-anim-fade{animation:navContentInFade .28s ease both;}
 
   /* ---------- 3. TOMBOL "NAIK KE ATAS" ---------- */
   .to-top-btn{
@@ -1500,7 +1528,14 @@
     max-width:min(420px, calc(100vw - 32px)); text-align:center; line-height:1.45;
   }
   .copyright-bar{
-    padding-bottom:calc(18px + env(safe-area-inset-bottom, 0px));
+    /* Body punya padding-bottom 60px+safe-area untuk ruang tombol "Naik ke Atas".
+       Dulu ruang itu tersisa polos (warna krem) tepat di bawah bar gelap ini,
+       membuat footer terlihat "mengambang"/naik, terpisah dari tepi bawah layar.
+       Sekarang bar gelapnya sendiri yang melebar mengisi ruang itu (lewat
+       margin-bottom negatif + padding-bottom yang menutupinya), jadi footer
+       selalu menempel rapat sampai ke tepi bawah layar. */
+    margin-bottom:calc(-1 * (60px + env(safe-area-inset-bottom, 0px)));
+    padding-bottom:calc(18px + 60px + env(safe-area-inset-bottom, 0px));
   }
 
   /* ---------- 5. MODAL: JADI "BOTTOM SHEET" DI HP ---------- */
@@ -2076,6 +2111,7 @@
   </div>
   <div class="mainnav-shell" id="mainNavShell">
   <nav class="mainnav" id="mainNav">
+    <span class="nav-indicator" id="navIndicator" aria-hidden="true"></span>
     <button data-view="beranda">Beranda</button>
     <button data-view="daftar">Daftar Job</button>
     <button data-view="kalender">Kalender Job</button>
@@ -2666,7 +2702,7 @@ function bangunPesanSelesai(j){
 }
 function pesanSelesaiPanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="selesai">
-    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai tombol "Kabari Klien" di Detail Job saat Proses Edit dan Proses Cetak sudah Selesai. Isinya masih bisa diedit sebelum dikirim.</p>
+    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai tombol "Kabari Klien" di Detail Job saat Proses Cetak sudah Selesai. Isinya masih bisa diedit sebelum dikirim.</p>
     <textarea id="pesanSelesaiTpl" rows="11" style="width:100%">${escapeHtml(PESAN_SELESAI_TPL)}</textarea>
     <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {acara} {tanggal} {paket} {deskripsiPaket} {sisa} {tagihan} {ajakan} {maps}. {tagihan} hanya muncul kalau belum lunas — berisi pengingat sisa pembayaran, bukan info tempat bayar (pelunasan biasanya sudah dilakukan di hari H acara). {ajakan} berisi ajakan menjemput foto. {maps} berisi link Google Maps lokasi Kaone Motret, dari titik yang sama dengan acuan hitung jarak.</div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
@@ -2758,7 +2794,7 @@ function switchWaTplTab(key){
 
 /* ---- Kotak "Foto sudah selesai" (otomatis, kondisional) di Detail Job ---- */
 function waSelesaiBoxHtml(j){
-  if(j.prosesEdit!=='Selesai' || j.prosesCetak!=='Selesai') return '';
+  if(j.prosesCetak!=='Selesai') return '';
   if((j.pengiriman||'').startsWith('Sudah')) return '';
   const adaNo=!!waDigits(j.noWhatsapp);
   const kapan=j.waSelesaiAt ? new Date(j.waSelesaiAt).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
@@ -4554,6 +4590,44 @@ document.getElementById('mainNav')?.addEventListener('scroll', updateNavScrollHi
 window.addEventListener('resize', updateNavScrollHint, {passive:true});
 setTimeout(updateNavScrollHint, 200);
 
+/* ---------- Pil indikator tab yang "berjalan" ke tombol aktif ----------
+   Dipanggil tiap kali tab aktif berganti (lewat navigate()) dan saat ukuran
+   layar berubah (lebar/tinggi tombol bisa berubah di breakpoint tertentu).
+   animate=false dipakai untuk menaruh posisinya secara instan tanpa
+   meluncur (mis. saat aplikasi baru dibuka atau sekadar menyesuaikan ukuran
+   layar) — meluncur beneran hanya terjadi saat memang berpindah tab. */
+function updateNavIndicator(animate){
+  const nav = document.getElementById('mainNav');
+  const indicator = document.getElementById('navIndicator');
+  if(!nav || !indicator) return;
+  const activeBtn = nav.querySelector('button.active');
+  if(!activeBtn){ indicator.classList.remove('show'); return; }
+  if(animate===false) indicator.style.transition = 'none';
+  indicator.style.width = activeBtn.offsetWidth + 'px';
+  indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+  indicator.classList.add('show');
+  if(animate===false){
+    void indicator.offsetWidth; // paksa terapkan posisi baru dulu sebelum transisi dikembalikan
+    indicator.style.transition = '';
+  }
+}
+window.addEventListener('resize', ()=>updateNavIndicator(false), {passive:true});
+
+/* ---------- Animasi masuk untuk isi halaman (#app) saat berpindah tab ----------
+   dir: 'right' kalau tab baru posisinya di sebelah kanan tab lama di strip menu
+   (jadi kontennya "berjalan masuk" dari kanan), 'left' kalau sebaliknya. Kalau
+   dir bukan salah satu itu (mis. hanya me-refresh tab yang sama), tidak ada
+   animasi sama sekali supaya auto-refresh berkala tidak ikut "berkedip". */
+function playAppTransition(dir){
+  const app = document.getElementById('app');
+  if(!app) return;
+  app.classList.remove('nav-anim-right','nav-anim-left','nav-anim-fade');
+  void app.offsetWidth; // paksa reflow supaya animasi bisa diputar ulang tiap kali
+  if(dir==='right') app.classList.add('nav-anim-right');
+  else if(dir==='left') app.classList.add('nav-anim-left');
+  else app.classList.add('nav-anim-fade');
+}
+
 /* ---------- Tombol "kembali ke atas" ----------
    Halaman Daftar Job / Rekap bisa sangat panjang di HP. Tombol ini muncul sendiri
    setelah digulir cukup jauh, lalu hilang lagi saat sudah berada di bagian atas. */
@@ -4583,9 +4657,21 @@ function navigate(view){
   // mengubah data job (Pulihkan Data, Hapus Semua, Import Excel, dsb.) di
   // dalamnya tetap dikunci sendiri lewat class admin-only.
   if(!isAdmin() && view==='form') view = 'beranda';
+  // Urutan ini dipakai untuk menentukan arah animasi "berjalan pindah" (lihat
+  // playAppTransition): kalau tab tujuan ada di sebelah kanan tab sebelumnya
+  // di strip menu, halaman baru masuk dari kanan, begitu juga sebaliknya.
+  const NAV_ORDER = ['beranda','daftar','kalender','rekap','tugas','laporan','ulasan','pengaturan'];
+  const prevView = currentView;
+  const isTabSwitch = prevView !== view;
   currentView = view;
   document.querySelectorAll('#mainNav button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
   render();
+  if(isTabSwitch){
+    const fromIdx = NAV_ORDER.indexOf(prevView), toIdx = NAV_ORDER.indexOf(view);
+    const dir = (fromIdx===-1 || toIdx===-1) ? null : (toIdx>fromIdx ? 'right' : 'left');
+    playAppTransition(dir);
+  }
+  updateNavIndicator(isTabSwitch);
   scrollActiveNavIntoView();
   window.scrollTo({top:0,behavior:'smooth'});
   if(view==='ulasan') pullUlasanFromCloud();
@@ -6629,7 +6715,7 @@ function downloadJobDetailImage(jobId){
   // pengambilan gambar, lalu dihapus lagi — supaya tidak mengganggu tampilan di layar
   // dan hasil unduhannya selalu presisi 1080x1920 apa pun ukuran layar penggunanya.
   const holder = document.createElement('div');
-  holder.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;z-index:-1;';
+  holder.style.cssText = 'position:fixed;top:-10000px;left:-10000px;opacity:0;pointer-events:none;z-index:-1;';
   holder.innerHTML = buildJobPosterHtml(j);
   document.body.appendChild(holder);
   const posterEl = holder.querySelector('#jobPosterExport');
@@ -6724,7 +6810,7 @@ function downloadJobStoryImage(jobId){
   toast('Menyiapkan gambar story...');
 
   const holder = document.createElement('div');
-  holder.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;z-index:-1;';
+  holder.style.cssText = 'position:fixed;top:-10000px;left:-10000px;opacity:0;pointer-events:none;z-index:-1;';
   holder.innerHTML = buildJobStoryHtml(j);
   document.body.appendChild(holder);
   const storyEl = holder.querySelector('#jobStoryExport');
@@ -7064,7 +7150,7 @@ function downloadKwitansiImage(jobId){
   // Sama seperti poster Detail Job/Story: dirender di luar tampilan (opacity:0) hanya
   // untuk keperluan pengambilan gambar, lalu dihapus lagi begitu selesai diunduh.
   const holder = document.createElement('div');
-  holder.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;z-index:-1;';
+  holder.style.cssText = 'position:fixed;top:-10000px;left:-10000px;opacity:0;pointer-events:none;z-index:-1;';
   holder.innerHTML = buildKwitansiPosterHtml(j);
   document.body.appendChild(holder);
   const posterEl = holder.querySelector('#kwitansiPosterExport');
@@ -9174,7 +9260,7 @@ function downloadUlasanImage(id){
   // Poster dirender di luar tampilan (opacity:0) khusus untuk pengambilan gambar, supaya
   // hasil unduhannya selalu presisi 1080x1920 apa pun ukuran layar penggunanya.
   const holder = document.createElement('div');
-  holder.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;z-index:-1;';
+  holder.style.cssText = 'position:fixed;top:-10000px;left:-10000px;opacity:0;pointer-events:none;z-index:-1;';
   holder.innerHTML = buildUlasanPosterHtml(u);
   document.body.appendChild(holder);
   const posterEl = holder.querySelector('#ulasanPosterExport');
@@ -9711,31 +9797,36 @@ function downloadPosterImage(includeKeterangan){
     return;
   }
   const poster = document.getElementById('calendarPoster');
-  const inner = document.getElementById('posterScaleInner');
-  // Sejak ada jalur swipe, posterScaleInner dibungkus satu lapis tambahan
-  // (.cal-swipe-slide) yang juga overflow:hidden — ikut dilonggarkan sementara
-  // supaya poster ukuran penuh 1080×1920 tidak ikut terpotong saat di-capture.
-  const slide = inner?.closest('.cal-swipe-slide');
-  const restore = ()=>{
-    if(inner){ inner.style.overflow = ''; }
-    if(slide){ slide.style.overflow = ''; }
-    scalePoster(); // scalePoster memasang kembali skala layar + blok keterangan
-  };
+  if(!poster) return;
+  toast('Menyiapkan gambar kalender...');
+
+  // Poster untuk diunduh dibuat dari SALINAN yang dirender jauh di luar tampilan
+  // (position:fixed di luar layar), pada ukuran asli 1080×1920 — sama seperti
+  // poster Detail Job/Story/Kwitansi/Testimoni. Poster ASLI yang sedang tampil
+  // di layar (skalanya sudah diperkecil oleh scalePoster()) sama sekali tidak
+  // disentuh/diubah.
+  // ⚠️ Dulu versi ini membesarkan poster ASLI langsung di tempatnya (mengubah
+  // transform & overflow induknya) untuk pengambilan gambar. Karena html2canvas
+  // butuh waktu, di sebagian HP itu bisa membuat lebar halaman "tersangkut" lebih
+  // lebar dari layar (muncul celah kosong di sisi kanan pada SEMUA halaman) sampai
+  // halaman dimuat ulang. Dengan salinan di luar tampilan seperti ini, hal itu
+  // tidak bisa lagi terjadi.
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:fixed;top:-10000px;left:-10000px;opacity:0;pointer-events:none;z-index:-1;';
+  const clone = poster.cloneNode(true);
+  clone.style.transform = 'none';
+  clone.style.zoom = '';
+  holder.appendChild(clone);
+  document.body.appendChild(holder);
+  // Kalau includeKeterangan=false: sembunyikan blok keterangan & kembalikan statistik
+  // ke posisi tepat di bawah grid (perilaku tombol unduh biasa, sama seperti semula).
+  // Kalau includeKeterangan=true: blok keterangan ikut ditampilkan & statistik
+  // otomatis digeser ke bawahnya, supaya keduanya ikut ter-capture di gambar.
+  positionPosterStats(clone, includeKeterangan);
+  const cleanup = ()=> holder.remove();
   try{
-    // Selama pengambilan gambar, poster dikembalikan ke ukuran asli 1080×1920 agar
-    // hasil unduhan selalu tajam & presisi — tidak terpengaruh ukuran layar HP.
-    poster.style.transform = 'none';
-    poster.style.zoom = '';
-    if(inner){ inner.style.overflow = 'visible'; }
-    if(slide){ slide.style.overflow = 'visible'; }
-    // Kalau includeKeterangan=false: sembunyikan blok keterangan & kembalikan statistik
-    // ke posisi tepat di bawah grid (perilaku tombol unduh biasa, sama seperti semula).
-    // Kalau includeKeterangan=true: blok keterangan ikut ditampilkan & statistik
-    // otomatis digeser ke bawahnya, supaya keduanya ikut ter-capture di gambar.
-    positionPosterStats(poster, includeKeterangan);
-    toast('Menyiapkan gambar kalender...');
-    html2canvas(poster, {width:1080, height:1920, scale:1, backgroundColor:'#fffef9'}).then(canvas=>{
-      restore();
+    html2canvas(clone, {width:1080, height:1920, scale:1, backgroundColor:'#fffef9'}).then(canvas=>{
+      cleanup();
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
       a.download = includeKeterangan
@@ -9743,13 +9834,13 @@ function downloadPosterImage(includeKeterangan){
         : `kalender-job-${MONTH_NAMES[calMonth]}-${calYear}.png`;
       a.click();
     }).catch(()=>{
-      restore();
+      cleanup();
       alert('Gagal membuat gambar. Pastikan koneksi internet aktif (untuk memuat font) lalu coba lagi.');
     });
   }catch(err){
     // Jaga-jaga bila html2canvas melempar error secara langsung (bukan lewat Promise),
     // supaya tampilan poster di layar tidak ikut rusak.
-    restore();
+    cleanup();
     alert('Gagal membuat gambar. Pastikan koneksi internet aktif lalu coba lagi.');
   }
 }
@@ -9805,18 +9896,28 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.9.1'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.10.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
   {
+    version: '1.10.0',
+    tanggal: '27 September 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Berpindah menu (Beranda, Rekap, Pengaturan, dst.) sekarang terasa lebih halus: ada pil emas kecil di strip menu yang "berjalan" ke tombol yang baru dipilih, dan halaman ikut masuk dengan animasi geser mengikuti arah menunya.' },
+      { kategori: 'Perbaikan', teks: 'Footer di paling bawah halaman tidak lagi terlihat "mengambang"/naik dengan celah kosong di bawahnya — sekarang menempel rapat sampai ke tepi bawah layar.' },
+      { kategori: 'Perbaikan', teks: 'Diperbaiki bug di sebagian HP yang membuat muncul celah kosong memanjang di sisi kanan layar (termasuk di halaman Pengaturan) setelah memakai fitur Unduh Gambar Kalender, sampai halaman dimuat ulang.' },
+    ]
+  },
+  {
     version: '1.9.1',
     tanggal: '26 September 2026',
     items: [
       { kategori: 'Perbaikan', teks: 'Judul acara di "Tambah ke Google Calendar" dan file .ics yang diunduh tidak lagi menampilkan kode aneh di depan nama desa — sekarang tampil rapi dengan ikon kamera 📷.' },
       { kategori: 'Perbaikan', teks: 'Kalender Job tidak lagi terlihat "berkedip" dan layar tidak lagi otomatis melompat ke atas saat berpindah bulan, baik lewat tombol panah maupun geser (swipe) jari.' },
+      { kategori: 'Peningkatan', teks: 'Kotak "Kabari Klien" (pesan WhatsApp ajakan menjemput foto) di Detail Job sekarang muncul begitu Proses Cetak sudah Selesai, tidak perlu menunggu Proses Edit ikut Selesai.' },
     ]
   },
   {

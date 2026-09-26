@@ -6084,7 +6084,13 @@ function completeCalSwipe(track, w, dir){
     calMonth += dir;
     if(calMonth < 0){ calMonth = 11; calYear--; }
     else if(calMonth > 11){ calMonth = 0; calYear++; }
-    navigate('kalender');
+    // PENTING: pakai refreshView(), BUKAN navigate('kalender'). navigate() memang
+    // sengaja melakukan window.scrollTo({top:0,...}) karena dipakai untuk BERPINDAH
+    // menu — kalau dipakai di sini (cuma pindah bulan di dalam menu Kalender Job yang
+    // sama), efeknya jadi terlihat seperti "berkedip" (layar tiba-tiba melompat ke atas)
+    // setiap kali digeser ke bulan lain. refreshView() me-render ulang tampilan yang
+    // sama tapi mempertahankan posisi scroll pengguna.
+    refreshView();
   };
   track.addEventListener('transitionend', finish, {once:true});
 }
@@ -7105,7 +7111,11 @@ function nextDayCompact(iso){
 function jobEventDetails(j){
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Acara') : (j.jenisAcara||'Acara');
   const lokasiSingkat = j.desa || '-'; // cukup nama desa saja
-  const title = `${ic('camera')} ${lokasiSingkat} - ${jenis}`;
+  // PENTING: ic('camera') menghasilkan tag <svg> (HTML) — hanya aman dipakai di tempat
+  // yang dirender sebagai HTML. Judul ini dipakai di Google Calendar & file .ics, yang
+  // menampilkan teks polos, jadi tag SVG-nya akan muncul sebagai teks mentah kalau
+  // dipakai di sini. Pakai emoji kamera biasa (karakter teks) sebagai gantinya.
+  const title = `📷 ${lokasiSingkat} - ${jenis}`;
   const location = lokasiSingkat;
   // Gabungkan nama paket & deskripsi paket menjadi catatan acara di Google Calendar / ICS
   const detailLines = [];
@@ -9537,8 +9547,11 @@ function attachHandlers(){
     observePosterContainer();
     schedulePosterRescale();
     setupCalendarSwipe();
-    document.getElementById('calPrev')?.addEventListener('click', ()=>{ calMonth--; if(calMonth<0){calMonth=11;calYear--;} navigate('kalender'); });
-    document.getElementById('calNext')?.addEventListener('click', ()=>{ calMonth++; if(calMonth>11){calMonth=0;calYear++;} navigate('kalender'); });
+    // Sama seperti di completeCalSwipe(): pakai refreshView() (bukan navigate('kalender'))
+    // supaya tombol panah bulan tidak memicu window.scrollTo(top:0) yang terlihat seperti
+    // "berkedip" — cukup render ulang kalender di posisi scroll yang sama.
+    document.getElementById('calPrev')?.addEventListener('click', ()=>{ calMonth--; if(calMonth<0){calMonth=11;calYear--;} refreshView(); });
+    document.getElementById('calNext')?.addEventListener('click', ()=>{ calMonth++; if(calMonth>11){calMonth=0;calYear++;} refreshView(); });
     document.getElementById('btnDownloadPoster')?.addEventListener('click', ()=>downloadPosterImage(false));
     document.getElementById('btnDownloadPosterKeterangan')?.addEventListener('click', ()=>downloadPosterImage(true));
 
@@ -9792,12 +9805,20 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.9.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.9.1'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.9.1',
+    tanggal: '26 September 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Judul acara di "Tambah ke Google Calendar" dan file .ics yang diunduh tidak lagi menampilkan kode aneh di depan nama desa — sekarang tampil rapi dengan ikon kamera 📷.' },
+      { kategori: 'Perbaikan', teks: 'Kalender Job tidak lagi terlihat "berkedip" dan layar tidak lagi otomatis melompat ke atas saat berpindah bulan, baik lewat tombol panah maupun geser (swipe) jari.' },
+    ]
+  },
   {
     version: '1.9.0',
     tanggal: '25 September 2026',

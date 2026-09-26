@@ -4448,7 +4448,10 @@ function openJobMaps(jobId){
   toast('Job ini belum ada Titik Koordinat maupun Link Maps');
 }
 
-/* ---- Estimasi jarak jalan real (rute kendaraan via OSRM) — async + cache + timeout ---- */
+/* ---- Estimasi jarak & waktu tempuh real (rute kendaraan via OSRM) — async + cache + timeout ----
+   OSRM mengembalikan distance (meter) SEKALIGUS duration (detik) dalam satu respons
+   yang sama, jadi jarak & perkiraan waktu tempuh dihitung dari satu kali panggilan
+   API yang sama (tidak ada panggilan tambahan). Keduanya disimpan bersama di cache. */
 function loadOsrmCache(){
   try{ return JSON.parse(localStorage.getItem(OSRM_CACHE_KEY)) || {}; }
   catch(e){ return {}; }
@@ -4460,26 +4463,35 @@ function saveOsrmCache(cache){
 function osrmCacheKey(c){
   return c.lat.toFixed(6) + ',' + c.lng.toFixed(6);
 }
-// Ambil estimasi jarak jalan dari CACHE SAJA (sinkron, tanpa memanggil API). Dipakai
-// di tempat yang harus render langsung tanpa menunggu (poster/story/salin teks) —
-// kalau koordinat ini belum pernah dihitung/cache sudah basi, hasilnya null.
-function getCachedJarakJalanKm(j){
+// Ambil estimasi jarak & waktu tempuh dari CACHE SAJA (sinkron, tanpa memanggil API).
+// Dipakai di tempat yang harus render langsung tanpa menunggu (poster/story/salin
+// teks/form saat dibuka lagi) — hasilnya {km, durMin}, atau null kalau koordinatnya
+// belum pernah dihitung, cache-nya sudah basi, ATAU masih format lama (cuma punya
+// km, belum punya durMin) — supaya otomatis dihitung ulang sekali saja lalu lengkap
+// seterusnya.
+function getCachedJarakTempuh(j){
   const c = parseCoordString(j && j.koordinat);
   if(!c) return null;
   const entry = loadOsrmCache()[osrmCacheKey(c)];
   if(!entry) return null;
   if(Date.now() - entry.ts > OSRM_CACHE_TTL_MS) return null; // cache basi, anggap belum ada
-  return entry.km;
+  if(typeof entry.km !== 'number' || typeof entry.durMin !== 'number') return null; // format lama, belum lengkap
+  return {km: entry.km, durMin: entry.durMin};
 }
-// Panggil API OSRM untuk estimasi jarak rute kendaraan (km). Pakai cache dulu kalau
-// ada; kalau tidak, fetch dengan timeout (AbortController) supaya tidak menggantung
-// selamanya kalau koneksi lambat/API tidak merespons. Berhasil → otomatis disimpan
-// ke cache. Gagal/timeout/koordinat kosong → null (gagal senyap, UI tetap fallback
-// ke jarak garis lurus).
-async function fetchJarakJalanKm(j){
+// Versi ringkas — dipakai di banyak tempat lama yang cuma butuh jaraknya saja (km).
+function getCachedJarakJalanKm(j){
+  const r = getCachedJarakTempuh(j);
+  return r ? r.km : null;
+}
+// Panggil API OSRM untuk estimasi jarak & waktu tempuh rute kendaraan sekaligus
+// ({km, durMin}). Pakai cache dulu kalau ada & lengkap; kalau tidak, fetch dengan
+// timeout (AbortController) supaya tidak menggantung selamanya kalau koneksi lambat/
+// API tidak merespons. Berhasil → otomatis disimpan ke cache. Gagal/timeout/koordinat
+// kosong → null (gagal senyap, UI tetap fallback ke tampilan "-"/"Tidak tersedia").
+async function fetchJarakTempuh(j){
   const c = parseCoordString(j && j.koordinat);
   if(!c) return null;
-  const cached = getCachedJarakJalanKm(j);
+  const cached = getCachedJarakTempuh(j);
   if(cached!==null) return cached;
 
   const url = `${OSRM_BASE_URL}/${ORIGIN_COORD.lng},${ORIGIN_COORD.lat};${c.lng},${c.lat}?overview=false`;
@@ -4489,24 +4501,47 @@ async function fetchJarakJalanKm(j){
     const res = await fetch(url, {signal: controller.signal});
     if(!res.ok) return null;
     const data = await res.json();
-    const meters = data && data.routes && data.routes[0] && data.routes[0].distance;
-    if(typeof meters !== 'number') return null;
+    const route = data && data.routes && data.routes[0];
+    const meters = route && route.distance;
+    const detik = route && route.duration;
+    if(typeof meters !== 'number' || typeof detik !== 'number') return null;
     const km = meters / 1000;
+    const durMin = detik / 60;
     const cache = loadOsrmCache();
-    cache[osrmCacheKey(c)] = {km, ts: Date.now()};
+    cache[osrmCacheKey(c)] = {km, durMin, ts: Date.now()};
     saveOsrmCache(cache);
-    return km;
+    return {km, durMin};
   }catch(e){
     return null; // timeout (AbortError), offline, atau error API lainnya
   }finally{
     clearTimeout(timer);
   }
 }
+// Versi ringkas — dipakai di tempat lama yang cuma butuh jaraknya saja (km).
+async function fetchJarakJalanKm(j){
+  const r = await fetchJarakTempuh(j);
+  return r ? r.km : null;
+}
 
-/* ---- Format tampilan & saran transport (jarak real via OSRM) ---- */
+/* ---- Format tampilan & saran transport (jarak & waktu tempuh real via OSRM) ---- */
 function fmtJarakJalan(km){
   if(km===null || km===undefined || isNaN(km)) return '-';
   return km.toLocaleString('id-ID', {minimumFractionDigits:1, maximumFractionDigits:1}) + ' km (jarak real)';
+}
+// Perkiraan waktu tempuh dari menit → teks "X jam Y menit" (atau "Y menit" saja kalau
+// kurang dari 1 jam). Dibulatkan ke 5 menit terdekat supaya tidak terkesan terlalu
+// presisi — namanya juga perkiraan dari rute OSRM, kondisi lalu lintas nyata bisa beda.
+function fmtDurasiTempuh(durMin){
+  if(durMin===null || durMin===undefined || isNaN(durMin)) return '-';
+  let menit = Math.round(durMin / 5) * 5;
+  if(menit < 5) menit = 5; // minimal tampil 5 menit, jangan sampai "0 menit"
+  const jam = Math.floor(menit / 60);
+  const sisaMenit = menit % 60;
+  let teks;
+  if(jam<=0) teks = `${sisaMenit} menit`;
+  else if(sisaMenit===0) teks = `${jam} jam`;
+  else teks = `${jam} jam ${sisaMenit} menit`;
+  return `± ${teks} (perkiraan, tanpa kondisi lalu lintas)`;
 }
 // Saran tambahan biaya transport, dibulatkan ke Rp1.000 terdekat.
 function hitungSaranTransport(km){
@@ -4527,33 +4562,40 @@ function updateJarakCalc(){
 
   const elJalan = document.getElementById('jarakJalanText');
   const elJalanBiaya = document.getElementById('jarakJalanBiayaText');
+  const elDurasi = document.getElementById('durasiTempuhText');
   const reqId = ++jarakJalanReqId;
 
   if(!c){
     if(elJalan) elJalan.textContent = '-';
     if(elJalanBiaya) elJalanBiaya.textContent = '-';
+    if(elDurasi) elDurasi.textContent = '-';
     return;
   }
 
-  const cachedJalan = getCachedJarakJalanKm(job);
-  if(cachedJalan!==null){
-    if(elJalan) elJalan.textContent = fmtJarakJalan(cachedJalan);
-    if(elJalanBiaya) elJalanBiaya.textContent = fmtRp(hitungSaranTransport(cachedJalan));
+  const cachedTempuh = getCachedJarakTempuh(job);
+  if(cachedTempuh!==null){
+    if(elJalan) elJalan.textContent = fmtJarakJalan(cachedTempuh.km);
+    if(elJalanBiaya) elJalanBiaya.textContent = fmtRp(hitungSaranTransport(cachedTempuh.km));
+    if(elDurasi) elDurasi.textContent = fmtDurasiTempuh(cachedTempuh.durMin);
     return;
   }
 
   if(elJalan) elJalan.textContent = 'Menghitung…';
   if(elJalanBiaya) elJalanBiaya.textContent = '…';
-  fetchJarakJalanKm(job).then(kmJalan=>{
+  if(elDurasi) elDurasi.textContent = 'Menghitung…';
+  fetchJarakTempuh(job).then(hasil=>{
     if(reqId !== jarakJalanReqId) return; // sudah usang (ada input baru sesudahnya) — abaikan hasil ini
     const elJalan2 = document.getElementById('jarakJalanText');
     const elJalanBiaya2 = document.getElementById('jarakJalanBiayaText');
-    if(kmJalan===null){
+    const elDurasi2 = document.getElementById('durasiTempuhText');
+    if(hasil===null){
       if(elJalan2) elJalan2.textContent = 'Tidak tersedia (cek koneksi)';
       if(elJalanBiaya2) elJalanBiaya2.textContent = '-';
+      if(elDurasi2) elDurasi2.textContent = 'Tidak tersedia (cek koneksi)';
     }else{
-      if(elJalan2) elJalan2.textContent = fmtJarakJalan(kmJalan);
-      if(elJalanBiaya2) elJalanBiaya2.textContent = fmtRp(hitungSaranTransport(kmJalan));
+      if(elJalan2) elJalan2.textContent = fmtJarakJalan(hasil.km);
+      if(elJalanBiaya2) elJalanBiaya2.textContent = fmtRp(hitungSaranTransport(hasil.km));
+      if(elDurasi2) elDurasi2.textContent = fmtDurasiTempuh(hasil.durMin);
     }
   });
 }
@@ -4880,7 +4922,9 @@ function buildJobFormHtml(j){
   jobFormHonorTim = (d.honorTimList || []).map(x=>({userId:x.userId, nama:x.nama, nominal:Number(x.nominal)||0}));
   jobFormHonorTimLegacy = Number(d.honorTim)||0;
   const opt = (list,val)=>list.map(o=>`<option value="${o}" ${o===val?'selected':''}>${o}</option>`).join('');
-  const jarakAwalJalan = getCachedJarakJalanKm(d); // hanya dari cache dulu — fetch baru dipicu setelah form ini dipasang ke DOM (lihat bindJobFormEvents)
+  const jarakTempuhAwal = getCachedJarakTempuh(d); // hanya dari cache dulu — fetch baru dipicu setelah form ini dipasang ke DOM (lihat bindJobFormEvents)
+  const jarakAwalJalan = jarakTempuhAwal ? jarakTempuhAwal.km : null;
+  const durasiAwalTempuh = jarakTempuhAwal ? jarakTempuhAwal.durMin : null;
   const koordAwalValid = !!parseCoordString(d.koordinat);
 
   return `
@@ -4941,9 +4985,10 @@ function buildJobFormHtml(j){
           </div>
           <div class="field-hint">Format: Lintang, Bujur.</div>
           <div class="jarak-box">
-            <div class="jr-group-label">${ic('road')} Jarak Real (OSRM)</div>
+            <div class="jr-group-label">${ic('road')} Jarak &amp; Waktu Tempuh Real (OSRM)</div>
             <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="jarakJalanText">${jarakAwalJalan===null?(koordAwalValid?'Menghitung…':'-'):fmtJarakJalan(jarakAwalJalan)}</b></div>
             <div class="jr-row"><span>${ic('car')} Saran tambahan transport</span><b id="jarakJalanBiayaText">${jarakAwalJalan===null?(koordAwalValid?'…':'-'):fmtRp(hitungSaranTransport(jarakAwalJalan))}</b></div>
+            <div class="jr-row"><span>${ic('clock')} Perkiraan waktu tempuh</span><b id="durasiTempuhText">${durasiAwalTempuh===null?(koordAwalValid?'Menghitung…':'-'):fmtDurasiTempuh(durasiAwalTempuh)}</b></div>
           </div>
         </div>
       </div>
@@ -6495,15 +6540,19 @@ function openJobDetailModal(jobId){
   if(!j) return;
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
   const lokasiFull = [desaDisplay(j),j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
-  const jarakJalanCachedDetail = getCachedJarakJalanKm(j);
+  const jarakTempuhCachedDetail = getCachedJarakTempuh(j);
+  const jarakJalanCachedDetail = jarakTempuhCachedDetail ? jarakTempuhCachedDetail.km : null;
+  const durasiTempuhCachedDetail = jarakTempuhCachedDetail ? jarakTempuhCachedDetail.durMin : null;
   const koordDetailValid = !!parseCoordString(j.koordinat);
   // Kalau belum ada di cache tapi koordinatnya valid, tampilkan status "Menghitung…"
   // dulu — hasil aslinya akan menyusul async & disuntikkan ke DOM lewat id di bawah
-  // (lihat pemanggilan fetchJarakJalanKm setelah showModal(...)).
+  // (lihat pemanggilan fetchJarakTempuh setelah showModal(...)).
   const jarakJalanTeksAwal = jarakJalanCachedDetail!==null ? fmtJarakJalan(jarakJalanCachedDetail)
     : (koordDetailValid ? 'Menghitung…' : '-');
   const jarakJalanBiayaTeksAwal = jarakJalanCachedDetail!==null ? fmtRp(hitungSaranTransport(jarakJalanCachedDetail))
     : (koordDetailValid ? '…' : '-');
+  const durasiTempuhTeksAwal = durasiTempuhCachedDetail!==null ? fmtDurasiTempuh(durasiTempuhCachedDetail)
+    : (koordDetailValid ? 'Menghitung…' : '-');
   const sections = [
     {title:'Data Acara', rows:[
       ['Nama Klien', j.namaKlien||'-'],
@@ -6514,6 +6563,7 @@ function openJobDetailModal(jobId){
       ['Titik Koordinat', j.koordinat||'-'],
       ['Jarak dari Kaone Motret (Real)', jarakJalanTeksAwal, 'jdJarakJalanText'],
       ['Saran Transport', jarakJalanBiayaTeksAwal, 'jdJarakJalanBiayaText'],
+      ['Perkiraan Waktu Tempuh', durasiTempuhTeksAwal, 'jdDurasiTempuhText'],
       ['No. WhatsApp', j.noWhatsapp||'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
@@ -6593,16 +6643,19 @@ function openJobDetailModal(jobId){
   // duluan sebelum fetch selesai, elemen dengan id ini otomatis sudah tidak ada
   // di DOM lagi sehingga update-nya otomatis diabaikan (tidak error).
   if(jarakJalanCachedDetail===null && koordDetailValid){
-    fetchJarakJalanKm(j).then(kmJalan=>{
+    fetchJarakTempuh(j).then(hasil=>{
       const elText = document.getElementById('jdJarakJalanText');
       const elBiaya = document.getElementById('jdJarakJalanBiayaText');
-      if(!elText && !elBiaya) return; // modal sudah ditutup
-      if(kmJalan===null){
+      const elDurasi = document.getElementById('jdDurasiTempuhText');
+      if(!elText && !elBiaya && !elDurasi) return; // modal sudah ditutup
+      if(hasil===null){
         if(elText) elText.textContent = 'Tidak tersedia (cek koneksi)';
         if(elBiaya) elBiaya.textContent = '-';
+        if(elDurasi) elDurasi.textContent = 'Tidak tersedia (cek koneksi)';
       }else{
-        if(elText) elText.textContent = fmtJarakJalan(kmJalan);
-        if(elBiaya) elBiaya.textContent = fmtRp(hitungSaranTransport(kmJalan));
+        if(elText) elText.textContent = fmtJarakJalan(hasil.km);
+        if(elBiaya) elBiaya.textContent = fmtRp(hitungSaranTransport(hasil.km));
+        if(elDurasi) elDurasi.textContent = fmtDurasiTempuh(hasil.durMin);
       }
     });
   }
@@ -9909,6 +9962,7 @@ const CHANGELOG = [
       { kategori: 'Fitur', teks: 'Berpindah menu (Beranda, Rekap, Pengaturan, dst.) sekarang terasa lebih halus: ada pil emas kecil di strip menu yang "berjalan" ke tombol yang baru dipilih, dan halaman ikut masuk dengan animasi geser mengikuti arah menunya.' },
       { kategori: 'Perbaikan', teks: 'Footer di paling bawah halaman tidak lagi terlihat "mengambang"/naik dengan celah kosong di bawahnya — sekarang menempel rapat sampai ke tepi bawah layar.' },
       { kategori: 'Perbaikan', teks: 'Diperbaiki bug di sebagian HP yang membuat muncul celah kosong memanjang di sisi kanan layar (termasuk di halaman Pengaturan) setelah memakai fitur Unduh Gambar Kalender, sampai halaman dimuat ulang.' },
+      { kategori: 'Fitur', teks: 'Form Input/Edit Job dan Detail Job sekarang otomatis menampilkan perkiraan waktu tempuh (naik kendaraan) dari Kaone Motret ke lokasi acara, berdampingan dengan jarak dan saran transport yang sudah ada — otomatis muncul begitu Titik Koordinat diisi.' },
     ]
   },
   {

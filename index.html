@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Kaone Motret — Buku Job Fotografer</title>
+<title>Kaone Motret - Buku Job Fotografer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Italiana&family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -286,6 +286,49 @@
   .jarak-box .jr-divider{height:1px; background:rgba(180,150,0,.18); margin:2px 0;}
   .section-title{font-size:15px; font-weight:700; margin:26px 0 10px; color:#241f0f; display:flex; align-items:center; gap:8px;}
   .section-title:first-child{margin-top:0;}
+
+  /* Saklar on/off Diantar/Dijemput (form Job) + saklar sejenis lainnya */
+  .toggle-switch-row{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    padding:13px 16px; border:1.5px solid #e5ddc0; border-radius:12px; background:#fffef9;
+    transition:border-color .18s ease, background-color .18s ease;
+  }
+  .toggle-switch-row.is-on{border-color:var(--gold); background:var(--gold-pale);}
+  .toggle-switch-row .ts-label{display:flex; flex-direction:column; gap:2px; min-width:0;}
+  .toggle-switch-row .ts-label b{font-size:14px; color:#241f0f; font-family:'Fraunces',serif;}
+  .toggle-switch-row .ts-label span{font-size:11.5px; color:var(--ink-soft); line-height:1.4;}
+  .toggle-switch{position:relative; display:inline-flex; align-items:center; gap:10px; cursor:pointer; user-select:none; flex-shrink:0;}
+  .toggle-switch input{position:absolute; opacity:0; width:1px; height:1px;}
+  .toggle-switch .ts-track{
+    width:50px; height:28px; border-radius:999px; background:#d8cf9e; position:relative; flex-shrink:0;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.18); transition:background-color .22s ease;
+  }
+  .toggle-switch .ts-track::after{
+    content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%;
+    background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.28); transition:transform .22s cubic-bezier(.34,1.56,.64,1);
+  }
+  .toggle-switch input:checked + .ts-track{background:linear-gradient(135deg,var(--gold-light),var(--gold));}
+  .toggle-switch input:checked + .ts-track::after{transform:translateX(22px);}
+  .toggle-switch input:focus-visible + .ts-track{outline:2px solid var(--gold); outline-offset:2px;}
+  .toggle-switch .ts-state{font-size:12.5px; font-weight:700; color:#7a6f4a; min-width:58px; text-transform:uppercase; letter-spacing:.4px;}
+  .toggle-switch input:checked ~ .ts-state{color:#a3790a;}
+  /* Kotak estimasi ongkos jemput — senada dengan .jarak-box */
+  .ongkir-box{
+    background:var(--gold-pale); border-radius:10px; padding:12px 16px; margin-top:10px;
+    display:flex; flex-direction:column; gap:7px;
+  }
+  .ongkir-box .jr-row{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:12.5px; font-weight:600; color:#5c4a12;}
+  .ongkir-box .jr-row b{font-weight:700; color:#241f0f; white-space:nowrap;}
+  .ongkir-box .jr-row b.ongkir-gratis{color:var(--ok);}
+  .ongkir-box .jr-group-label{font-size:10.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--warn);}
+
+  /* Pengelompokan kartu di halaman Pengaturan supaya susunannya lebih jelas & profesional */
+  .settings-group-title{
+    font-family:'Fraunces',serif; font-size:13.5px; font-weight:700; letter-spacing:.8px; text-transform:uppercase;
+    color:var(--warn); margin:30px 0 12px; padding-bottom:9px; border-bottom:1.5px dashed var(--line);
+    display:flex; align-items:center; gap:8px;
+  }
+  #app .settings-group-title:first-child{margin-top:0;}
 
   /* TABLE / DAFTAR JOB */
   .toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:center; justify-content:space-between;}
@@ -2703,8 +2746,9 @@ function renderWaTpl(tpl,map){
 /* ---- 1) Foto Selesai ---- */
 const PESAN_SELESAI_KEY='kaoneMotret_pesanSelesai_v1';
 const PESAN_SELESAI_DEFAULT_LAMA='Halo Kak {nama},\n\nKabar baik dari Kaone Motret! 🎉 Foto {acara} Kakak ({tanggal}) sudah selesai diedit dan dicetak.\n\n{tagihan}{ajakan}\n\nTerima kasih sudah mempercayakan momen berharga Kakak kepada Kaone Motret 🙏📸';
-const PESAN_SELESAI_DEFAULT='Halo Kak {nama},\n\nKabar baik dari Kaone Motret! 🎉 Foto {acara} Kakak ({tanggal}) sudah selesai diedit dan dicetak.\n\n{tagihan}{ajakan}\n\n📍 Lokasi Kaone Motret:\n{maps}\n\nTerima kasih sudah mempercayakan momen berharga Kakak kepada Kaone Motret 🙏📸';
-function normPesanSelesai(t){ return (!t || t===PESAN_SELESAI_DEFAULT_LAMA) ? PESAN_SELESAI_DEFAULT : t; }
+const PESAN_SELESAI_DEFAULT_SEBELUM_ONGKIR='Halo Kak {nama},\n\nKabar baik dari Kaone Motret! 🎉 Foto {acara} Kakak ({tanggal}) sudah selesai diedit dan dicetak.\n\n{tagihan}{ajakan}\n\n📍 Lokasi Kaone Motret:\n{maps}\n\nTerima kasih sudah mempercayakan momen berharga Kakak kepada Kaone Motret 🙏📸';
+const PESAN_SELESAI_DEFAULT='Halo Kak {nama},\n\nKabar baik dari Kaone Motret! 🎉 Foto {acara} Kakak ({tanggal}) sudah selesai diedit dan dicetak.\n\n{tagihan}{ajakan}{ongkir}\n\n📍 Lokasi Kaone Motret:\n{maps}\n\nTerima kasih sudah mempercayakan momen berharga Kakak kepada Kaone Motret 🙏📸';
+function normPesanSelesai(t){ return (!t || t===PESAN_SELESAI_DEFAULT_LAMA || t===PESAN_SELESAI_DEFAULT_SEBELUM_ONGKIR) ? PESAN_SELESAI_DEFAULT : t; }
 let PESAN_SELESAI_TPL=(()=>{try{return localStorage.getItem(PESAN_SELESAI_KEY)||PESAN_SELESAI_DEFAULT;}catch(e){return PESAN_SELESAI_DEFAULT;}})();
 PESAN_SELESAI_TPL=normPesanSelesai(PESAN_SELESAI_TPL);
 function simpanPesanSelesai(){
@@ -2719,15 +2763,29 @@ function bangunPesanSelesai(j){
   const jenis=j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'acara') : (j.jenisAcara||'acara');
   const sisa=Math.max(0,hitungSisaPembayaran(j));
   const tagihan=(j.statusPembayaran==='Lunas'||sisa<=0) ? '' : `Sebagai pengingat, masih ada sisa pembayaran sebesar ${fmtRp(sisa)} ya, Kak.\n\n`;
-  const ajakan='Silakan datang ke Kaone Motret untuk menjemput fotonya. Kabari kami dulu ya, Kak, supaya kami pastikan ada yang menyambut saat Kakak datang.';
-  const map={nama:(j.namaKlien||'').trim(), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'', deskripsiPaket:j.deskripsiPaket||'', sisa:fmtRp(sisa), tagihan, ajakan, maps:mapsStudioLink()};
+  const isDiantar = pengirimanMetode(j.pengiriman)==='diantar';
+  const ajakan = isDiantar
+    ? 'Foto Kakak akan diantar oleh tim kami ke lokasi Kakak.'
+    : 'Silakan datang ke Kaone Motret untuk menjemput fotonya. Kabari kami dulu ya, Kak, supaya kami pastikan ada yang menyambut saat Kakak datang.';
+  // {ongkir}: hanya muncul kalau Pengiriman diatur ke "Diantar" (yang mengantar tim kita
+  // sendiri). Nominalnya diambil dari yang sudah dihitung & disimpan otomatis di
+  // Input/Edit Job (j.ongkirAntar), bukan dihitung ulang saat ini — supaya nilainya tetap
+  // sama persis dengan yang tercatat di job.
+  let ongkir='';
+  if(isDiantar){
+    const biaya=Number(j.ongkirAntar)||0;
+    ongkir = biaya<=0
+      ? '\n\nOngkos antar: GRATIS.'
+      : `\n\nOngkos antar: ${fmtRp(biaya)} (Rp${fmtRibuan(ONGKIR_ANTAR.perKm)}/km), dibayar saat foto diterima.`;
+  }
+  const map={nama:(j.namaKlien||'').trim(), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'', deskripsiPaket:j.deskripsiPaket||'', sisa:fmtRp(sisa), tagihan, ajakan, ongkir, maps:mapsStudioLink()};
   return renderWaTpl(PESAN_SELESAI_TPL,map);
 }
 function pesanSelesaiPanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="selesai">
     <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai tombol "Kabari Klien" di Detail Job saat Proses Cetak sudah Selesai. Isinya masih bisa diedit sebelum dikirim.</p>
     <textarea id="pesanSelesaiTpl" rows="11" style="width:100%">${escapeHtml(PESAN_SELESAI_TPL)}</textarea>
-    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {acara} {tanggal} {paket} {deskripsiPaket} {sisa} {tagihan} {ajakan} {maps}. {tagihan} hanya muncul kalau belum lunas — berisi pengingat sisa pembayaran, bukan info tempat bayar (pelunasan biasanya sudah dilakukan di hari H acara). {ajakan} berisi ajakan menjemput foto. {maps} berisi link Google Maps lokasi Kaone Motret, dari titik yang sama dengan acuan hitung jarak.</div>
+    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {acara} {tanggal} {paket} {deskripsiPaket} {sisa} {tagihan} {ajakan} {ongkir} {maps}. {tagihan} hanya muncul kalau belum lunas — berisi pengingat sisa pembayaran, bukan info tempat bayar (pelunasan biasanya sudah dilakukan di hari H acara). {ajakan} menyesuaikan saklar Pengiriman di job: "Dijemput" mengajak klien datang mengambil sendiri, "Diantar" memberi tahu foto akan diantar tim ke lokasi klien. {ongkir} otomatis kosong kalau Pengiriman = Dijemput, dan berisi nominal ongkos antar (dari Ongkos Antar Foto di Pengaturan) kalau Pengiriman = Diantar. {maps} berisi link Google Maps lokasi Kaone Motret, dari titik yang sama dengan acuan hitung jarak.</div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
       <button type="button" class="btn btn-primary" onclick="simpanPesanSelesai()">Simpan pesan</button>
       <button type="button" class="btn btn-outline" onclick="resetPesanSelesai()">Kembalikan bawaan</button>
@@ -2931,6 +2989,50 @@ function simpanHargaCetak(e){
   pushToCloud();
   toast('Harga cetak disimpan');
 }
+
+/* ---------- Ongkos Antar Foto (dipakai saat Pengiriman = "Diantar") ----------
+   Dihitung otomatis dari jarak real (OSRM) Titik Koordinat job ke Kaone Motret,
+   dikali tarif per km. Kalau hasilnya di bawah batas gratis, dianggap gratis
+   (nominal jadi Rp0) — supaya jarak dekat tidak perlu menagih ongkos receh. */
+const ONGKIR_ANTAR_KEY='kaoneMotret_ongkirAntar_v1';
+const ONGKIR_ANTAR_DEFAULT={perKm:3000, batasGratis:19999};
+let ONGKIR_ANTAR=(()=>{try{return {...ONGKIR_ANTAR_DEFAULT,...JSON.parse(localStorage.getItem(ONGKIR_ANTAR_KEY)||'{}')};}catch(e){return {...ONGKIR_ANTAR_DEFAULT};}})();
+// km null/tidak valid -> null (belum bisa dihitung). Selain itu selalu angka (0 = gratis).
+function hitungOngkirAntar(km){
+  if(km===null || km===undefined || isNaN(km)) return null;
+  const raw = Math.round(km * (Number(ONGKIR_ANTAR.perKm)||0));
+  const batas = Number(ONGKIR_ANTAR.batasGratis);
+  return raw <= (isNaN(batas)?0:batas) ? 0 : raw;
+}
+function fmtOngkirAntar(km){
+  const biaya=hitungOngkirAntar(km);
+  if(biaya===null) return '-';
+  return biaya<=0 ? 'GRATIS' : fmtRp(biaya);
+}
+function ongkirAntarCardHtml(){
+  return `<div class="card"><h2 style="margin-top:0;">${ic('car')} Ongkos Antar Foto</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Dipakai otomatis saat saklar Pengiriman di Input/Edit Job diatur ke "Diantar" (foto diantar tim ke lokasi klien). Dihitung dari jarak real (Titik Koordinat) ke Kaone Motret.</p>
+    <div class="form-grid">
+      <div><label>Tarif per KM</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-ongkirantar="perKm" value="${fmtRibuan(ONGKIR_ANTAR.perKm)}" oninput="handleMoneyInput(this)"></div></div>
+      <div><label>Gratis Jika Biaya Sampai Dengan</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-ongkirantar="batasGratis" value="${fmtRibuan(ONGKIR_ANTAR.batasGratis)}" oninput="handleMoneyInput(this)"></div></div>
+    </div>
+    <div class="field-hint" style="margin-top:8px;">Contoh dengan pengaturan bawaan: jarak 6 km → Rp18.000 (≤ Rp19.999) dianggap GRATIS. Jarak 7 km → Rp21.000 (≥ Rp20.000) tetap ditagih penuh.</div>
+    <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
+      <button type="button" class="btn btn-primary" onclick="simpanOngkirAntar()">${ic('save')} Simpan</button>
+      <button type="button" class="btn btn-outline" onclick="resetOngkirAntarForm()">Kembalikan bawaan</button>
+    </div>
+  </div>`;
+}
+function simpanOngkirAntar(){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah pengaturan ini.'); return; }
+  document.querySelectorAll('[data-ongkirantar]').forEach(i=>{ ONGKIR_ANTAR[i.dataset.ongkirantar]=parseRibuan(i.value)||0; });
+  try{ localStorage.setItem(ONGKIR_ANTAR_KEY,JSON.stringify(ONGKIR_ANTAR)); }catch(_){}
+  pushToCloud();
+  toast('Pengaturan ongkos antar disimpan');
+}
+function resetOngkirAntarForm(){
+  document.querySelectorAll('[data-ongkirantar]').forEach(i=>{ i.value=fmtRibuan(ONGKIR_ANTAR_DEFAULT[i.dataset.ongkirantar]); });
+}
 function bacaCetak(){
   const $=(a,k)=>document.querySelector('[data-cx'+a+'="'+k+'"]');
   const on=k=>!!$('',k)?.checked, qty=k=>$('-qty',k)?.value||1, sel=k=>$('-sel',k)?.value;
@@ -2994,7 +3096,7 @@ function cetakSectionHtml(d){
 }
 
 function collectAllData(){
-  return { jobs, tasks, bonusAdjustments, bonusClaims, hargaCetak: HARGA_CETAK, pesanSelesai: PESAN_SELESAI_TPL, pesanBooking: PESAN_BOOKING_TPL, pesanH1: PESAN_H1_TPL, formatSalinBulan: CPB_FORMAT, bonusRate: BONUS_PER_JAM, minKlaimTunai: MIN_KLAIM_TUNAI, minKlaimWdp: MIN_KLAIM_WDP, reports, thanksOverrides, thanksFontSize, posterThemeOverrides, layoutOverrides };
+  return { jobs, tasks, bonusAdjustments, bonusClaims, hargaCetak: HARGA_CETAK, ongkirAntar: ONGKIR_ANTAR, pesanSelesai: PESAN_SELESAI_TPL, pesanBooking: PESAN_BOOKING_TPL, pesanH1: PESAN_H1_TPL, formatSalinBulan: CPB_FORMAT, bonusRate: BONUS_PER_JAM, minKlaimTunai: MIN_KLAIM_TUNAI, minKlaimWdp: MIN_KLAIM_WDP, reports, thanksOverrides, thanksFontSize, posterThemeOverrides, layoutOverrides };
 }
 function applyAllData(data){
   if(!data) return;
@@ -3003,6 +3105,7 @@ function applyAllData(data){
   if(Array.isArray(data.bonusAdjustments)) bonusAdjustments = data.bonusAdjustments;
   if(Array.isArray(data.bonusClaims)) bonusClaims = data.bonusClaims;
   if(data.hargaCetak && typeof data.hargaCetak==='object'){ HARGA_CETAK={...HARGA_CETAK_DEFAULT,...data.hargaCetak}; try{ localStorage.setItem(HARGA_CETAK_KEY,JSON.stringify(HARGA_CETAK)); }catch(e){} }
+  if(data.ongkirAntar && typeof data.ongkirAntar==='object'){ ONGKIR_ANTAR={...ONGKIR_ANTAR_DEFAULT,...data.ongkirAntar}; try{ localStorage.setItem(ONGKIR_ANTAR_KEY,JSON.stringify(ONGKIR_ANTAR)); }catch(e){} }
   if(typeof data.pesanSelesai==='string' && data.pesanSelesai.trim()){ PESAN_SELESAI_TPL=normPesanSelesai(data.pesanSelesai); try{ localStorage.setItem(PESAN_SELESAI_KEY,PESAN_SELESAI_TPL); }catch(e){} }
   if(typeof data.pesanBooking==='string' && data.pesanBooking.trim()){ PESAN_BOOKING_TPL=data.pesanBooking; try{ localStorage.setItem(PESAN_BOOKING_KEY,PESAN_BOOKING_TPL); }catch(e){} }
   if(typeof data.pesanH1==='string' && data.pesanH1.trim()){ PESAN_H1_TPL=data.pesanH1; try{ localStorage.setItem(PESAN_H1_KEY,PESAN_H1_TPL); }catch(e){} }
@@ -3219,6 +3322,101 @@ function jenisAcaraColor(jenisAcara){
   return JENIS_ACARA_COLORS[jenisAcara] || JENIS_ACARA_COLORS['Lainnya'];
 }
 const PENGIRIMAN_LIST = ['Sudah Dijemput','Sudah Diantar','Belum Diantar','Belum Dijemput'];
+// Field "pengiriman" tetap 1 nilai teks (demi kompatibilitas data lama & fitur lain
+// yang sudah membaca PENGIRIMAN_LIST apa adanya), tapi di form Input/Edit Job kini
+// diisi lewat saklar (metode) + status terpisah supaya lebih nyaman. 2 fungsi ini
+// membongkar nilai gabungan itu jadi metode ('diantar'/'dijemput') dan status Sudah/Belum.
+function pengirimanMetode(p){ return (p||'').includes('Dijemput') ? 'dijemput' : 'diantar'; }
+function pengirimanSudah(p){ return (p||'').startsWith('Sudah'); }
+function buildPengirimanValue(metode, sudah){
+  return (sudah?'Sudah ':'Belum ') + (metode==='dijemput'?'Dijemput':'Diantar');
+}
+// Blok saklar "Diantar/Dijemput" + status + estimasi ongkos jemput (form Input/Edit Job).
+// jarakKmAwal: hasil dari cache (getCachedJarakTempuh) saat form pertama dirender —
+// null kalau belum pernah dihitung, akan menyusul lewat updateJarakCalc()/updateOngkirDisplay().
+function pengirimanFieldHtml(d, jarakKmAwal){
+  const metode = pengirimanMetode(d.pengiriman);
+  const sudah = pengirimanSudah(d.pengiriman);
+  const isDiantar = metode==='diantar';
+  const koordValid = !!parseCoordString(d.koordinat);
+  const ongkirAwal = isDiantar ? hitungOngkirAntar(jarakKmAwal) : null;
+  const jarakTeks = jarakKmAwal===null ? (koordValid?'Menghitung…':'-') : fmtJarakJalan(jarakKmAwal);
+  const biayaTeks = jarakKmAwal===null ? (koordValid?'…':'-') : fmtOngkirAntar(jarakKmAwal);
+  return `
+    <div class="full">
+      <label>Pengiriman Foto</label>
+      <div class="toggle-switch-row ${isDiantar?'is-on':''}" id="pengirimanToggleRow">
+        <div class="ts-label">
+          <b id="pengirimanMetodeLabel">${isDiantar?'Diantar':'Dijemput'}</b>
+          <span id="pengirimanMetodeDesc">${isDiantar?'Foto diantar tim ke lokasi klien — ongkos antar dihitung otomatis per km.':'Klien mengambil sendiri foto di Kaone Motret, tanpa ongkos tambahan.'}</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="pengirimanMetodeToggle" ${isDiantar?'checked':''} onchange="onPengirimanMetodeChange()">
+          <span class="ts-track"></span>
+          <span class="ts-state" id="pengirimanMetodeState">${isDiantar?'Diantar':'Dijemput'}</span>
+        </label>
+      </div>
+      <div style="margin-top:10px;max-width:240px;">
+        <label>Status Pengiriman</label>
+        <select id="pengirimanStatusSelect" onchange="onPengirimanMetodeChange()">
+          <option value="Belum" ${!sudah?'selected':''}>Belum</option>
+          <option value="Sudah" ${sudah?'selected':''}>Sudah</option>
+        </select>
+      </div>
+      <input type="hidden" id="ongkirAntarHidden" name="ongkirAntar" value="${isDiantar?(ongkirAwal||0):0}">
+      <div class="ongkir-box" id="ongkirAntarBox" style="display:${isDiantar?'flex':'none'}">
+        <div class="jr-group-label">${ic('car')} Estimasi Ongkos Antar</div>
+        <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="ongkirAntarJarakText">${jarakTeks}</b></div>
+        <div class="jr-row"><span>Biaya Antar (Rp${fmtRibuan(ONGKIR_ANTAR.perKm)}/km)</span><b id="ongkirAntarBiayaText" class="${ongkirAwal===0?'ongkir-gratis':''}">${biayaTeks}</b></div>
+      </div>
+    </div>`;
+}
+// Baca ulang jarak (km) dari cache berdasarkan isi kolom Titik Koordinat SEKARANG di form.
+// Tidak memanggil API — hanya mengintip cache yang sudah/sedang diisi oleh updateJarakCalc().
+function currentFormJarakKm(){
+  const input=document.getElementById('koordinatInput');
+  if(!input) return null;
+  const cached=getCachedJarakTempuh({koordinat:input.value});
+  return cached ? cached.km : null;
+}
+// Perbarui tampilan kotak estimasi ongkos antar. km bisa dilewatkan langsung (dari
+// updateJarakCalc yang sudah tahu hasilnya), atau dibiarkan kosong untuk dibaca ulang
+// dari cache (dipakai saat saklar/status diubah manual, tanpa mengubah koordinat).
+function updateOngkirDisplay(km){
+  const toggle=document.getElementById('pengirimanMetodeToggle');
+  if(!toggle || !toggle.checked) return; // ongkos hanya relevan saat metode "Diantar"
+  if(km===undefined) km=currentFormJarakKm();
+  const input=document.getElementById('koordinatInput');
+  const koordValid=!!parseCoordString(input?.value);
+  const elJarak=document.getElementById('ongkirAntarJarakText');
+  const elBiaya=document.getElementById('ongkirAntarBiayaText');
+  const hidden=document.getElementById('ongkirAntarHidden');
+  if(elJarak) elJarak.textContent = km===null?(koordValid?'Menghitung…':'-'):fmtJarakJalan(km);
+  const biaya = km===null ? null : hitungOngkirAntar(km);
+  if(elBiaya){
+    elBiaya.textContent = km===null?(koordValid?'…':'-'):fmtOngkirAntar(km);
+    elBiaya.classList.toggle('ongkir-gratis', biaya===0);
+  }
+  if(hidden) hidden.value = biaya||0;
+}
+// Dipicu saat saklar Dijemput/Diantar atau Status Pengiriman diubah di form.
+function onPengirimanMetodeChange(){
+  const toggle=document.getElementById('pengirimanMetodeToggle');
+  if(!toggle) return;
+  const isDiantar=toggle.checked;
+  const row=document.getElementById('pengirimanToggleRow');
+  const labelB=document.getElementById('pengirimanMetodeLabel');
+  const labelDesc=document.getElementById('pengirimanMetodeDesc');
+  const state=document.getElementById('pengirimanMetodeState');
+  const box=document.getElementById('ongkirAntarBox');
+  row?.classList.toggle('is-on', isDiantar);
+  if(labelB) labelB.textContent = isDiantar?'Diantar':'Dijemput';
+  if(labelDesc) labelDesc.textContent = isDiantar?'Foto diantar tim ke lokasi klien — ongkos antar dihitung otomatis per km.':'Klien mengambil sendiri foto di Kaone Motret, tanpa ongkos tambahan.';
+  if(state) state.textContent = isDiantar?'Diantar':'Dijemput';
+  if(box) box.style.display = isDiantar?'flex':'none';
+  if(isDiantar){ updateOngkirDisplay(); }
+  else { const hidden=document.getElementById('ongkirAntarHidden'); if(hidden) hidden.value=0; }
+}
 const STATUS_BAYAR_LIST = ['Lunas','DP','Belum Bayar'];
 const VENDOR_LIST = ['Shia Makeup','Kaone Motret','Lainnya'];
 
@@ -4602,6 +4800,7 @@ function updateJarakCalc(){
     if(elJalan) elJalan.textContent = '-';
     if(elJalanBiaya) elJalanBiaya.textContent = '-';
     if(elDurasi) elDurasi.textContent = '-';
+    updateOngkirDisplay(null);
     return;
   }
 
@@ -4610,12 +4809,14 @@ function updateJarakCalc(){
     if(elJalan) elJalan.textContent = fmtJarakJalan(cachedTempuh.km);
     if(elJalanBiaya) elJalanBiaya.textContent = fmtRp(hitungSaranTransport(cachedTempuh.km));
     if(elDurasi) elDurasi.textContent = fmtDurasiTempuh(cachedTempuh.durMin);
+    updateOngkirDisplay(cachedTempuh.km);
     return;
   }
 
   if(elJalan) elJalan.textContent = 'Menghitung…';
   if(elJalanBiaya) elJalanBiaya.textContent = '…';
   if(elDurasi) elDurasi.textContent = 'Menghitung…';
+  updateOngkirDisplay(null);
   fetchJarakTempuh(job).then(hasil=>{
     if(reqId !== jarakJalanReqId) return; // sudah usang (ada input baru sesudahnya) — abaikan hasil ini
     const elJalan2 = document.getElementById('jarakJalanText');
@@ -4630,6 +4831,7 @@ function updateJarakCalc(){
       if(elJalanBiaya2) elJalanBiaya2.textContent = fmtRp(hitungSaranTransport(hasil.km));
       if(elDurasi2) elDurasi2.textContent = fmtDurasiTempuh(hasil.durMin);
     }
+    updateOngkirDisplay(hasil?hasil.km:null);
   });
 }
 
@@ -4943,7 +5145,7 @@ function buildJobFormHtml(j){
   const d = j || {
     tanggalAcara:'', tanggalSelesai:'', jamAcara:'', desa:'', dusun:'', adaDusun:false, kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'', koordinat:'',
     jenisAcara:'', jenisAcaraLain:'', namaKlien:'', noWhatsapp:'', paket:'', deskripsiPaket:'',
-    prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Diantar',
+    prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Dijemput',
     vendor:'', vendorLain:'', timFreelancer:'', dp:'', biayaCetak:'', honorTim:'', honorTimList:[], diskon:'',
     penghasilan:'', sedekahNominal:'', sedekahStatus:'Belum', setoranShia:'',
     statusPembayaran:'Belum Bayar', catatan:''
@@ -5030,8 +5232,8 @@ function buildJobFormHtml(j){
       <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('settings')}</span><div><h3>Status Proses</h3><p>Progres pengerjaan, pembayaran, dan siapa yang mengerjakan.</p></div></div><div class="form-grid jf-body">
         <div><label>Proses Edit</label><select name="prosesEdit">${opt(['Belum Selesai','Selesai'], d.prosesEdit)}</select></div>
         <div><label>Proses Cetak</label><select name="prosesCetak">${opt(['Belum Selesai','Selesai'], d.prosesCetak)}</select></div>
-        <div><label>Pengiriman</label><select name="pengiriman">${opt(PENGIRIMAN_LIST, d.pengiriman)}</select></div>
         <div><label>Status Pembayaran</label><select name="statusPembayaran">${opt(STATUS_BAYAR_LIST, d.statusPembayaran)}</select></div>
+        ${pengirimanFieldHtml(d, jarakAwalJalan)}
         <div>
           <label>Vendor Asal Job</label>
           <select name="vendor" onchange="onVendorChange(this)">
@@ -5179,6 +5381,15 @@ function bindJobFormEvents(scopeEl, onDone){
     // tidak ada teks dusun "nyangkut" dari isian sebelumnya yang sudah disembunyikan.
     data.adaDusun = fd.get('adaDusun') === 'on';
     if(!data.adaDusun) data.dusun = '';
+    // Saklar Diantar/Dijemput + Status Pengiriman (di luar FormData karena bukan <select name=...>
+    // biasa) digabung jadi 1 nilai teks yang sama seperti sebelumnya, supaya PENGIRIMAN_LIST,
+    // badge, filter, dan rekap yang sudah ada tetap bekerja tanpa perubahan.
+    {
+      const metodeOn = form.querySelector('#pengirimanMetodeToggle')?.checked;
+      const statusVal = form.querySelector('#pengirimanStatusSelect')?.value;
+      data.pengiriman = buildPengirimanValue(metodeOn?'diantar':'dijemput', statusVal==='Sudah');
+      if(!metodeOn) data.ongkirAntar = 0; // metode Dijemput tidak pakai ongkos antar
+    }
     // Hilangkan spasi berlebih di awal/akhir tiap isian teks (mis. "Portibi " dan "Portibi"
     // supaya dianggap sama di pencarian, filter, maupun rekap).
     Object.keys(data).forEach(k=>{
@@ -5193,7 +5404,7 @@ function bindJobFormEvents(scopeEl, onDone){
       return;
     }
     // Kolom uang: ubah dari teks berformat "3.000.000" menjadi angka murni sebelum disimpan.
-    ['dp','penghasilan','biayaCetak','honorTim','diskon','sedekahNominal','setoranShia'].forEach(k=>{
+    ['dp','penghasilan','biayaCetak','honorTim','diskon','sedekahNominal','setoranShia','ongkirAntar'].forEach(k=>{
       data[k] = parseRibuan(data[k]);
     });
     // Rincian Honor Tim per anggota (hasil pilihan checkbox + nominal di section Honor Tim).
@@ -6605,6 +6816,7 @@ function openJobDetailModal(jobId){
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
+      ...(pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
       ['Status Pembayaran', j.statusPembayaran||'-'],
       ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
@@ -6726,6 +6938,7 @@ function buildJobPosterHtml(j){
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
+      ...(pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
       ['Status Pembayaran', j.statusPembayaran||'-'],
       ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
@@ -6969,6 +7182,7 @@ function copyJobDetails(jobId){
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
+      ...(pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
       ['Status Pembayaran', j.statusPembayaran||'-'],
       ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
@@ -9379,7 +9593,12 @@ function viewPengaturan(){
   const backupDays = daysSinceLastBackup();
   const lastBackupText = backupDays===null ? 'Belum pernah dicadangkan' : (backupDays===0 ? 'Hari ini' : `${backupDays} hari yang lalu`);
   return `
-  ${isAdmin()?hargaCetakCardHtml()+templateWaCardHtml():''}
+  ${isAdmin()?`
+  <div class="settings-group-title">${ic('money')} Harga &amp; Pesan Bisnis</div>
+  ${hargaCetakCardHtml()}
+  ${ongkirAntarCardHtml()}
+  ${templateWaCardHtml()}
+  <div class="settings-group-title">${ic('lock')} Akun</div>`:''}
   <div class="card">
     <h2 style="margin-top:0;">${ic('lock')} Akun Saya</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">
@@ -9433,6 +9652,7 @@ function viewPengaturan(){
     `}
   </div>
 
+  <div class="settings-group-title">${ic('folder')} Data &amp; Cadangan</div>
   <div class="card">
     <h2 style="margin-top:0;">${ic('settings')} Pengaturan &amp; Cadangan Data</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">

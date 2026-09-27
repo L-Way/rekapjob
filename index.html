@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Kaone Motret - Buku Job Fotografer</title>
+<title>Kaone Motret — Buku Job Fotografer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Italiana&family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -245,18 +245,21 @@
   .field-hint{font-size:11px; color:var(--ink-soft); margin-top:4px;}
   /* Pemilihan anggota Tim + honor masing-masing di form Input/Edit Job */
   .honor-tim-list{
-    display:flex; flex-direction:column; gap:8px; margin-bottom:10px;
+    display:flex; flex-direction:column; gap:7px; margin-bottom:10px;
   }
   .honor-tim-row{
-    display:flex; align-items:center; flex-wrap:wrap; gap:10px;
-    padding:10px 12px; border:1.5px solid #e5ddc0; border-radius:9px; background:#fffef9;
+    display:flex; flex-direction:column; gap:8px;
+    padding:9px 12px; border:1.5px solid #e5ddc0; border-radius:10px; background:#fffef9;
+    transition:border-color .15s ease, background-color .15s ease;
   }
+  .honor-tim-row.is-checked{border-color:var(--gold); background:var(--gold-pale);}
   .honor-tim-check{
-    display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600;
-    color:#3a3423; cursor:pointer; margin:0; min-width:150px;
+    display:flex; align-items:center; gap:9px; font-size:13px; font-weight:600;
+    color:#3a3423; cursor:pointer; margin:0; min-width:0;
   }
-  .honor-tim-check input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(--gold);}
-  .honor-tim-nominal-wrap{flex:1; min-width:160px;}
+  .honor-tim-check span{flex:1; min-width:0; overflow-wrap:anywhere;}
+  .honor-tim-check input[type=checkbox]{width:17px; height:17px; cursor:pointer; accent-color:var(--gold); flex-shrink:0;}
+  .honor-tim-nominal-wrap{width:100%; max-width:none;}
   /* Kolom Link Maps: ikon peta di kiri + tombol "Buka" di kanan, senada dengan kolom Rp */
   .maps-input-wrap{position:relative; display:flex; align-items:stretch; gap:8px; flex-wrap:wrap;}
   .maps-input-wrap .maps-field{position:relative; flex:1 1 200px; min-width:0;}
@@ -279,11 +282,13 @@
     background:var(--gold-pale); border-radius:10px; padding:12px 16px; margin-top:10px;
     display:flex; flex-direction:column; gap:7px;
   }
-  .jarak-box .jr-row{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:12.5px; font-weight:600; color:#5c4a12;}
-  .jarak-box .jr-row b{font-weight:700; color:#241f0f; white-space:nowrap;}
+  .jarak-box .jr-row{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; font-size:12px; font-weight:600; color:#5c4a12;}
+  .jarak-box .jr-row span{display:flex; align-items:center; gap:5px; flex:1 1 auto; min-width:0; line-height:1.35;}
+  .jarak-box .jr-row b{font-weight:700; color:#241f0f; text-align:right; flex:0 1 auto; max-width:56%; word-break:break-word; line-height:1.35;}
   .jarak-box .jr-group-label{font-size:10.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--warn); margin-top:2px;}
   .jarak-box .jr-group-label:first-child{margin-top:0;}
   .jarak-box .jr-divider{height:1px; background:rgba(180,150,0,.18); margin:2px 0;}
+  .jarak-box .jr-note{font-size:10.5px; color:#8a7a3d; line-height:1.4; margin-top:1px; padding-top:6px; border-top:1px dashed rgba(180,150,0,.25);}
   .section-title{font-size:15px; font-weight:700; margin:26px 0 10px; color:#241f0f; display:flex; align-items:center; gap:8px;}
   .section-title:first-child{margin-top:0;}
 
@@ -317,8 +322,9 @@
     background:var(--gold-pale); border-radius:10px; padding:12px 16px; margin-top:10px;
     display:flex; flex-direction:column; gap:7px;
   }
-  .ongkir-box .jr-row{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:12.5px; font-weight:600; color:#5c4a12;}
-  .ongkir-box .jr-row b{font-weight:700; color:#241f0f; white-space:nowrap;}
+  .ongkir-box .jr-row{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; font-size:12px; font-weight:600; color:#5c4a12;}
+  .ongkir-box .jr-row span{display:flex; align-items:center; gap:5px; flex:1 1 auto; min-width:0; line-height:1.35;}
+  .ongkir-box .jr-row b{font-weight:700; color:#241f0f; text-align:right; flex:0 1 auto; max-width:56%; word-break:break-word; line-height:1.35;}
   .ongkir-box .jr-row b.ongkir-gratis{color:var(--ok);}
   .ongkir-box .jr-group-label{font-size:10.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--warn);}
 
@@ -1532,6 +1538,10 @@
   .to-top-btn.show{opacity:1; visibility:visible; transform:translateY(0) scale(1);}
   .to-top-btn:hover{transform:translateY(-3px) scale(1.05);}
   .to-top-btn:active{transform:scale(.92);}
+  /* Saat ada modal/pop-up terbuka (mis. form Input/Edit Job), tombol ini disembunyikan
+     total — sebelumnya bisa "nyangkut" menimpa tombol Simpan di bar bawah form karena
+     posisinya fixed ke layar, bukan ke dalam modal. */
+  body:has(#modalOverlay) .to-top-btn{display:none!important;}
 
   /* ---------- 4. POLESAN VISUAL UMUM ---------- */
   body{
@@ -1898,37 +1908,66 @@
     .claim-type-toggle button{min-width:0;}
   }
 
-  /* ===== Form Input/Edit Job — desain panel per bagian + bar total di bawah ===== */
-  .jf{container-type:inline-size; display:flex; flex-direction:column; gap:16px;}
+  /* ===== Form Input/Edit Job — desain panel per bagian (akordeon) + bar total di bawah ===== */
+  .jf{container-type:inline-size; display:flex; flex-direction:column; gap:12px;}
   .jf-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-bottom:14px; border-bottom:1px solid var(--line);}
-  .jf-head h2{margin:0;}
-  .jf-head p{margin:4px 0 0; font-size:13px; color:var(--ink-soft);}
-  .jf-no{font-size:12px; font-weight:600; color:#7a6400; background:var(--gold-pale); border:1px solid #efe2a0; border-radius:999px; padding:5px 12px; white-space:nowrap;}
-  .jf-sec{border:1px solid var(--line); border-radius:16px; background:#fff;}
-  .jf-sec-h{display:flex; align-items:center; gap:12px; padding:14px 18px; background:#fff9e6; border-bottom:1px solid var(--line); border-radius:15px 15px 0 0;}
-  .jf-ico{width:36px; height:36px; border-radius:10px; background:var(--ink); color:var(--gold-light); display:grid; place-items:center; flex-shrink:0;}
-  .jf-ico .ic{width:18px; height:18px;}
-  .jf-sec-h h3{margin:0; font-size:16px;}
-  .jf-sec-h p{margin:2px 0 0; font-size:12px; color:var(--ink-soft); line-height:1.4;}
-  .jf-body{padding:18px;}
-  .jf label{color:#3f3a29; margin-bottom:6px;}
+  .jf-head h2{margin:0; font-size:19px;}
+  .jf-head p{margin:4px 0 0; font-size:12.5px; color:var(--ink-soft);}
+  .jf-head-right{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+  .jf-no{font-size:11.5px; font-weight:600; color:#7a6400; background:var(--gold-pale); border:1px solid #efe2a0; border-radius:999px; padding:5px 12px; white-space:nowrap;}
+  .jf-del-btn{width:38px; height:38px; padding:0; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .jf-del-btn .ic{width:17px; height:17px;}
+  /* Tiap bagian = akordeon: header selalu terlihat & bisa diklik, isi disembunyikan
+     rapi (bukan display:none, supaya kolom wajib di dalamnya tetap bisa fokus/tervalidasi
+     browser walau sedang tertutup) sampai bagian itu dibuka. Buka satu -> yang lain
+     otomatis tertutup (lihat toggleJfSection di app.js). */
+  .jf-sec{border:1px solid var(--line); border-radius:15px; background:#fff; overflow:hidden;}
+  .jf-sec-h{display:flex; align-items:center; gap:11px; padding:12px 15px; background:#fff9e6; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent;}
+  .jf-sec-h:active{background:#fef3cc;}
+  .jf-sec.open .jf-sec-h{border-bottom:1px solid var(--line);}
+  .jf-ico{width:32px; height:32px; border-radius:9px; background:var(--ink); color:var(--gold-light); display:grid; place-items:center; flex-shrink:0;}
+  .jf-ico .ic{width:16px; height:16px;}
+  .jf-sec-h h3{margin:0; font-size:14.5px;}
+  .jf-sec-h p{margin:1px 0 0; font-size:11.5px; color:var(--ink-soft); line-height:1.35;}
+  .jf-sec-h .jf-sec-htx{flex:1; min-width:0;}
+  .jf-chevron{width:20px; height:20px; color:var(--ink-soft); flex-shrink:0; transform:rotate(180deg); transition:transform .25s ease, color .2s ease;}
+  .jf-chevron .ic{width:20px; height:20px;}
+  .jf-sec.open .jf-chevron{transform:rotate(0deg); color:var(--warn);}
+  .jf-panel{max-height:0; opacity:0; overflow:hidden; pointer-events:none; padding-top:0!important; padding-bottom:0!important; transition:opacity .2s ease;}
+  .jf-sec.open .jf-panel{max-height:none; opacity:1; overflow:visible; pointer-events:auto; padding:15px!important;}
+  .jf label{color:#3f3a29; margin-bottom:5px; font-size:12.5px;}
   .jf input:not([type=checkbox]),.jf select,.jf textarea{background:#fffdf7;}
   .jf input:focus,.jf select:focus,.jf textarea:focus{background:#fff;}
-  .jf-check{padding:10px 12px; border:1.5px dashed #e6dcae; border-radius:11px; background:#fffdf3;}
+  .jf-check{padding:9px 12px; border:1.5px dashed #e6dcae; border-radius:11px; background:#fffdf3;}
   .jf #durasiHariHintWrap{background:#fff9e6; border-left:3px solid var(--gold); border-radius:8px; padding:8px 12px;}
-  .jf #durasiHariHintWrap .field-hint{margin:0; font-size:12px; color:#5c4a12;}
-  .jf .jarak-box{background:#fff9e6; border:1px solid #f0e4a6;}
-  .jf .jarak-box .jr-group-label{text-transform:none; letter-spacing:0; font-size:12px; display:flex; align-items:center; gap:6px;}
-  .jf-bar{position:sticky; bottom:calc(8px + env(safe-area-inset-bottom,0px)); z-index:5; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; padding:12px 16px; background:rgba(28,26,18,.97); color:#fff; border-radius:16px; box-shadow:0 14px 30px -12px rgba(28,26,18,.55);}
-  .jf-totals{display:flex; gap:24px; flex-wrap:wrap;}
-  .jf-totals span{display:block; font-size:11.5px; color:#cbbf8f;}
-  .jf-totals b{font-family:'Fraunces',serif; font-size:18px; color:var(--gold-light); white-space:nowrap;}
-  .jf-bar .form-actions{margin:0;}
+  .jf #durasiHariHintWrap .field-hint{margin:0; font-size:11.5px; color:#5c4a12;}
+  .jf .jarak-box,.jf .ongkir-box{background:#fff9e6; border:1px solid #f0e4a6; padding:11px 14px;}
+  .jf .jarak-box .jr-group-label,.jf .ongkir-box .jr-group-label{text-transform:none; letter-spacing:0; font-size:11.5px; display:flex; align-items:center; gap:6px;}
+  /* Kolom Instagram: senada kolom +62, prefix @ permanen + tombol buka profil */
+  .ig-field-wrap{display:flex; align-items:stretch; gap:8px;}
+  .ig-field-wrap .rp-input-wrap{flex:1; min-width:0;}
+  .ig-open-btn{
+    flex-shrink:0; width:44px; padding:0; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg,#e1306c,#c13584); border:none; color:#fff; border-radius:11px;
+    box-shadow:0 6px 14px rgba(193,53,132,.32);
+  }
+  .ig-open-btn .ic{width:18px; height:18px;}
+  .ig-open-btn:hover{box-shadow:0 8px 18px rgba(193,53,132,.42);}
+  .ig-open-btn:active{box-shadow:0 3px 8px rgba(193,53,132,.3);}
+  /* Bar bawah: ringkas, cuma 2 baris (total + 2 tombol utama), Hapus Job dipindah ke header */
+  .jf-bar{position:sticky; bottom:calc(8px + env(safe-area-inset-bottom,0px)); z-index:5; display:flex; flex-direction:column; gap:9px; padding:11px 14px; background:rgba(28,26,18,.97); color:#fff; border-radius:15px; box-shadow:0 14px 30px -12px rgba(28,26,18,.55);}
+  .jf-totals{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .jf-totals div{display:flex; flex-direction:column; gap:1px; min-width:0;}
+  .jf-totals div:last-child{align-items:flex-end; text-align:right;}
+  .jf-totals span{display:block; font-size:10.5px; color:#cbbf8f; white-space:nowrap;}
+  .jf-totals b{font-family:'Fraunces',serif; font-size:16px; color:var(--gold-light); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .jf-bar .form-actions{margin:0; display:flex; gap:9px; flex-wrap:nowrap;}
+  .jf-bar .form-actions .btn{flex:1; min-width:0; padding:11px 10px; font-size:13.5px;}
   .jf-bar .btn-outline{background:transparent; color:#efe6c0; border-color:rgba(255,255,255,.3);}
   .jf-bar .btn-outline:hover{background:rgba(255,255,255,.08);}
   @container (max-width:560px){
     .jf .form-grid{grid-template-columns:1fr;}
-    .jf-body{padding:14px;}
+    .jf-sec.open .jf-panel{padding:12px!important;}
     .jf-totals{width:100%; justify-content:space-between;}
     .jf-bar .form-actions{width:100%;}
   }
@@ -1951,7 +1990,7 @@
   .jf .rp-input-wrap:focus-within,.hc .rp-input-wrap:focus-within{border-color:var(--gold); box-shadow:0 0 0 3.5px rgba(212,175,0,.16); background:#fff;}
   .jf .rp-input-wrap:has(input:read-only),.hc .rp-input-wrap:has(input:read-only){background:#faf6e6;}
   .jf .rp-input-wrap .rp-prefix,.hc .rp-input-wrap .rp-prefix{position:static; transform:none; display:flex; align-items:center; padding:0 13px; background:var(--gold-pale); color:#7a6400; font-size:13px; font-weight:700; border-right:1.5px solid #efe2a0; flex-shrink:0;}
-  .jf .rp-input-wrap input.money-input,.jf .rp-input-wrap input[type=tel],.hc .rp-input-wrap input.money-input{flex:1; min-width:0; width:auto; min-height:41px; border:0; border-radius:0; background:transparent; box-shadow:none; padding-left:12px; font-variant-numeric:tabular-nums;}
+  .jf .rp-input-wrap input.money-input,.jf .rp-input-wrap input[type=tel],.jf .rp-input-wrap input[type=text],.hc .rp-input-wrap input.money-input{flex:1; min-width:0; width:auto; min-height:41px; border:0; border-radius:0; background:transparent; box-shadow:none; padding-left:12px; font-variant-numeric:tabular-nums;}
   /* Jam Acara — input time bawaan browser dirapikan supaya senada dengan kolom Rp/+62 lainnya */
   .jf .rp-input-wrap.jam-acara-wrap .rp-prefix{padding:0 12px;}
   .jf .rp-input-wrap.jam-acara-wrap .rp-prefix .ic{width:17px; height:17px;}
@@ -2094,6 +2133,7 @@
 <symbol id="ic-rocket" viewBox="0 0 24 24"><path d="M12 2 c3 2 5 6 5 10.5 c0 2-1 4-2 5 l-3-2 l-3 2 c-1-1-2-3-2-5 C7 8 9 4 12 2Z"/><path d="M9 15.5 l-3 1.5 1-3.5 M15 15.5 l3 1.5 -1-3.5"/><circle cx="12" cy="10" r="1.6" fill="currentColor" stroke="none"/></symbol>
 <symbol id="ic-new-badge" viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="10" rx="2"/><path d="M6.5 14.5 V9.5 l3 5 V9.5 M11.5 14.5 v-5 h2.5 M11.5 12 h2 M11.5 14.5 h2.5 M16 9.5 h2.2 c1 0 1.5 0.5 1.5 1.2 s-0.5 1.1 -1.5 1.1 H16 v2.7 M16 11.8 h2" stroke-width="1.4"/></symbol>
 <symbol id="ic-hourglass" viewBox="0 0 24 24"><path d="M6 3 h12 M6 21 h12 M7 3 c0 4.5 2 6.5 5 9 c3-2.5 5-4.5 5-9 M7 21 c0-4.5 2-6.5 5-9 c3 2.5 5 4.5 5 9"/></symbol>
+<symbol id="ic-instagram" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></symbol>
 </defs>
 </svg>
 
@@ -2966,6 +3006,34 @@ function onWaInput(el){
   const d=waDigits(el.value); if(d!==el.value) el.value=d;
   const h=document.getElementById('waHidden'); if(h) h.value=d?'0'+d:'';
 }
+// Username Instagram: bersihkan dari "@" atau link lengkap (mis. tempel
+// "https://instagram.com/nama" atau "@nama") supaya yang tersimpan cuma usernamenya.
+function igUsername(v){
+  let s=String(v||'').trim();
+  s = s.replace(/^https?:\/\/(www\.)?instagram\.com\//i,'').replace(/\/.*$/,'');
+  s = s.replace(/^@+/,'');
+  return s;
+}
+function onInstagramInput(el){
+  const clean = igUsername(el.value);
+  if(clean!==el.value) el.value=clean;
+}
+function bukaInstagramKlien(){
+  const el=document.getElementById('instagramInput');
+  const u=igUsername(el?el.value:'');
+  if(!u){ toast('Isi username Instagram klien dulu, ya.'); return; }
+  window.open('https://instagram.com/'+encodeURIComponent(u), '_blank', 'noopener');
+}
+// Akordeon Input/Edit Job: buka satu bagian -> bagian lain otomatis tertutup.
+// Klik bagian yang sedang terbuka akan menutupnya (boleh semua tertutup).
+function toggleJfSection(sec){
+  if(!sec) return;
+  const form = sec.closest('#jobForm');
+  if(!form) return;
+  const isOpen = sec.classList.contains('open');
+  form.querySelectorAll('.jf-sec').forEach(s=>s.classList.remove('open'));
+  if(!isOpen) sec.classList.add('open');
+}
 
 /* ---------- Harga & hitung Hasil Cetak (Input Job) ---------- */
 const HARGA_CETAK_KEY='kaoneMotret_hargaCetak_v1';
@@ -3083,8 +3151,8 @@ function cetakSectionHtml(d){
   const qty=k=>`<input type="number" min="1" max="99" class="cx-q" data-cx-qty="${k}" value="${cur(k,'qty',1)}" aria-label="Jumlah">`;
   const so=(k,arr,v,fmt)=>`<select class="cx-s" data-cx-sel="${k}">${arr.map(x=>`<option value="${x}" ${String(x)===String(v)?'selected':''}>${fmt(x)}</option>`).join('')}</select>`;
   const row=(k,name,price,ctrl)=>`<div class="cx-row"><label class="cx-n">${chk(k)}<b>${name}</b></label><span class="cx-p">${price}</span><span class="cx-c">${ctrl}</span></div>`;
-  return `<section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('camera')}</span><div><h3>Hasil Cetak</h3><p>Centang yang dipesan. Otomatis masuk ke Deskripsi Paket dan Biaya Cetak.</p></div></div>
-    <div class="jf-body cx" id="cetakSection" oninput="cetakRecalc()" onchange="cetakRecalc()">
+  return `<section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('camera')}</span><div class="jf-sec-htx"><h3>Hasil Cetak</h3><p>Centang yang dipesan. Otomatis masuk ke Deskripsi Paket dan Biaya Cetak.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div>
+    <div class="jf-body jf-panel cx" id="cetakSection" oninput="cetakRecalc()" onchange="cetakRecalc()">
       ${row('f16','Foto 16" + Bingkai',fmtRp(H.f16)+' / foto',qty('f16'))}
       ${row('f12','Foto 12"',fmtRp(H.f12)+' / foto',qty('f12')+`<label class="cx-b"><input type="checkbox" data-cx-b="f12" ${c.f12&&c.f12.bingkai?'checked':''}> Bingkai +${fmtRp(H.f12b)}</label>`)}
       ${row('f10','Foto 10"',fmtRp(H.f10)+' / foto',qty('f10'))}
@@ -4772,7 +4840,7 @@ function fmtDurasiTempuh(durMin){
   if(jam<=0) teks = `${sisaMenit} menit`;
   else if(sisaMenit===0) teks = `${jam} jam`;
   else teks = `${jam} jam ${sisaMenit} menit`;
-  return `± ${teks} (perkiraan, tanpa kondisi lalu lintas)`;
+  return `± ${teks}`;
 }
 // Saran tambahan biaya transport, dibulatkan ke Rp1.000 terdekat.
 function hitungSaranTransport(km){
@@ -5144,7 +5212,7 @@ function viewBeranda(){
 function buildJobFormHtml(j){
   const d = j || {
     tanggalAcara:'', tanggalSelesai:'', jamAcara:'', desa:'', dusun:'', adaDusun:false, kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'', koordinat:'',
-    jenisAcara:'', jenisAcaraLain:'', namaKlien:'', noWhatsapp:'', paket:'', deskripsiPaket:'',
+    jenisAcara:'', jenisAcaraLain:'', namaKlien:'', noWhatsapp:'', instagram:'', paket:'', deskripsiPaket:'',
     prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Dijemput',
     vendor:'', vendorLain:'', timFreelancer:'', dp:'', biayaCetak:'', honorTim:'', honorTimList:[], diskon:'',
     penghasilan:'', sedekahNominal:'', sedekahStatus:'Belum', setoranShia:'',
@@ -5169,11 +5237,21 @@ function buildJobFormHtml(j){
           <h2>${j?ic('edit')+' Edit Job':ic('note')+' Input Job Baru'}</h2>
           <p>Lengkapi data acara, lokasi, dan keuangan. Kolom bertanda * wajib diisi.</p>
         </div>
-        <span class="jf-no">${j ? `No. urut <b>#${getJobNo(j.id)}</b>` : 'No. urut otomatis'}</span>
+        <div class="jf-head-right">
+          <span class="jf-no">${j ? `No. urut <b>#${getJobNo(j.id)}</b>` : 'No. urut otomatis'}</span>
+          ${j?`<button type="button" class="icon-btn icon-btn-danger jf-del-btn" id="btnDeleteJob" title="Hapus job ini">${ic('trash')}</button>`:''}
+        </div>
       </div>
-      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('user')}</span><div><h3>Data Klien &amp; Acara</h3><p>Siapa yang memesan dan kapan acaranya.</p></div></div><div class="form-grid jf-body">
+      <section class="jf-sec open"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('user')}</span><div class="jf-sec-htx"><h3>Data Klien &amp; Acara</h3><p>Siapa yang memesan dan kapan acaranya.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
         <div><label>Nama Klien / Pemesan</label><input type="text" name="namaKlien" value="${escapeHtml(d.namaKlien)}" placeholder="Nama klien" autocomplete="off"></div>
         <div><label>No. WhatsApp</label>${waFieldHtml(d.noWhatsapp)}</div>
+        <div>
+          <label>Instagram</label>
+          <div class="ig-field-wrap">
+            <div class="rp-input-wrap"><span class="rp-prefix">@</span><input type="text" name="instagram" id="instagramInput" value="${escapeHtml(igUsername(d.instagram))}" placeholder="username_klien" autocomplete="off" oninput="onInstagramInput(this)"></div>
+            <button type="button" class="ig-open-btn" id="btnBukaInstagram" title="Buka profil Instagram">${ic('instagram')}</button>
+          </div>
+        </div>
         <div><label>Tanggal Acara (Mulai) *</label><input type="date" name="tanggalAcara" id="tanggalAcaraInput" value="${d.tanggalAcara}" required oninput="onTanggalAcaraChange()"></div>
         <div><label>Tanggal Acara (Selesai) *</label><input type="date" name="tanggalSelesai" id="tanggalSelesaiInput" value="${escapeHtml(getJobFinishDate(d)||d.tanggalAcara||'')}" required oninput="updateDurasiHariHint()"></div>
         <div><label>Jam Acara (opsional)</label><div class="rp-input-wrap jam-acara-wrap"><span class="rp-prefix">${ic('clock')}</span><input type="time" name="jamAcara" id="jamAcaraInput" value="${escapeHtml(d.jamAcara||'')}"></div></div>
@@ -5195,7 +5273,7 @@ function buildJobFormHtml(j){
 
       </section>
       ${cetakSectionHtml(d)}
-      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('map-pin')}</span><div><h3>Lokasi Acara</h3><p>Alamat dan titik peta, dipakai untuk menghitung jarak dan saran transport.</p></div></div><div class="form-grid jf-body">
+      <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('map-pin')}</span><div class="jf-sec-htx"><h3>Lokasi Acara</h3><p>Alamat dan titik peta, dipakai untuk menghitung jarak dan saran transport.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
         <div class="full jf-check" style="display:flex;align-items:center;gap:8px;">
           <input type="checkbox" id="adaDusunInput" name="adaDusun" style="width:18px;height:18px;" ${(d.adaDusun || d.dusun)?'checked':''} onchange="document.getElementById('dusunWrap').style.display=this.checked?'block':'none'">
           <label for="adaDusunInput" style="margin:0;">Alamat ini punya Dusun</label>
@@ -5216,20 +5294,21 @@ function buildJobFormHtml(j){
               <input type="text" inputmode="decimal" class="maps-input" id="koordinatInput" name="koordinat" value="${escapeHtml(d.koordinat||'')}" placeholder="-1.234567, 101.234567" oninput="updateJarakCalc()">
             </div>
             <button type="button" class="btn btn-outline maps-open-btn" id="btnBukaKoordinat">${ic('map-pin')} Lihat Titik</button>
-            <button type="button" class="btn btn-outline maps-open-btn" id="btnCopyLinkMaps">${ic('clipboard')} Salin Link Maps</button>
+            <button type="button" class="btn btn-outline maps-open-btn" id="btnCopyLinkMaps">${ic('clipboard')} Salin Link</button>
           </div>
           <div class="field-hint">Format: Lintang, Bujur.</div>
           <div class="jarak-box">
             <div class="jr-group-label">${ic('road')} Jarak &amp; Waktu Tempuh Real (OSRM)</div>
             <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="jarakJalanText">${jarakAwalJalan===null?(koordAwalValid?'Menghitung…':'-'):fmtJarakJalan(jarakAwalJalan)}</b></div>
-            <div class="jr-row"><span>${ic('car')} Saran tambahan transport</span><b id="jarakJalanBiayaText">${jarakAwalJalan===null?(koordAwalValid?'…':'-'):fmtRp(hitungSaranTransport(jarakAwalJalan))}</b></div>
-            <div class="jr-row"><span>${ic('clock')} Perkiraan waktu tempuh</span><b id="durasiTempuhText">${durasiAwalTempuh===null?(koordAwalValid?'Menghitung…':'-'):fmtDurasiTempuh(durasiAwalTempuh)}</b></div>
+            <div class="jr-row"><span>${ic('car')} Saran transport</span><b id="jarakJalanBiayaText">${jarakAwalJalan===null?(koordAwalValid?'…':'-'):fmtRp(hitungSaranTransport(jarakAwalJalan))}</b></div>
+            <div class="jr-row"><span>${ic('clock')} Waktu tempuh</span><b id="durasiTempuhText">${durasiAwalTempuh===null?(koordAwalValid?'Menghitung…':'-'):fmtDurasiTempuh(durasiAwalTempuh)}</b></div>
+            <div class="jr-note">Perkiraan naik kendaraan, belum memperhitungkan kondisi lalu lintas.</div>
           </div>
         </div>
       </div>
 
       </section>
-      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('settings')}</span><div><h3>Status Proses</h3><p>Progres pengerjaan, pembayaran, dan siapa yang mengerjakan.</p></div></div><div class="form-grid jf-body">
+      <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('settings')}</span><div class="jf-sec-htx"><h3>Status Proses</h3><p>Progres pengerjaan, pembayaran, dan siapa yang mengerjakan.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
         <div><label>Proses Edit</label><select name="prosesEdit">${opt(['Belum Selesai','Selesai'], d.prosesEdit)}</select></div>
         <div><label>Proses Cetak</label><select name="prosesCetak">${opt(['Belum Selesai','Selesai'], d.prosesCetak)}</select></div>
         <div><label>Status Pembayaran</label><select name="statusPembayaran">${opt(STATUS_BAYAR_LIST, d.statusPembayaran)}</select></div>
@@ -5246,7 +5325,7 @@ function buildJobFormHtml(j){
         </div>
 
       </section>
-      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('money')}</span><div><h3>Keuangan</h3><p>Uang masuk dan keluar. Sisa bayar dan laba dihitung otomatis.</p></div></div><div class="form-grid jf-body">
+      <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('money')}</span><div class="jf-sec-htx"><h3>Keuangan</h3><p>Uang masuk dan keluar. Sisa bayar dan laba dihitung otomatis.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
         ${rpField('Penghasilan Dari Klien/Mitra','penghasilan',d.penghasilan)}
         ${rpField('Diskon','diskon',d.diskon)}
         ${rpField('DP','dp',d.dp)}
@@ -5258,7 +5337,7 @@ function buildJobFormHtml(j){
         </div>
 
       </section>
-      <section class="jf-sec"><div class="jf-sec-h"><span class="jf-ico">${ic('note')}</span><div><h3>Catatan Tambahan</h3><p>Permintaan khusus atau hal yang perlu diingat.</p></div></div><div class="form-grid jf-body">
+      <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('note')}</span><div class="jf-sec-htx"><h3>Catatan Tambahan</h3><p>Permintaan khusus atau hal yang perlu diingat.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
         <div class="full">
           <label>Catatan</label>
           <textarea name="catatan" rows="3" placeholder="Catatan lain seputar job ini...">${escapeHtml(d.catatan||'')}</textarea>
@@ -5272,7 +5351,6 @@ function buildJobFormHtml(j){
           <div><span>Penghasilan bersih</span><b id="calcBersih">${fmtRp(hitungBersih({...d, sedekahNominal: d.sedekahNominal||hitungSedekah(d)}))}</b></div>
         </div>
       <div class="form-actions">
-        ${j?`<button type="button" class="btn btn-danger" id="btnDeleteJob">${ic('trash')} Hapus Job</button>`:''}
         <button type="button" class="btn btn-outline" id="btnCancelForm">Batal</button>
         <button type="submit" class="btn btn-primary">${j?'Simpan Perubahan':'Simpan Job'}</button>
       </div>
@@ -5298,7 +5376,7 @@ function renderHonorTimSectionHtml(){
         const nama = a.nama_lengkap || a.username;
         const sel = jobFormHonorTim.find(x=>String(x.userId)===String(a.id));
         return `
-        <div class="honor-tim-row">
+        <div class="honor-tim-row ${sel?'is-checked':''}">
           <label class="honor-tim-check">
             <input type="checkbox" data-honor-toggle="${escapeHtml(a.id)}" data-honor-nama="${escapeHtml(nama)}" ${sel?'checked':''} onchange="toggleHonorTimMember(this)">
             <span>${escapeHtml(nama)}</span>
@@ -5371,6 +5449,16 @@ function bindJobFormEvents(scopeEl, onDone){
     const c = parseCoordString(val);
     if(!c){ toast('Isi Titik Koordinat yang valid dulu (Lintang, Bujur)'); return; }
     copyToClipboard(`https://www.google.com/maps?q=${c.lat},${c.lng}`, 'Link Maps disalin');
+  });
+  scopeEl.querySelector('#btnBukaInstagram')?.addEventListener('click', bukaInstagramKlien);
+  // Jaga-jaga: kalau kolom wajib (Tanggal Acara, Jenis Acara) tidak terisi saat Simpan
+  // ditekan, sedangkan bagian akordeon yang memuatnya sedang tertutup, buka dulu
+  // bagian itu supaya validasi browser bisa fokus & terlihat oleh pengguna.
+  form.querySelectorAll('[required]').forEach(inp=>{
+    inp.addEventListener('invalid', function(){
+      const sec = this.closest('.jf-sec');
+      if(sec && !sec.classList.contains('open')) toggleJfSection(sec);
+    });
   });
   form.addEventListener('submit', (e)=>{
     e.preventDefault();
@@ -6809,6 +6897,7 @@ function openJobDetailModal(jobId){
       ['Saran Transport', jarakJalanBiayaTeksAwal, 'jdJarakJalanBiayaText'],
       ['Perkiraan Waktu Tempuh', durasiTempuhTeksAwal, 'jdDurasiTempuhText'],
       ['No. WhatsApp', j.noWhatsapp||'-'],
+      ['Instagram', j.instagram?'@'+j.instagram:'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
     ]},
@@ -6931,6 +7020,7 @@ function buildJobPosterHtml(j){
       ...(jarakJalanPoster!==null ? [['Jarak dari Kaone Motret (Real)', fmtJarakJalan(jarakJalanPoster)]] : []),
       ...(jarakJalanPoster!==null ? [['Saran Transport', fmtRp(hitungSaranTransport(jarakJalanPoster))]] : []),
       ['No. WhatsApp', j.noWhatsapp||'-'],
+      ['Instagram', j.instagram?'@'+j.instagram:'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', truncateText(j.deskripsiPaket, 160) || '-'],
     ]},
@@ -7175,6 +7265,7 @@ function copyJobDetails(jobId){
       ['Jarak dari Kaone Motret (Real)', jarakJalanCopy===null?'- (belum dihitung, buka Detail Job dulu)':fmtJarakJalan(jarakJalanCopy)],
       ['Saran Transport', jarakJalanCopy===null?'-':fmtRp(hitungSaranTransport(jarakJalanCopy))],
       ['No. WhatsApp', j.noWhatsapp||'-'],
+      ['Instagram', j.instagram?'@'+j.instagram:'-'],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
     ]},
@@ -10217,6 +10308,11 @@ const CHANGELOG = [
       { kategori: 'Perbaikan', teks: 'Diperbaiki bug di sebagian HP yang membuat muncul celah kosong memanjang di sisi kanan layar (termasuk di halaman Pengaturan) setelah memakai fitur Unduh Gambar Kalender, sampai halaman dimuat ulang.' },
       { kategori: 'Fitur', teks: 'Form Input/Edit Job dan Detail Job sekarang otomatis menampilkan perkiraan waktu tempuh (naik kendaraan) dari Kaone Motret ke lokasi acara, berdampingan dengan jarak dan saran transport yang sudah ada — otomatis muncul begitu Titik Koordinat diisi.' },
       { kategori: 'Perbaikan', teks: 'Semua kolom isian teks/angka (termasuk kolom di kartu Harga Cetak) sekarang pakai ukuran huruf minimal 16px, supaya browser HP tidak lagi otomatis memperbesar (zoom) tampilan saat kolomnya disentuh — beberapa HP sebelumnya tidak kembali normal setelah itu, terlihat seperti ada celah kosong di pinggir layar.' },
+      { kategori: 'Fitur', teks: 'Form Input/Edit Job kini punya saklar Pengiriman Diantar/Dijemput. Kalau diatur ke "Diantar" (diantar tim), ongkos antar terhitung otomatis dari jarak ke lokasi klien dan otomatis masuk ke pesan WhatsApp "Foto Selesai". Tarif per km & batas gratisnya bisa diatur Admin di Pengaturan.' },
+      { kategori: 'Peningkatan', teks: 'Halaman Pengaturan dirapikan — kartu-kartunya sekarang dikelompokkan (Harga & Pesan Bisnis, Akun, Data & Cadangan) supaya lebih mudah ditemukan.' },
+      { kategori: 'Peningkatan', teks: 'Form Input/Edit Job dirombak total supaya lebih nyaman di HP: tiap bagian sekarang bisa dibuka-tutup satu per satu (buka satu, yang lain otomatis tertutup), ukuran kolom & tulisan lebih pas, dan bar Simpan/Batal di bawah dibuat lebih ringkas.' },
+      { kategori: 'Perbaikan', teks: 'Perkiraan waktu tempuh yang sebelumnya bisa "keluar kotak", kolom Honor Tim yang berdesakan, dan tombol "kembali ke atas" yang menimpa tombol Simpan di form Job — semuanya sudah dirapikan.' },
+      { kategori: 'Fitur', teks: 'Kolom Instagram ditambahkan di form Job (Data Klien & Acara), lengkap dengan tombol untuk langsung membuka profil Instagram klien.' },
     ]
   },
   {

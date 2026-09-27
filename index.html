@@ -3018,11 +3018,69 @@ function onInstagramInput(el){
   const clean = igUsername(el.value);
   if(clean!==el.value) el.value=clean;
 }
-function bukaInstagramKlien(){
-  const el=document.getElementById('instagramInput');
-  const u=igUsername(el?el.value:'');
-  if(!u){ toast('Isi username Instagram klien dulu, ya.'); return; }
+function bukaInstagramByBtn(btn){
+  const wrap = btn.closest('.ig-field-wrap');
+  const input = wrap ? wrap.querySelector('input') : null;
+  const u = igUsername(input?input.value:'');
+  if(!u){ toast('Isi username Instagram-nya dulu, ya.'); return; }
   window.open('https://instagram.com/'+encodeURIComponent(u), '_blank', 'noopener');
+}
+/* ---------- Kolom Instagram menyesuaikan Jenis Acara ----------
+   Jumlah & nama kolom Instagram di form Job mengikuti jenis acaranya (mis. Margondang
+   perlu 2: mempelai laki-laki & perempuan; Mangayun perlu 3: ayah, ibu, anak). Supaya
+   gampang ditambah/diubah nanti, semuanya diatur lewat SATU peta di bawah ini — key-nya
+   harus SAMA PERSIS dengan salah satu nilai di JENIS_ACARA_LIST. Jenis acara yang tidak
+   terdaftar di sini (termasuk "Lainnya") otomatis dapat 1 kolom Instagram generik. */
+const INSTAGRAM_ROLES_BY_ACARA = {
+  'Margondang 1 Hari': ['Pengantin Laki-laki','Pengantin Perempuan'],
+  'Margondang 2 Hari': ['Pengantin Laki-laki','Pengantin Perempuan'],
+  'Marbagas': ['Pengantin Laki-laki','Pengantin Perempuan'],
+  'Patuaekkon': ['Pengantin Laki-laki','Pengantin Perempuan'],
+  'Mangayun/Aqiqah': ['Ayah','Ibu','Anak'],
+  'Wisuda': ['Wisudawan'],
+};
+function getInstagramRoles(jenisAcara){
+  return INSTAGRAM_ROLES_BY_ACARA[jenisAcara] || ['Instagram'];
+}
+// Baris untuk ditampilkan di Detail Job / Poster / Salin Teks — 1 baris per kolom
+// Instagram yang tersimpan di job (jumlahnya mengikuti Jenis Acara saat job disimpan).
+function instagramDetailRows(j){
+  const list = Array.isArray(j.instagramList) ? j.instagramList : [];
+  if(!list.length) return [['Instagram', '-']];
+  const generic = list.length===1 && list[0].role==='Instagram';
+  return list.map(it=>[ generic?'Instagram':('Instagram '+it.role), it.username?('@'+it.username):'-' ]);
+}
+// Cocokkan username yang sudah pernah diisi ke susunan role yang baru (berdasarkan
+// nama role-nya) — supaya kalau jenis acaranya tetap sama, isian yang sudah diketik
+// tidak hilang. Role yang tidak ada di susunan baru otomatis tidak dibawa.
+function matchInstagramRoles(roles, existingList){
+  const byRole = {};
+  (existingList||[]).forEach(it=>{ if(it && it.role) byRole[it.role] = it.username||''; });
+  return roles.map(role=>({ role, username: byRole[role]||'' }));
+}
+function instagramFieldsHtml(roles, list){
+  const generic = roles.length===1 && roles[0]==='Instagram';
+  return list.map(it=>{
+    const labelTeks = generic ? 'Instagram' : ('Instagram '+it.role);
+    return `<div>
+      <label>${escapeHtml(labelTeks)}</label>
+      <div class="ig-field-wrap">
+        <div class="rp-input-wrap"><span class="rp-prefix">@</span><input type="text" class="ig-role-input" data-ig-role="${escapeHtml(it.role)}" value="${escapeHtml(igUsername(it.username))}" placeholder="${generic?'username_klien':'username'}" autocomplete="off" oninput="onInstagramInput(this)"></div>
+        <button type="button" class="ig-open-btn" onclick="bukaInstagramByBtn(this)" title="Buka profil Instagram ${generic?'':escapeHtml(it.role)}">${ic('instagram')}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+// Dipicu saat Jenis Acara diganti di form: susun ulang kolom Instagram sesuai jenis
+// acara yang baru, sambil tetap mempertahankan isian yang cocok (lihat matchInstagramRoles).
+function onJenisAcaraChange(sel){
+  const jenisLainWrap = document.getElementById('jenisLainWrap');
+  if(jenisLainWrap) jenisLainWrap.style.display = sel.value==='Lainnya' ? 'block' : 'none';
+  const wrap = document.getElementById('instagramFieldsWrap');
+  if(!wrap) return;
+  const currentList = Array.from(wrap.querySelectorAll('.ig-role-input')).map(inp=>({role:inp.dataset.igRole, username:inp.value}));
+  const roles = getInstagramRoles(sel.value);
+  wrap.innerHTML = instagramFieldsHtml(roles, matchInstagramRoles(roles, currentList));
 }
 // Akordeon Input/Edit Job: buka satu bagian -> bagian lain otomatis tertutup.
 // Klik bagian yang sedang terbuka akan menutupnya (boleh semua tertutup).
@@ -3068,9 +3126,10 @@ let ONGKIR_ANTAR=(()=>{try{return {...ONGKIR_ANTAR_DEFAULT,...JSON.parse(localSt
 // km null/tidak valid -> null (belum bisa dihitung). Selain itu selalu angka (0 = gratis).
 function hitungOngkirAntar(km){
   if(km===null || km===undefined || isNaN(km)) return null;
-  const raw = Math.round(km * (Number(ONGKIR_ANTAR.perKm)||0));
+  const mentah = km * (Number(ONGKIR_ANTAR.perKm)||0);
+  const dibulatkan = Math.ceil(mentah/1000)*1000; // dibulatkan ke ATAS per Rp1.000, mis. Rp47.670 -> Rp48.000
   const batas = Number(ONGKIR_ANTAR.batasGratis);
-  return raw <= (isNaN(batas)?0:batas) ? 0 : raw;
+  return dibulatkan <= (isNaN(batas)?0:batas) ? 0 : dibulatkan;
 }
 function fmtOngkirAntar(km){
   const biaya=hitungOngkirAntar(km);
@@ -3079,12 +3138,12 @@ function fmtOngkirAntar(km){
 }
 function ongkirAntarCardHtml(){
   return `<div class="card"><h2 style="margin-top:0;">${ic('car')} Ongkos Antar Foto</h2>
-    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Dipakai otomatis saat saklar Pengiriman di Input/Edit Job diatur ke "Diantar" (foto diantar tim ke lokasi klien). Dihitung dari jarak real (Titik Koordinat) ke Kaone Motret.</p>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Dipakai otomatis saat saklar Pengiriman di Input/Edit Job diatur ke "Diantar" (foto diantar tim ke lokasi klien). Dihitung dari jarak real (Titik Koordinat) ke Kaone Motret, lalu dibulatkan ke atas per Rp1.000 (mis. Rp47.670 jadi Rp48.000).</p>
     <div class="form-grid">
       <div><label>Tarif per KM</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-ongkirantar="perKm" value="${fmtRibuan(ONGKIR_ANTAR.perKm)}" oninput="handleMoneyInput(this)"></div></div>
       <div><label>Gratis Jika Biaya Sampai Dengan</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-ongkirantar="batasGratis" value="${fmtRibuan(ONGKIR_ANTAR.batasGratis)}" oninput="handleMoneyInput(this)"></div></div>
     </div>
-    <div class="field-hint" style="margin-top:8px;">Contoh dengan pengaturan bawaan: jarak 6 km → Rp18.000 (≤ Rp19.999) dianggap GRATIS. Jarak 7 km → Rp21.000 (≥ Rp20.000) tetap ditagih penuh.</div>
+    <div class="field-hint" style="margin-top:8px;">Contoh dengan pengaturan bawaan: jarak 6 km → Rp18.000 (≤ Rp19.999) dianggap GRATIS. Jarak 15,89 km → Rp47.670 dibulatkan jadi Rp48.000 (≥ Rp20.000) dan tetap ditagih penuh.</div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
       <button type="button" class="btn btn-primary" onclick="simpanOngkirAntar()">${ic('save')} Simpan</button>
       <button type="button" class="btn btn-outline" onclick="resetOngkirAntarForm()">Kembalikan bawaan</button>
@@ -5212,7 +5271,7 @@ function viewBeranda(){
 function buildJobFormHtml(j){
   const d = j || {
     tanggalAcara:'', tanggalSelesai:'', jamAcara:'', desa:'', dusun:'', adaDusun:false, kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'', koordinat:'',
-    jenisAcara:'', jenisAcaraLain:'', namaKlien:'', noWhatsapp:'', instagram:'', paket:'', deskripsiPaket:'',
+    jenisAcara:'', jenisAcaraLain:'', namaKlien:'', noWhatsapp:'', instagramList:[], paket:'', deskripsiPaket:'',
     prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Dijemput',
     vendor:'', vendorLain:'', timFreelancer:'', dp:'', biayaCetak:'', honorTim:'', honorTimList:[], diskon:'',
     penghasilan:'', sedekahNominal:'', sedekahStatus:'Belum', setoranShia:'',
@@ -5229,6 +5288,8 @@ function buildJobFormHtml(j){
   const jarakAwalJalan = jarakTempuhAwal ? jarakTempuhAwal.km : null;
   const durasiAwalTempuh = jarakTempuhAwal ? jarakTempuhAwal.durMin : null;
   const koordAwalValid = !!parseCoordString(d.koordinat);
+  const igRolesAwal = getInstagramRoles(d.jenisAcara);
+  const igListAwal = matchInstagramRoles(igRolesAwal, d.instagramList);
 
   return `
     <form id="jobForm" class="jf">
@@ -5245,26 +5306,20 @@ function buildJobFormHtml(j){
       <section class="jf-sec open"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('user')}</span><div class="jf-sec-htx"><h3>Data Klien &amp; Acara</h3><p>Siapa yang memesan dan kapan acaranya.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
         <div><label>Nama Klien / Pemesan</label><input type="text" name="namaKlien" value="${escapeHtml(d.namaKlien)}" placeholder="Nama klien" autocomplete="off"></div>
         <div><label>No. WhatsApp</label>${waFieldHtml(d.noWhatsapp)}</div>
-        <div>
-          <label>Instagram</label>
-          <div class="ig-field-wrap">
-            <div class="rp-input-wrap"><span class="rp-prefix">@</span><input type="text" name="instagram" id="instagramInput" value="${escapeHtml(igUsername(d.instagram))}" placeholder="username_klien" autocomplete="off" oninput="onInstagramInput(this)"></div>
-            <button type="button" class="ig-open-btn" id="btnBukaInstagram" title="Buka profil Instagram">${ic('instagram')}</button>
-          </div>
-        </div>
         <div><label>Tanggal Acara (Mulai) *</label><input type="date" name="tanggalAcara" id="tanggalAcaraInput" value="${d.tanggalAcara}" required oninput="onTanggalAcaraChange()"></div>
         <div><label>Tanggal Acara (Selesai) *</label><input type="date" name="tanggalSelesai" id="tanggalSelesaiInput" value="${escapeHtml(getJobFinishDate(d)||d.tanggalAcara||'')}" required oninput="updateDurasiHariHint()"></div>
         <div><label>Jam Acara (opsional)</label><div class="rp-input-wrap jam-acara-wrap"><span class="rp-prefix">${ic('clock')}</span><input type="time" name="jamAcara" id="jamAcaraInput" value="${escapeHtml(d.jamAcara||'')}"></div></div>
         <div class="full" id="durasiHariHintWrap"><div class="field-hint" id="durasiHariHint">Job 1 hari — tugas tim otomatis ditandai selesai pukul 23.59 pada Tanggal Acara.</div></div>
         <div>
           <label>Jenis Acara *</label>
-          <select name="jenisAcara" required onchange="document.getElementById('jenisLainWrap').style.display=this.value==='Lainnya'?'block':'none'">
+          <select name="jenisAcara" required onchange="onJenisAcaraChange(this)">
             <option value="">Pilih jenis acara</option>
             ${opt(JENIS_ACARA_LIST, d.jenisAcara)}
           </select>
         </div>
         <div><label>Paket</label><input type="text" name="paket" value="${escapeHtml(d.paket)}" placeholder="Nama / isi paket"></div>
         <div class="full" id="jenisLainWrap" style="display:${d.jenisAcara==='Lainnya'?'block':'none'}"><label>Sebutkan Jenis Acara Lainnya</label><input type="text" name="jenisAcaraLain" value="${escapeHtml(d.jenisAcaraLain||'')}"></div>
+        <div id="instagramFieldsWrap" style="display:contents;">${instagramFieldsHtml(igRolesAwal, igListAwal)}</div>
         <div class="full">
           <label>Deskripsi Paket</label>
           <textarea name="deskripsiPaket" rows="3" placeholder="Rincian isi paket, misal: 1 album 20R, cetak 4R 50 lembar, softfile semua foto, dll.">${escapeHtml(d.deskripsiPaket||'')}</textarea>
@@ -5450,7 +5505,6 @@ function bindJobFormEvents(scopeEl, onDone){
     if(!c){ toast('Isi Titik Koordinat yang valid dulu (Lintang, Bujur)'); return; }
     copyToClipboard(`https://www.google.com/maps?q=${c.lat},${c.lng}`, 'Link Maps disalin');
   });
-  scopeEl.querySelector('#btnBukaInstagram')?.addEventListener('click', bukaInstagramKlien);
   // Jaga-jaga: kalau kolom wajib (Tanggal Acara, Jenis Acara) tidak terisi saat Simpan
   // ditekan, sedangkan bagian akordeon yang memuatnya sedang tertutup, buka dulu
   // bagian itu supaya validasi browser bisa fokus & terlihat oleh pengguna.
@@ -5478,6 +5532,11 @@ function bindJobFormEvents(scopeEl, onDone){
       data.pengiriman = buildPengirimanValue(metodeOn?'diantar':'dijemput', statusVal==='Sudah');
       if(!metodeOn) data.ongkirAntar = 0; // metode Dijemput tidak pakai ongkos antar
     }
+    // Kolom Instagram dinamis (jumlah & nama kolomnya ikut Jenis Acara) dikumpulkan
+    // manual di sini, bukan lewat FormData, karena elemennya tidak pakai atribut name.
+    data.instagramList = Array.from(form.querySelectorAll('.ig-role-input')).map(inp=>({
+      role: inp.dataset.igRole, username: igUsername(inp.value)
+    }));
     // Hilangkan spasi berlebih di awal/akhir tiap isian teks (mis. "Portibi " dan "Portibi"
     // supaya dianggap sama di pencarian, filter, maupun rekap).
     Object.keys(data).forEach(k=>{
@@ -6897,7 +6956,7 @@ function openJobDetailModal(jobId){
       ['Saran Transport', jarakJalanBiayaTeksAwal, 'jdJarakJalanBiayaText'],
       ['Perkiraan Waktu Tempuh', durasiTempuhTeksAwal, 'jdDurasiTempuhText'],
       ['No. WhatsApp', j.noWhatsapp||'-'],
-      ['Instagram', j.instagram?'@'+j.instagram:'-'],
+      ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
     ]},
@@ -7020,7 +7079,7 @@ function buildJobPosterHtml(j){
       ...(jarakJalanPoster!==null ? [['Jarak dari Kaone Motret (Real)', fmtJarakJalan(jarakJalanPoster)]] : []),
       ...(jarakJalanPoster!==null ? [['Saran Transport', fmtRp(hitungSaranTransport(jarakJalanPoster))]] : []),
       ['No. WhatsApp', j.noWhatsapp||'-'],
-      ['Instagram', j.instagram?'@'+j.instagram:'-'],
+      ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', truncateText(j.deskripsiPaket, 160) || '-'],
     ]},
@@ -7265,7 +7324,7 @@ function copyJobDetails(jobId){
       ['Jarak dari Kaone Motret (Real)', jarakJalanCopy===null?'- (belum dihitung, buka Detail Job dulu)':fmtJarakJalan(jarakJalanCopy)],
       ['Saran Transport', jarakJalanCopy===null?'-':fmtRp(hitungSaranTransport(jarakJalanCopy))],
       ['No. WhatsApp', j.noWhatsapp||'-'],
-      ['Instagram', j.instagram?'@'+j.instagram:'-'],
+      ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
     ]},
@@ -10293,12 +10352,20 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.10.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.11.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.11.0',
+    tanggal: '28 September 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Kolom Instagram di form Job sekarang otomatis menyesuaikan Jenis Acara: Margondang (1/2 Hari), Marbagas & Patuaekkon jadi 2 kolom (Pengantin Laki-laki & Perempuan), Mangayun/Aqiqah jadi 3 kolom (Ayah, Ibu, Anak), Wisuda jadi 1 kolom (Wisudawan). Jenis acara lain tetap 1 kolom Instagram biasa.' },
+      { kategori: 'Peningkatan', teks: 'Ongkos Antar Foto sekarang dibulatkan ke atas per Rp1.000 (misalnya Rp47.670 jadi Rp48.000), supaya nominal yang muncul di pesan WhatsApp lebih rapi dan gampang dibayar.' },
+    ]
+  },
   {
     version: '1.10.0',
     tanggal: '27 September 2026',

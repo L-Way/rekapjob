@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1c1a12">
 <meta name="application-name" content="Kaone Motret">
 <meta name="apple-mobile-web-app-title" content="Kaone Motret">
@@ -202,6 +202,12 @@
   .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px 20px;}
   .form-grid .full{grid-column:1/-1;}
   @media(max-width:720px){.form-grid{grid-template-columns:1fr;}}
+  /* Setiap kolom di dalam grid (mis. tiap kotak harga di kartu Harga Cetak)
+     secara default punya "min-width:auto", yang secara teori bisa memaksa
+     kolomnya melebar melebihi jatah 1fr kalau isinya (label/kolom Rp) tidak
+     bisa menyusut. min-width:0 di sini mengizinkan kolom menyusut sepenuhnya
+     mengikuti grid, supaya kartu tidak pernah diam-diam lebih lebar dari layar. */
+  .form-grid > div{min-width:0;}
   label{font-size:12.5px; font-weight:600; color:#4a4530; display:block; margin-bottom:5px; letter-spacing:.2px;}
   input[type=text],input[type=url],input[type=date],input[type=number],input[type=tel],input[type=password],select,textarea{
     width:100%; padding:10px 12px; border:1.5px solid #e5ddc0; border-radius:9px; font-size:14px;
@@ -1373,10 +1379,19 @@
     scroll-behavior:smooth;
     overflow-x:hidden;
     max-width:100%;
+    /* Baris ini sengaja ditambahkan LAGI di sini (bukan cuma overflow-x:hidden)
+       supaya kalau ada elemen yang diam-diam lebih lebar dari layar (mis. kolom
+       di kartu Harga Cetak), browser di HP benar-benar tidak bisa menggeser
+       (scroll) halaman ke samping sama sekali — termasuk saat dia mencoba
+       "menggulung ke kolom yang sedang disentuh" secara otomatis. overflow-x:hidden
+       saja kadang masih bisa digeser paksa oleh sebagian browser/WebView Android;
+       overflow-x:clip (kalau didukung) menutup celah itu. */
+    overflow-x:clip;
   }
   body{
     -webkit-tap-highlight-color:transparent;
     overflow-x:hidden;
+    overflow-x:clip;
     max-width:100%;
     /* Ruang aman bawah untuk iPhone dengan home-indicator */
     padding-bottom:calc(60px + env(safe-area-inset-bottom, 0px));
@@ -1889,7 +1904,7 @@
   @container (max-width:560px){ .cx-row{grid-template-columns:1fr; gap:6px;} }
 
   /* Kolom Rp / +62: prefix menyatu dengan isian, satu bingkai */
-  .jf .rp-input-wrap,.hc .rp-input-wrap{display:flex; align-items:stretch; border:1.5px solid #e8e0c6; border-radius:11px; background:#fffdf7; overflow:hidden; transition:border-color .15s, box-shadow .15s;}
+  .jf .rp-input-wrap,.hc .rp-input-wrap{display:flex; align-items:stretch; min-width:0; border:1.5px solid #e8e0c6; border-radius:11px; background:#fffdf7; overflow:hidden; transition:border-color .15s, box-shadow .15s;}
   .jf .rp-input-wrap:focus-within,.hc .rp-input-wrap:focus-within{border-color:var(--gold); box-shadow:0 0 0 3.5px rgba(212,175,0,.16); background:#fff;}
   .jf .rp-input-wrap:has(input:read-only),.hc .rp-input-wrap:has(input:read-only){background:#faf6e6;}
   .jf .rp-input-wrap .rp-prefix,.hc .rp-input-wrap .rp-prefix{position:static; transform:none; display:flex; align-items:center; padding:0 13px; background:var(--gold-pale); color:#7a6400; font-size:13px; font-weight:700; border-right:1.5px solid #efe2a0; flex-shrink:0;}
@@ -4238,7 +4253,17 @@ function parseRibuan(str){
   return digits ? Number(digits) : 0;
 }
 function handleMoneyInput(el){
-  el.value = fmtRibuan(el.value);
+  // Dulu: el.value langsung ditimpa setiap ketikan, yang membuat kursor selalu
+  // melompat ke ujung teks (mengganggu kalau mengedit di tengah angka) dan
+  // memicu browser HP menghitung ulang posisi "gulir ke kolom ini" berkali-kali
+  // saat mengetik cepat. Sekarang posisi kursor (dihitung dari belakang, karena
+  // pemformatan menambah/mengurangi titik ribuan) ikut dipulihkan.
+  const before = el.value;
+  const caretFromEnd = before.length - (el.selectionStart ?? before.length);
+  const formatted = fmtRibuan(before);
+  el.value = formatted;
+  const pos = Math.max(0, formatted.length - caretFromEnd);
+  try{ el.setSelectionRange(pos, pos); }catch(_){}
 }
 function vendorDisplay(j){
   if(!j) return '-';

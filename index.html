@@ -1513,6 +1513,14 @@
   input[type=text],input[type=url],input[type=date],input[type=number],
   input[type=tel],input[type=password],input[type=time],select,textarea{
     border-radius:11px; border-color:#e8e0c6;
+    /* font-size minimal 16px: sebagian browser mobile (terutama Safari/iOS,
+       tapi beberapa WebView Android juga) otomatis memperbesar (zoom) seluruh
+       halaman saat kolom dengan huruf lebih kecil dari 16px disentuh, dan
+       tidak selalu kembali normal setelah keyboard ditutup — bisa terlihat
+       seperti sebagian layar "terpotong"/ada celah di pinggir. Kolom harga
+       (Harga Cetak, dll.) paling sering disentuh berkali-kali sehingga
+       paling gampang memicu ini. */
+    font-size:16px;
   }
   input:focus,select:focus,textarea:focus{
     box-shadow:0 0 0 3.5px rgba(212,175,0,.16);
@@ -9963,6 +9971,7 @@ const CHANGELOG = [
       { kategori: 'Perbaikan', teks: 'Footer di paling bawah halaman tidak lagi terlihat "mengambang"/naik dengan celah kosong di bawahnya — sekarang menempel rapat sampai ke tepi bawah layar.' },
       { kategori: 'Perbaikan', teks: 'Diperbaiki bug di sebagian HP yang membuat muncul celah kosong memanjang di sisi kanan layar (termasuk di halaman Pengaturan) setelah memakai fitur Unduh Gambar Kalender, sampai halaman dimuat ulang.' },
       { kategori: 'Fitur', teks: 'Form Input/Edit Job dan Detail Job sekarang otomatis menampilkan perkiraan waktu tempuh (naik kendaraan) dari Kaone Motret ke lokasi acara, berdampingan dengan jarak dan saran transport yang sudah ada — otomatis muncul begitu Titik Koordinat diisi.' },
+      { kategori: 'Perbaikan', teks: 'Semua kolom isian teks/angka (termasuk kolom di kartu Harga Cetak) sekarang pakai ukuran huruf minimal 16px, supaya browser HP tidak lagi otomatis memperbesar (zoom) tampilan saat kolomnya disentuh — beberapa HP sebelumnya tidak kembali normal setelah itu, terlihat seperti ada celah kosong di pinggir layar.' },
     ]
   },
   {

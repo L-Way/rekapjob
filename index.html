@@ -1942,6 +1942,19 @@
   .jf #durasiHariHintWrap{background:#fff9e6; border-left:3px solid var(--gold); border-radius:8px; padding:8px 12px;}
   .jf #durasiHariHintWrap .field-hint{margin:0; font-size:11.5px; color:#5c4a12;}
   .jf .jarak-box,.jf .ongkir-box{background:#fff9e6; border:1px solid #f0e4a6; padding:11px 14px;}
+  /* Kotak "Ambil dari Pricelist" di atas form Input/Edit Job */
+  .jf .pl-box{background:#fff9e6; border:1px dashed var(--gold); border-radius:12px; padding:12px 14px; margin:14px 0 4px;}
+  .jf .pl-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; margin-bottom:9px;}
+  .jf .pl-head b{font-size:13.5px; color:var(--ink);}
+  .jf .pl-head span{font-size:11.5px; color:var(--ink-soft);}
+  .jf .pl-row{display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) auto; gap:8px; align-items:center;}
+  .jf .pl-row .btn{white-space:nowrap;}
+  @media (max-width:640px){ .jf .pl-row{grid-template-columns:1fr;} .jf .pl-row .btn{width:100%;} }
+  .jf .pl-status{margin-top:8px; font-size:12px; line-height:1.6; color:var(--ink-soft);}
+  .jf .pl-status:empty{display:none;}
+  .jf .pl-status.is-ok{color:var(--ok);}
+  .jf .pl-status.is-warn{color:var(--warn);}
+  .jf .pl-status.is-err{color:var(--danger);}
   .jf .jarak-box .jr-group-label,.jf .ongkir-box .jr-group-label{text-transform:none; letter-spacing:0; font-size:11.5px; display:flex; align-items:center; gap:6px;}
   /* Kolom Instagram: senada kolom +62, prefix @ permanen + tombol buka profil */
   .ig-field-wrap{display:flex; align-items:stretch; gap:8px;}
@@ -2595,6 +2608,42 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const SYNC_TABLE = 'kaone_motret_data';
 const SYNC_ROW_ID = 'main';
 
+/* Tabel kecil TERPISAH dari kaone_motret_data di atas — isinya BUKAN data job/klien,
+   cuma pengaturan yang memang sengaja dibuat bisa dibaca publik: tarif Ongkos Antar
+   (dan pengaturan publik lain di masa depan, satu baris per "kunci"). Dipisah dari
+   kaone_motret_data supaya keempat halaman pricelist (Wedding/Mangayun & Aqiqah/
+   Margondang/Isi Biodata) bisa membaca tarif ongkirnya sendiri TANPA perlu diberi
+   akses ke data klien/job yang sensitif di kaone_motret_data.
+   Buat tabel ini di Supabase (SQL Editor) apabila belum ada:
+
+   create table kaone_motret_pengaturan_publik (
+     kunci text primary key,
+     nilai jsonb not null,
+     updated_at timestamptz not null default now()
+   );
+   alter table kaone_motret_pengaturan_publik enable row level security;
+   create policy "Publik boleh baca pengaturan" on kaone_motret_pengaturan_publik for select to anon using (true);
+   create policy "Publik boleh simpan pengaturan" on kaone_motret_pengaturan_publik for insert to anon with check (true);
+   create policy "Publik boleh ubah pengaturan" on kaone_motret_pengaturan_publik for update to anon using (true) with check (true);
+*/
+const PUBLIC_SETTINGS_TABLE = 'kaone_motret_pengaturan_publik';
+// Menerbitkan tarif Ongkos Antar yang berlaku SEKARANG ke tabel publik di atas, supaya
+// keempat halaman pricelist otomatis memakai tarif yang sama tanpa perlu diedit manual
+// satu-satu di tiap file HTML. Dipanggil dari simpanOngkirAntar() (Admin menyimpan
+// perubahan tarif) dan sekali lagi setelah pullFromCloud() berhasil (jaga-jaga tabel
+// publik ini sempat tertinggal/belum pernah diterbitkan dari device lain).
+async function pushOngkirAntarPublic(){
+  if(!cloudSyncEnabled) return;
+  try{
+    const { error } = await supabaseClient
+      .from(PUBLIC_SETTINGS_TABLE)
+      .upsert({ kunci:'ongkir_antar', nilai:{ perKm:Number(ONGKIR_ANTAR.perKm)||0, batasGratis:Number(ONGKIR_ANTAR.batasGratis)||0 }, updated_at:new Date().toISOString() });
+    if(error) throw error;
+  }catch(e){
+    console.error('Gagal menerbitkan tarif Ongkos Antar ke tabel publik (pastikan tabel kaone_motret_pengaturan_publik sudah dibuat)', e);
+  }
+}
+
 /* Tabel terpisah untuk Saran & Penilaian (testimoni) klien. Setiap baris = satu ulasan,
    dikirim oleh klien lewat formulir "Saran & Penilaian" di halaman pricelist wedding.
    Buat tabel ini di Supabase (SQL Editor) apabila belum ada:
@@ -3155,6 +3204,7 @@ function simpanOngkirAntar(){
   document.querySelectorAll('[data-ongkirantar]').forEach(i=>{ ONGKIR_ANTAR[i.dataset.ongkirantar]=parseRibuan(i.value)||0; });
   try{ localStorage.setItem(ONGKIR_ANTAR_KEY,JSON.stringify(ONGKIR_ANTAR)); }catch(_){}
   pushToCloud();
+  pushOngkirAntarPublic();
   toast('Pengaturan ongkos antar disimpan');
 }
 function resetOngkirAntarForm(){
@@ -3310,6 +3360,11 @@ async function pullFromCloud(){
       applyAllData(data.payload);
       persistAllLocal();
       setSyncStatus('synced');
+      // Jaga-jaga tabel publik kaone_motret_pengaturan_publik sempat tertinggal
+      // (mis. baru pertama kali dipasang, atau sempat gagal saat disimpan dari
+      // device lain) — diterbitkan ulang tiap kali berhasil memuat dari cloud,
+      // supaya keempat halaman pricelist selalu dapat tarif Ongkos Antar terbaru.
+      pushOngkirAntarPublic();
       return true;
     }else{
       await pushToCloud();
@@ -5268,6 +5323,454 @@ function viewBeranda(){
 /* =========================================================
    FORM INPUT / EDIT JOB
 ========================================================= */
+/* =========================================================
+   AMBIL DATA DARI PRICELIST (Input/Edit Job)
+   Admin/tim cukup memilih sumber + mengetik No. WhatsApp klien, lalu data yang
+   sudah diisi klien di website (Wedding / Mangayun & Aqiqah / Margondang / Isi
+   Biodata) terisi otomatis ke form job. Pencariannya lewat endpoint ?action=findClient
+   di masing-masing Google Apps Script — nomor WA harus COCOK PERSIS.
+
+   Yang SENGAJA tidak diisi otomatis: Honor Tim, Biaya Cetak, Sedekah, dan sejenisnya
+   (perhitungan internal studio, tidak ada di data pricelist). Ongkos Antar juga tidak
+   disalin dari pricelist: cukup titik lokasi + pilihan "Diantar" yang diisi, lalu
+   Rekap Job menghitung sendiri jarak & ongkirnya memakai pengaturan Ongkos Antar Foto.
+   Prinsipnya: lebih baik sebuah kolom dibiarkan KOSONG (dan diberi tahu) daripada
+   terisi dengan tebakan yang salah.
+========================================================= */
+const PRICELIST_MOTRET_URL = 'https://script.google.com/macros/s/AKfycbw8x8Q0G39087QZc4gh4QL0bkLdp5L3v1watARJymjb6xiIbgLC0s3fr90vEib4mZKObQ/exec';
+const PRICELIST_STUDIO_URL = 'https://script.google.com/macros/s/AKfycbzQf4G5NuPpJFrPkJSI9ulirladgU1QCqjbWS6NiClEKBBSW8JigsL9UKx_YrGB_21zCA/exec';
+const PRICELIST_KEY_STORE = 'kaoneMotret_pricelistAdminKey_v1';
+const PRICELIST_SOURCES = {
+  'wedding':        { label:'Pricelist Wedding',            kind:'motret', form:'' },
+  'mangayun':       { label:'Pricelist Mangayun & Aqiqah',  kind:'motret', form:'mangayun' },
+  'margondang':     { label:'Pricelist Margondang',         kind:'motret', form:'margondang' },
+  'bio-wedding':    { label:'Isi Biodata — Wedding',        kind:'studio', formKey:'wedding' },
+  'bio-margondang': { label:'Isi Biodata — Margondang',     kind:'studio', formKey:'margondang' },
+  'bio-mangayun':   { label:'Isi Biodata — Mangayun',       kind:'studio', formKey:'mangayun' },
+  'bio-wisuda':     { label:'Isi Biodata — Wisuda',         kind:'studio', formKey:'wisuda' },
+  'bio-undangan':   { label:'Isi Biodata — Undangan',       kind:'studio', formKey:'undangan' }
+};
+
+function plNationalDigits(raw){
+  let d = String(raw==null?'':raw).replace(/\D/g,'');
+  if(d.indexOf('62')===0) d = d.slice(2);
+  return d.replace(/^0+/,'');
+}
+function plPad(n){ return String(n).padStart(2,'0'); }
+function plIsoLocal(d){ return d.getFullYear()+'-'+plPad(d.getMonth()+1)+'-'+plPad(d.getDate()); }
+function plValidYmd(y,m,d){
+  y=+y; m=+m; d=+d;
+  if(!(y>=2000 && y<=2100 && m>=1 && m<=12 && d>=1 && d<=31)) return '';
+  const t=new Date(y,m-1,d);
+  if(t.getFullYear()!==y || t.getMonth()!==m-1 || t.getDate()!==d) return '';
+  return y+'-'+plPad(m)+'-'+plPad(d);
+}
+const PL_BULAN = { jan:1, feb:2, mar:3, apr:4, mei:5, may:5, jun:6, jul:7, agu:8, aug:8, sep:9, okt:10, oct:10, nov:11, des:12, dec:12 };
+// Mengenali semua bentuk tanggal yang mungkin keluar dari spreadsheet: "25 September 2026",
+// rentang "25 – 26 September 2026" / "30 September – 1 Oktober 2026" (Margondang 2-3 hari),
+// "2026-09-25", "25/09/2026", dan tanggal ISO dari objek Date Sheets. Mengembalikan
+// {start,end} berformat YYYY-MM-DD, atau null kalau tidak bisa dibaca dengan pasti.
+function plParseTanggal(raw){
+  let s = String(raw==null?'':raw).trim();
+  if(!s || s==='-') return null;
+  let m;
+  if(/^\d{4}-\d{2}-\d{2}T/.test(s) && /Z$|[+-]\d{2}:?\d{2}$/.test(s)){
+    // Objek Date dari Google Sheets (zona waktu skrip = WIB): dibaca sebagai WIB, bukan zona
+    // perangkat, supaya "25 Sept 00:00 WIB" (= 24 Sept 17:00 UTC) tidak bergeser jadi tanggal 24.
+    const d=new Date(s);
+    if(!isNaN(d.getTime())){
+      const w=new Date(d.getTime()+7*3600*1000);
+      const v=plValidYmd(w.getUTCFullYear(), w.getUTCMonth()+1, w.getUTCDate());
+      return v?{start:v,end:v}:null;
+    }
+  }
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:$|[T\s])/))){
+    const v=plValidYmd(m[1],m[2],m[3]); return v?{start:v,end:v}:null;
+  }
+  if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/))){
+    const v=plValidYmd(m[3],m[2],m[1]); return v?{start:v,end:v}:null;
+  }
+  s = s.replace(/^[A-Za-z]+,\s*/,'').replace(/[–—]/g,'-').replace(/\s+(?:s\/d|sd|sampai)\s+/gi,'-');
+  const parts = s.split('-').map(x=>x.trim()).filter(Boolean);
+  if(!parts.length || parts.length>2) return null;
+  const parseFull = (txt, fbMonth, fbYear)=>{
+    const mm = txt.match(/^(\d{1,2})(?:\s+([A-Za-z]+))?(?:\s+(\d{4}))?$/);
+    if(!mm) return null;
+    const mon = mm[2] ? PL_BULAN[mm[2].slice(0,3).toLowerCase()] : fbMonth;
+    const yr = mm[3] ? +mm[3] : fbYear;
+    if(!mon || !yr) return null;
+    const v = plValidYmd(yr, mon, mm[1]);
+    return v ? {v, mon, yr} : null;
+  };
+  const last = parseFull(parts[parts.length-1]);
+  if(!last) return null;
+  if(parts.length===1) return {start:last.v, end:last.v};
+  const first = parseFull(parts[0], last.mon, last.yr);
+  if(!first) return null;
+  return first.v <= last.v ? {start:first.v, end:last.v} : null;
+}
+// "16:00", "16.00 - 20.00", atau objek waktu Sheets (ISO 1899-12-30…) -> "HH:MM"
+function plParseWaktu(raw){
+  const s = String(raw==null?'':raw).trim();
+  if(!s || s==='-') return '';
+  let m = s.match(/^(\d{1,2})[:.](\d{2})/);
+  if(m){ const h=+m[1], mi=+m[2]; return (h<24 && mi<60) ? plPad(h)+':'+plPad(mi) : ''; }
+  if(/^\d{4}-\d{2}-\d{2}T/.test(s)){
+    // Sel jam di Google Sheets = Date pada 30 Des 1899; zona Asia/Jakarta saat itu masih +7:07:12
+    // (bukan +7:00), jadi selisih itulah yang ditambahkan lalu dibulatkan ke menit terdekat.
+    const d=new Date(s);
+    if(!isNaN(d.getTime())){
+      const offsetSec = d.getUTCFullYear()<1930 ? (7*3600+7*60+12) : 7*3600;
+      const tot = Math.round(((d.getUTCHours()*3600 + d.getUTCMinutes()*60 + d.getUTCSeconds() + offsetSec) % 86400)/60);
+      return plPad(Math.floor(tot/60)%24)+':'+plPad(tot%60);
+    }
+  }
+  return '';
+}
+function plNum(v){
+  if(typeof v==='number' && isFinite(v)) return Math.max(0, Math.round(v));
+  const d = String(v==null?'':v).replace(/[^\d]/g,'');
+  return d ? parseInt(d,10) : 0;
+}
+function plClean(v){
+  const s = String(v==null?'':v).trim();
+  return (s==='-' || s==='—') ? '' : s;
+}
+function plIg(v){
+  return plClean(v).replace(/^@+/,'').replace(/[^A-Za-z0-9._]/g,'').toLowerCase();
+}
+// Link Google Maps (…?q=lat,lng, /@lat,lng, !3d…!4d…) -> "lat, lng" untuk kolom Titik Koordinat.
+function plCoordsFromLink(raw){
+  let s = String(raw==null?'':raw).trim();
+  if(!s) return '';
+  try{ s = decodeURIComponent(s.replace(/\+/g,' ')); }catch(_){}
+  const pats = [
+    /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/,
+    /[?&](?:q|query|ll|sll|destination|daddr|center)=\s*(?:loc:)?\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/i,
+    /\/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /^(-?\d{1,3}\.\d+)\s*[,;\s]\s*(-?\d{1,3}\.\d+)$/
+  ];
+  for(const re of pats){
+    const m = s.match(re);
+    if(m){
+      const lat=parseFloat(m[1]), lng=parseFloat(m[2]);
+      if(isFinite(lat)&&isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180&&!(lat===0&&lng===0)) return lat.toFixed(6)+', '+lng.toFixed(6);
+    }
+  }
+  return '';
+}
+// "Desa, Kec. X, Kab. Y" (format yang dirangkai form pricelist) -> tiga kolom terpisah.
+function plParseAlamat(raw){
+  const s = plClean(raw);
+  if(!s) return null;
+  const m = s.match(/^(.*?),\s*Kec\.\s*(.*?),\s*Kab\.\s*(.*)$/i);
+  if(m) return { desa:m[1].trim(), kecamatan:m[2].trim(), kabupaten:m[3].trim(), terurai:true };
+  return { desa:s, kecamatan:'', kabupaten:'', terurai:false };
+}
+function plWithoutAddOnNone(v){
+  const s = plClean(v);
+  return (!s || /^tidak ada$/i.test(s)) ? '' : s;
+}
+
+// Mengubah satu baris data mentah (kunci = judul kolom spreadsheet) menjadi bentuk seragam.
+function plNormalize(sourceKey, f){
+  const src = PRICELIST_SOURCES[sourceKey];
+  const out = { namaKlien:'', wa:'', jenis:'', jenisKeep:[], jenisLain:'', tanggal:null, jam:'',
+    alamat:null, maps:'', paket:'', deskripsi:'', ig:{}, pengambilan:'', penghasilan:0, diskon:0, dp:0,
+    catatanBaris:[], catatanJenis:'' };
+  const g = k => plClean(f[k]);
+  const lines = out.catatanBaris;
+
+  if(src.kind==='motret'){
+    const t = f['Tanggal Acara'];
+    out.wa = plNationalDigits(f['No. WhatsApp']);
+    out.tanggal = plParseTanggal(t);
+    out.maps = g('Maps');
+    out.alamat = plParseAlamat(f['Alamat']);
+    out.paket = g('Paket');
+    const addon = plWithoutAddOnNone(f['Add-On']);
+    if(addon) out.deskripsi = 'Add-On: ' + addon;
+    out.pengambilan = /^(Diantar|Dijemput)$/i.test(g('Pengambilan Hasil Cetak')) ? (/^diantar$/i.test(g('Pengambilan Hasil Cetak'))?'Diantar':'Dijemput') : '';
+    out.diskon = plNum(f['Diskon']);
+    out.dp = plNum(f['DP']);
+    out.penghasilan = plNum(f['Total']) + out.diskon;   // = harga sebelum diskon; Sisa = penghasilan - diskon - DP
+    if(g('Kode Voucher')) lines.push('Kode Voucher: ' + g('Kode Voucher'));
+    if(sourceKey==='mangayun'){
+      out.namaKlien = g('Nama Pemesan');
+      out.jenis = 'Mangayun/Aqiqah';
+      out.jam = plParseWaktu(f['Jam Acara']);
+      out.ig = { 'Anak':plIg(f['IG Anak']), 'Ibu':plIg(f['IG Ibu']), 'Ayah':plIg(f['IG Ayah']) };
+      if(g('Nama Anak')) lines.push('Nama Anak: ' + g('Nama Anak'));
+      if(g('Nama Ibu')) lines.push('Nama Ibu: ' + g('Nama Ibu'));
+      if(g('Nama Ayah')) lines.push('Nama Ayah: ' + g('Nama Ayah'));
+    } else {
+      out.namaKlien = g('Nama');
+      out.jam = plParseWaktu(f['Waktu Acara']);
+      out.ig = { 'Pengantin Perempuan':plIg(f['IG Pengantin Wanita']), 'Pengantin Laki-laki':plIg(f['IG Pengantin Pria']) };
+      if(g('Nama Mempelai')) lines.push('Mempelai: ' + g('Nama Mempelai'));
+      if(sourceKey==='margondang'){
+        const hari = g('Jumlah Hari Acara');
+        if(hari==='2') out.jenis = 'Margondang 2 Hari';
+        else if(hari==='3'){ out.jenis = 'Lainnya'; out.jenisLain = 'Margondang 3 Hari'; }
+        else out.jenis = 'Margondang 1 Hari';
+      } else {
+        out.jenis = 'Marbagas'; out.jenisKeep = ['Marbagas','Patuaekkon'];
+        out.catatanJenis = 'Pricelist Wedding mencakup Marbagas dan Patuaekkon — periksa Jenis Acara.';
+        if(g('Konsep Pakaian')) lines.push('Adat/Konsep Pakaian: ' + g('Konsep Pakaian'));
+      }
+    }
+    if(g('Pemilihan Foto')) lines.push('Pemilihan Foto: ' + g('Pemilihan Foto'));
+    if(g('IG Vendor')) lines.push('IG Vendor: ' + g('IG Vendor'));
+    if(g('Catatan')) lines.push('Catatan klien: ' + g('Catatan'));
+    return out;
+  }
+
+  // ---- Isi Biodata (Kaone Studio): sheet dinamis, judul kolom = label kolom di formulir ----
+  const fk = src.formKey;
+  out.wa = plNationalDigits(f['No. WhatsApp']);
+  out.paket = g('Nama Paket') || g('Jenis Paket');
+  out.penghasilan = plNum(f['Harga Paket']);
+  out.dp = plNum(f['DP (Uang Muka)']);
+  if(g('Kode Voucher')) lines.push('Kode Voucher: ' + g('Kode Voucher') + ' (diskon belum dihitung — isi kolom Diskon bila ada)');
+  if(fk==='wisuda'){
+    out.namaKlien = g('Nama Wisudawan/i');
+    out.jenis = 'Wisuda';
+    out.tanggal = plParseTanggal(f['Tanggal Wisuda']);
+    out.jam = plParseWaktu(f['Waktu Acara']);
+    out.maps = g('Maps Lokasi Foto Outdoor');
+    if(g('Universitas/Institusi')) lines.push('Universitas/Institusi: ' + g('Universitas/Institusi') + (g('Jenjang')?(' ('+g('Jenjang')+')'):''));
+    if(g('Lokasi')) lines.push('Lokasi: ' + g('Lokasi'));
+    if(g('Sesi Diminati')) lines.push('Sesi Diminati: ' + g('Sesi Diminati'));
+    if(g('Lokasi Foto Outdoor')) lines.push('Lokasi Foto Outdoor: ' + g('Lokasi Foto Outdoor'));
+    if(g('Catatan')) lines.push('Catatan klien: ' + g('Catatan'));
+    out.ig = { 'Wisudawan':'' };
+    return out;
+  }
+  if(fk==='undangan'){
+    out.namaKlien = g('Penanggung Jawab');
+    out.jenis = 'Lainnya';
+    out.jenisLain = 'Undangan' + (g('Jenis Undangan') ? (' — ' + (/lain/i.test(g('Jenis Undangan')) && g('Jenis Undangan (Lainnya)') ? g('Jenis Undangan (Lainnya)') : g('Jenis Undangan'))) : '');
+    out.tanggal = plParseTanggal(f['Tanggal Acara']);
+    if(g('Nama Acara')) lines.push('Nama Acara: ' + g('Nama Acara'));
+    if(g('Tema/Warna')) lines.push('Tema/Warna: ' + g('Tema/Warna'));
+    if(g('Estimasi Tamu')) lines.push('Estimasi Tamu: ' + g('Estimasi Tamu'));
+    if(g('Deadline Dibutuhkan')) lines.push('Deadline Dibutuhkan: ' + g('Deadline Dibutuhkan'));
+    return out;
+  }
+  out.tanggal = plParseTanggal(f['Tanggal Acara']);
+  out.maps = g('Maps Acara');
+  out.alamat = plParseAlamat(f['Alamat Acara']);
+  const p = g('Pengambilan Hasil Cetak');
+  out.pengambilan = /^diantar/i.test(p) ? 'Diantar' : (/^dijemput/i.test(p) ? 'Dijemput' : '');
+  if(g('Pemilihan Foto')) lines.push('Pemilihan Foto: ' + g('Pemilihan Foto'));
+  if(g('Instagram Semua Vendor')) lines.push('IG Vendor: ' + g('Instagram Semua Vendor'));
+  if(g('IG All Vendor')) lines.push('IG Vendor: ' + g('IG All Vendor'));
+  if(g('Catatan Penting Untuk Fotografer')) lines.push('Catatan klien: ' + g('Catatan Penting Untuk Fotografer'));
+  if(fk==='mangayun'){
+    out.namaKlien = g('Nama Pemesan/Penanggung Jawab');
+    out.jenis = 'Mangayun/Aqiqah';
+    out.jam = plParseWaktu(f['Jam Acara']);
+    out.ig = { 'Anak':plIg(f['IG Anak']), 'Ibu':plIg(f['IG Ibu']), 'Ayah':plIg(f['IG Ayah']) };
+    if(g('Nama Anak')) lines.push('Nama Anak: ' + g('Nama Anak'));
+    if(g('Nama Ibu')) lines.push('Nama Ibu: ' + g('Nama Ibu'));
+    if(g('Nama Ayah')) lines.push('Nama Ayah: ' + g('Nama Ayah'));
+  } else {
+    out.namaKlien = g('Nama Lengkap');
+    out.ig = { 'Pengantin Perempuan':plIg(f['Instagram Pengantin Wanita']), 'Pengantin Laki-laki':plIg(f['Instagram Pengantin Pria']) };
+    if(g('Nama Kedua Mempelai')) lines.push('Mempelai: ' + g('Nama Kedua Mempelai'));
+    if(fk==='margondang'){
+      out.jam = plParseWaktu(f['Waktu Mulai Acara']);
+      out.jenis = 'Margondang 1 Hari'; out.jenisKeep = ['Margondang 1 Hari','Margondang 2 Hari'];
+      out.catatanJenis = 'Biodata Margondang tidak memuat jumlah hari — periksa Jenis Acara (1 atau 2 Hari).';
+      if(g('Waktu Selesai Acara')) lines.push('Waktu Selesai: ' + g('Waktu Selesai Acara'));
+    } else {
+      out.jam = plParseWaktu(f['Waktu Acara']);
+      out.jenis = 'Marbagas'; out.jenisKeep = ['Marbagas','Patuaekkon'];
+      out.catatanJenis = 'Biodata Wedding mencakup Marbagas dan Patuaekkon — periksa Jenis Acara.';
+      if(g('Adat/Konsep Pakaian')) lines.push('Adat/Konsep Pakaian: ' + g('Adat/Konsep Pakaian'));
+    }
+  }
+  return out;
+}
+
+// Memanggil endpoint findClient. Mengembalikan {status:'found', fields} | {status:'notfound'} | {status:'error', message}.
+async function plFetchClient(sourceKey, phoneRaw, attempt){
+  const src = PRICELIST_SOURCES[sourceKey];
+  const national = plNationalDigits(phoneRaw);
+  if(!/^8\d{8,11}$/.test(national)) return { status:'error', message:'Nomor WhatsApp tidak valid. Contoh: 0812xxxxxxxx.' };
+  let url = (src.kind==='motret' ? PRICELIST_MOTRET_URL : PRICELIST_STUDIO_URL) + '?action=findClient&phone=' + encodeURIComponent('0'+national);
+  if(src.kind==='motret' && src.form) url += '&form=' + encodeURIComponent(src.form);
+  if(src.kind==='studio') url += '&formKey=' + encodeURIComponent(src.formKey);
+  let savedKey = ''; try{ savedKey = localStorage.getItem(PRICELIST_KEY_STORE) || ''; }catch(_){}
+  if(savedKey) url += '&key=' + encodeURIComponent(savedKey);
+  const ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+  const timer = setTimeout(()=>{ if(ctrl) ctrl.abort(); }, 20000);
+  let json;
+  try{
+    const res = await fetch(url, ctrl ? { signal:ctrl.signal } : undefined);
+    if(!res.ok) return { status:'error', message:'Server pricelist menjawab error ('+res.status+').' };
+    json = await res.json();
+  }catch(e){
+    return { status:'error', message: (e && e.name==='AbortError') ? 'Server pricelist terlalu lama menjawab. Coba lagi.' : 'Tidak bisa menghubungi server pricelist. Periksa koneksi internet.' };
+  }finally{ clearTimeout(timer); }
+  if(json && json.ok===false){
+    if(/kode admin/i.test(String(json.message||'')) && !attempt){
+      const k = window.prompt('Server pricelist meminta Kode Admin (ADMIN_KEY di Apps Script). Masukkan kodenya:');
+      if(k){ try{ localStorage.setItem(PRICELIST_KEY_STORE, k.trim()); }catch(_){} return plFetchClient(sourceKey, phoneRaw, true); }
+      return { status:'error', message:'Kode Admin diperlukan untuk mengambil data.' };
+    }
+    if(/kode admin/i.test(String(json.message||''))){ try{ localStorage.removeItem(PRICELIST_KEY_STORE); }catch(_){} }
+    return { status:'error', message: json.message || 'Server pricelist menolak permintaan.' };
+  }
+  if(!json || json.found!==true || !json.fields) return { status:'notfound' };
+  return { status:'found', fields:json.fields };
+}
+
+function plSetVal(form, sel, value, fire){
+  const el = form.querySelector(sel);
+  if(!el || value===undefined || value===null || value==='') return false;
+  el.value = value;
+  if(fire){ el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); }
+  return true;
+}
+
+// Menerapkan data ke form. HANYA mengisi kolom yang ada datanya (tidak pernah mengosongkan
+// kolom yang sudah terisi). Mengembalikan daftar kolom yang terisi & yang perlu dicek manual.
+function plApplyToForm(form, data){
+  const filled = [], review = [];
+  const has = (label, ok)=>{ if(ok) filled.push(label); };
+
+  // 1) Jenis Acara dulu — mengganti jenis akan membangun ulang kolom Instagram per peran.
+  const jenisSel = form.querySelector('select[name="jenisAcara"]');
+  if(jenisSel && data.jenis){
+    const cur = jenisSel.value;
+    const keep = data.jenisKeep && data.jenisKeep.indexOf(cur)!==-1;
+    if(!keep && [...jenisSel.options].some(o=>o.value===data.jenis)){
+      if(cur!==data.jenis){
+        jenisSel.value = data.jenis;
+        if(typeof onJenisAcaraChange==='function') onJenisAcaraChange(jenisSel);
+      }
+      has('Jenis Acara', true);
+      if(data.catatanJenis) review.push(data.catatanJenis);
+    } else if(keep){
+      has('Jenis Acara (dipertahankan)', true);
+    }
+    if(data.jenis==='Lainnya' && data.jenisLain){
+      if(plSetVal(form,'[name="jenisAcaraLain"]', data.jenisLain, true)) has('Jenis Acara (Lainnya)', true);
+    }
+  }
+  // 2) Data klien
+  has('Nama Klien', plSetVal(form,'[name="namaKlien"]', data.namaKlien, true));
+  if(data.wa){
+    const hid = form.querySelector('#waHidden');
+    const vis = hid ? hid.parentElement.querySelector('input[type="tel"]') : null;
+    if(vis){ vis.value = data.wa; if(typeof onWaInput==='function') onWaInput(vis); else vis.dispatchEvent(new Event('input',{bubbles:true})); has('No. WhatsApp', true); }
+  }
+  // 3) Tanggal & jam
+  if(data.tanggal){
+    const mulai = form.querySelector('#tanggalAcaraInput'), selesai = form.querySelector('#tanggalSelesaiInput');
+    if(mulai){
+      mulai.value = data.tanggal.start;
+      if(selesai){ selesai.min = data.tanggal.start; selesai.value = data.tanggal.end; }
+      if(typeof onTanggalAcaraChange==='function') onTanggalAcaraChange();
+      has('Tanggal Acara', true);
+      if(data.tanggal.end!==data.tanggal.start) has('Tanggal Selesai', true);
+    }
+  } else { review.push('Tanggal Acara tidak terbaca dari data pricelist — isi manual.'); }
+  if(data.jam){ has('Jam Acara', plSetVal(form,'#jamAcaraInput', data.jam, true)); }
+  else { review.push('Jam Acara tidak terisi — cek/isi manual.'); }
+  // 4) Alamat & lokasi
+  if(data.alamat){
+    has('Desa', plSetVal(form,'[name="desa"]', data.alamat.desa, true));
+    if(data.alamat.kecamatan) has('Kecamatan', plSetVal(form,'[name="kecamatan"]', data.alamat.kecamatan, true));
+    if(data.alamat.kabupaten) has('Kabupaten', plSetVal(form,'[name="kabupaten"]', data.alamat.kabupaten, true));
+    if(!data.alamat.terurai) review.push('Alamat dari pricelist berformat lama (satu kolom) — seluruhnya ditaruh di kolom Desa, pecah manual ke Kecamatan/Kabupaten.');
+  }
+  const coord = plCoordsFromLink(data.maps);
+  if(coord){ has('Titik Koordinat', plSetVal(form,'#koordinatInput', coord, true)); }
+  else if(data.maps){ review.push('Link Maps dari pricelist tidak memuat titik koordinat yang bisa dibaca — isi Titik Koordinat manual.'); }
+  // 5) Paket
+  has('Paket', plSetVal(form,'[name="paket"]', data.paket, true));
+  has('Deskripsi Paket', plSetVal(form,'[name="deskripsiPaket"]', data.deskripsi, true));
+  // 6) Instagram per peran (kolomnya baru ada setelah Jenis Acara diterapkan di atas)
+  let igCount = 0, igMiss = 0;
+  Object.keys(data.ig||{}).forEach(role=>{
+    const val = data.ig[role]; if(!val) return;
+    const inp = [...form.querySelectorAll('.ig-role-input')].find(i=>i.dataset.igRole===role);
+    if(inp){ inp.value = val; inp.dispatchEvent(new Event('input',{bubbles:true})); igCount++; } else igMiss++;
+  });
+  if(igCount) filled.push('Instagram ('+igCount+')');
+  if(igMiss) review.push('Sebagian Instagram tidak punya kolom yang cocok pada Jenis Acara ini — isi manual.');
+  // 7) Keuangan klien (BUKAN honor/biaya internal): Sisa = Penghasilan − Diskon − DP
+  if(data.penghasilan>0) has('Penghasilan', plSetVal(form,'[name="penghasilan"]', fmtRibuan(data.penghasilan), true));
+  if(data.diskon>0) has('Diskon', plSetVal(form,'[name="diskon"]', fmtRibuan(data.diskon), true));
+  if(data.dp>0){
+    has('DP', plSetVal(form,'[name="dp"]', fmtRibuan(data.dp), true));
+    const st = form.querySelector('select[name="statusPembayaran"]');
+    if(st && [...st.options].some(o=>o.value==='DP')){ st.value='DP'; st.dispatchEvent(new Event('change',{bubbles:true})); has('Status Pembayaran', true); }
+  }
+  // 8) Pengiriman hasil cetak: hanya metodenya; ongkir dihitung ulang oleh Rekap Job sendiri
+  if(data.pengambilan){
+    const tg = form.querySelector('#pengirimanMetodeToggle');
+    if(tg){
+      tg.checked = (data.pengambilan==='Diantar');
+      if(typeof onPengirimanMetodeChange==='function') onPengirimanMetodeChange();
+      has('Pengiriman: '+data.pengambilan, true);
+      if(data.pengambilan==='Diantar' && !coord) review.push('Pengiriman "Diantar" tapi titik koordinat kosong — ongkos antar belum bisa dihitung.');
+    }
+  }
+  // 9) Catatan gabungan
+  if(data.catatanBaris.length){ has('Catatan', plSetVal(form,'[name="catatan"]', data.catatanBaris.join('\n'), true)); }
+  return { filled, review };
+}
+
+function plPanelHtml(){
+  const opt = k => `<option value="${k}">${escapeHtml(PRICELIST_SOURCES[k].label)}</option>`;
+  return `<div class="pl-box" id="plBox">
+    <div class="pl-head"><b>Ambil dari Pricelist</b><span>Isi otomatis dari data yang klien sudah isi di website</span></div>
+    <div class="pl-row">
+      <select id="plSource" aria-label="Sumber data">
+        <optgroup label="Formulir Pemesanan (Pricelist)">${['wedding','mangayun','margondang'].map(opt).join('')}</optgroup>
+        <optgroup label="Formulir Isi Biodata">${['bio-wedding','bio-margondang','bio-mangayun','bio-wisuda','bio-undangan'].map(opt).join('')}</optgroup>
+      </select>
+      <input type="text" id="plPhone" inputmode="numeric" placeholder="No. WhatsApp klien, mis. 0812xxxxxxxx" autocomplete="off" aria-label="No. WhatsApp klien">
+      <button type="button" class="btn btn-outline" id="plBtn">Ambil &amp; Isi</button>
+    </div>
+    <div class="pl-status" id="plStatus" role="status" aria-live="polite"></div>
+  </div>`;
+}
+function plBindPanel(scopeEl){
+  const form = scopeEl.querySelector('#jobForm');
+  const btn = scopeEl.querySelector('#plBtn');
+  if(!form || !btn) return;
+  const phone = scopeEl.querySelector('#plPhone'), srcSel = scopeEl.querySelector('#plSource'), status = scopeEl.querySelector('#plStatus');
+  let busy = false;
+  const say = (msg, kind)=>{ status.className = 'pl-status' + (kind ? ' is-'+kind : ''); status.textContent = ''; if(Array.isArray(msg)) msg.forEach(m=>{ const d=document.createElement('div'); d.textContent=m; status.appendChild(d); }); else status.textContent = msg; };
+  async function run(){
+    if(busy) return;
+    busy = true; btn.disabled = true;
+    say('Mencari data…');
+    try{
+      const res = await plFetchClient(srcSel.value, phone.value);
+      if(res.status==='error'){ say(res.message,'err'); return; }
+      if(res.status==='notfound'){ say('Tidak ada data dengan nomor tersebut di "'+PRICELIST_SOURCES[srcSel.value].label+'". Pastikan nomornya sama persis dengan yang diisi klien, atau coba sumber lain.','err'); return; }
+      const data = plNormalize(srcSel.value, res.fields);
+      const sudahIsi = (form.querySelector('[name="namaKlien"]')?.value || '').trim() !== '';
+      if(sudahIsi && !window.confirm('Form ini sudah berisi data. Timpa kolom yang ada datanya di pricelist dengan data dari "'+PRICELIST_SOURCES[srcSel.value].label+'"?\n\n(Kolom yang tidak ada datanya di pricelist tidak akan dikosongkan.)')){ say('Dibatalkan — form tidak diubah.'); return; }
+      const r = plApplyToForm(form, data);
+      const msgs = ['✓ Terisi: ' + r.filled.join(', ') + '.'];
+      r.review.forEach(x=>msgs.push('⚠ ' + x));
+      msgs.push('Honor Tim, Biaya Cetak, dan Sedekah tidak diisi otomatis. Periksa kembali semua kolom sebelum menyimpan.');
+      say(msgs, r.review.length ? 'warn' : 'ok');
+    }catch(e){
+      console.error('Ambil dari pricelist gagal', e);
+      say('Terjadi kesalahan saat mengisi form: ' + (e && e.message ? e.message : e), 'err');
+    }finally{ busy = false; btn.disabled = false; }
+  }
+  btn.addEventListener('click', run);
+  phone.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); run(); } });
+}
+
 function buildJobFormHtml(j){
   const d = j || {
     tanggalAcara:'', tanggalSelesai:'', jamAcara:'', desa:'', dusun:'', adaDusun:false, kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'', koordinat:'',
@@ -5293,6 +5796,7 @@ function buildJobFormHtml(j){
 
   return `
     <form id="jobForm" class="jf">
+      ${plPanelHtml()}
       <div class="jf-head">
         <div>
           <h2>${j?ic('edit')+' Edit Job':ic('note')+' Input Job Baru'}</h2>
@@ -5481,6 +5985,7 @@ function viewForm(){
 function bindJobFormEvents(scopeEl, onDone){
   const form = scopeEl.querySelector('#jobForm');
   if(!form) return;
+  plBindPanel(scopeEl);
   // Kalau koordinat sudah terisi (mode edit), langsung picu pengecekan jarak jalan
   // (OSRM) begitu form tampil — biar tidak menunggu user mengetik ulang di kolom.
   if(scopeEl.querySelector('#koordinatInput')?.value.trim()) updateJarakCalc();
@@ -10352,12 +10857,20 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.11.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.12.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.12.0',
+    tanggal: '30 September 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Form Input/Edit Job punya kotak baru "Ambil dari Pricelist". Pilih sumbernya (Pricelist Wedding, Mangayun & Aqiqah, Margondang, atau Isi Biodata Wedding/Margondang/Mangayun/Wisuda/Undangan), ketik nomor WhatsApp klien, lalu tekan "Ambil & Isi". Nama klien, No. WhatsApp, tanggal & jam acara, alamat, titik lokasi, paket, harga, DP, dan Instagram terisi otomatis dari data yang klien isi di website. Nomor boleh diketik 0812…, +62 812…, atau 812….' },
+      { kategori: 'Peningkatan', teks: 'Nomor WhatsApp klien yang tercatat di spreadsheet Isi Biodata sekarang selalu berformat 08xxxxxxxxxx, sehingga pencarian di "Ambil dari Pricelist" lebih tepat dan tidak salah baca.' },
+    ]
+  },
   {
     version: '1.11.0',
     tanggal: '28 September 2026',

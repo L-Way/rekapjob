@@ -2867,14 +2867,14 @@ function bangunPesanSelesai(j){
       ? '\n\nOngkos antar: GRATIS.'
       : `\n\nOngkos antar: ${fmtRp(biaya)} (Rp${fmtRibuan(ONGKIR_ANTAR.perKm)}/km), dibayar saat foto diterima.`;
   }
-  const map={nama:(j.namaKlien||'').trim(), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'', deskripsiPaket:j.deskripsiPaket||'', sisa:fmtRp(sisa), tagihan, ajakan, ongkir, maps:mapsStudioLink()};
+  const map={nama:(j.namaKlien||'').trim(), mempelai:mempelaiTeks(j), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'', deskripsiPaket:j.deskripsiPaket||'', sisa:fmtRp(sisa), tagihan, ajakan, ongkir, maps:mapsStudioLink()};
   return renderWaTpl(PESAN_SELESAI_TPL,map);
 }
 function pesanSelesaiPanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="selesai">
     <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai tombol "Kabari Klien" di Detail Job saat Proses Cetak sudah Selesai. Isinya masih bisa diedit sebelum dikirim.</p>
     <textarea id="pesanSelesaiTpl" rows="11" style="width:100%">${escapeHtml(PESAN_SELESAI_TPL)}</textarea>
-    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {acara} {tanggal} {paket} {deskripsiPaket} {sisa} {tagihan} {ajakan} {ongkir} {maps}. {tagihan} hanya muncul kalau belum lunas — berisi pengingat sisa pembayaran, bukan info tempat bayar (pelunasan biasanya sudah dilakukan di hari H acara). {ajakan} menyesuaikan saklar Pengiriman di job: "Dijemput" mengajak klien datang mengambil sendiri, "Diantar" memberi tahu foto akan diantar tim ke lokasi klien. {ongkir} otomatis kosong kalau Pengiriman = Dijemput, dan berisi nominal ongkos antar (dari Ongkos Antar Foto di Pengaturan) kalau Pengiriman = Diantar. {maps} berisi link Google Maps lokasi Kaone Motret, dari titik yang sama dengan acuan hitung jarak.</div>
+    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {mempelai} {acara} {tanggal} {paket} {deskripsiPaket} {sisa} {tagihan} {ajakan} {ongkir} {maps}. {tagihan} hanya muncul kalau belum lunas — berisi pengingat sisa pembayaran, bukan info tempat bayar (pelunasan biasanya sudah dilakukan di hari H acara). {ajakan} menyesuaikan saklar Pengiriman di job: "Dijemput" mengajak klien datang mengambil sendiri, "Diantar" memberi tahu foto akan diantar tim ke lokasi klien. {ongkir} otomatis kosong kalau Pengiriman = Dijemput, dan berisi nominal ongkos antar (dari Ongkos Antar Foto di Pengaturan) kalau Pengiriman = Diantar. {maps} berisi link Google Maps lokasi Kaone Motret, dari titik yang sama dengan acuan hitung jarak.</div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
       <button type="button" class="btn btn-primary" onclick="simpanPesanSelesai()">Simpan pesan</button>
       <button type="button" class="btn btn-outline" onclick="resetPesanSelesai()">Kembalikan bawaan</button>
@@ -2898,14 +2898,14 @@ function bangunPesanBooking(j){
   const sisa=Math.max(0,hitungSisaPembayaran(j));
   const deskripsi=(j.deskripsiPaket||'').trim();
   const deskripsiPaketLine=deskripsi ? `Detail : ${deskripsi}\n` : '';
-  const map={nama:(j.namaKlien||'').trim(), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'-', deskripsiPaket:deskripsi, deskripsiPaketLine, dp:fmtRp(j.dp), sisa:fmtRp(sisa), maps:mapsStudioLink()};
+  const map={nama:(j.namaKlien||'').trim(), mempelai:mempelaiTeks(j), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'-', deskripsiPaket:deskripsi, deskripsiPaketLine, dp:fmtRp(j.dp), sisa:fmtRp(sisa), maps:mapsStudioLink()};
   return renderWaTpl(PESAN_BOOKING_TPL,map);
 }
 function pesanBookingPanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="booking" style="display:none;">
     <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai untuk mengabari klien setelah Booking &amp; DP diterima — kirim manual lewat tombol "Konfirmasi Booking/DP" di Detail Job. Isinya masih bisa diedit sebelum dikirim.</p>
     <textarea id="pesanBookingTpl" rows="11" style="width:100%">${escapeHtml(PESAN_BOOKING_TPL)}</textarea>
-    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {acara} {tanggal} {paket} {deskripsiPaketLine} {dp} {sisa} {maps}. {deskripsiPaketLine} otomatis kosong kalau Deskripsi Paket belum diisi.</div>
+    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {mempelai} {acara} {tanggal} {paket} {deskripsiPaketLine} {dp} {sisa} {maps}. {deskripsiPaketLine} otomatis kosong kalau Deskripsi Paket belum diisi. {mempelai} berisi Nama Kedua Mempelai (hanya untuk Marbagas/Patuaekkon/Margondang, selain itu kosong) — belum dipakai di pesan bawaan, silakan tambahkan sendiri kalau perlu.</div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
       <button type="button" class="btn btn-primary" onclick="simpanPesanBooking()">Simpan pesan</button>
       <button type="button" class="btn btn-outline" onclick="resetPesanBooking()">Kembalikan bawaan</button>
@@ -2929,14 +2929,14 @@ function bangunPesanH1(j){
   const lokasi=[desaDisplay(j),j.kecamatan,j.kabupaten].filter(Boolean).join(', ') || '-';
   const jam=(j.jamAcara||'').trim();
   const jamLine=jam ? `Jam    : ${jam} WIB\n` : '';
-  const map={nama:(j.namaKlien||'').trim(), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'-', lokasi, jam, jamLine, maps:mapsStudioLink()};
+  const map={nama:(j.namaKlien||'').trim(), mempelai:mempelaiTeks(j), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'-', lokasi, jam, jamLine, maps:mapsStudioLink()};
   return renderWaTpl(PESAN_H1_TPL,map);
 }
 function pesanH1PanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="h1" style="display:none;">
     <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai untuk mengingatkan klien sehari sebelum acara — kirim manual lewat tombol "Pengingat H-1" di Detail Job. Isinya masih bisa diedit sebelum dikirim.</p>
     <textarea id="pesanH1Tpl" rows="11" style="width:100%">${escapeHtml(PESAN_H1_TPL)}</textarea>
-    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {acara} {tanggal} {paket} {lokasi} {jam} {jamLine} {maps}. {jam} hanya berisi jamnya saja (mis. "09.00"), sedangkan {jamLine} sudah berupa baris siap-pakai "Jam    : 09.00 WIB" — keduanya otomatis kosong kalau kolom Jam Acara di form job tidak diisi.</div>
+    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {mempelai} {acara} {tanggal} {paket} {lokasi} {jam} {jamLine} {maps}. {jam} hanya berisi jamnya saja (mis. "09.00"), sedangkan {jamLine} sudah berupa baris siap-pakai "Jam    : 09.00 WIB" — keduanya otomatis kosong kalau kolom Jam Acara di form job tidak diisi.</div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
       <button type="button" class="btn btn-primary" onclick="simpanPesanH1()">Simpan pesan</button>
       <button type="button" class="btn btn-outline" onclick="resetPesanH1()">Kembalikan bawaan</button>
@@ -3091,6 +3091,21 @@ const INSTAGRAM_ROLES_BY_ACARA = {
 function getInstagramRoles(jenisAcara){
   return INSTAGRAM_ROLES_BY_ACARA[jenisAcara] || ['Instagram'];
 }
+/* ---------- Kolom "Nama Kedua Mempelai" ----------
+   Hanya muncul di form Job untuk jenis acara yang memang punya sepasang mempelai.
+   Kalau nanti ada jenis acara lain yang perlu kolom ini, cukup tambahkan namanya di
+   daftar berikut (harus SAMA PERSIS dengan nilai di JENIS_ACARA_LIST). */
+const JENIS_ACARA_MEMPELAI = ['Marbagas','Patuaekkon','Margondang 1 Hari','Margondang 2 Hari'];
+function isJenisMempelai(jenisAcara){
+  return JENIS_ACARA_MEMPELAI.indexOf(jenisAcara) !== -1;
+}
+// Baris untuk Detail Job / Poster / Salin Teks: hanya ada untuk jenis acara yang relevan.
+function mempelaiTeks(j){
+  return isJenisMempelai(j.jenisAcara) ? (j.namaMempelai||'').trim() : '';
+}
+function mempelaiDetailRows(j){
+  return isJenisMempelai(j.jenisAcara) ? [['Nama Kedua Mempelai', (j.namaMempelai||'').trim() || '-']] : [];
+}
 // Baris untuk ditampilkan di Detail Job / Poster / Salin Teks — 1 baris per kolom
 // Instagram yang tersimpan di job (jumlahnya mengikuti Jenis Acara saat job disimpan).
 function instagramDetailRows(j){
@@ -3125,6 +3140,11 @@ function instagramFieldsHtml(roles, list){
 function onJenisAcaraChange(sel){
   const jenisLainWrap = document.getElementById('jenisLainWrap');
   if(jenisLainWrap) jenisLainWrap.style.display = sel.value==='Lainnya' ? 'block' : 'none';
+  // Kolom Nama Kedua Mempelai: tampil hanya untuk Marbagas/Patuaekkon/Margondang. Isiannya
+  // tidak dihapus di sini (kalau salah pilih lalu balik lagi, ketikan tidak hilang) —
+  // baru dikosongkan saat form disimpan kalau jenis acaranya memang bukan yang relevan.
+  const mempelaiWrap = document.getElementById('mempelaiWrap');
+  if(mempelaiWrap) mempelaiWrap.style.display = isJenisMempelai(sel.value) ? 'block' : 'none';
   const wrap = document.getElementById('instagramFieldsWrap');
   if(!wrap) return;
   const currentList = Array.from(wrap.querySelectorAll('.ig-role-input')).map(inp=>({role:inp.dataset.igRole, username:inp.value}));
@@ -3605,6 +3625,7 @@ const VENDOR_LIST = ['Shia Makeup','Kaone Motret','Lainnya'];
 // Pemetaan kolom Excel (import/template) <-> field data job
 const EXCEL_FIELD_MAP = [
   {header:'Nama Klien', field:'namaKlien'},
+  {header:'Nama Kedua Mempelai', field:'namaMempelai'},
   {header:'Tanggal Acara (YYYY-MM-DD)', field:'tanggalAcara'},
   {header:'Jenis Acara', field:'jenisAcara'},
   {header:'Jenis Acara Lainnya', field:'jenisAcaraLain'},
@@ -5475,7 +5496,7 @@ function plWithoutAddOnNone(v){
 // Mengubah satu baris data mentah (kunci = judul kolom spreadsheet) menjadi bentuk seragam.
 function plNormalize(sourceKey, f){
   const src = PRICELIST_SOURCES[sourceKey];
-  const out = { namaKlien:'', wa:'', jenis:'', jenisKeep:[], jenisLain:'', tanggal:null, jam:'',
+  const out = { namaKlien:'', namaMempelai:'', wa:'', jenis:'', jenisKeep:[], jenisLain:'', tanggal:null, jam:'',
     alamat:null, maps:'', paket:'', deskripsi:'', ig:{}, pengambilan:'', penghasilan:0, diskon:0, dp:0,
     catatanBaris:[], catatanJenis:'' };
   const g = k => plClean(f[k]);
@@ -5507,7 +5528,7 @@ function plNormalize(sourceKey, f){
       out.namaKlien = g('Nama');
       out.jam = plParseWaktu(f['Waktu Acara']);
       out.ig = { 'Pengantin Perempuan':plIg(f['IG Pengantin Wanita']), 'Pengantin Laki-laki':plIg(f['IG Pengantin Pria']) };
-      if(g('Nama Mempelai')) lines.push('Mempelai: ' + g('Nama Mempelai'));
+      out.namaMempelai = g('Nama Mempelai');   // diisikan ke kolom Nama Kedua Mempelai (lihat plApplyToForm)
       if(sourceKey==='margondang'){
         const hari = g('Jumlah Hari Acara');
         if(hari==='2') out.jenis = 'Margondang 2 Hari';
@@ -5577,7 +5598,7 @@ function plNormalize(sourceKey, f){
   } else {
     out.namaKlien = g('Nama Lengkap');
     out.ig = { 'Pengantin Perempuan':plIg(f['Instagram Pengantin Wanita']), 'Pengantin Laki-laki':plIg(f['Instagram Pengantin Pria']) };
-    if(g('Nama Kedua Mempelai')) lines.push('Mempelai: ' + g('Nama Kedua Mempelai'));
+    out.namaMempelai = g('Nama Kedua Mempelai');   // diisikan ke kolom Nama Kedua Mempelai (lihat plApplyToForm)
     if(fk==='margondang'){
       out.jam = plParseWaktu(f['Waktu Mulai Acara']);
       out.jenis = 'Margondang 1 Hari'; out.jenisKeep = ['Margondang 1 Hari','Margondang 2 Hari'];
@@ -5661,6 +5682,14 @@ function plApplyToForm(form, data){
   }
   // 2) Data klien
   has('Nama Klien', plSetVal(form,'[name="namaKlien"]', data.namaKlien, true));
+  //    Nama Kedua Mempelai (kolomnya hanya ada isinya kalau Jenis Acara sudah Marbagas/Patuaekkon/Margondang)
+  if(data.namaMempelai){
+    if(isJenisMempelai(jenisSel ? jenisSel.value : '')){
+      has('Nama Kedua Mempelai', plSetVal(form,'[name="namaMempelai"]', data.namaMempelai, true));
+    } else {
+      review.push('Nama mempelai "' + data.namaMempelai + '" tidak diisikan karena Jenis Acara bukan Marbagas/Patuaekkon/Margondang — pilih jenisnya lalu isi manual.');
+    }
+  }
   if(data.wa){
     const hid = form.querySelector('#waHidden');
     const vis = hid ? hid.parentElement.querySelector('input[type="tel"]') : null;
@@ -5774,7 +5803,7 @@ function plBindPanel(scopeEl){
 function buildJobFormHtml(j){
   const d = j || {
     tanggalAcara:'', tanggalSelesai:'', jamAcara:'', desa:'', dusun:'', adaDusun:false, kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'', koordinat:'',
-    jenisAcara:'', jenisAcaraLain:'', namaKlien:'', noWhatsapp:'', instagramList:[], paket:'', deskripsiPaket:'',
+    jenisAcara:'', jenisAcaraLain:'', namaKlien:'', namaMempelai:'', noWhatsapp:'', instagramList:[], paket:'', deskripsiPaket:'',
     prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Dijemput',
     vendor:'', vendorLain:'', timFreelancer:'', dp:'', biayaCetak:'', honorTim:'', honorTimList:[], diskon:'',
     penghasilan:'', sedekahNominal:'', sedekahStatus:'Belum', setoranShia:'',
@@ -5823,6 +5852,7 @@ function buildJobFormHtml(j){
         </div>
         <div><label>Paket</label><input type="text" name="paket" value="${escapeHtml(d.paket)}" placeholder="Nama / isi paket"></div>
         <div class="full" id="jenisLainWrap" style="display:${d.jenisAcara==='Lainnya'?'block':'none'}"><label>Sebutkan Jenis Acara Lainnya</label><input type="text" name="jenisAcaraLain" value="${escapeHtml(d.jenisAcaraLain||'')}"></div>
+        <div class="full" id="mempelaiWrap" style="display:${isJenisMempelai(d.jenisAcara)?'block':'none'}"><label>Nama Kedua Mempelai</label><input type="text" name="namaMempelai" value="${escapeHtml(d.namaMempelai||'')}" placeholder="Contoh: Budi &amp; Ani" autocomplete="off"></div>
         <div id="instagramFieldsWrap" style="display:contents;">${instagramFieldsHtml(igRolesAwal, igListAwal)}</div>
         <div class="full">
           <label>Deskripsi Paket</label>
@@ -6047,6 +6077,9 @@ function bindJobFormEvents(scopeEl, onDone){
     Object.keys(data).forEach(k=>{
       if(typeof data[k] === 'string') data[k] = data[k].trim();
     });
+    // Nama Kedua Mempelai hanya berlaku untuk Marbagas/Patuaekkon/Margondang. Kalau jenis
+    // acaranya (sudah) bukan itu, kosongkan supaya tidak ada nama "nyangkut" dari isian lama.
+    if(!isJenisMempelai(data.jenisAcara)) data.namaMempelai = '';
     // Validasi rentang tanggal acara: Tanggal Selesai wajib ada dan tidak boleh lebih awal
     // dari Tanggal Mulai. Kalau kosong (mis. form lama sebelum fitur ini), samakan dengan
     // Tanggal Mulai supaya job tetap dianggap 1 hari seperti sebelumnya.
@@ -6187,7 +6220,7 @@ function renderDaftarTable(){
   if(q){
     const qDigits = q.replace(/[^0-9]/g,'');
     list = list.filter(j=>{
-      const hay = [j.namaKlien,j.desa,j.dusun,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket]
+      const hay = [j.namaKlien,j.namaMempelai,j.desa,j.dusun,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket]
         .join(' ').toLowerCase();
       if(hay.includes(q)) return true;
       if(qDigits && String(j.noWhatsapp||'').replace(/[^0-9]/g,'').includes(qDigits)) return true;
@@ -7159,6 +7192,7 @@ function openDateModal(dateIso){
       <div class="modal-job">
         <div style="font-weight:700;margin-bottom:4px;">#${getJobNo(j.id)} — ${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
         <div class="mj-row"><span>Jenis Acara</span><span>${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara||'-')}</span></div>
+        ${(isJenisMempelai(j.jenisAcara) && (j.namaMempelai||'').trim()) ? `<div class="mj-row"><span>Kedua Mempelai</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.namaMempelai.trim())}</span></div>` : ''}
         <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}, ${escapeHtml(j.kabupaten||'-')}</span></div>
         <div class="mj-row"><span>Paket</span><span>${escapeHtml(j.paket||'-')}</span></div>
         ${(j.deskripsiPaket||'').trim() ? `<div class="mj-row"><span>Deskripsi Paket</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.deskripsiPaket.trim())}</span></div>` : ''}
@@ -7452,6 +7486,7 @@ function openJobDetailModal(jobId){
   const sections = [
     {title:'Data Acara', rows:[
       ['Nama Klien', j.namaKlien||'-'],
+      ...mempelaiDetailRows(j),
       ['Tanggal Acara', fmtTglJob(j)],
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
@@ -7578,6 +7613,7 @@ function buildJobPosterHtml(j){
 
   const sections = [
     {title:'Data Acara', rows:[
+      ...mempelaiDetailRows(j),
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
@@ -7821,6 +7857,7 @@ function copyJobDetails(jobId){
   const groups = [
     {title:ic('calendar')+' Data Acara', rows:[
       ['Nama Klien', j.namaKlien||'-'],
+      ...mempelaiDetailRows(j),
       ['Tanggal Acara', fmtTglJob(j)],
       ['Jenis Acara', jenis],
       ['Lokasi', lokasiFull],
@@ -7961,6 +7998,7 @@ function downloadKwitansiPdf(jobId){
     ['No. WhatsApp', j.noWhatsapp||'-'],
     ['Tanggal Acara', fmtTglJob(j)],
     ['Jenis Acara', jenis],
+    ...(mempelaiTeks(j) ? [['Kedua Mempelai', mempelaiTeks(j)]] : []),
     ['Paket', j.paket||'-'],
     ...((j.deskripsiPaket||'').trim() ? [['Deskripsi Paket', j.deskripsiPaket.trim()]] : []),
   ];
@@ -8062,7 +8100,7 @@ function buildKwitansiPosterHtml(j){
         <div class="kw-client-name">${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
         <div class="kw-meta-row">
           <span>${escapeHtml(fmtTglJob(j))}</span>
-          <span class="sep"></span><span>${escapeHtml(jenis)}</span>
+          <span class="sep"></span><span>${escapeHtml(jenis + (mempelaiTeks(j) ? ' — ' + mempelaiTeks(j) : ''))}</span>
           ${j.paket?`<span class="sep"></span><span>${escapeHtml(j.paket)}</span>`:''}
         </div>
       </div>
@@ -8163,6 +8201,7 @@ function jobEventDetails(j){
   if((j.paket||'').trim()) detailLines.push(`Paket: ${j.paket.trim()}`);
   if((j.deskripsiPaket||'').trim()) detailLines.push(`Deskripsi Paket: ${j.deskripsiPaket.trim()}`);
   if(j.namaKlien) detailLines.push(`Klien: ${j.namaKlien}`);
+  if(isJenisMempelai(j.jenisAcara) && (j.namaMempelai||'').trim()) detailLines.push(`Mempelai: ${j.namaMempelai.trim()}`);
   if(j.noWhatsapp) detailLines.push(`WhatsApp: ${j.noWhatsapp}`);
   const details = detailLines.length ? detailLines.join('\n') : '-';
   return {title, location, details};
@@ -10427,6 +10466,7 @@ function downloadExcelTemplate(){
   const headers = EXCEL_FIELD_MAP.map(f=>f.header);
   const exampleRow = {
     'Nama Klien':'Rani & Budi',
+    'Nama Kedua Mempelai':'Rani & Budi',
     'Tanggal Acara (YYYY-MM-DD)':'2026-08-30',
     'Jenis Acara':'Margondang 1 Hari',
     'Jenis Acara Lainnya':'',
@@ -10469,6 +10509,7 @@ function downloadExcelTemplate(){
     ['10. Kolom angka (DP, Penghasilan, Biaya Cetak, Honor Tim, Diskon, Sedekah Nominal, Harga Paket Vendor) diisi angka saja, tanpa titik/koma/Rp.'],
     ['11. Sedekah Nominal otomatis dihitung ulang oleh aplikasi setiap job dibuka/disimpan lewat form (Rp20.000 jika vendor Shia Makeup, atau kelipatan Rp10.000 per Rp100.000 dari Penghasilan-Honor Tim-Biaya Cetak-Diskon). Nilai di Excel hanya dipakai sebagai cadangan awal.'],
     ['12. Baris tanpa isian Tanggal Acara akan otomatis dilewati saat import.'],
+    ['13. Kolom Nama Kedua Mempelai hanya dipakai untuk jenis acara '+JENIS_ACARA_MEMPELAI.join(', ')+'. Untuk jenis acara lain, kolom ini diabaikan.'],
   ]);
   wsInfo['!cols'] = [{wch:70}];
   const wb = XLSX.utils.book_new();
@@ -10500,6 +10541,9 @@ function importExcelFile(file){
         if(!tglVal){ skipped++; return; }
         const newJobData = {};
         EXCEL_FIELD_MAP.forEach(f=>{
+          // File Excel lama (dibuat sebelum kolom Nama Kedua Mempelai ada) tidak punya kolom ini —
+          // lewati saja supaya nama mempelai yang sudah tersimpan di job tidak terhapus saat update.
+          if(f.field==='namaMempelai' && !Object.prototype.hasOwnProperty.call(row, f.header)) return;
           let v = row[f.header];
           if(f.field==='tanggalAcara'){
             if(v instanceof Date){
@@ -10867,6 +10911,7 @@ const CHANGELOG = [
     version: '1.12.0',
     tanggal: '30 September 2026',
     items: [
+      { kategori: 'Fitur', teks: 'Form Input/Edit Job punya kolom baru "Nama Kedua Mempelai" (contoh: Budi & Ani) yang otomatis muncul kalau Jenis Acara-nya Marbagas, Patuaekkon, Margondang 1 Hari, atau Margondang 2 Hari. Namanya ikut tampil di Detail Job, poster Detail Job, Salin Detail, kwitansi (PDF dan gambar), dan catatan Google Calendar/.ics, bisa dicari lewat kolom pencarian, serta ikut di template dan import Excel. Di "Ambil dari Pricelist", nama mempelai sekarang langsung terisi di kolom ini (sebelumnya masuk ke Catatan). Di Pengaturan > Template Pesan WhatsApp, tersedia kode {mempelai} yang bisa dipakai di ketiga pesan (isi pesan bawaan tidak berubah).' },
       { kategori: 'Fitur', teks: 'Form Input/Edit Job punya kotak baru "Ambil dari Pricelist". Pilih sumbernya (Pricelist Wedding, Mangayun & Aqiqah, Margondang, atau Isi Biodata Wedding/Margondang/Mangayun/Wisuda/Undangan), ketik nomor WhatsApp klien, lalu tekan "Ambil & Isi". Nama klien, No. WhatsApp, tanggal & jam acara, alamat, titik lokasi, paket, harga, DP, dan Instagram terisi otomatis dari data yang klien isi di website. Nomor boleh diketik 0812…, +62 812…, atau 812….' },
       { kategori: 'Peningkatan', teks: 'Nomor WhatsApp klien yang tercatat di spreadsheet Isi Biodata sekarang selalu berformat 08xxxxxxxxxx, sehingga pencarian di "Ambil dari Pricelist" lebih tepat dan tidak salah baca.' },
     ]

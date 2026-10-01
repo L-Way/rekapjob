@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#1c1a12">
+<meta name="theme-color" content="#fffdf6">
 <meta name="application-name" content="Kaone Motret">
 <meta name="apple-mobile-web-app-title" content="Kaone Motret">
 <link rel="manifest" href="manifest.webmanifest">
@@ -12,7 +12,7 @@
 <meta name="format-detection" content="telephone=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Kaone Motret — Buku Job Fotografer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Italiana&family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -2306,6 +2306,103 @@
     .topbar-meta .datetime-strip{font-size:10px; letter-spacing:.2px;}
     main{padding:12px 12px 6px;}
   }
+
+  /* =========================================================
+     v1.13.0 — PALET TERPADU: header, isi halaman, dan footer
+     Sebelumnya header & footer hampir hitam sementara isi halaman krem terang,
+     sehingga terasa "jomplang". Sekarang ketiganya satu keluarga warna:
+     isi halaman = krem paling terang, header & footer = champagne (krem
+     keemasan) sedikit lebih pekat + garis tepi halus, aksen tetap emas.
+     Blok ini ditaruh PALING AKHIR supaya menimpa gaya lama.
+  ========================================================= */
+  :root{
+    --shell-top:#fffdf6;
+    --shell-mid:#fbf3d6;
+    --shell-low:#f6ebbf;
+    --shell-edge:#eadfb4;
+    --shell-ink:#1f1b10;
+    --shell-muted:#6d6652;
+    --shell-accent:#7d6200;
+  }
+  html{background:var(--shell-mid);}
+  header.topbar{
+    background:linear-gradient(180deg,var(--shell-top) 0%,var(--shell-mid) 100%);
+    color:var(--shell-ink);
+    border-bottom:1px solid var(--shell-edge);
+    box-shadow:0 8px 22px -14px rgba(110,85,0,.35);
+  }
+  .brand-text .name{color:var(--shell-ink);}
+  .brand-text .tag{color:var(--shell-muted); opacity:1;}
+  .brand-badge{box-shadow:inset 0 0 0 2px rgba(255,255,255,.65), 0 3px 8px -2px rgba(160,125,0,.45);}
+  .topbar-meta{border-top-color:rgba(125,98,0,.16);}
+  .datetime-strip{color:var(--shell-muted);}
+  .user-chip{color:var(--shell-muted);}
+  .user-chip button{color:var(--shell-accent);}
+  .user-chip .role-badge{background:var(--dash-gold); color:#241b00;}
+  .notif-btn{
+    background:#fff; border:1px solid var(--shell-edge); color:var(--shell-accent);
+    box-shadow:0 3px 10px -4px rgba(110,85,0,.3); backdrop-filter:none; -webkit-backdrop-filter:none;
+  }
+  .notif-btn:hover{background:#fff8e1;}
+  .notif-badge{border-color:#fff;}
+  .notif-panel-head{
+    background:linear-gradient(180deg,var(--shell-top),var(--shell-mid)); color:var(--shell-ink);
+    border-bottom:1px solid var(--shell-edge);
+  }
+  .notif-panel-head .cnt{color:var(--shell-muted);}
+  .notif-markall-btn{background:#fff; border:1px solid var(--shell-edge); color:var(--shell-accent);}
+  .notif-markall-btn:hover{background:#fff8e1;}
+  /* Judul kolom tabel: dari hampir hitam jadi emas lembut, senada dengan header */
+  table.jobtable th, table.rekaptable th{
+    background:linear-gradient(180deg,var(--shell-mid),var(--shell-low));
+    color:#4a3b00; border-bottom:1px solid var(--shell-edge);
+  }
+  .copyright-bar{
+    background:linear-gradient(180deg,var(--shell-mid) 0%,var(--shell-low) 100%);
+    border-top:1px solid var(--shell-edge);
+    color:var(--shell-muted);
+  }
+  .version-tag{background:rgba(125,98,0,.10); color:var(--shell-accent);}
+
+  /* =========================================================
+     v1.13.0 — KARTU ANGKA BERANDA BISA DIKETUK
+  ========================================================= */
+  .dash-stat{
+    position:relative; display:block; width:100%; cursor:pointer;
+    -webkit-appearance:none; appearance:none; -webkit-tap-highlight-color:transparent;
+    transition:border-color .15s ease, box-shadow .15s ease, transform .12s ease;
+  }
+  button.dash-stat:hover{box-shadow:0 8px 20px -14px rgba(90,70,0,.45);}
+  button.dash-stat:active{transform:scale(.97); border-color:#d9cc9a;}
+  button.dash-stat:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+  .dash-stat .l{display:flex; align-items:center; justify-content:space-between; gap:6px;}
+  .dash-stat .go{flex:none; display:inline-flex;}
+  .dash-stat .go .ic{width:13px; height:13px; color:#b5ab8a;}
+
+  /* Isi pop-up rincian dari kartu angka */
+  .stat-sum{margin-top:10px; padding:11px 13px; border-radius:14px; background:var(--dash-chip); color:var(--dash-ink);}
+  .stat-sum .ss-big{font:700 18px/1.25 'Poppins',sans-serif; overflow-wrap:anywhere;}
+  .stat-sum .ss-note{margin-top:3px; font-size:11.5px; line-height:1.5; color:var(--dash-muted);}
+  .stat-sum .ss-row{display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:3px 0;}
+  .stat-sum .ss-row + .ss-row{border-top:1px dashed #e0d5ab;}
+  .stat-job{
+    display:flex; align-items:center; gap:10px; width:100%; margin-top:8px; padding:9px 11px; text-align:left;
+    background:#fff; border:1px solid var(--dash-line); border-radius:14px; font-family:inherit; color:inherit;
+  }
+  .stat-job:hover{transform:none; border-color:#d9cc9a; background:#fffdf6;}
+  .stat-job .sj-date{width:38px; flex:none; padding:5px 0; border-radius:11px; background:var(--dash-chip); color:var(--dash-gold-ink); text-align:center; line-height:1.05;}
+  .stat-job .sj-date b{display:block; font-size:14.5px;}
+  .stat-job .sj-date span{font-size:9.5px; font-weight:600;}
+  .stat-job .sj-tx{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;}
+  .stat-job .sj-t{font-weight:600; font-size:12.5px; line-height:1.3; color:var(--dash-ink); overflow-wrap:anywhere;}
+  .stat-job .sj-s{font-size:11px; line-height:1.35; color:var(--dash-muted);}
+  .stat-job .sj-amt{flex:none; font-weight:700; font-size:12.5px; color:var(--dash-ink); text-align:right; white-space:nowrap;}
+  .stat-job .sj-amt.neg{color:var(--danger);}
+  .stat-hint{margin-top:10px; font-size:11px; color:var(--dash-muted); text-align:center;}
+
+  /* Sapaan Beranda dikecilkan (sebelumnya 24-28px) supaya tidak mendominasi layar */
+  .dash-head h1{font-size:17px; line-height:1.25; letter-spacing:-.2px; margin:0 0 2px;}
+  .dash-head p{font-size:12px;}
 </style>
 </head>
 <body>
@@ -3052,10 +3149,10 @@ function setSyncStatus(status){
   const el = document.getElementById('syncStatus');
   if(!el) return;
   const map = {
-    synced:  {text:'☁️ Data tersinkron ke semua device',        color:'#8fe28a'},
-    saving:  {text:'⏳ Menyimpan ke cloud...',                   color:'#f4d93e'},
-    loading: {text:'⏳ Memuat data dari cloud...',                color:'#f4d93e'},
-    offline: {text:'⚠️ Mode offline — data hanya di device ini', color:'#e6a2a2'},
+    synced:  {text:'☁️ Data tersinkron ke semua device',        color:'#2e7d32'},
+    saving:  {text:'⏳ Menyimpan ke cloud...',                   color:'#8a6a00'},
+    loading: {text:'⏳ Memuat data dari cloud...',                color:'#8a6a00'},
+    offline: {text:'⚠️ Mode offline — data hanya di device ini', color:'#b3261e'},
   };
   const s = map[status] || map.offline;
   el.textContent = s.text;
@@ -4370,6 +4467,21 @@ function getJobDurasiHari(job){
   const diff = Math.round(diffMs/86400000) + 1;
   return diff>=1 ? diff : 1;
 }
+// Apakah job sudah "berjalan": tanggal MULAI-nya sudah tiba (hari ini atau sebelumnya).
+// Job multi-hari yang sedang berlangsung ikut dihitung (hari pertamanya sudah lewat),
+// sedangkan job yang tanggal mulainya masih di masa depan belum dihitung. Dipakai daftar
+// "Perlu dikerjakan" di Beranda — pekerjaan edit/cetak/antar/sedekah baru relevan setelah
+// jobnya jalan. Kalau tanggalnya kosong/tidak terbaca, job TETAP dihitung (lebih aman
+// terlihat daripada diam-diam tersembunyi).
+function jobSudahBerjalan(job, refDate){
+  const mulai = job?.tanggalAcara;
+  if(!mulai) return true;
+  const d = new Date(mulai+'T00:00:00');
+  if(Number.isNaN(d.getTime())) return true;
+  const t = refDate ? new Date(refDate) : new Date();
+  t.setHours(0,0,0,0);
+  return d.getTime() <= t.getTime();
+}
 // Cek apakah sebuah tanggal (YYYY-MM-DD) termasuk dalam rentang hari job ini
 // (dari Tanggal Acara sampai Tanggal Selesai/getJobFinishDate, inklusif kedua ujung).
 function isJobOnDate(job, dateIso){
@@ -5478,12 +5590,17 @@ function viewBeranda(){
   // Bonus Tim yang sudah diklaim bulan ini ikut mengurangi Penghasilan Bersih Admin —
   // lihat totalBonusDiklaimBulanIni().
   const totalBersihBulanIni = thisMonthJobs.reduce((s,j)=>s+hitungBersih(j),0) - (isAdmin() ? totalBonusDiklaimBulanIni() : 0);
-  const belumEdit = jobs.filter(j=>j.prosesEdit!=='Selesai').length;
-  const belumCetak = jobs.filter(j=>j.prosesCetak!=='Selesai').length;
+  // Daftar "Perlu dikerjakan" HANYA menghitung job yang sudah berjalan (tanggal mulai sudah
+  // tiba). Job yang jadwalnya masih di depan belum bisa diedit/dicetak/diantar/disedekahkan,
+  // jadi tidak ikut dihitung. Daftar rincian yang terbuka saat baris diketuk memakai aturan
+  // yang sama (data-status-scope="berjalan") supaya angka dan isi daftarnya selalu cocok.
+  const jobsBerjalan = jobs.filter(j=>jobSudahBerjalan(j, todayStart));
+  const belumEdit = jobsBerjalan.filter(j=>j.prosesEdit!=='Selesai').length;
+  const belumCetak = jobsBerjalan.filter(j=>j.prosesCetak!=='Selesai').length;
   // "Belum" di sini mencakup dua nilai pengiriman: 'Belum Diantar' dan 'Belum Dijemput'
   // (lihat PENGIRIMAN_LIST) — keduanya dianggap belum tuntas selama belum diawali kata 'Sudah'.
-  const belumPengiriman = jobs.filter(j=>!(j.pengiriman||'').startsWith('Sudah')).length;
-  const sedekahBelumJobs = jobs.filter(j=>j.sedekahStatus!=='Sudah');
+  const belumPengiriman = jobsBerjalan.filter(j=>!(j.pengiriman||'').startsWith('Sudah')).length;
+  const sedekahBelumJobs = jobsBerjalan.filter(j=>j.sedekahStatus!=='Sudah');
   const totalSedekahBelum = sedekahBelumJobs.reduce((s,j)=>s+(Number(j.sedekahNominal||hitungSedekah(j))||0),0);
   // Total tagihan yang belum masuk (sisa pembayaran semua job yang belum Lunas).
   const totalBelumLunas = jobs.filter(j=>j.statusPembayaran!=='Lunas')
@@ -5505,7 +5622,16 @@ function viewBeranda(){
   const otherJobs = upcomingAll.slice(1,5);
 
   // ----- pembantu tampilan -----
-  const tglHariIni = `${namaHariID(today)}, ${today.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`;
+  // Tanggal & jam lengkap sudah tampil live di header, jadi judul Beranda TIDAK mengulang
+  // tanggalnya. Sebagai gantinya: sapaan sesuai waktu (WIB) + ringkasan job hari ini.
+  const jamWib = parseInt(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta', hour:'2-digit', hour12:false}).format(today), 10) % 24;
+  const sapaan = jamWib<11 ? 'Selamat pagi' : (jamWib<15 ? 'Selamat siang' : (jamWib<18 ? 'Selamat sore' : 'Selamat malam'));
+  const namaDepan = String(currentNamaLengkap || currentUsername || '').trim().split(/\s+/)[0];
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const jobHariIni = jobs.filter(j=>isJobOnDate(j, todayIso)).length;
+  const ringkasHariIni = jobHariIni>0
+    ? `Hari ini ada ${jobHariIni} job.`
+    : 'Tidak ada job hari ini.';
   const jenisLabel = j => (j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'') : (j.jenisAcara||''));
   const jobTitle = j => [jenisLabel(j), j.namaKlien].filter(Boolean).join(' ') || 'Tanpa Nama';
   const bayarLabel = j => j.statusPembayaran==='Lunas' ? 'Lunas' : (j.statusPembayaran==='DP' ? 'DP lunas' : 'Belum bayar');
@@ -5556,28 +5682,29 @@ function viewBeranda(){
 
   // ----- kartu angka -----
   const stats = isAdmin() ? [
-    {v: moneyHtml(totalPenghasilanBulanIni), l:'Pemasukan bulan ini'},
-    {v: `${thisMonthJobs.length} job`,        l:'Terjadwal bulan ini'},
+    {v: moneyHtml(totalPenghasilanBulanIni), l:'Pemasukan bulan ini', attr:'data-open-stat="pemasukan"'},
+    {v: `${thisMonthJobs.length} job`,        l:'Terjadwal bulan ini', attr:'data-open-stat="terjadwal"'},
     {v: moneyHtml(totalBelumLunas),           l:'Belum lunas', attr:'data-open-status-list="statusPembayaran"'},
-    {v: moneyHtml(totalBersihBulanIni),       l:'Bersih bulan ini'}
+    {v: moneyHtml(totalBersihBulanIni),       l:'Bersih bulan ini', attr:'data-open-stat="bersih"'}
   ] : [
-    {v: moneyHtml(honorSayaBulanIni),         l:'Honor job bulan ini'},
-    {v: `${thisMonthJobs.length} job`,        l:'Terjadwal bulan ini'},
-    {v: moneyHtml(userBonusRupiah(currentUserId)), l:'Bonus saya'},
-    {v: escapeHtml(fmtTaskHours(Math.max(0,userTotalBonusHours(currentUserId)))), l:'Jam kerja saya'}
+    {v: moneyHtml(honorSayaBulanIni),         l:'Honor job bulan ini', attr:'data-open-stat="honor"'},
+    {v: `${thisMonthJobs.length} job`,        l:'Terjadwal bulan ini', attr:'data-open-stat="terjadwal"'},
+    {v: moneyHtml(userBonusRupiah(currentUserId)), l:'Bonus saya', attr:'data-goto="tugas"'},
+    {v: escapeHtml(fmtTaskHours(Math.max(0,userTotalBonusHours(currentUserId)))), l:'Jam kerja saya', attr:'data-goto="tugas"'}
   ];
-  const statsHtml = stats.map(st => st.attr
-    ? `<button type="button" class="dash-stat" ${st.attr}><div class="v">${st.v}</div><div class="l">${st.l}</div></button>`
-    : `<div class="dash-stat"><div class="v">${st.v}</div><div class="l">${st.l}</div></div>`
+  // Keempat kartu adalah tombol: ketuk untuk melihat rincian (pop-up) atau, untuk Bonus & Jam
+  // kerja milik akun Tim, langsung ke halaman Tugas tempat bonus & klaimnya berada.
+  const statsHtml = stats.map(st =>
+    `<button type="button" class="dash-stat" ${st.attr}><div class="v">${st.v}</div><div class="l"><span>${st.l}</span><span class="go">${ic('chevron-right')}</span></div></button>`
   ).join('');
 
   // ----- daftar "Perlu dikerjakan" (hanya yang masih ada isinya) -----
   const todos = [];
   if(homeTaskPending>0) todos.push({icon:'check-circle', t: isAdmin() ? 'Tugas tim belum selesai' : 'Tugas saya belum selesai', s:'Buka halaman tugas', n:homeTaskPending, attr:'data-goto="tugas"'});
-  if(belumEdit>0)       todos.push({icon:'edit',    t:'Edit belum selesai',   s:'Job yang masih dalam proses edit', n:belumEdit,  attr:'data-open-status-list="prosesEdit"'});
-  if(belumCetak>0)      todos.push({icon:'printer', t:'Cetak belum selesai',  s:'Job yang belum selesai dicetak',   n:belumCetak, attr:'data-open-status-list="prosesCetak"'});
-  if(belumPengiriman>0) todos.push({icon:'truck',   t:'Belum dijemput/diantar', s:'Foto yang belum sampai ke klien', n:belumPengiriman, attr:'data-open-status-list="pengiriman"'});
-  if(isAdmin() && sedekahBelumJobs.length>0) todos.push({icon:'hands', t:'Sedekah belum selesai', s:`Total ${fmtRp(totalSedekahBelum)}`, n:sedekahBelumJobs.length, attr:'data-open-status-list="sedekahStatus"'});
+  if(belumEdit>0)       todos.push({icon:'edit',    t:'Edit belum selesai',   s:'Job yang masih dalam proses edit', n:belumEdit,  attr:'data-open-status-list="prosesEdit" data-status-scope="berjalan"'});
+  if(belumCetak>0)      todos.push({icon:'printer', t:'Cetak belum selesai',  s:'Job yang belum selesai dicetak',   n:belumCetak, attr:'data-open-status-list="prosesCetak" data-status-scope="berjalan"'});
+  if(belumPengiriman>0) todos.push({icon:'truck',   t:'Belum dijemput/diantar', s:'Foto yang belum sampai ke klien', n:belumPengiriman, attr:'data-open-status-list="pengiriman" data-status-scope="berjalan"'});
+  if(isAdmin() && sedekahBelumJobs.length>0) todos.push({icon:'hands', t:'Sedekah belum selesai', s:`Total ${fmtRp(totalSedekahBelum)}`, n:sedekahBelumJobs.length, attr:'data-open-status-list="sedekahStatus" data-status-scope="berjalan"'});
   const todoHtml = todos.length ? `<div class="dash-list">${todos.map(td=>`
       <button type="button" class="dash-row" ${td.attr}>
         <span class="ico">${ic(td.icon)}</span>
@@ -5603,8 +5730,8 @@ function viewBeranda(){
   return `
   <div class="dash">
     <header class="dash-head">
-      <h1>Hari ini</h1>
-      <p>${escapeHtml(tglHariIni)}</p>
+      <h1>${sapaan}${namaDepan ? ', ' + escapeHtml(namaDepan) : ''}</h1>
+      <p>${ringkasHariIni}</p>
     </header>
 
     ${nextCard}
@@ -7527,6 +7654,7 @@ const STATUS_LIST_CONFIG = {
     isPending: j => j.sedekahStatus!=='Sudah',
     // Nominal sedekah tiap job dipakai untuk menghitung total di kartu Beranda & modal ini.
     getAmount: j => Number(j.sedekahNominal||hitungSedekah(j))||0,
+    amountLabel: 'Nominal Sedekah',
   },
   statusPembayaran: {
     label: 'Pembayaran',
@@ -7535,24 +7663,31 @@ const STATUS_LIST_CONFIG = {
     isPending: j => j.statusPembayaran!=='Lunas',
     // Sisa yang masih harus ditagih ke klien untuk job yang belum Lunas.
     getAmount: j => Math.max(0, hitungSisaPembayaran(j)),
+    amountLabel: 'Sisa Pembayaran',
   },
 };
-function renderStatusListModalHtml(field){
+function renderStatusListModalHtml(field, scope){
   const cfg = STATUS_LIST_CONFIG[field];
   if(!cfg) return '';
-  const list = sortedJobsWithNo().filter(cfg.isPending);
+  // scope 'berjalan' (dari daftar "Perlu dikerjakan" di Beranda): job yang tanggal mulainya
+  // belum tiba disembunyikan, sama persis dengan aturan penghitungan di Beranda.
+  const hanyaBerjalan = scope==='berjalan';
+  const semuaPending = sortedJobsWithNo().filter(cfg.isPending);
+  const list = hanyaBerjalan ? semuaPending.filter(j=>jobSudahBerjalan(j)) : semuaPending;
+  const belumMulai = semuaPending.length - list.length;
   const totalAmount = cfg.getAmount ? list.reduce((s,j)=>s+cfg.getAmount(j),0) : null;
   return `
     <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
     <h3>${cfg.icon} ${cfg.label} Belum Tuntas</h3>
-    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job dengan status ${cfg.label.toLowerCase()} yang belum tuntas${totalAmount!==null ? ` · Total: <b>${fmtRp(totalAmount)}</b>` : ''}</div>
-    ${list.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">${ic('check-circle')}</div>Semua ${cfg.label.toLowerCase()} sudah tuntas.</div>` :
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job${hanyaBerjalan ? ' yang sudah berjalan' : ''} dengan status ${cfg.label.toLowerCase()} yang belum tuntas${totalAmount!==null ? ` · Total: <b>${fmtRp(totalAmount)}</b>` : ''}</div>
+    ${(hanyaBerjalan && belumMulai>0) ? `<div style="font-size:12px;color:var(--ink-soft);margin-bottom:2px;">${belumMulai} job terjadwal yang tanggalnya belum tiba tidak dihitung.</div>` : ''}
+    ${list.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">${ic('check-circle')}</div>Semua ${cfg.label.toLowerCase()}${hanyaBerjalan ? ' pada job yang sudah berjalan' : ''} sudah tuntas.</div>` :
       list.map(j=>`
         <div class="modal-job">
           <div style="font-weight:700;margin-bottom:4px;">#${j.noUrut} — ${escapeHtml(j.namaKlien||'Tanpa Nama')} <span class="pill">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara||'-')}</span></div>
           <div class="mj-row"><span>Tanggal Acara</span><span>${fmtTglJob(j)}</span></div>
           <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</span></div>
-          ${cfg.getAmount ? `<div class="mj-row"><span>Nominal Sedekah</span><span>${fmtRp(cfg.getAmount(j))}</span></div>` : ''}
+          ${cfg.getAmount ? `<div class="mj-row"><span>${cfg.amountLabel||'Nominal'}</span><span>${fmtRp(cfg.getAmount(j))}</span></div>` : ''}
           <div class="mj-row"><span>Status ${cfg.label}</span><span>${badgeSelect(j.id, field, cfg.options, j[field])}</span></div>
           <div class="modal-actions">
             <button type="button" class="btn btn-outline" data-view-job="${j.id}">Lihat Detail</button>
@@ -7604,8 +7739,8 @@ function openUniqueClientsModal(){
 }
 // ⚠️ Kalau fungsi ini diubah (field baru ditambahkan ke STATUS_LIST_CONFIG, dsb),
 // ingat catat juga di CHANGELOG + naikkan APP_VERSION — lihat aturan wajib di atas file ini.
-function openStatusListModal(field){
-  showModal(renderStatusListModalHtml(field));
+function openStatusListModal(field, scope){
+  showModal(renderStatusListModalHtml(field, scope));
   const ov = document.getElementById('modalOverlay');
   ov?.querySelectorAll('select[data-field]').forEach(sel=>{
     sel.addEventListener('click', e=> e.stopPropagation());
@@ -7619,7 +7754,7 @@ function openStatusListModal(field){
       saveJobs();
       toast('Status diperbarui');
       render(); // supaya angka di kartu statistik Beranda di belakang modal ikut ter-update
-      openStatusListModal(field); // bangun ulang isi modal (job yang sudah tuntas akan hilang dari daftar)
+      openStatusListModal(field, scope); // bangun ulang isi modal (dengan lingkup yang sama) (job yang sudah tuntas akan hilang dari daftar)
     });
   });
 }
@@ -7670,6 +7805,119 @@ function openValueListModal(field, value){
       openValueListModal(field, value); // bangun ulang isi modal dgn filter nilai yang SAMA (job yang barusan diubah akan hilang dari daftar ini)
     });
   });
+}
+/* ---------- Modal rincian dari 4 kartu angka Beranda ----------
+   Pemasukan / Bersih (Admin), Honor (Tim), dan Terjadwal (semua). Semuanya memakai
+   kumpulan job yang SAMA dengan kartunya (job yang tanggal acaranya jatuh di bulan
+   ini), jadi total di pop-up selalu cocok dengan angka di kartu. Kartu "Belum lunas"
+   memakai modal status pembayaran yang sudah ada; "Bonus saya" & "Jam kerja saya"
+   langsung ke halaman Tugas. */
+const BERANDA_STAT_CONFIG = {
+  pemasukan: {
+    title:'Pemasukan', icon:'money', adminOnly:true,
+    amount: j => hitungOmzet(j),
+    note:'Omzet semua job bulan ini (harga setelah diskon), termasuk yang belum lunas.'
+  },
+  bersih: {
+    title:'Penghasilan Bersih', icon:'money', adminOnly:true,
+    amount: j => hitungBersih(j),
+    note:'Omzet dikurangi biaya cetak, honor tim, sedekah yang sudah disalurkan, dan setoran vendor.'
+  },
+  honor: {
+    title:'Honor Job Saya', icon:'money', timOnly:true,
+    amount: j => honorTimUntukAkun(j, currentUserId),
+    onlyIf: j => honorTimUntukAkun(j, currentUserId) > 0,
+    note:'Honor dari rincian Honor Tim yang diisi Admin di tiap job.'
+  },
+  terjadwal: {
+    title:'Job Terjadwal', icon:'calendar', amount:null
+  }
+};
+function renderBerandaStatModalHtml(kind){
+  const cfg = BERANDA_STAT_CONFIG[kind];
+  if(!cfg) return '';
+  if(cfg.adminOnly && !isAdmin()) return '';
+  if(cfg.timOnly && isAdmin()) return '';
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const bulanLabel = today.toLocaleDateString('id-ID',{month:'long', year:'numeric'});
+  const semuaBulanIni = sortedJobsWithNo().filter(j=>{
+    if(!j.tanggalAcara) return false;
+    const d = new Date(j.tanggalAcara+'T00:00:00');
+    return d.getMonth()===today.getMonth() && d.getFullYear()===today.getFullYear();
+  });
+  const list = cfg.onlyIf ? semuaBulanIni.filter(cfg.onlyIf) : semuaBulanIni;
+  const jenisLabel = j => (j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'') : (j.jenisAcara||''));
+  const jobTitle = j => [jenisLabel(j), j.namaKlien].filter(Boolean).join(' ') || 'Tanpa Nama';
+  const fase = j => {
+    const mulai = new Date(j.tanggalAcara+'T00:00:00');
+    const akhir = new Date((getJobFinishDate(j) || j.tanggalAcara)+'T00:00:00');
+    if(akhir < todayStart) return 'Sudah lewat';
+    if(mulai > todayStart) return 'Akan datang';
+    return mulai.getTime()===todayStart.getTime() ? 'Hari ini' : 'Berlangsung';
+  };
+
+  let summary = '';
+  if(cfg.amount){
+    const total = list.reduce((s,j)=>s+(Number(cfg.amount(j))||0), 0);
+    if(kind==='bersih'){
+      // Sama persis dengan kartu: bonus Tim yang sudah diklaim bulan ini dikurangkan dari total.
+      const bonus = totalBonusDiklaimBulanIni();
+      summary = `
+        <div class="stat-sum">
+          <div class="ss-row"><span>Bersih dari job</span><b>${fmtRp(total)}</b></div>
+          ${bonus>0 ? `<div class="ss-row"><span>Bonus tim diklaim bulan ini</span><b>-${fmtRp(bonus)}</b></div>` : ''}
+          <div class="ss-big" style="margin-top:6px;">${fmtRp(total-bonus)}</div>
+          <div class="ss-note">${cfg.note}</div>
+        </div>`;
+    } else {
+      summary = `
+        <div class="stat-sum">
+          <div class="ss-big">${fmtRp(total)}</div>
+          <div class="ss-note">${list.length} job · ${cfg.note}</div>
+        </div>`;
+    }
+  } else {
+    const hitung = f => list.filter(j=>fase(j)===f).length;
+    const berjalan = hitung('Hari ini') + hitung('Berlangsung');
+    const bagian = [];
+    if(hitung('Sudah lewat')) bagian.push(`${hitung('Sudah lewat')} sudah lewat`);
+    if(berjalan) bagian.push(`${berjalan} sedang berjalan`);
+    if(hitung('Akan datang')) bagian.push(`${hitung('Akan datang')} akan datang`);
+    summary = `
+      <div class="stat-sum">
+        <div class="ss-big">${list.length} job</div>
+        ${bagian.length ? `<div class="ss-note">${bagian.join(' · ')}</div>` : ''}
+      </div>`;
+  }
+
+  const rows = list.map(j=>{
+    const d = new Date(j.tanggalAcara+'T00:00:00');
+    const meta = [`#${j.noUrut}`, fase(j)];
+    if(getJobDurasiHari(j)>1) meta.push(`${getJobDurasiHari(j)} hari`);
+    if(isAdmin()) meta.push(j.statusPembayaran==='Lunas' ? 'Lunas' : (j.statusPembayaran==='DP' ? 'DP' : 'Belum bayar'));
+    const amt = cfg.amount ? (Number(cfg.amount(j))||0) : null;
+    return `
+      <button type="button" class="stat-job" data-view-job="${j.id}">
+        <span class="sj-date"><b>${d.getDate()}</b><span>${escapeHtml(d.toLocaleDateString('id-ID',{month:'short'}))}</span></span>
+        <span class="sj-tx"><span class="sj-t">${escapeHtml(jobTitle(j))}</span><span class="sj-s">${escapeHtml(meta.join(' · '))}</span></span>
+        ${amt!==null ? `<span class="sj-amt${amt<0?' neg':''}">${fmtRp(amt)}</span>` : ''}
+      </button>`;
+  }).join('');
+
+  return `
+    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic(cfg.icon)} ${cfg.title} ${escapeHtml(bulanLabel)}</h3>
+    ${summary}
+    ${list.length===0
+      ? `<div class="empty-state" style="padding:20px;"><div class="em">${ic('mailbox-empty')}</div>Belum ada job pada bulan ini.</div>`
+      : `${rows}<div class="stat-hint">Ketuk salah satu job untuk melihat detailnya.</div>`}
+  `;
+}
+function openBerandaStatModal(kind){
+  const html = renderBerandaStatModalHtml(kind);
+  if(!html) return;
+  showModal(html);
 }
 function showModal(innerHtml){
   // hapus modal lama jika ada, agar tidak menumpuk
@@ -10888,7 +11136,10 @@ function attachHandlers(){
     el.addEventListener('click', ()=> navigate(el.dataset.goto));
   });
   document.querySelectorAll('[data-open-status-list]').forEach(el=>{
-    el.addEventListener('click', ()=> openStatusListModal(el.dataset.openStatusList));
+    el.addEventListener('click', ()=> openStatusListModal(el.dataset.openStatusList, el.dataset.statusScope));
+  });
+  document.querySelectorAll('[data-open-stat]').forEach(el=>{
+    el.addEventListener('click', ()=> openBerandaStatModal(el.dataset.openStat));
   });
   document.querySelectorAll('[data-open-unique-clients]').forEach(el=>{
     el.addEventListener('click', openUniqueClientsModal);
@@ -11200,6 +11451,11 @@ const CHANGELOG = [
     version: '1.13.0',
     tanggal: '1 Oktober 2026',
     items: [
+      { kategori: 'Perbaikan', teks: 'Tanggal di judul Beranda tidak lagi muncul dua kali (sebelumnya sama dengan tanggal di bar atas). Judul Beranda sekarang berisi sapaan sesuai waktu dan ringkasan job hari ini, dengan ukuran huruf yang ringkas.' },
+      { kategori: 'Peningkatan', teks: 'Warna bar atas, isi halaman, dan bagian bawah (footer) disatukan jadi satu keluarga warna krem keemasan, tidak lagi hitam pekat di atas dan bawah. Tampilan jadi lebih serasi dengan Beranda dan menu bawah. Judul kolom tabel dan panel notifikasi ikut diselaraskan.' },
+      { kategori: 'Fitur', teks: 'Empat kartu angka di Beranda sekarang bisa diketuk. Pemasukan, Bersih, dan Terjadwal bulan ini membuka rincian job satu per satu beserta totalnya (ketuk job untuk melihat detail), Belum lunas membuka daftar tagihan, dan untuk akun Tim, Honor membuka rincian honor per job, sedangkan Bonus saya dan Jam kerja saya langsung ke halaman Tugas.' },
+      { kategori: 'Perbaikan', teks: 'Daftar "Perlu dikerjakan" di Beranda (Edit, Cetak, Belum dijemput/diantar, dan Sedekah) sekarang hanya menghitung job yang sudah berjalan. Job yang tanggalnya belum tiba tidak ikut dihitung. Daftar yang terbuka saat baris diketuk mengikuti aturan yang sama dan menyebutkan berapa job terjadwal yang belum dihitung.' },
+      { kategori: 'Perbaikan', teks: 'Pada daftar rincian status, label nominal sekarang sesuai jenisnya: "Sisa Pembayaran" untuk pembayaran dan "Nominal Sedekah" untuk sedekah.' },
       { kategori: 'Peningkatan', teks: 'Menu utama pindah dari atas ke bawah layar seperti aplikasi HP, dengan ikon baru: Beranda, Daftar Job, Kalender, Tugas, dan Lainnya. Menu Rekap, Laporan, Saran & Penilaian, dan Pengaturan sekarang ada di tombol \"Lainnya\".' },
       { kategori: 'Peningkatan', teks: 'Beranda didesain ulang: tampil tanggal hari ini, kartu job berikutnya (dengan tombol Tambah job dan Lihat detail), ringkasan angka bulan ini, dan daftar \"Perlu dikerjakan\" yang bisa diketuk untuk melihat job terkait.' },
       { kategori: 'Peningkatan', teks: 'Bar atas dirampingkan: jam dan status sinkron data kini berada dalam satu baris.' },

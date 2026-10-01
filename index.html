@@ -929,16 +929,6 @@
   .akun-table td.akun-pw{font-family:monospace; letter-spacing:.5px;}
   .akun-me{background:var(--gold-pale) !important;}
 
-  /* ---------- Chip pengguna (role) di header ---------- */
-  .user-chip{display:flex; align-items:center; gap:8px; font-size:11.5px; color:#d8c98a; flex-shrink:0;}
-  .user-chip .role-badge{
-    padding:3px 10px; border-radius:999px; font-weight:700; font-size:10px; letter-spacing:.5px;
-    text-transform:uppercase; background:var(--gold-pale); color:#7a5f00; white-space:nowrap;
-  }
-  .user-chip button{
-    border:none; background:none; color:#d8c98a; font-size:11px; cursor:pointer;
-    text-decoration:underline; padding:0; white-space:nowrap;
-  }
   /* Elemen bertanda admin-only otomatis disembunyikan untuk akun peran "Tim".
      Peran "Tim" TIDAK BOLEH: (1) membuka halaman Pengaturan, (2) mempublish/
      membatalkan publish/menghapus Saran & Penilaian, (3) mengubah teks, ukuran
@@ -1985,6 +1975,57 @@
     .jf-bar .form-actions{width:100%;}
   }
 
+  /* ===== Popup Edit/Input Job — rapi selebar popup (tanpa ruang kosong di kanan) =====
+     Penyebab ruang kosong dulu: tombol X memakai float:right, sedangkan form (.jf) punya
+     container-type sehingga ia "menghormati" float itu dan menyempit di sebelahnya.
+     Sekarang X ada di dalam header form, dan bar Simpan menempel penuh di dasar popup. */
+  .modal.modal-form{--fx:24px; --fb:24px; max-width:680px; overflow-x:hidden;}
+  .modal.modal-form .jf{width:100%;}
+  .modal.modal-form .close-x{float:none; position:static; width:38px; height:38px; padding:0; margin:0; display:grid; place-items:center; flex-shrink:0; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink-soft);}
+  .modal.modal-form .close-x .ic{width:17px; height:17px;}
+  .modal.modal-form .close-x:hover{transform:none; background:#fdeceb; border-color:#f4c9c4;}
+  .modal.modal-form .jf-head{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; gap:6px 12px; padding-bottom:12px;}
+  .modal.modal-form .jf-head-main{min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:2px;}
+  .modal.modal-form .jf-head h2{display:flex; align-items:center; gap:8px; font-size:21px; line-height:1.2;}
+  .modal.modal-form .jf-head h2 .ic{width:20px; height:20px; color:var(--warn);}
+  .modal.modal-form .jf-head p{margin:0 0 8px;}
+  .modal.modal-form .jf-head-right{display:flex; align-items:center; gap:8px;}
+  .modal.modal-form .jf-del-btn{width:38px; height:38px; min-height:38px; padding:0;}
+  /* Kotak Pricelist: baris ringkas yang bisa dilipat */
+  .jf .pl-box{padding:0; margin:0; overflow:hidden;}
+  .jf .pl-box > summary{display:flex; align-items:center; gap:11px; padding:10px 14px; cursor:pointer; list-style:none; user-select:none; -webkit-tap-highlight-color:transparent;}
+  .jf .pl-box > summary::-webkit-details-marker{display:none;}
+  .jf .pl-ico{width:32px; height:32px; border-radius:9px; background:#fff; border:1px solid #efe2a0; color:#7a6400; display:grid; place-items:center; flex-shrink:0;}
+  .jf .pl-ico .ic{width:16px; height:16px;}
+  .jf .pl-sum-tx{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;}
+  .jf .pl-sum-tx b{font-size:13.5px; color:var(--ink);}
+  .jf .pl-sum-tx span{font-size:11.5px; color:var(--ink-soft); line-height:1.35;}
+  .jf .pl-chev{width:20px; height:20px; flex-shrink:0; color:var(--ink-soft); transform:rotate(180deg); transition:transform .25s ease, color .2s ease;}
+  .jf .pl-chev .ic{width:20px; height:20px;}
+  .jf .pl-box[open] .pl-chev{transform:rotate(0deg); color:var(--warn);}
+  .jf .pl-body{padding:2px 14px 14px;}
+  /* Bar total & tombol: menempel penuh di dasar popup */
+  .modal.modal-form .jf-bar{
+    position:sticky; bottom:0; z-index:8; margin:6px calc(-1 * var(--fx)) calc(-1 * var(--fb));
+    padding:12px var(--fx) calc(12px + env(safe-area-inset-bottom,0px));
+    border-radius:16px 16px 0 0; box-shadow:0 -10px 26px -14px rgba(28,26,18,.5);
+  }
+  .modal.modal-form .jf-totals div + div{padding-left:14px; border-left:1px solid rgba(255,255,255,.14);}
+  .modal.modal-form .jf-bar .form-actions .btn{min-height:44px;}
+  .modal.modal-form .jf-bar .form-actions .btn-outline{flex:.8;}
+  .modal.modal-form .jf-bar .form-actions .btn-primary{flex:1.4;}
+  @container (min-width:560px){
+    .modal.modal-form .jf-bar{flex-direction:row; align-items:center; justify-content:space-between; gap:20px;}
+    .modal.modal-form .jf-totals{width:auto; justify-content:flex-start; gap:14px;}
+    .modal.modal-form .jf-bar .form-actions{width:auto; min-width:300px;}
+  }
+  @media(max-width:640px){
+    .modal.modal-form{--fx:18px; --fb:calc(22px + env(safe-area-inset-bottom,0px));}
+    .modal.modal-form::before{margin-bottom:10px;}
+    .modal.modal-form .jf-head h2{font-size:19px;}
+    .modal.modal-form .jf-bar{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));}
+  }
+
   /* Hasil Cetak */
   .cx{display:flex; flex-direction:column; gap:8px;}
   .cx-row{display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.3fr); gap:10px; align-items:center; padding:8px 12px; border:1.5px solid var(--line); border-radius:11px; background:#fffdf7;}
@@ -2107,13 +2148,12 @@
     margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.09);
   }
   .topbar-meta .datetime-strip{margin:0 !important; padding:0 !important; border:0 !important; text-align:left; font-size:11px; min-width:0;}
-  /* Di HP: tombol notifikasi naik ke baris yang sama dengan nama brand, chip akun turun ke baris sendiri */
+  /* Di HP: tombol notifikasi sejajar dengan nama brand (akun & tombol Keluar sekarang ada di menu "Lainnya") */
   @media(max-width:640px){
     .topbar-row{flex-wrap:wrap; align-items:center; row-gap:8px;}
     .topbar-row .brand{order:1; flex:1 1 auto; min-width:0;}
     .topbar-actions{display:contents;}
     .topbar-actions .notif-wrap{order:2; flex:none;}
-    .topbar-actions .user-chip{order:3; flex:1 1 100%;}
   }
 
   /* Menu bawah */
@@ -2169,6 +2209,18 @@
   .more-item .mi-ico .ic{width:21px; height:21px;}
   .more-item .mi-label{flex:1; min-width:0;}
   .more-item .mi-chev .ic{width:18px; height:18px; color:#b5ab8a;}
+
+
+  /* Kartu akun + tombol Keluar di sheet "Lainnya" (pindahan dari bar atas) */
+  .more-profile{display:flex; align-items:center; gap:12px; padding:10px 12px; margin:0 0 12px; background:var(--dash-chip); border:1px solid #efe4b6; border-radius:18px;}
+  .more-profile:empty{display:none;}
+  .more-profile .mp-avatar{width:42px; height:42px; border-radius:50%; flex:none; display:grid; place-items:center; background:var(--dash-gold); color:#241b00; font:700 17px 'Poppins',sans-serif; box-shadow:inset 0 0 0 2px rgba(255,255,255,.6);}
+  .more-profile .mp-info{display:flex; flex-direction:column; align-items:flex-start; gap:3px; min-width:0;}
+  .more-profile .mp-name{font:600 14.5px/1.25 'Poppins',sans-serif; color:var(--dash-ink); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .more-profile .role-badge{padding:2px 10px; border-radius:999px; font-weight:700; font-size:10px; letter-spacing:.5px; text-transform:uppercase; background:#fff; color:var(--dash-gold-ink); border:1px solid #e6dcb8;}
+  .more-logout{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:12px; padding:11px 14px; border:1px solid #efcfc9; border-radius:15px; background:#fff; color:var(--danger); font:600 13px 'Poppins',sans-serif;}
+  .more-logout .ic{width:18px; height:18px;}
+  .more-logout:hover{transform:none; background:#fdf3f1;}
 
   /* Beranda baru */
   .dash{max-width:820px; margin:0 auto;}
@@ -2300,8 +2352,6 @@
     .brand-text .name{font-size:14.5px; letter-spacing:.3px;}
     .brand-text .tag{font-size:8.5px; letter-spacing:1px;}
     .notif-btn{width:32px; height:32px; font-size:14px;}
-    .user-chip{font-size:10.5px; gap:6px;}
-    .user-chip .role-badge{font-size:9.5px; padding:3px 9px;}
     .topbar-meta{margin-top:5px; padding-top:5px; gap:1px 10px;}
     .topbar-meta .datetime-strip{font-size:10px; letter-spacing:.2px;}
     main{padding:12px 12px 6px;}
@@ -2336,9 +2386,6 @@
   .brand-badge{box-shadow:inset 0 0 0 2px rgba(255,255,255,.65), 0 3px 8px -2px rgba(160,125,0,.45);}
   .topbar-meta{border-top-color:rgba(125,98,0,.16);}
   .datetime-strip{color:var(--shell-muted);}
-  .user-chip{color:var(--shell-muted);}
-  .user-chip button{color:var(--shell-accent);}
-  .user-chip .role-badge{background:var(--dash-gold); color:#241b00;}
   .notif-btn{
     background:#fff; border:1px solid var(--shell-edge); color:var(--shell-accent);
     box-shadow:0 3px 10px -4px rgba(110,85,0,.3); backdrop-filter:none; -webkit-backdrop-filter:none;
@@ -2474,6 +2521,7 @@
 <symbol id="ic-truck" viewBox="0 0 24 24"><rect x="1.5" y="7" width="12" height="9" rx="1"/><path d="M13.5 10.5 h4 l3 3.2 V16 h-7Z"/><circle cx="6" cy="18.5" r="1.7"/><circle cx="17" cy="18.5" r="1.7"/></symbol>
 <symbol id="ic-trend-down" viewBox="0 0 24 24"><polyline points="3,7 10,14 14,10 21,17"/><polyline points="21,11 21,17 15,17"/></symbol>
 <symbol id="ic-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="12" x2="12" y2="7"/><line x1="12" y1="12" x2="15.5" y2="14"/></symbol>
+<symbol id="ic-logout" viewBox="0 0 24 24"><path d="M10 4 H6.5 A1.5 1.5 0 0 0 5 5.5 v13 A1.5 1.5 0 0 0 6.5 20 H10"/><path d="M15 8 l4 4 -4 4"/><path d="M19 12 H9.5"/></symbol>
 <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5 V7 a4 4 0 0 1 8 0 v3.5"/></symbol>
 <symbol id="ic-rocket" viewBox="0 0 24 24"><path d="M12 2 c3 2 5 6 5 10.5 c0 2-1 4-2 5 l-3-2 l-3 2 c-1-1-2-3-2-5 C7 8 9 4 12 2Z"/><path d="M9 15.5 l-3 1.5 1-3.5 M15 15.5 l3 1.5 -1-3.5"/><circle cx="12" cy="10" r="1.6" fill="currentColor" stroke="none"/></symbol>
 <symbol id="ic-new-badge" viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="10" rx="2"/><path d="M6.5 14.5 V9.5 l3 5 V9.5 M11.5 14.5 v-5 h2.5 M11.5 12 h2 M11.5 14.5 h2.5 M16 9.5 h2.2 c1 0 1.5 0.5 1.5 1.2 s-0.5 1.1 -1.5 1.1 H16 v2.7 M16 11.8 h2" stroke-width="1.4"/></symbol>
@@ -2559,7 +2607,6 @@
       </div>
     </div>
     <div class="topbar-actions">
-      <div class="user-chip" id="userChip"></div>
       <div class="notif-wrap" id="notifWrap">
         <button type="button" class="notif-btn" id="notifBtn" aria-label="Notifikasi">
           <svg class="ic" aria-hidden="true"><use href="#ic-bell"></use></svg><span class="notif-badge" id="notifBadge" style="display:none;">0</span>
@@ -2600,8 +2647,10 @@
   <div class="more-backdrop" id="moreBackdrop"></div>
   <div class="more-sheet" id="moreSheet" role="dialog" aria-modal="true" aria-label="Menu lainnya">
     <div class="more-grab" aria-hidden="true"></div>
+    <div class="more-profile" id="userChip"></div>
     <div class="more-title">Menu lainnya</div>
     <div class="more-list" id="moreList"></div>
+    <button type="button" class="more-logout" id="btnLogout"><svg class="ic" aria-hidden="true"><use href="#ic-logout"></use></svg><span>Keluar dari akun</span></button>
   </div>
 </div>
 
@@ -2725,12 +2774,19 @@ function applyRoleToUI(){
   document.body.classList.toggle('role-tim', currentUserRole==='tim');
   const chip = document.getElementById('userChip');
   if(!chip) return;
+  const nama = (currentNamaLengkap || currentUsername || '').trim();
+  const inisial = (nama.charAt(0) || '?').toUpperCase();
   chip.innerHTML = `
-    <span class="role-badge">${currentUserRole==='admin' ? 'Admin' : 'Tim'}</span>
-    <span>${escapeHtml(currentNamaLengkap || currentUsername || '')}</span>
-    <button type="button" id="btnLogout">Keluar</button>
+    <span class="mp-avatar" aria-hidden="true">${escapeHtml(inisial)}</span>
+    <span class="mp-info">
+      <span class="mp-name">${escapeHtml(nama || 'Pengguna')}</span>
+      <span class="role-badge">${currentUserRole==='admin' ? 'Admin' : 'Tim'}</span>
+    </span>
   `;
-  document.getElementById('btnLogout')?.addEventListener('click', logout);
+  // Tombol Keluar sekarang ada di sheet "Lainnya" (bukan lagi di bar atas).
+  // Pakai onclick (bukan addEventListener) supaya tidak menumpuk walau fungsi ini dipanggil berulang.
+  const btnOut = document.getElementById('btnLogout');
+  if(btnOut) btnOut.onclick = ()=>{ closeMoreSheet(); logout(); };
 }
 
 async function attemptLogin(username, password){
@@ -6169,20 +6225,28 @@ function plApplyToForm(form, data){
   return { filled, review };
 }
 
-function plPanelHtml(){
+function plPanelHtml(terbuka){
   const opt = k => `<option value="${k}">${escapeHtml(PRICELIST_SOURCES[k].label)}</option>`;
-  return `<div class="pl-box" id="plBox">
-    <div class="pl-head"><b>Ambil dari Pricelist</b><span>Isi otomatis dari data yang klien sudah isi di website</span></div>
-    <div class="pl-row">
-      <select id="plSource" aria-label="Sumber data">
-        <optgroup label="Formulir Pemesanan (Pricelist)">${['wedding','mangayun','margondang'].map(opt).join('')}</optgroup>
-        <optgroup label="Formulir Isi Biodata">${['bio-wedding','bio-margondang','bio-mangayun','bio-wisuda','bio-undangan'].map(opt).join('')}</optgroup>
-      </select>
-      <input type="text" id="plPhone" inputmode="numeric" placeholder="No. WhatsApp klien, mis. 0812xxxxxxxx" autocomplete="off" aria-label="No. WhatsApp klien">
-      <button type="button" class="btn btn-outline" id="plBtn">Ambil &amp; Isi</button>
+  // Kotak ini bisa dilipat. Saat membuat job baru terbuka (karena paling sering dipakai di situ),
+  // saat mengedit job yang sudah ada ia tertutup jadi satu baris ringkas supaya form langsung kelihatan.
+  return `<details class="pl-box" id="plBox"${terbuka?' open':''}>
+    <summary>
+      <span class="pl-ico">${ic('clipboard')}</span>
+      <span class="pl-sum-tx"><b>Ambil dari Pricelist</b><span>Isi otomatis dari data yang klien sudah isi di website</span></span>
+      <span class="pl-chev">${ic('arrow-up')}</span>
+    </summary>
+    <div class="pl-body">
+      <div class="pl-row">
+        <select id="plSource" aria-label="Sumber data">
+          <optgroup label="Formulir Pemesanan (Pricelist)">${['wedding','mangayun','margondang'].map(opt).join('')}</optgroup>
+          <optgroup label="Formulir Isi Biodata">${['bio-wedding','bio-margondang','bio-mangayun','bio-wisuda','bio-undangan'].map(opt).join('')}</optgroup>
+        </select>
+        <input type="text" id="plPhone" inputmode="numeric" placeholder="No. WhatsApp klien, mis. 0812xxxxxxxx" autocomplete="off" aria-label="No. WhatsApp klien">
+        <button type="button" class="btn btn-outline" id="plBtn">Ambil &amp; Isi</button>
+      </div>
+      <div class="pl-status" id="plStatus" role="status" aria-live="polite"></div>
     </div>
-    <div class="pl-status" id="plStatus" role="status" aria-live="polite"></div>
-  </div>`;
+  </details>`;
 }
 function plBindPanel(scopeEl){
   const form = scopeEl.querySelector('#jobForm');
@@ -6241,17 +6305,17 @@ function buildJobFormHtml(j){
 
   return `
     <form id="jobForm" class="jf">
-      ${plPanelHtml()}
       <div class="jf-head">
-        <div>
+        <div class="jf-head-main">
           <h2>${j?ic('edit')+' Edit Job':ic('note')+' Input Job Baru'}</h2>
           <p>Lengkapi data acara, lokasi, dan keuangan. Kolom bertanda * wajib diisi.</p>
+          <span class="jf-no">${j ? `No. urut <b>#${getJobNo(j.id)}</b>` : 'No. urut otomatis'}</span>
         </div>
         <div class="jf-head-right">
-          <span class="jf-no">${j ? `No. urut <b>#${getJobNo(j.id)}</b>` : 'No. urut otomatis'}</span>
-          ${j?`<button type="button" class="icon-btn icon-btn-danger jf-del-btn" id="btnDeleteJob" title="Hapus job ini">${ic('trash')}</button>`:''}
+          ${j?`<button type="button" class="icon-btn icon-btn-danger jf-del-btn" id="btnDeleteJob" title="Hapus job ini" aria-label="Hapus job ini">${ic('trash')}</button>`:''}
         </div>
       </div>
+      ${plPanelHtml(!j)}
       <section class="jf-sec open"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('user')}</span><div class="jf-sec-htx"><h3>Data Klien &amp; Acara</h3><p>Siapa yang memesan dan kapan acaranya.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
         <div><label>Nama Klien / Pemesan</label><input type="text" name="namaKlien" value="${escapeHtml(d.namaKlien)}" placeholder="Nama klien" autocomplete="off"></div>
         <div><label>No. WhatsApp</label>${waFieldHtml(d.noWhatsapp)}</div>
@@ -7988,11 +8052,16 @@ function openEditJobModal(jobId){
   const j = jobId ? jobs.find(x=>x.id===jobId) : null;
   editingId = j ? j.id : null;
   showModal(`
-    <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <button type="button" class="close-x" id="closeModal" aria-label="Tutup">${ic('close')}</button>
     ${buildJobFormHtml(j)}
   `);
   pullTeamAccountsPublic();
   const ov = document.getElementById('modalOverlay');
+  // Tampilan khusus popup form: tombol X dipindah ke dalam header form (bukan melayang/float
+  // di kanan, yang dulu membuat form menyempit dan menyisakan ruang kosong di sisi kanan).
+  ov.querySelector('.modal')?.classList.add('modal-form');
+  const xBtn = ov.querySelector('#closeModal'), headRight = ov.querySelector('.jf-head-right');
+  if(xBtn && headRight) headRight.appendChild(xBtn);
   bindJobFormEvents(ov, ()=>{
     closeModal();
     // segarkan tampilan yang sedang aktif di belakang modal
@@ -11451,6 +11520,8 @@ const CHANGELOG = [
     version: '1.13.0',
     tanggal: '1 Oktober 2026',
     items: [
+      { kategori: 'Peningkatan', teks: 'Popup Edit Job dan Input Job dirapikan. Isinya sekarang memenuhi lebar popup (sebelumnya ada ruang kosong di sisi kanan), tombol tutup dan hapus berada sejajar di kepala form, dan bar total beserta tombol Simpan menempel rapi di dasar popup. Kotak \"Ambil dari Pricelist\" kini bisa dilipat dan otomatis tertutup saat mengedit job supaya form langsung terlihat.' },
+      { kategori: 'Peningkatan', teks: 'Nama akun dan tombol Keluar dipindah dari bar atas ke menu \"Lainnya\". Di sana ada kartu akun (inisial, nama, dan peran) serta tombol \"Keluar dari akun\", sehingga bar atas lebih lega.' },
       { kategori: 'Perbaikan', teks: 'Tanggal di judul Beranda tidak lagi muncul dua kali (sebelumnya sama dengan tanggal di bar atas). Judul Beranda sekarang berisi sapaan sesuai waktu dan ringkasan job hari ini, dengan ukuran huruf yang ringkas.' },
       { kategori: 'Peningkatan', teks: 'Warna bar atas, isi halaman, dan bagian bawah (footer) disatukan jadi satu keluarga warna krem keemasan, tidak lagi hitam pekat di atas dan bawah. Tampilan jadi lebih serasi dengan Beranda dan menu bawah. Judul kolom tabel dan panel notifikasi ikut diselaraskan.' },
       { kategori: 'Fitur', teks: 'Empat kartu angka di Beranda sekarang bisa diketuk. Pemasukan, Bersih, dan Terjadwal bulan ini membuka rincian job satu per satu beserta totalnya (ketuk job untuk melihat detail), Belum lunas membuka daftar tagihan, dan untuk akun Tim, Honor membuka rincian honor per job, sedangkan Bonus saya dan Jam kerja saya langsung ke halaman Tugas.' },

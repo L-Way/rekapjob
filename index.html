@@ -2450,6 +2450,136 @@
   /* Sapaan Beranda dikecilkan (sebelumnya 24-28px) supaya tidak mendominasi layar */
   .dash-head h1{font-size:17px; line-height:1.25; letter-spacing:-.2px; margin:0 0 2px;}
   .dash-head p{font-size:12px;}
+
+  /* ===== Redesain Input/Edit Job (v1.14.0) =====
+     Bagian: kartu akordeon lebih tegas, label status di header, kolom keuangan
+     dikelompokkan, kolom Link Maps Antar, dan bar bawah yang bisa dibuka untuk rincian. */
+  .jf{gap:14px;}
+  .jf-sec{border-radius:16px; box-shadow:0 1px 0 rgba(122,100,0,.05); transition:box-shadow .2s ease, border-color .2s ease;}
+  .jf-sec.open{border-color:#e7d98a; box-shadow:0 12px 26px -18px rgba(122,100,0,.55);}
+  .jf-sec-h{padding:13px 15px; min-height:56px;}
+  .jf-sec.open .jf-sec-h{background:linear-gradient(180deg,#fff6d6,#fff9e6);}
+  .jf-ico{width:34px; height:34px; border-radius:10px;}
+  .jf-sec-h h3{font-size:15px; letter-spacing:.1px;}
+  .jf label{font-weight:600; letter-spacing:.1px;}
+  .jf .lbl-note{font-weight:400; color:var(--ink-soft); font-size:11.5px;}
+  .jf input:not([type=checkbox]):not([type=hidden]),.jf select{min-height:44px;}
+  .jf input:not([type=checkbox]):focus,.jf select:focus,.jf textarea:focus{
+    border-color:var(--gold); box-shadow:0 0 0 3px rgba(212,175,0,.2); outline:none;
+  }
+  .jf .field-hint{font-size:11.5px; line-height:1.45; color:var(--ink-soft); margin-top:5px;}
+  .jf #statusBayarHint:empty{display:none;}
+  .jf #statusBayarHint{color:#7a5a00;}
+
+  /* Label status kecil di header bagian (tetap terlihat saat bagian dilipat) */
+  .jf-sec-tt{display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px;}
+  .jf-sec-tt h3{margin:0;}
+  .jf-badge{
+    flex-shrink:0; max-width:100%; white-space:nowrap;
+    font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px;
+    background:#fff; border:1px solid #efe2a0; color:#7a6400;
+  }
+  .jf-badge.is-ok{background:#e8f6ec; border-color:#bfe3c9; color:#1d7a3a;}
+  .jf-badge.is-dp{background:#fff3cf; border-color:#f0d57a; color:#8a6200;}
+  .jf-badge.is-warn{background:#fdeceb; border-color:#f4c9c4; color:#b3261e;}
+
+  /* Keuangan: tiga kelompok */
+  .jf-fin{display:flex; flex-direction:column; gap:12px;}
+  .fin-group{border:1px solid #f0e4a6; background:#fffdf3; border-radius:14px; padding:12px 12px 14px;}
+  .fin-title{display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:11px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:#7a6f4a;}
+  .jf .da-title{display:flex; align-items:center; gap:8px; margin:8px 0 -2px; padding-top:10px; border-top:1px dashed #e6dcae; font-size:11px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:#7a6f4a;}
+  .jf .da-input{width:100%; box-sizing:border-box;}
+  .fin-dot{display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--gold);}
+  .fin-dot.is-in{background:#2e9e55;}
+  .fin-dot.is-out{background:#d9534f;}
+  .fin-dot.is-sed{background:var(--gold);}
+  .fin-group .form-grid{gap:12px;}
+
+  /* Pengiriman: kolom Link Maps Antar */
+  .antar-wrap{border:1px dashed #e6d98f; background:#fffdf3; border-radius:14px; padding:12px;}
+  .antar-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:9px;}
+  .antar-actions .btn{flex:0 0 auto; width:auto;}
+  .jf .btn-gold-mini{background:linear-gradient(135deg,var(--gold-light),var(--gold)); color:#231f0f; border:none; font-weight:700; box-shadow:0 4px 10px rgba(212,175,0,.28);}
+  .jf .btn-mini{padding:8px 12px; min-height:36px; font-size:12.5px; border-radius:10px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;}
+  .jf .btn-mini .ic{width:14px; height:14px;}
+  .antar-status{margin-top:8px; font-size:12px; line-height:1.5; color:var(--ink-soft);}
+  .antar-status:empty{display:none;}
+  .antar-status.is-ok{color:var(--ok);}
+  .antar-status.is-warn{color:var(--warn);}
+  .antar-wrap .ongkir-box{margin-top:10px;}
+
+  /* Bar bawah: total + rincian + tombol */
+  .jf-bar{gap:10px; background:#1c1a12; isolation:isolate;}
+  .jf-bar-row{display:flex; flex-direction:column; gap:10px;}
+  .jf-sum{display:flex; align-items:center; gap:10px;}
+  .jf-sum .jf-totals{flex:1; min-width:0;}
+  .jf-bd-toggle{
+    flex-shrink:0; display:inline-flex; align-items:center; gap:6px; padding:8px 11px; min-height:38px;
+    border-radius:10px; border:1px solid rgba(255,255,255,.28); background:transparent; color:#efe6c0;
+    font-size:12.5px; font-weight:600; cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .jf-bd-toggle .ic{width:15px; height:15px;}
+  .jf-bar.bd-open .jf-bd-toggle{background:rgba(255,255,255,.12); color:var(--gold-light);}
+  .jf-bd{display:none; max-height:42vh; overflow:auto; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,.14); -webkit-overflow-scrolling:touch;}
+  .jf-bar.bd-open .jf-bd{display:block;}
+  .jf-bd-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .jf-bd h5{margin:0 0 6px; font-size:10.5px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:#cbbf8f;}
+  .jf-bd-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px; padding:2.5px 0; font-size:12px; color:#efe6c0;}
+  .jf-bd-row span{min-width:0;}
+  .jf-bd-row b{font-family:inherit; font-size:12px; font-weight:600; white-space:nowrap; color:#fff;}
+  .jf-bd-row.is-minus b::before{content:'− '; color:#cbbf8f;}
+  .jf-bd-row.is-muted{opacity:.5;}
+  .jf-bd-row.is-total{margin-top:4px; padding-top:7px; border-top:1px dashed rgba(255,255,255,.28); font-weight:700;}
+  .jf-bd-row.is-total b{color:var(--gold-light); font-size:13px;}
+  @container (max-width:560px){
+    .jf-bd-grid{grid-template-columns:1fr; gap:12px;}
+  }
+  body.view-form .to-top-btn{bottom:calc(158px + env(safe-area-inset-bottom,0px));}
+  body.view-form .toast{bottom:calc(164px + env(safe-area-inset-bottom,0px));}
+  body.view-form:has(.jf-bar.bd-open) .to-top-btn{display:none!important;}
+  @container (min-width:560px){
+    .modal.modal-form .jf-bar{flex-direction:column; align-items:stretch; gap:10px;}
+    .jf-bar-row{flex-direction:row; align-items:center; justify-content:space-between; gap:20px;}
+    .jf-bar-row .jf-sum{flex:1; min-width:0;}
+    .modal.modal-form .jf-sum .jf-totals{width:auto; flex:0 1 auto; justify-content:flex-start; gap:14px;}
+    .modal.modal-form .jf-bar-row{gap:14px;}
+    .modal.modal-form .jf-bar .form-actions{width:auto; min-width:276px; flex:0 0 auto;}
+    .modal.modal-form .jf-bar .form-actions .btn{white-space:nowrap;}
+    .modal.modal-form .jf-sum .jf-totals b{overflow:visible; text-overflow:clip;}
+  }
+
+  /* ===== Perbaikan tampilan form Input/Edit Job di layar sempit (v1.14.1) =====
+     1) Kolom form melebar keluar panel: grid memakai "1fr" yang tidak boleh lebih kecil dari
+        lebar minimum isinya (kolom Instagram/Detail Acara berada di dalam pembungkus
+        display:contents sehingga aturan min-width:0 tidak berlaku untuknya). Sekarang
+        kolom dikunci minmax(0,1fr) dan semua isinya boleh mengecil.
+     2) Bar total di bawah: label "Sisa pembayaran" dan "Penghasilan bersih" saling menimpa
+        karena sama-sama tidak mau membungkus. Sekarang dua kolom sama lebar, label dipotong
+        rapi (…) bila kepanjangan, dan tombol Rincian jadi ikon saja di layar sempit. */
+  .jf .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  @media(max-width:720px){ .jf .form-grid{grid-template-columns:minmax(0,1fr);} }
+  @container (max-width:560px){ .jf .form-grid{grid-template-columns:minmax(0,1fr);} }
+  .jf .form-grid > *, .jf #instagramFieldsWrap > *, .jf #detailAcaraWrap > *{min-width:0;}
+  .jf input, .jf select, .jf textarea{max-width:100%; box-sizing:border-box;}
+  .jf .field-hint{overflow-wrap:anywhere;}
+  .jf #durasiHariHintWrap:has(.field-hint:empty){display:none;}
+  .jf-sum{gap:8px;}
+  .jf-sum .jf-totals{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; align-items:stretch; width:auto; flex:1; min-width:0;}
+  .jf-sum .jf-totals > div{min-width:0; padding:0 8px 0 0; align-items:flex-start; text-align:left;}
+  .jf-sum .jf-totals > div + div, .modal.modal-form .jf-sum .jf-totals > div + div{padding:0 0 0 12px; border-left:1px solid rgba(255,255,255,.16); align-items:flex-start; text-align:left;}
+  .jf-sum .jf-totals span{overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .jf-sum .jf-totals b{max-width:100%; font-size:15.5px; line-height:1.25;}
+  .jf-bd-toggle{min-width:40px; justify-content:center;}
+  @container (max-width:430px){
+    .jf-bd-toggle{width:42px; min-height:42px; padding:0;}
+    .jf-bd-toggle span{display:none;}
+    .jf-bd-toggle .ic{width:18px; height:18px;}
+  }
+  @container (min-width:560px){
+    .modal.modal-form .jf-sum .jf-totals{flex:0 1 auto; gap:0;}
+    .modal.modal-form .jf-sum .jf-totals > div{padding-right:14px;}
+    .modal.modal-form .jf-sum .jf-totals > div + div{padding-left:14px; padding-right:0;}
+  }
 </style>
 </head>
 <body>
@@ -3266,9 +3396,19 @@ function bangunPesanSelesai(j){
   let ongkir='';
   if(isDiantar){
     const biaya=Number(j.ongkirAntar)||0;
-    ongkir = biaya<=0
-      ? '\n\nOngkos antar: GRATIS.'
-      : `\n\nOngkos antar: ${fmtRp(biaya)} (Rp${fmtRibuan(ONGKIR_ANTAR.perKm)}/km), dibayar saat foto diterima.`;
+    const jarakNum = (j.jarakAntarKm===null || j.jarakAntarKm===undefined || j.jarakAntarKm==='') ? NaN : Number(j.jarakAntarKm);
+    const jarakAda = isFinite(jarakNum);
+    const jarakTeks = jarakAda ? jarakNum.toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' km' : '';
+    const linkAntar = mapsAntarUrl(j);
+    const titik = linkAntar ? `\n📍 Titik antar: ${linkAntar}` : '';
+    if(biaya>0){
+      ongkir = `\n\nOngkos antar: ${fmtRp(biaya)} (${jarakAda?'jarak ±'+jarakTeks:'Rp'+fmtRibuan(ONGKIR_ANTAR.perKm)+'/km'}), dibayar saat foto diterima.${titik}`;
+    }else if(jarakAda || !j.linkMapsAntar){
+      ongkir = `\n\nOngkos antar: GRATIS.${titik}`;
+    }else{
+      // Link ada tapi jarak belum pernah berhasil dihitung: jangan menjanjikan "gratis", cukup kirim titiknya.
+      ongkir = titik ? `\n${titik}` : '';
+    }
   }
   const map={nama:(j.namaKlien||'').trim(), mempelai:mempelaiTeks(j), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'', deskripsiPaket:j.deskripsiPaket||'', sisa:fmtRp(sisa), tagihan, ajakan, ongkir, maps:mapsStudioLink()};
   return renderWaTpl(PESAN_SELESAI_TPL,map);
@@ -3277,7 +3417,7 @@ function pesanSelesaiPanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="selesai">
     <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai tombol "Kabari Klien" di Detail Job saat Proses Cetak sudah Selesai. Isinya masih bisa diedit sebelum dikirim.</p>
     <textarea id="pesanSelesaiTpl" rows="11" style="width:100%">${escapeHtml(PESAN_SELESAI_TPL)}</textarea>
-    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {mempelai} {acara} {tanggal} {paket} {deskripsiPaket} {sisa} {tagihan} {ajakan} {ongkir} {maps}. {tagihan} hanya muncul kalau belum lunas — berisi pengingat sisa pembayaran, bukan info tempat bayar (pelunasan biasanya sudah dilakukan di hari H acara). {ajakan} menyesuaikan saklar Pengiriman di job: "Dijemput" mengajak klien datang mengambil sendiri, "Diantar" memberi tahu foto akan diantar tim ke lokasi klien. {ongkir} otomatis kosong kalau Pengiriman = Dijemput, dan berisi nominal ongkos antar (dari Ongkos Antar Foto di Pengaturan) kalau Pengiriman = Diantar. {maps} berisi link Google Maps lokasi Kaone Motret, dari titik yang sama dengan acuan hitung jarak.</div>
+    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {mempelai} {acara} {tanggal} {paket} {deskripsiPaket} {sisa} {tagihan} {ajakan} {ongkir} {maps}. {tagihan} hanya muncul kalau belum lunas — berisi pengingat sisa pembayaran, bukan info tempat bayar (pelunasan biasanya sudah dilakukan di hari H acara). {ajakan} menyesuaikan saklar Pengiriman di job: "Dijemput" mengajak klien datang mengambil sendiri, "Diantar" memberi tahu foto akan diantar tim ke lokasi klien. {ongkir} otomatis kosong kalau Pengiriman = Dijemput, dan berisi nominal ongkos antar, jarak, serta link titik antar dari Link Maps Antar (tarifnya dari Ongkos Antar Foto di Pengaturan) kalau Pengiriman = Diantar. {maps} berisi link Google Maps lokasi Kaone Motret, dari titik yang sama dengan acuan hitung jarak.</div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
       <button type="button" class="btn btn-primary" onclick="simpanPesanSelesai()">Simpan pesan</button>
       <button type="button" class="btn btn-outline" onclick="resetPesanSelesai()">Kembalikan bawaan</button>
@@ -3548,11 +3688,129 @@ function onJenisAcaraChange(sel){
   // baru dikosongkan saat form disimpan kalau jenis acaranya memang bukan yang relevan.
   const mempelaiWrap = document.getElementById('mempelaiWrap');
   if(mempelaiWrap) mempelaiWrap.style.display = isJenisMempelai(sel.value) ? 'block' : 'none';
+  refreshDetailAcara();
   const wrap = document.getElementById('instagramFieldsWrap');
   if(!wrap) return;
   const currentList = Array.from(wrap.querySelectorAll('.ig-role-input')).map(inp=>({role:inp.dataset.igRole, username:inp.value}));
   const roles = getInstagramRoles(sel.value);
   wrap.innerHTML = instagramFieldsHtml(roles, matchInstagramRoles(roles, currentList));
+}
+/* ---------- Detail Acara: kolom nyata yang menyesuaikan Jenis Acara ----------
+   Data khusus per jenis acara (mis. Nama Anak/Ibu/Ayah untuk Mangayun, Universitas untuk
+   Wisuda, Waktu Selesai untuk Margondang) disimpan di job.detailAcara = { kunci: nilai }
+   dan ditampilkan sebagai kolom sungguhan di form, Detail Job, poster, Salin Detail, dan
+   catatan kalender — bukan lagi diselipkan ke teks Catatan.
+   Cara menambah kolom: tambahkan {key, label} ke kelompok yang sesuai di bawah ini.
+   Kelompok "umum" berlaku untuk SEMUA jenis acara (begitu Jenis Acara dipilih).
+   Kelompok ditentukan oleh detailGrupAcara(): Marbagas/Patuaekkon = pernikahan,
+   Margondang = margondang, Mangayun/Aqiqah = mangayun, Wisuda = wisuda, dan jenis
+   "Lainnya" yang diawali kata "Undangan"/"Margondang" ikut kelompok itu. */
+const DETAIL_ACARA_SKEMA = {
+  pernikahan: [
+    {key:'konsepPakaian', label:'Adat / Konsep Pakaian', placeholder:'Contoh: Adat Batak, gaun putih'},
+  ],
+  margondang: [
+    {key:'waktuSelesai', label:'Waktu Selesai Acara', type:'time'},
+  ],
+  mangayun: [
+    {key:'namaAnak', label:'Nama Anak', placeholder:'Nama anak'},
+    {key:'namaIbu', label:'Nama Ibu', placeholder:'Nama ibu'},
+    {key:'namaAyah', label:'Nama Ayah', placeholder:'Nama ayah'},
+  ],
+  wisuda: [
+    {key:'institusi', label:'Universitas / Institusi', placeholder:'Nama kampus atau sekolah'},
+    {key:'jenjang', label:'Jenjang', placeholder:'Contoh: S1, D3, SMA'},
+    {key:'lokasiAcara', label:'Lokasi Acara', placeholder:'Tempat wisuda'},
+    {key:'sesiDiminati', label:'Sesi Diminati', placeholder:'Sesi foto yang dipilih'},
+    {key:'lokasiOutdoor', label:'Lokasi Foto Outdoor', placeholder:'Tempat foto di luar ruangan'},
+  ],
+  undangan: [
+    {key:'namaAcara', label:'Nama Acara', placeholder:'Nama acara yang diundang'},
+    {key:'temaWarna', label:'Tema / Warna', placeholder:'Contoh: Rustic, hijau sage'},
+    {key:'estimasiTamu', label:'Estimasi Tamu', placeholder:'Perkiraan jumlah tamu'},
+    {key:'deadline', label:'Deadline Dibutuhkan', placeholder:'Kapan undangan harus jadi'},
+  ],
+  umum: [
+    {key:'pemilihanFoto', label:'Pemilihan Foto', placeholder:'Contoh: Dipilih klien', umum:true},
+    {key:'igVendor', label:'Instagram Vendor', type:'textarea', full:true, placeholder:'@mua, @dekor, @wo ...', umum:true},
+    {key:'kodeVoucher', label:'Kode Voucher', placeholder:'Kode voucher klien', umum:true},
+  ],
+};
+const DETAIL_GRUP_LABEL = {pernikahan:'Pernikahan', margondang:'Margondang', mangayun:'Mangayun/Aqiqah', wisuda:'Wisuda', undangan:'Undangan'};
+const DETAIL_ACARA_LABEL = (()=>{ const m={}; Object.keys(DETAIL_ACARA_SKEMA).forEach(g=>DETAIL_ACARA_SKEMA[g].forEach(f=>{ m[f.key]=f.label; })); return m; })();
+function detailAcaraLabel(key){ return DETAIL_ACARA_LABEL[key] || key; }
+function detailGrupAcara(jenisAcara, jenisAcaraLain){
+  const j = String(jenisAcara||'');
+  if(j==='Marbagas' || j==='Patuaekkon') return 'pernikahan';
+  if(/^Margondang/i.test(j)) return 'margondang';
+  if(j==='Mangayun/Aqiqah') return 'mangayun';
+  if(j==='Wisuda') return 'wisuda';
+  if(j==='Lainnya'){
+    const l = String(jenisAcaraLain||'').trim();
+    if(/^margondang/i.test(l)) return 'margondang';
+    if(/^undangan/i.test(l)) return 'undangan';
+  }
+  return '';
+}
+// Daftar kolom yang berlaku untuk sebuah jenis acara (kosong kalau Jenis Acara belum dipilih).
+function detailAcaraSkema(jenisAcara, jenisAcaraLain){
+  if(!jenisAcara) return [];
+  const g = detailGrupAcara(jenisAcara, jenisAcaraLain);
+  return [...(DETAIL_ACARA_SKEMA[g] || []), ...DETAIL_ACARA_SKEMA.umum];
+}
+function detailAcaraKunci(jenisAcara, jenisAcaraLain){
+  return jenisAcara ? (jenisAcara + '|' + detailGrupAcara(jenisAcara, jenisAcaraLain)) : '';
+}
+function detailAcaraFieldsHtml(jenisAcara, jenisAcaraLain, vals){
+  const skema = detailAcaraSkema(jenisAcara, jenisAcaraLain);
+  if(!skema.length) return '';
+  vals = vals || {};
+  const grup = detailGrupAcara(jenisAcara, jenisAcaraLain);
+  const judul = jenisAcara==='Lainnya' ? (DETAIL_GRUP_LABEL[grup] || 'Lainnya') : jenisAcara;
+  return `<div class="full da-title">Detail Acara · ${escapeHtml(judul)}</div>` + skema.map(f=>{
+    const v = escapeHtml(vals[f.key] == null ? '' : vals[f.key]);
+    const ph = f.placeholder ? ` placeholder="${escapeHtml(f.placeholder)}"` : '';
+    const input = f.type==='textarea'
+      ? `<textarea class="da-input" data-da-key="${f.key}" rows="2"${ph}>${v}</textarea>`
+      : `<input type="${f.type||'text'}" class="da-input" data-da-key="${f.key}" value="${v}"${ph} autocomplete="off">`;
+    return `<div${f.full ? ' class="full"' : ''}><label>${escapeHtml(f.label)}</label>${input}</div>`;
+  }).join('');
+}
+// Isian yang sedang diketik disimpan sementara di sini, jadi kalau Jenis Acara diganti lalu
+// dikembalikan lagi, ketikan yang cocok tidak hilang (baru benar-benar dibuang saat Simpan).
+let detailAcaraStash = {};
+function refreshDetailAcara(){
+  const wrap = document.getElementById('detailAcaraWrap');
+  if(!wrap) return;
+  const form = wrap.closest('form') || document;
+  const jenis = form.querySelector('select[name="jenisAcara"]')?.value || '';
+  const lain = form.querySelector('input[name="jenisAcaraLain"]')?.value || '';
+  const kunci = detailAcaraKunci(jenis, lain);
+  if(wrap.dataset.kunci === kunci) return;
+  wrap.querySelectorAll('.da-input').forEach(i=>{ detailAcaraStash[i.dataset.daKey] = i.value; });
+  wrap.innerHTML = detailAcaraFieldsHtml(jenis, lain, detailAcaraStash);
+  wrap.dataset.kunci = kunci;
+}
+// Hanya kolom yang berlaku untuk jenis acara SAAT INI yang disimpan ke job.
+function kumpulkanDetailAcara(form){
+  const out = {};
+  form.querySelectorAll('.da-input').forEach(i=>{
+    const v = String(i.value || '').trim();
+    if(v) out[i.dataset.daKey] = v;
+  });
+  return out;
+}
+// Baris untuk Detail Job / Poster / Salin Detail / Kalender — hanya kolom yang ada isinya.
+// opts.tanpaUmum: lewati kolom umum (dipakai poster yang tingginya terbatas).
+// opts.maks: potong nilai panjang.
+function detailAcaraRows(j, opts){
+  opts = opts || {};
+  const v = (j && j.detailAcara) || {};
+  return detailAcaraSkema(j && j.jenisAcara, j && j.jenisAcaraLain)
+    .filter(f=> !(opts.tanpaUmum && f.umum))
+    .map(f=>[f.label, String(v[f.key] == null ? '' : v[f.key]).trim()])
+    .filter(([,val])=>val)
+    .map(([l,val])=>[l, opts.maks ? truncateText(val, opts.maks) : val]);
 }
 // Akordeon Input/Edit Job: buka satu bagian -> bagian lain otomatis tertutup.
 // Klik bagian yang sedang terbuka akan menutupnya (boleh semua tertutup).
@@ -3589,7 +3847,7 @@ function simpanHargaCetak(e){
 }
 
 /* ---------- Ongkos Antar Foto (dipakai saat Pengiriman = "Diantar") ----------
-   Dihitung otomatis dari jarak real (OSRM) Titik Koordinat job ke Kaone Motret,
+   Dihitung otomatis dari jarak real (OSRM) titik di kolom Link Maps Antar job ke Kaone Motret,
    dikali tarif per km. Kalau hasilnya di bawah batas gratis, dianggap gratis
    (nominal jadi Rp0) — supaya jarak dekat tidak perlu menagih ongkos receh. */
 const ONGKIR_ANTAR_KEY='kaoneMotret_ongkirAntar_v1';
@@ -3610,7 +3868,7 @@ function fmtOngkirAntar(km){
 }
 function ongkirAntarCardHtml(){
   return `<div class="card"><h2 style="margin-top:0;">${ic('car')} Ongkos Antar Foto</h2>
-    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Dipakai otomatis saat saklar Pengiriman di Input/Edit Job diatur ke "Diantar" (foto diantar tim ke lokasi klien). Dihitung dari jarak real (Titik Koordinat) ke Kaone Motret, lalu dibulatkan ke atas per Rp1.000 (mis. Rp47.670 jadi Rp48.000).</p>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Dipakai otomatis saat saklar Pengiriman di Input/Edit Job diatur ke "Diantar" (foto diantar tim ke lokasi klien). Dihitung dari jarak real titik di kolom Link Maps Antar (Input/Edit Job) ke Kaone Motret, lalu dibulatkan ke atas per Rp1.000 (mis. Rp47.670 jadi Rp48.000).</p>
     <div class="form-grid">
       <div><label>Tarif per KM</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-ongkirantar="perKm" value="${fmtRibuan(ONGKIR_ANTAR.perKm)}" oninput="handleMoneyInput(this)"></div></div>
       <div><label>Gratis Jika Biaya Sampai Dengan</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-ongkirantar="batasGratis" value="${fmtRibuan(ONGKIR_ANTAR.batasGratis)}" oninput="handleMoneyInput(this)"></div></div>
@@ -3936,24 +4194,73 @@ function pengirimanSudah(p){ return (p||'').startsWith('Sudah'); }
 function buildPengirimanValue(metode, sudah){
   return (sudah?'Sudah ':'Belum ') + (metode==='dijemput'?'Dijemput':'Diantar');
 }
-// Blok saklar "Diantar/Dijemput" + status + estimasi ongkos jemput (form Input/Edit Job).
-// jarakKmAwal: hasil dari cache (getCachedJarakTempuh) saat form pertama dirender —
-// null kalau belum pernah dihitung, akan menyusul lewat updateJarakCalc()/updateOngkirDisplay().
-function pengirimanFieldHtml(d, jarakKmAwal){
+/* ---------- Link Maps Antar (lokasi pengantaran foto) ----------
+   Kolom ini hanya muncul saat Pengiriman = "Diantar". Ongkos antar dihitung dari titik
+   di link ini (BUKAN dari Titik Koordinat acara), karena foto bisa diantar ke alamat
+   yang berbeda dari lokasi acara. Yang bisa dibaca otomatis: link Google Maps panjang
+   (…/@lat,lng, …!3d…!4d…, ?q=lat,lng, /place/lat,lng) dan koordinat polos "lat, lng".
+   Link pendek (maps.app.goo.gl) tidak bisa dibuka dari browser karena dibatasi CORS,
+   jadi kolom memberi petunjuk supaya user menempel link panjang atau koordinatnya. */
+function parseMapsAntar(str){
+  const raw = String(str||'').trim();
+  if(!raw) return null;
+  // Koordinat polos: hanya angka, titik, koma, spasi, titik koma, tanda minus
+  if(/^[\d\s.,;+\-]+$/.test(raw)) return parseCoordString(raw);
+  let t = raw;
+  try{ t = decodeURIComponent(raw); }catch(e){}
+  const num = '(-?\\d{1,3}(?:\\.\\d+)?)';
+  const pola = [
+    new RegExp('!3d' + num + '!4d' + num),                       // pin sebenarnya di link panjang
+    new RegExp('@' + num + ',' + num),                           // titik tengah peta
+    new RegExp('[?&](?:q|query|ll|sll|destination|daddr|center)=' + num + '\\s*[,+ ]\\s*' + num),
+    new RegExp('/(?:place|search)/' + num + ',[\\s+]*' + num)
+  ];
+  for(const re of pola){
+    const m = t.match(re);
+    if(m){
+      const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+      if(isFinite(lat) && isFinite(lng) && Math.abs(lat)<=90 && Math.abs(lng)<=180) return {lat, lng};
+    }
+  }
+  return null;
+}
+function isShortMapsLink(str){
+  return /(?:maps\.app\.goo\.gl|goo\.gl\/maps|g\.co\/kgs)/i.test(String(str||''));
+}
+// Link yang aman dibuka / dikirim lewat WhatsApp dari isi Link Maps Antar milik job.
+function mapsAntarUrl(j){
+  const raw = String((j && j.linkMapsAntar) || '').trim();
+  if(!raw) return '';
+  if(/^https?:\/\//i.test(raw)) return raw;
+  if(/^[\w-]+(?:\.[\w-]+)+(?:\/|$)/.test(raw) && !/\s/.test(raw)) return 'https://' + raw;
+  const c = parseMapsAntar(raw);
+  return c ? `https://www.google.com/maps?q=${c.lat},${c.lng}` : '';
+}
+function openJfSectionFor(el){
+  const sec = el && el.closest ? el.closest('.jf-sec') : null;
+  if(sec && !sec.classList.contains('open')) toggleJfSection(sec);
+}
+
+function buildPengirimanValue(metode, sudah){
+  return (sudah?'Sudah ':'Belum ') + (metode==='dijemput'?'Dijemput':'Diantar');
+}
+// Isi bagian "Pengiriman Foto" di form Input/Edit Job: saklar Diantar/Dijemput, status,
+// dan (khusus Diantar) kolom Link Maps Antar + kotak ongkos antar. Nilai ongkos & jarak
+// diisi/dihitung oleh updateOngkirAntarCalc() setelah form terpasang di DOM.
+function pengirimanFieldHtml(d){
   const metode = pengirimanMetode(d.pengiriman);
   const sudah = pengirimanSudah(d.pengiriman);
   const isDiantar = metode==='diantar';
-  const koordValid = !!parseCoordString(d.koordinat);
-  const ongkirAwal = isDiantar ? hitungOngkirAntar(jarakKmAwal) : null;
-  const jarakTeks = jarakKmAwal===null ? (koordValid?'Menghitung…':'-') : fmtJarakJalan(jarakKmAwal);
-  const biayaTeks = jarakKmAwal===null ? (koordValid?'…':'-') : fmtOngkirAntar(jarakKmAwal);
+  const savedOngkir = Number(d.ongkirAntar)||0;
+  const jk = parseFloat(d.jarakAntarKm);
+  const savedJarak = isFinite(jk) ? jk : '';
   return `
     <div class="full">
-      <label>Pengiriman Foto</label>
+      <label>Metode Pengiriman</label>
       <div class="toggle-switch-row ${isDiantar?'is-on':''}" id="pengirimanToggleRow">
         <div class="ts-label">
           <b id="pengirimanMetodeLabel">${isDiantar?'Diantar':'Dijemput'}</b>
-          <span id="pengirimanMetodeDesc">${isDiantar?'Foto diantar tim ke lokasi klien — ongkos antar dihitung otomatis per km.':'Klien mengambil sendiri foto di Kaone Motret, tanpa ongkos tambahan.'}</span>
+          <span id="pengirimanMetodeDesc">${isDiantar?'Foto diantar tim ke lokasi klien. Isi Link Maps Antar, ongkos dihitung otomatis per km.':'Klien mengambil sendiri foto di Kaone Motret, tanpa ongkos tambahan.'}</span>
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="pengirimanMetodeToggle" ${isDiantar?'checked':''} onchange="onPengirimanMetodeChange()">
@@ -3961,66 +4268,146 @@ function pengirimanFieldHtml(d, jarakKmAwal){
           <span class="ts-state" id="pengirimanMetodeState">${isDiantar?'Diantar':'Dijemput'}</span>
         </label>
       </div>
-      <div style="margin-top:10px;max-width:240px;">
-        <label>Status Pengiriman</label>
-        <select id="pengirimanStatusSelect" onchange="onPengirimanMetodeChange()">
-          <option value="Belum" ${!sudah?'selected':''}>Belum</option>
-          <option value="Sudah" ${sudah?'selected':''}>Sudah</option>
-        </select>
+    </div>
+    <div>
+      <label>Status Pengiriman</label>
+      <select id="pengirimanStatusSelect" onchange="refreshJfBadges()">
+        <option value="Belum" ${!sudah?'selected':''}>Belum</option>
+        <option value="Sudah" ${sudah?'selected':''}>Sudah</option>
+      </select>
+    </div>
+    <input type="hidden" id="ongkirAntarHidden" name="ongkirAntar" value="${isDiantar?savedOngkir:0}" data-saved="${savedOngkir}" data-state="none">
+    <input type="hidden" id="jarakAntarKmHidden" name="jarakAntarKm" value="${isDiantar?savedJarak:''}">
+    <div class="full antar-wrap" id="antarWrap" style="display:${isDiantar?'block':'none'}">
+      <label for="linkMapsAntarInput">Link Maps Antar <span class="lbl-note">(lokasi pengantaran foto)</span></label>
+      <div class="maps-input-wrap">
+        <div class="maps-field">
+          <span class="maps-prefix">${ic('map-pin')}</span>
+          <input type="text" class="maps-input" id="linkMapsAntarInput" name="linkMapsAntar" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${escapeHtml(d.linkMapsAntar||'')}" placeholder="Tempel link Google Maps atau koordinat">
+        </div>
       </div>
-      <input type="hidden" id="ongkirAntarHidden" name="ongkirAntar" value="${isDiantar?(ongkirAwal||0):0}">
-      <div class="ongkir-box" id="ongkirAntarBox" style="display:${isDiantar?'flex':'none'}">
-        <div class="jr-group-label">${ic('car')} Estimasi Ongkos Antar</div>
-        <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="ongkirAntarJarakText">${jarakTeks}</b></div>
-        <div class="jr-row"><span>Biaya Antar (Rp${fmtRibuan(ONGKIR_ANTAR.perKm)}/km)</span><b id="ongkirAntarBiayaText" class="${ongkirAwal===0?'ongkir-gratis':''}">${biayaTeks}</b></div>
+      <div class="antar-actions">
+        <button type="button" class="btn btn-mini btn-gold-mini" id="btnBukaLinkAntar">${ic('map-pin')} Buka</button>
+        <button type="button" class="btn btn-outline btn-mini" id="btnTempelLinkAntar">${ic('clipboard')} Tempel</button>
+        <button type="button" class="btn btn-outline btn-mini" id="btnSamakanLinkAntar">${ic('refresh')} Samakan dengan lokasi acara</button>
+      </div>
+      <div class="antar-status" id="linkAntarStatus"></div>
+      <div class="ongkir-box" id="ongkirAntarBox">
+        <div class="jr-group-label">${ic('car')} Ongkos Antar</div>
+        <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="ongkirAntarJarakText">-</b></div>
+        <div class="jr-row"><span>Biaya antar (Rp${fmtRibuan(ONGKIR_ANTAR.perKm)}/km)</span><b id="ongkirAntarBiayaText">-</b></div>
       </div>
     </div>`;
 }
-// Baca ulang jarak (km) dari cache berdasarkan isi kolom Titik Koordinat SEKARANG di form.
-// Tidak memanggil API — hanya mengintip cache yang sudah/sedang diisi oleh updateJarakCalc().
-function currentFormJarakKm(){
-  const input=document.getElementById('koordinatInput');
-  if(!input) return null;
-  const cached=getCachedJarakTempuh({koordinat:input.value});
-  return cached ? cached.km : null;
+
+let antarReqId = 0;
+let antarTimer = null;
+function setAntarStatus(kind, msg){
+  const el = document.getElementById('linkAntarStatus');
+  if(!el) return;
+  el.className = 'antar-status' + (kind ? ' is-' + kind : '');
+  el.textContent = msg || '';
 }
-// Perbarui tampilan kotak estimasi ongkos antar. km bisa dilewatkan langsung (dari
-// updateJarakCalc yang sudah tahu hasilnya), atau dibiarkan kosong untuk dibaca ulang
-// dari cache (dipakai saat saklar/status diubah manual, tanpa mengubah koordinat).
-function updateOngkirDisplay(km){
-  const toggle=document.getElementById('pengirimanMetodeToggle');
-  if(!toggle || !toggle.checked) return; // ongkos hanya relevan saat metode "Diantar"
-  if(km===undefined) km=currentFormJarakKm();
-  const input=document.getElementById('koordinatInput');
-  const koordValid=!!parseCoordString(input?.value);
-  const elJarak=document.getElementById('ongkirAntarJarakText');
-  const elBiaya=document.getElementById('ongkirAntarBiayaText');
-  const hidden=document.getElementById('ongkirAntarHidden');
-  if(elJarak) elJarak.textContent = km===null?(koordValid?'Menghitung…':'-'):fmtJarakJalan(km);
-  const biaya = km===null ? null : hitungOngkirAntar(km);
-  if(elBiaya){
-    elBiaya.textContent = km===null?(koordValid?'…':'-'):fmtOngkirAntar(km);
-    elBiaya.classList.toggle('ongkir-gratis', biaya===0);
+// state: none | short | invalid | loading | fail | ok
+// Disimpan di #ongkirAntarHidden[data-state] supaya saat Simpan bisa dicek dulu.
+function setOngkirAntarUi(state, km){
+  const hidden = document.getElementById('ongkirAntarHidden');
+  const jkEl = document.getElementById('jarakAntarKmHidden');
+  const elJ = document.getElementById('ongkirAntarJarakText');
+  const elB = document.getElementById('ongkirAntarBiayaText');
+  if(hidden) hidden.dataset.state = state;
+  let jarakTxt = '-', biayaTxt = '-', gratis = false;
+  if(state==='ok' && km!==null && km!==undefined){
+    const biaya = hitungOngkirAntar(km);
+    jarakTxt = fmtJarakJalan(km);
+    biayaTxt = fmtOngkirAntar(km);
+    gratis = biaya===0;
+    if(hidden) hidden.value = biaya || 0;
+    if(jkEl) jkEl.value = Math.round(km*10)/10;
+  }else if(state==='loading'){
+    jarakTxt = 'Menghitung…'; biayaTxt = '…';
+  }else if(state==='fail'){
+    jarakTxt = 'Tidak tersedia (cek koneksi)';
+  }else{
+    // none / short / invalid: belum ada titik yang bisa dihitung.
+    const saved = hidden ? (Number(hidden.dataset.saved)||0) : 0;
+    if(state==='none' && saved>0){
+      // Job lama (dihitung dari lokasi acara sebelum kolom Link Maps Antar ada): nilai lama dipertahankan.
+      biayaTxt = fmtRp(saved) + ' (tersimpan)';
+      if(hidden) hidden.value = saved;
+    }else{
+      if(hidden) hidden.value = 0;
+      if(jkEl) jkEl.value = '';
+    }
   }
-  if(hidden) hidden.value = biaya||0;
+  if(elJ) elJ.textContent = jarakTxt;
+  if(elB){ elB.textContent = biayaTxt; elB.classList.toggle('ongkir-gratis', gratis); }
+  refreshJfBadges();
 }
-// Dipicu saat saklar Dijemput/Diantar atau Status Pengiriman diubah di form.
+// Baca Link Maps Antar di form -> parse titik -> jarak real (OSRM, pakai cache) -> ongkos.
+// opts.initial = true saat form baru dibuka / saklar dinyalakan: nilai tersimpan tidak
+// di-nol-kan dulu. Selain itu (user mengetik/menempel) hasil lama dibuang supaya tidak ada
+// ongkos "nyangkut" dari link sebelumnya.
+function updateOngkirAntarCalc(opts){
+  opts = opts || {};
+  const toggle = document.getElementById('pengirimanMetodeToggle');
+  const input = document.getElementById('linkMapsAntarInput');
+  if(!toggle || !input || !toggle.checked) return;
+  clearTimeout(antarTimer);
+  const reqId = ++antarReqId;
+  const hidden = document.getElementById('ongkirAntarHidden');
+  const jkEl = document.getElementById('jarakAntarKmHidden');
+  if(!opts.initial){ if(hidden) hidden.value = 0; if(jkEl) jkEl.value = ''; }
+  const raw = input.value.trim();
+  if(!raw){ setAntarStatus('', ''); setOngkirAntarUi('none'); return; }
+  const c = parseMapsAntar(raw);
+  if(!c){
+    if(isShortMapsLink(raw)){
+      setAntarStatus('warn', 'Link pendek (maps.app.goo.gl) tidak bisa dibaca otomatis. Buka link itu, lalu salin link panjang dari kolom alamat browser, atau tempel koordinatnya.');
+      setOngkirAntarUi('short');
+    }else{
+      setAntarStatus('warn', 'Titik belum terbaca. Pakai link Google Maps yang lengkap atau koordinat "lintang, bujur".');
+      setOngkirAntarUi('invalid');
+    }
+    return;
+  }
+  const job = {koordinat: `${c.lat}, ${c.lng}`};
+  setAntarStatus('ok', `Titik terbaca: ${c.lat.toFixed(6)}, ${c.lng.toFixed(6)}`);
+  const cached = getCachedJarakTempuh(job);
+  if(cached){ setOngkirAntarUi('ok', cached.km); return; }
+  setOngkirAntarUi('loading');
+  antarTimer = setTimeout(()=>{
+    fetchJarakTempuh(job).then(h=>{
+      if(reqId !== antarReqId) return; // sudah ada input baru sesudahnya, abaikan hasil usang
+      if(!h) setAntarStatus('warn', 'Jarak belum bisa dihitung (cek koneksi internet). Coba tempel ulang link-nya.');
+      setOngkirAntarUi(h ? 'ok' : 'fail', h ? h.km : null);
+    });
+  }, opts.initial ? 0 : 450);
+}
+// Dipicu saat saklar Dijemput/Diantar diubah (juga dipanggil import Pricelist).
 function onPengirimanMetodeChange(){
-  const toggle=document.getElementById('pengirimanMetodeToggle');
+  const toggle = document.getElementById('pengirimanMetodeToggle');
   if(!toggle) return;
-  const isDiantar=toggle.checked;
-  const row=document.getElementById('pengirimanToggleRow');
-  const labelB=document.getElementById('pengirimanMetodeLabel');
-  const labelDesc=document.getElementById('pengirimanMetodeDesc');
-  const state=document.getElementById('pengirimanMetodeState');
-  const box=document.getElementById('ongkirAntarBox');
+  const isDiantar = toggle.checked;
+  const row = document.getElementById('pengirimanToggleRow');
+  const labelB = document.getElementById('pengirimanMetodeLabel');
+  const labelDesc = document.getElementById('pengirimanMetodeDesc');
+  const state = document.getElementById('pengirimanMetodeState');
+  const wrap = document.getElementById('antarWrap');
   row?.classList.toggle('is-on', isDiantar);
   if(labelB) labelB.textContent = isDiantar?'Diantar':'Dijemput';
-  if(labelDesc) labelDesc.textContent = isDiantar?'Foto diantar tim ke lokasi klien — ongkos antar dihitung otomatis per km.':'Klien mengambil sendiri foto di Kaone Motret, tanpa ongkos tambahan.';
+  if(labelDesc) labelDesc.textContent = isDiantar?'Foto diantar tim ke lokasi klien. Isi Link Maps Antar, ongkos dihitung otomatis per km.':'Klien mengambil sendiri foto di Kaone Motret, tanpa ongkos tambahan.';
   if(state) state.textContent = isDiantar?'Diantar':'Dijemput';
-  if(box) box.style.display = isDiantar?'flex':'none';
-  if(isDiantar){ updateOngkirDisplay(); }
-  else { const hidden=document.getElementById('ongkirAntarHidden'); if(hidden) hidden.value=0; }
+  if(wrap) wrap.style.display = isDiantar?'block':'none';
+  if(isDiantar){ updateOngkirAntarCalc({initial:true}); }
+  else{
+    antarReqId++; clearTimeout(antarTimer);
+    const hidden = document.getElementById('ongkirAntarHidden');
+    const jkEl = document.getElementById('jarakAntarKmHidden');
+    if(hidden){ hidden.value = 0; hidden.dataset.state = 'none'; }
+    if(jkEl) jkEl.value = '';
+  }
+  refreshJfBadges();
 }
 const STATUS_BAYAR_LIST = ['Lunas','DP','Belum Bayar'];
 const VENDOR_LIST = ['Shia Makeup','Kaone Motret','Lainnya'];
@@ -4045,6 +4432,8 @@ const EXCEL_FIELD_MAP = [
   {header:'Proses Edit (Selesai/Belum Selesai)', field:'prosesEdit'},
   {header:'Proses Cetak (Selesai/Belum Selesai)', field:'prosesCetak'},
   {header:'Pengiriman', field:'pengiriman'},
+  {header:'Link Maps Antar (jika Diantar)', field:'linkMapsAntar'},
+  {header:'Ongkos Antar', field:'ongkirAntar'},
   {header:'Status Pembayaran', field:'statusPembayaran'},
   {header:'Vendor (Shia Makeup/Kaone Motret/Lainnya)', field:'vendor'},
   {header:'Vendor Lainnya (jika Vendor = Lainnya)', field:'vendorLain'},
@@ -5421,7 +5810,6 @@ function updateJarakCalc(){
     if(elJalan) elJalan.textContent = '-';
     if(elJalanBiaya) elJalanBiaya.textContent = '-';
     if(elDurasi) elDurasi.textContent = '-';
-    updateOngkirDisplay(null);
     return;
   }
 
@@ -5430,14 +5818,12 @@ function updateJarakCalc(){
     if(elJalan) elJalan.textContent = fmtJarakJalan(cachedTempuh.km);
     if(elJalanBiaya) elJalanBiaya.textContent = fmtRp(hitungSaranTransport(cachedTempuh.km));
     if(elDurasi) elDurasi.textContent = fmtDurasiTempuh(cachedTempuh.durMin);
-    updateOngkirDisplay(cachedTempuh.km);
     return;
   }
 
   if(elJalan) elJalan.textContent = 'Menghitung…';
   if(elJalanBiaya) elJalanBiaya.textContent = '…';
   if(elDurasi) elDurasi.textContent = 'Menghitung…';
-  updateOngkirDisplay(null);
   fetchJarakTempuh(job).then(hasil=>{
     if(reqId !== jarakJalanReqId) return; // sudah usang (ada input baru sesudahnya) — abaikan hasil ini
     const elJalan2 = document.getElementById('jarakJalanText');
@@ -5452,7 +5838,6 @@ function updateJarakCalc(){
       if(elJalanBiaya2) elJalanBiaya2.textContent = fmtRp(hitungSaranTransport(hasil.km));
       if(elDurasi2) elDurasi2.textContent = fmtDurasiTempuh(hasil.durMin);
     }
-    updateOngkirDisplay(hasil?hasil.km:null);
   });
 }
 
@@ -5825,10 +6210,13 @@ function viewBeranda(){
 
    Yang SENGAJA tidak diisi otomatis: Honor Tim, Biaya Cetak, Sedekah, dan sejenisnya
    (perhitungan internal studio, tidak ada di data pricelist). Ongkos Antar juga tidak
-   disalin dari pricelist: cukup titik lokasi + pilihan "Diantar" yang diisi, lalu
-   Rekap Job menghitung sendiri jarak & ongkirnya memakai pengaturan Ongkos Antar Foto.
-   Prinsipnya: lebih baik sebuah kolom dibiarkan KOSONG (dan diberi tahu) daripada
-   terisi dengan tebakan yang salah.
+   disalin dari pricelist: pricelist hanya memberi pilihan "Diantar" + titik lokasi, lalu
+   form mengisi Link Maps Antar dari titik itu dan menghitung jarak & ongkosnya sendiri
+   (tarif dari pengaturan Ongkos Antar Foto).
+   Prinsip: (1) lebih baik kolom dibiarkan KOSONG (dan diberi tahu) daripada terisi tebakan
+   yang salah; (2) tidak ada data pricelist yang hilang diam-diam: kolom yang tidak punya
+   padanan di form dimasukkan ke Catatan; (3) setiap kolom yang diklaim "terisi" dibaca
+   ulang dari form (plApplyToForm) — kalau nilainya ternyata tidak masuk, dilaporkan.
 ========================================================= */
 const PRICELIST_MOTRET_URL = 'https://script.google.com/macros/s/AKfycbw8x8Q0G39087QZc4gh4QL0bkLdp5L3v1watARJymjb6xiIbgLC0s3fr90vEib4mZKObQ/exec';
 const PRICELIST_STUDIO_URL = 'https://script.google.com/macros/s/AKfycbzQf4G5NuPpJFrPkJSI9ulirladgU1QCqjbWS6NiClEKBBSW8JigsL9UKx_YrGB_21zCA/exec';
@@ -5966,13 +6354,14 @@ function plWithoutAddOnNone(v){
 }
 
 // Mengubah satu baris data mentah (kunci = judul kolom spreadsheet) menjadi bentuk seragam.
-function plNormalize(sourceKey, f){
+function plNormalizeCore(sourceKey, f){
   const src = PRICELIST_SOURCES[sourceKey];
   const out = { namaKlien:'', namaMempelai:'', wa:'', jenis:'', jenisKeep:[], jenisLain:'', tanggal:null, jam:'',
     alamat:null, maps:'', paket:'', deskripsi:'', ig:{}, pengambilan:'', penghasilan:0, diskon:0, dp:0,
-    catatanBaris:[], catatanJenis:'' };
+    catatanBaris:[], catatanJenis:'', detail:{}, peringatan:[] };
   const g = k => plClean(f[k]);
   const lines = out.catatanBaris;
+  const det = (k, v)=>{ v = plClean(v); if(v) out.detail[k] = v; };   // -> kolom Detail Acara
 
   if(src.kind==='motret'){
     const t = f['Tanggal Acara'];
@@ -5987,15 +6376,13 @@ function plNormalize(sourceKey, f){
     out.diskon = plNum(f['Diskon']);
     out.dp = plNum(f['DP']);
     out.penghasilan = plNum(f['Total']) + out.diskon;   // = harga sebelum diskon; Sisa = penghasilan - diskon - DP
-    if(g('Kode Voucher')) lines.push('Kode Voucher: ' + g('Kode Voucher'));
+    det('kodeVoucher', g('Kode Voucher'));
     if(sourceKey==='mangayun'){
       out.namaKlien = g('Nama Pemesan');
       out.jenis = 'Mangayun/Aqiqah';
       out.jam = plParseWaktu(f['Jam Acara']);
       out.ig = { 'Anak':plIg(f['IG Anak']), 'Ibu':plIg(f['IG Ibu']), 'Ayah':plIg(f['IG Ayah']) };
-      if(g('Nama Anak')) lines.push('Nama Anak: ' + g('Nama Anak'));
-      if(g('Nama Ibu')) lines.push('Nama Ibu: ' + g('Nama Ibu'));
-      if(g('Nama Ayah')) lines.push('Nama Ayah: ' + g('Nama Ayah'));
+      det('namaAnak', g('Nama Anak')); det('namaIbu', g('Nama Ibu')); det('namaAyah', g('Nama Ayah'));
     } else {
       out.namaKlien = g('Nama');
       out.jam = plParseWaktu(f['Waktu Acara']);
@@ -6009,11 +6396,11 @@ function plNormalize(sourceKey, f){
       } else {
         out.jenis = 'Marbagas'; out.jenisKeep = ['Marbagas','Patuaekkon'];
         out.catatanJenis = 'Pricelist Wedding mencakup Marbagas dan Patuaekkon — periksa Jenis Acara.';
-        if(g('Konsep Pakaian')) lines.push('Adat/Konsep Pakaian: ' + g('Konsep Pakaian'));
+        det('konsepPakaian', g('Konsep Pakaian'));
       }
     }
-    if(g('Pemilihan Foto')) lines.push('Pemilihan Foto: ' + g('Pemilihan Foto'));
-    if(g('IG Vendor')) lines.push('IG Vendor: ' + g('IG Vendor'));
+    det('pemilihanFoto', g('Pemilihan Foto'));
+    det('igVendor', g('IG Vendor'));
     if(g('Catatan')) lines.push('Catatan klien: ' + g('Catatan'));
     return out;
   }
@@ -6024,17 +6411,19 @@ function plNormalize(sourceKey, f){
   out.paket = g('Nama Paket') || g('Jenis Paket');
   out.penghasilan = plNum(f['Harga Paket']);
   out.dp = plNum(f['DP (Uang Muka)']);
-  if(g('Kode Voucher')) lines.push('Kode Voucher: ' + g('Kode Voucher') + ' (diskon belum dihitung — isi kolom Diskon bila ada)');
+  if(g('Kode Voucher')){
+    det('kodeVoucher', g('Kode Voucher'));
+    out.peringatan.push('Kode Voucher "' + g('Kode Voucher') + '" sudah masuk, tapi diskonnya belum dihitung — isi kolom Diskon bila ada.');
+  }
   if(fk==='wisuda'){
     out.namaKlien = g('Nama Wisudawan/i');
     out.jenis = 'Wisuda';
     out.tanggal = plParseTanggal(f['Tanggal Wisuda']);
     out.jam = plParseWaktu(f['Waktu Acara']);
     out.maps = g('Maps Lokasi Foto Outdoor');
-    if(g('Universitas/Institusi')) lines.push('Universitas/Institusi: ' + g('Universitas/Institusi') + (g('Jenjang')?(' ('+g('Jenjang')+')'):''));
-    if(g('Lokasi')) lines.push('Lokasi: ' + g('Lokasi'));
-    if(g('Sesi Diminati')) lines.push('Sesi Diminati: ' + g('Sesi Diminati'));
-    if(g('Lokasi Foto Outdoor')) lines.push('Lokasi Foto Outdoor: ' + g('Lokasi Foto Outdoor'));
+    det('institusi', g('Universitas/Institusi')); det('jenjang', g('Jenjang'));
+    det('lokasiAcara', g('Lokasi')); det('sesiDiminati', g('Sesi Diminati'));
+    det('lokasiOutdoor', g('Lokasi Foto Outdoor'));
     if(g('Catatan')) lines.push('Catatan klien: ' + g('Catatan'));
     out.ig = { 'Wisudawan':'' };
     return out;
@@ -6044,10 +6433,8 @@ function plNormalize(sourceKey, f){
     out.jenis = 'Lainnya';
     out.jenisLain = 'Undangan' + (g('Jenis Undangan') ? (' — ' + (/lain/i.test(g('Jenis Undangan')) && g('Jenis Undangan (Lainnya)') ? g('Jenis Undangan (Lainnya)') : g('Jenis Undangan'))) : '');
     out.tanggal = plParseTanggal(f['Tanggal Acara']);
-    if(g('Nama Acara')) lines.push('Nama Acara: ' + g('Nama Acara'));
-    if(g('Tema/Warna')) lines.push('Tema/Warna: ' + g('Tema/Warna'));
-    if(g('Estimasi Tamu')) lines.push('Estimasi Tamu: ' + g('Estimasi Tamu'));
-    if(g('Deadline Dibutuhkan')) lines.push('Deadline Dibutuhkan: ' + g('Deadline Dibutuhkan'));
+    det('namaAcara', g('Nama Acara')); det('temaWarna', g('Tema/Warna'));
+    det('estimasiTamu', g('Estimasi Tamu')); det('deadline', g('Deadline Dibutuhkan'));
     return out;
   }
   out.tanggal = plParseTanggal(f['Tanggal Acara']);
@@ -6055,18 +6442,15 @@ function plNormalize(sourceKey, f){
   out.alamat = plParseAlamat(f['Alamat Acara']);
   const p = g('Pengambilan Hasil Cetak');
   out.pengambilan = /^diantar/i.test(p) ? 'Diantar' : (/^dijemput/i.test(p) ? 'Dijemput' : '');
-  if(g('Pemilihan Foto')) lines.push('Pemilihan Foto: ' + g('Pemilihan Foto'));
-  if(g('Instagram Semua Vendor')) lines.push('IG Vendor: ' + g('Instagram Semua Vendor'));
-  if(g('IG All Vendor')) lines.push('IG Vendor: ' + g('IG All Vendor'));
+  det('pemilihanFoto', g('Pemilihan Foto'));
+  det('igVendor', [g('Instagram Semua Vendor'), g('IG All Vendor')].filter((x,i,a)=>x && a.indexOf(x)===i).join(' ; '));
   if(g('Catatan Penting Untuk Fotografer')) lines.push('Catatan klien: ' + g('Catatan Penting Untuk Fotografer'));
   if(fk==='mangayun'){
     out.namaKlien = g('Nama Pemesan/Penanggung Jawab');
     out.jenis = 'Mangayun/Aqiqah';
     out.jam = plParseWaktu(f['Jam Acara']);
     out.ig = { 'Anak':plIg(f['IG Anak']), 'Ibu':plIg(f['IG Ibu']), 'Ayah':plIg(f['IG Ayah']) };
-    if(g('Nama Anak')) lines.push('Nama Anak: ' + g('Nama Anak'));
-    if(g('Nama Ibu')) lines.push('Nama Ibu: ' + g('Nama Ibu'));
-    if(g('Nama Ayah')) lines.push('Nama Ayah: ' + g('Nama Ayah'));
+    det('namaAnak', g('Nama Anak')); det('namaIbu', g('Nama Ibu')); det('namaAyah', g('Nama Ayah'));
   } else {
     out.namaKlien = g('Nama Lengkap');
     out.ig = { 'Pengantin Perempuan':plIg(f['Instagram Pengantin Wanita']), 'Pengantin Laki-laki':plIg(f['Instagram Pengantin Pria']) };
@@ -6075,7 +6459,8 @@ function plNormalize(sourceKey, f){
       out.jam = plParseWaktu(f['Waktu Mulai Acara']);
       out.jenis = 'Margondang 1 Hari'; out.jenisKeep = ['Margondang 1 Hari','Margondang 2 Hari'];
       out.catatanJenis = 'Biodata Margondang tidak memuat jumlah hari — periksa Jenis Acara (1 atau 2 Hari).';
-      if(g('Waktu Selesai Acara')) lines.push('Waktu Selesai: ' + g('Waktu Selesai Acara'));
+      { const ws = plParseWaktu(f['Waktu Selesai Acara']);
+        if(ws) det('waktuSelesai', ws); else if(g('Waktu Selesai Acara')) lines.push('Waktu Selesai: ' + g('Waktu Selesai Acara')); }
     } else {
       out.jam = plParseWaktu(f['Waktu Acara']);
       out.jenis = 'Marbagas'; out.jenisKeep = ['Marbagas','Patuaekkon'];
@@ -6083,6 +6468,30 @@ function plNormalize(sourceKey, f){
       if(g('Adat/Konsep Pakaian')) lines.push('Adat/Konsep Pakaian: ' + g('Adat/Konsep Pakaian'));
     }
   }
+  return out;
+}
+
+// Pembungkus plNormalizeCore: mencatat KOLOM MANA SAJA dari data pricelist yang dibaca oleh
+// pemetaan. Kolom berisi data yang tidak dibaca siapa pun (mis. kolom baru yang ditambahkan
+// di formulir website) dimasukkan ke Catatan, jadi tidak ada data klien yang hilang diam-diam.
+// Kolom teknis (cap waktu, dsb.) dan nilai kosong / "Tidak ada" dilewati.
+const PL_KOLOM_ABAIKAN = /(timestamp|time stamp|cap waktu|tanggal (input|isi|kirim|submit)|waktu (input|isi|kirim|submit)|submitted|created|updated|^row$|^baris$)/i;
+function plNormalize(sourceKey, raw){
+  raw = raw || {};
+  const dibaca = new Set();
+  const f = new Proxy(raw, { get(t, k){ if(typeof k==='string') dibaca.add(k); return t[k]; } });
+  const out = plNormalizeCore(sourceKey, f);
+  const lain = [];
+  Object.keys(raw).forEach(k=>{
+    if(dibaca.has(k) || PL_KOLOM_ABAIKAN.test(k)) return;
+    let v = raw[k];
+    if(v && typeof v==='object'){ try{ v = JSON.stringify(v); }catch(_){ v = ''; } }
+    v = plWithoutAddOnNone(v);
+    if(!v) return;
+    lain.push({ k: String(k).trim(), v });
+  });
+  out.kolomLain = lain;
+  lain.forEach(x=> out.catatanBaris.push(x.k + ': ' + x.v));
   return out;
 }
 
@@ -6129,9 +6538,30 @@ function plSetVal(form, sel, value, fire){
 
 // Menerapkan data ke form. HANYA mengisi kolom yang ada datanya (tidak pernah mengosongkan
 // kolom yang sudah terisi). Mengembalikan daftar kolom yang terisi & yang perlu dicek manual.
+const PL_CATATAN_MARK = '— Dari pricelist —';
+// Mengisi form dari data pricelist yang sudah dinormalisasi (plNormalize), lalu MEMBACA ULANG
+// setiap kolom yang diklaim terisi. Mengembalikan:
+//   filled : kolom yang terisi DAN terbukti masuk (nilai di form = nilai dari pricelist)
+//   failed : kolom yang sudah diisi tapi nilainya ditolak/berubah oleh form
+//   review : hal yang perlu dicek manual
+//   info   : keterangan (kolom yang masih kosong, kolom pricelist yang dialihkan ke Catatan)
 function plApplyToForm(form, data){
-  const filled = [], review = [];
-  const has = (label, ok)=>{ if(ok) filled.push(label); };
+  const filled = [], review = [], info = [], failed = [];
+  const checks = [];
+  const val = sel => { const el = form.querySelector(sel); return el ? String(el.value==null?'':el.value).trim() : ''; };
+  const verify = (label, want, read)=>{ checks.push({label, want, read}); };
+  // Isi satu kolom + daftarkan verifikasinya. opts.want / opts.read dipakai kalau nilai yang
+  // dibaca dari form bentuknya berbeda dari yang dikirim (mis. angka berformat ribuan).
+  const put = (label, sel, value, opts)=>{
+    opts = opts || {};
+    const ok = plSetVal(form, sel, value, true);
+    if(ok){
+      filled.push(label);
+      verify(label, opts.want!==undefined ? opts.want : value, opts.read || (()=>val(sel)));
+    }
+    return ok;
+  };
+  const uang = (sel)=>()=>parseRibuan(val(sel));
 
   // 1) Jenis Acara dulu — mengganti jenis akan membangun ulang kolom Instagram per peran.
   const jenisSel = form.querySelector('select[name="jenisAcara"]');
@@ -6143,29 +6573,58 @@ function plApplyToForm(form, data){
         jenisSel.value = data.jenis;
         if(typeof onJenisAcaraChange==='function') onJenisAcaraChange(jenisSel);
       }
-      has('Jenis Acara', true);
+      filled.push('Jenis Acara');
+      verify('Jenis Acara', data.jenis, ()=>val('select[name="jenisAcara"]'));
       if(data.catatanJenis) review.push(data.catatanJenis);
     } else if(keep){
-      has('Jenis Acara (dipertahankan)', true);
+      filled.push('Jenis Acara (dipertahankan)');
+    } else {
+      review.push('Jenis Acara "' + data.jenis + '" tidak ada di daftar form — pilih manual.');
     }
     if(data.jenis==='Lainnya' && data.jenisLain){
-      if(plSetVal(form,'[name="jenisAcaraLain"]', data.jenisLain, true)) has('Jenis Acara (Lainnya)', true);
+      put('Jenis Acara (Lainnya)', '[name="jenisAcaraLain"]', data.jenisLain);
     }
   }
   // 2) Data klien
-  has('Nama Klien', plSetVal(form,'[name="namaKlien"]', data.namaKlien, true));
+  put('Nama Klien', '[name="namaKlien"]', data.namaKlien);
   //    Nama Kedua Mempelai (kolomnya hanya ada isinya kalau Jenis Acara sudah Marbagas/Patuaekkon/Margondang)
   if(data.namaMempelai){
     if(isJenisMempelai(jenisSel ? jenisSel.value : '')){
-      has('Nama Kedua Mempelai', plSetVal(form,'[name="namaMempelai"]', data.namaMempelai, true));
+      put('Nama Kedua Mempelai', '[name="namaMempelai"]', data.namaMempelai);
     } else {
       review.push('Nama mempelai "' + data.namaMempelai + '" tidak diisikan karena Jenis Acara bukan Marbagas/Patuaekkon/Margondang — pilih jenisnya lalu isi manual.');
     }
   }
+  //    Detail Acara: kolom nyata sesuai Jenis Acara (kolomnya baru ada setelah Jenis Acara diterapkan di atas)
+  if(data.detail){
+    const daInputs = [...form.querySelectorAll('.da-input')];
+    Object.keys(data.detail).forEach(k=>{
+      const v = String(data.detail[k] == null ? '' : data.detail[k]).trim();
+      if(!v) return;
+      const label = detailAcaraLabel(k);
+      const inp = daInputs.find(i=>i.dataset.daKey===k);
+      if(inp){
+        inp.value = v;
+        inp.dispatchEvent(new Event('input',{bubbles:true}));
+        filled.push(label);
+        verify(label, v.replace(/\r\n?/g,'\n'), ()=>String(inp.value||'').trim());
+      } else {
+        // Jenis Acara belum dipilih / tidak punya kolom ini: datanya tetap diselamatkan ke Catatan.
+        (data.catatanBaris = data.catatanBaris || []).push(label + ': ' + v);
+        review.push(label + ' "' + v + '" tidak punya kolom pada Jenis Acara ini, jadi dimasukkan ke Catatan.');
+      }
+    });
+  }
+  (data.peringatan || []).forEach(x=>review.push(x));
   if(data.wa){
     const hid = form.querySelector('#waHidden');
     const vis = hid ? hid.parentElement.querySelector('input[type="tel"]') : null;
-    if(vis){ vis.value = data.wa; if(typeof onWaInput==='function') onWaInput(vis); else vis.dispatchEvent(new Event('input',{bubbles:true})); has('No. WhatsApp', true); }
+    if(vis){
+      vis.value = data.wa;
+      if(typeof onWaInput==='function') onWaInput(vis); else vis.dispatchEvent(new Event('input',{bubbles:true}));
+      filled.push('No. WhatsApp');
+      verify('No. WhatsApp', '0' + data.wa, ()=>val('#waHidden'));
+    }
   }
   // 3) Tanggal & jam
   if(data.tanggal){
@@ -6174,55 +6633,142 @@ function plApplyToForm(form, data){
       mulai.value = data.tanggal.start;
       if(selesai){ selesai.min = data.tanggal.start; selesai.value = data.tanggal.end; }
       if(typeof onTanggalAcaraChange==='function') onTanggalAcaraChange();
-      has('Tanggal Acara', true);
-      if(data.tanggal.end!==data.tanggal.start) has('Tanggal Selesai', true);
+      filled.push('Tanggal Acara');
+      verify('Tanggal Acara', data.tanggal.start, ()=>val('#tanggalAcaraInput'));
+      if(data.tanggal.end!==data.tanggal.start){
+        filled.push('Tanggal Selesai');
+        verify('Tanggal Selesai', data.tanggal.end, ()=>val('#tanggalSelesaiInput'));
+      }
     }
   } else { review.push('Tanggal Acara tidak terbaca dari data pricelist — isi manual.'); }
-  if(data.jam){ has('Jam Acara', plSetVal(form,'#jamAcaraInput', data.jam, true)); }
+  if(data.jam){ put('Jam Acara', '#jamAcaraInput', data.jam); }
   else { review.push('Jam Acara tidak terisi — cek/isi manual.'); }
   // 4) Alamat & lokasi
   if(data.alamat){
-    has('Desa', plSetVal(form,'[name="desa"]', data.alamat.desa, true));
-    if(data.alamat.kecamatan) has('Kecamatan', plSetVal(form,'[name="kecamatan"]', data.alamat.kecamatan, true));
-    if(data.alamat.kabupaten) has('Kabupaten', plSetVal(form,'[name="kabupaten"]', data.alamat.kabupaten, true));
+    put('Desa', '[name="desa"]', data.alamat.desa);
+    if(data.alamat.kecamatan) put('Kecamatan', '[name="kecamatan"]', data.alamat.kecamatan);
+    if(data.alamat.kabupaten) put('Kabupaten', '[name="kabupaten"]', data.alamat.kabupaten);
     if(!data.alamat.terurai) review.push('Alamat dari pricelist berformat lama (satu kolom) — seluruhnya ditaruh di kolom Desa, pecah manual ke Kecamatan/Kabupaten.');
   }
   const coord = plCoordsFromLink(data.maps);
-  if(coord){ has('Titik Koordinat', plSetVal(form,'#koordinatInput', coord, true)); }
-  else if(data.maps){ review.push('Link Maps dari pricelist tidak memuat titik koordinat yang bisa dibaca — isi Titik Koordinat manual.'); }
+  if(coord){
+    put('Titik Koordinat', '#koordinatInput', coord, { read: ()=>{ const c = parseCoordString(val('#koordinatInput')); return c ? c.lat.toFixed(6)+', '+c.lng.toFixed(6) : ''; } });
+  } else if(data.maps){
+    // Titik tidak bisa dibaca (biasanya link pendek maps.app.goo.gl). Link aslinya JANGAN hilang:
+    // disimpan di kolom Link Maps job (cadangan untuk tombol peta) dan ikut ke Catatan.
+    const lm = form.querySelector('input[name="linkMaps"]');
+    if(lm){
+      lm.value = data.maps;
+      filled.push('Link Maps (cadangan)');
+      verify('Link Maps (cadangan)', data.maps, ()=>val('input[name="linkMaps"]'));
+    }
+    data.catatanBaris = (data.catatanBaris || []).filter(x=>x.indexOf('Link Maps klien: ')!==0);
+    data.catatanBaris.push('Link Maps klien: ' + data.maps);
+    review.push('Link Maps dari pricelist tidak memuat titik koordinat yang bisa dibaca (biasanya link pendek). Link aslinya disimpan di job dan di Catatan, jadi tombol peta tetap bisa membukanya. Isi Titik Koordinat manual kalau mau menghitung jarak.');
+  }
   // 5) Paket
-  has('Paket', plSetVal(form,'[name="paket"]', data.paket, true));
-  has('Deskripsi Paket', plSetVal(form,'[name="deskripsiPaket"]', data.deskripsi, true));
+  put('Paket', '[name="paket"]', data.paket);
+  {
+    const taDesk = form.querySelector('[name="deskripsiPaket"]');
+    const mCetak = taDesk ? String(taDesk.value||'').match(/Hasil cetak: [^\n]*/) : null;
+    // Baris "Hasil cetak: …" dibuat otomatis dari ceklis Hasil Cetak — dipertahankan saat Add-On dari pricelist masuk.
+    if(data.deskripsi) put('Deskripsi Paket', '[name="deskripsiPaket"]', data.deskripsi + (mCetak ? '\n' + mCetak[0] : ''));
+  }
   // 6) Instagram per peran (kolomnya baru ada setelah Jenis Acara diterapkan di atas)
-  let igCount = 0, igMiss = 0;
+  let igCount = 0, igMiss = 0; const igGagal = [];
   Object.keys(data.ig||{}).forEach(role=>{
-    const val = data.ig[role]; if(!val) return;
+    const v = data.ig[role]; if(!v) return;
     const inp = [...form.querySelectorAll('.ig-role-input')].find(i=>i.dataset.igRole===role);
-    if(inp){ inp.value = val; inp.dispatchEvent(new Event('input',{bubbles:true})); igCount++; } else igMiss++;
+    if(inp){
+      inp.value = v; inp.dispatchEvent(new Event('input',{bubbles:true}));
+      if(String(inp.value).trim().toLowerCase() === igUsername(v).toLowerCase()) igCount++;
+      else igGagal.push('Instagram ' + role + ' (dikirim "' + v + '", form berisi "' + inp.value + '")');
+    } else igMiss++;
   });
   if(igCount) filled.push('Instagram ('+igCount+')');
+  igGagal.forEach(x=>failed.push(x));
   if(igMiss) review.push('Sebagian Instagram tidak punya kolom yang cocok pada Jenis Acara ini — isi manual.');
   // 7) Keuangan klien (BUKAN honor/biaya internal): Sisa = Penghasilan − Diskon − DP
-  if(data.penghasilan>0) has('Penghasilan', plSetVal(form,'[name="penghasilan"]', fmtRibuan(data.penghasilan), true));
-  if(data.diskon>0) has('Diskon', plSetVal(form,'[name="diskon"]', fmtRibuan(data.diskon), true));
+  if(data.penghasilan>0) put('Penghasilan', '[name="penghasilan"]', fmtRibuan(data.penghasilan), { want:data.penghasilan, read:uang('[name="penghasilan"]') });
+  if(data.diskon>0) put('Diskon', '[name="diskon"]', fmtRibuan(data.diskon), { want:data.diskon, read:uang('[name="diskon"]') });
   if(data.dp>0){
-    has('DP', plSetVal(form,'[name="dp"]', fmtRibuan(data.dp), true));
+    put('DP', '[name="dp"]', fmtRibuan(data.dp), { want:data.dp, read:uang('[name="dp"]') });
     const st = form.querySelector('select[name="statusPembayaran"]');
-    if(st && [...st.options].some(o=>o.value==='DP')){ st.value='DP'; st.dispatchEvent(new Event('change',{bubbles:true})); has('Status Pembayaran', true); }
+    if(st && [...st.options].some(o=>o.value==='DP')){
+      st.value = 'DP'; st.dispatchEvent(new Event('change',{bubbles:true}));
+      filled.push('Status Pembayaran');
+      verify('Status Pembayaran', 'DP', ()=>val('select[name="statusPembayaran"]'));
+    }
   }
-  // 8) Pengiriman hasil cetak: hanya metodenya; ongkir dihitung ulang oleh Rekap Job sendiri
+  // 8) Pengiriman hasil cetak: metode + (kalau Diantar) Link Maps Antar. Jarak & ongkos dihitung
+  //    oleh form sendiri dari Link Maps Antar.
   if(data.pengambilan){
     const tg = form.querySelector('#pengirimanMetodeToggle');
     if(tg){
       tg.checked = (data.pengambilan==='Diantar');
       if(typeof onPengirimanMetodeChange==='function') onPengirimanMetodeChange();
-      has('Pengiriman: '+data.pengambilan, true);
-      if(data.pengambilan==='Diantar' && !coord) review.push('Pengiriman "Diantar" tapi titik koordinat kosong — ongkos antar belum bisa dihitung.');
+      filled.push('Pengiriman: '+data.pengambilan);
+      verify('Pengiriman: '+data.pengambilan, data.pengambilan==='Diantar', ()=>!!form.querySelector('#pengirimanMetodeToggle')?.checked);
+      if(data.pengambilan==='Diantar'){
+        const liAntar = form.querySelector('#linkMapsAntarInput');
+        if(liAntar && !liAntar.value.trim()){
+          if(coord){
+            put('Link Maps Antar', '#linkMapsAntarInput', 'https://www.google.com/maps?q='+String(coord).replace(/\s+/g,''));
+            review.push('Link Maps Antar diisi dari lokasi acara. Ganti kalau foto diantar ke alamat lain.');
+          }else{
+            review.push('Pengiriman "Diantar" tapi titik lokasi tidak terbaca — isi Link Maps Antar manual (link lengkap atau koordinat) supaya ongkos antar terhitung.');
+          }
+        }
+      }
     }
   }
-  // 9) Catatan gabungan
-  if(data.catatanBaris.length){ has('Catatan', plSetVal(form,'[name="catatan"]', data.catatanBaris.join('\n'), true)); }
-  return { filled, review };
+  // 9) Catatan gabungan. Catatan yang diketik manual TIDAK ditimpa: blok pricelist diberi
+  //    penanda, jadi tarik ulang hanya mengganti blok itu (tidak menumpuk dobel).
+  if(data.catatanBaris && data.catatanBaris.length){
+    const ta = form.querySelector('[name="catatan"]');
+    if(ta){
+      const block = PL_CATATAN_MARK + '\n' + data.catatanBaris.join('\n');
+      const cur = String(ta.value || '');
+      const at = cur.indexOf(PL_CATATAN_MARK);
+      const manual = (at>-1 ? cur.slice(0, at) : cur).replace(/\s+$/,'');
+      ta.value = manual ? manual + '\n\n' + block : block;
+      ta.dispatchEvent(new Event('input',{bubbles:true}));
+      filled.push('Catatan');
+      verify('Catatan', true, ()=>String(ta.value).indexOf(block)>-1);
+    }
+  }
+  if(!(data.catatanBaris && data.catatanBaris.length)){
+    // Semua data pricelist sekarang masuk kolom Detail Acara: blok "Dari pricelist" lama di Catatan
+    // (hasil penarikan sebelumnya) sudah tidak relevan dan dibuang. Catatan ketikan sendiri tetap utuh.
+    const ta0 = form.querySelector('[name="catatan"]');
+    const cur0 = ta0 ? String(ta0.value || '') : '';
+    const at0 = cur0.indexOf(PL_CATATAN_MARK);
+    if(ta0 && at0>-1){
+      ta0.value = cur0.slice(0, at0).replace(/\s+$/,'');
+      ta0.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+  }
+  if(data.kolomLain && data.kolomLain.length){
+    info.push('Kolom pricelist yang belum punya kolom di form, dipindahkan ke Catatan: ' + data.kolomLain.map(x=>x.k).join(', ') + '.');
+  }
+
+  // 10) VERIFIKASI: baca ulang tiap kolom yang diklaim terisi.
+  const ringkas = v => { const t = String(v==null?'':v).replace(/\s+/g,' ').trim(); return t.length>40 ? t.slice(0,37)+'…' : t; };
+  checks.forEach(c=>{
+    let got; try{ got = c.read(); }catch(e){ got = ''; }
+    if(String(c.want==null?'':c.want).trim() !== String(got==null?'':got).trim()){
+      const i = filled.indexOf(c.label); if(i>-1) filled.splice(i,1);
+      failed.push(c.label + ' (dikirim "' + ringkas(c.want) + '", form berisi "' + ringkas(got) + '")');
+    }
+  });
+  // 11) Kolom penting yang masih kosong setelah penarikan
+  const kosong = [];
+  [['Nama Klien','[name="namaKlien"]'],['No. WhatsApp','#waHidden'],['Jenis Acara','select[name="jenisAcara"]'],
+   ['Desa','[name="desa"]'],['Kecamatan','[name="kecamatan"]'],['Kabupaten','[name="kabupaten"]'],['Provinsi','[name="provinsi"]'],
+   ['Titik Koordinat','#koordinatInput'],['Paket','[name="paket"]'],['Penghasilan','[name="penghasilan"]']
+  ].forEach(([l,sel])=>{ const v = val(sel); if(!v || v==='0') kosong.push(l); });
+  if(kosong.length) info.push('Masih kosong (tidak ada di data pricelist): ' + kosong.join(', ') + '.');
+  return { filled, review, info, failed };
 }
 
 function plPanelHtml(terbuka){
@@ -6265,12 +6811,14 @@ function plBindPanel(scopeEl){
       if(res.status==='notfound'){ say('Tidak ada data dengan nomor tersebut di "'+PRICELIST_SOURCES[srcSel.value].label+'". Pastikan nomornya sama persis dengan yang diisi klien, atau coba sumber lain.','err'); return; }
       const data = plNormalize(srcSel.value, res.fields);
       const sudahIsi = (form.querySelector('[name="namaKlien"]')?.value || '').trim() !== '';
-      if(sudahIsi && !window.confirm('Form ini sudah berisi data. Timpa kolom yang ada datanya di pricelist dengan data dari "'+PRICELIST_SOURCES[srcSel.value].label+'"?\n\n(Kolom yang tidak ada datanya di pricelist tidak akan dikosongkan.)')){ say('Dibatalkan — form tidak diubah.'); return; }
+      if(sudahIsi && !window.confirm('Form ini sudah berisi data. Timpa kolom yang ada datanya di pricelist dengan data dari "'+PRICELIST_SOURCES[srcSel.value].label+'"?\n\n(Kolom yang tidak ada datanya di pricelist tidak dikosongkan. Catatan yang Anda ketik sendiri tetap dipertahankan.)')){ say('Dibatalkan — form tidak diubah.'); return; }
       const r = plApplyToForm(form, data);
-      const msgs = ['✓ Terisi: ' + r.filled.join(', ') + '.'];
+      const msgs = ['✓ Masuk & terverifikasi (' + r.filled.length + ' kolom): ' + (r.filled.join(', ') || '-') + '.'];
+      r.failed.forEach(x=>msgs.push('✗ Gagal masuk: ' + x));
       r.review.forEach(x=>msgs.push('⚠ ' + x));
+      r.info.forEach(x=>msgs.push('ℹ ' + x));
       msgs.push('Honor Tim, Biaya Cetak, dan Sedekah tidak diisi otomatis. Periksa kembali semua kolom sebelum menyimpan.');
-      say(msgs, r.review.length ? 'warn' : 'ok');
+      say(msgs, (r.failed.length || r.review.length) ? 'warn' : 'ok');
     }catch(e){
       console.error('Ambil dari pricelist gagal', e);
       say('Terjadi kesalahan saat mengisi form: ' + (e && e.message ? e.message : e), 'err');
@@ -6283,8 +6831,8 @@ function plBindPanel(scopeEl){
 function buildJobFormHtml(j){
   const d = j || {
     tanggalAcara:'', tanggalSelesai:'', jamAcara:'', desa:'', dusun:'', adaDusun:false, kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'', koordinat:'',
-    jenisAcara:'', jenisAcaraLain:'', namaKlien:'', namaMempelai:'', noWhatsapp:'', instagramList:[], paket:'', deskripsiPaket:'',
-    prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Dijemput',
+    jenisAcara:'', jenisAcaraLain:'', namaKlien:'', namaMempelai:'', noWhatsapp:'', instagramList:[], detailAcara:{}, paket:'', deskripsiPaket:'',
+    prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Dijemput', linkMapsAntar:'', jarakAntarKm:'', ongkirAntar:'',
     vendor:'', vendorLain:'', timFreelancer:'', dp:'', biayaCetak:'', honorTim:'', honorTimList:[], diskon:'',
     penghasilan:'', sedekahNominal:'', sedekahStatus:'Belum', setoranShia:'',
     statusPembayaran:'Belum Bayar', catatan:''
@@ -6299,9 +6847,11 @@ function buildJobFormHtml(j){
   const jarakTempuhAwal = getCachedJarakTempuh(d); // hanya dari cache dulu — fetch baru dipicu setelah form ini dipasang ke DOM (lihat bindJobFormEvents)
   const jarakAwalJalan = jarakTempuhAwal ? jarakTempuhAwal.km : null;
   const durasiAwalTempuh = jarakTempuhAwal ? jarakTempuhAwal.durMin : null;
+  const isDiantarAwal = pengirimanMetode(d.pengiriman)==='diantar';
   const koordAwalValid = !!parseCoordString(d.koordinat);
   const igRolesAwal = getInstagramRoles(d.jenisAcara);
   const igListAwal = matchInstagramRoles(igRolesAwal, d.instagramList);
+  detailAcaraStash = {...(d.detailAcara || {})};
 
   return `
     <form id="jobForm" class="jf">
@@ -6331,9 +6881,10 @@ function buildJobFormHtml(j){
           </select>
         </div>
         <div><label>Paket</label><input type="text" name="paket" value="${escapeHtml(d.paket)}" placeholder="Nama / isi paket"></div>
-        <div class="full" id="jenisLainWrap" style="display:${d.jenisAcara==='Lainnya'?'block':'none'}"><label>Sebutkan Jenis Acara Lainnya</label><input type="text" name="jenisAcaraLain" value="${escapeHtml(d.jenisAcaraLain||'')}"></div>
+        <div class="full" id="jenisLainWrap" style="display:${d.jenisAcara==='Lainnya'?'block':'none'}"><label>Sebutkan Jenis Acara Lainnya</label><input type="text" name="jenisAcaraLain" value="${escapeHtml(d.jenisAcaraLain||'')}" oninput="refreshDetailAcara()"></div>
         <div class="full" id="mempelaiWrap" style="display:${isJenisMempelai(d.jenisAcara)?'block':'none'}"><label>Nama Kedua Mempelai</label><input type="text" name="namaMempelai" value="${escapeHtml(d.namaMempelai||'')}" placeholder="Contoh: Budi &amp; Ani" autocomplete="off"></div>
         <div id="instagramFieldsWrap" style="display:contents;">${instagramFieldsHtml(igRolesAwal, igListAwal)}</div>
+        <div id="detailAcaraWrap" style="display:contents;" data-kunci="${escapeHtml(detailAcaraKunci(d.jenisAcara, d.jenisAcaraLain))}">${detailAcaraFieldsHtml(d.jenisAcara, d.jenisAcaraLain, detailAcaraStash)}</div>
         <div class="full">
           <label>Deskripsi Paket</label>
           <textarea name="deskripsiPaket" rows="3" placeholder="Rincian isi paket, misal: 1 album 20R, cetak 4R 50 lembar, softfile semua foto, dll.">${escapeHtml(d.deskripsiPaket||'')}</textarea>
@@ -6355,6 +6906,7 @@ function buildJobFormHtml(j){
         <div><label>Kecamatan</label><input type="text" name="kecamatan" value="${escapeHtml(d.kecamatan)}"></div>
         <div><label>Kabupaten / Kota</label><input type="text" name="kabupaten" value="${escapeHtml(d.kabupaten)}"></div>
         <div><label>Provinsi</label><input type="text" name="provinsi" value="${escapeHtml(d.provinsi)}"></div>
+        <input type="hidden" name="linkMaps" value="${escapeHtml(d.linkMaps||'')}">
         <div class="full">
           <label>Titik Koordinat</label>
           <div class="maps-input-wrap">
@@ -6377,11 +6929,14 @@ function buildJobFormHtml(j){
       </div>
 
       </section>
-      <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('settings')}</span><div class="jf-sec-htx"><h3>Status Proses</h3><p>Progres pengerjaan, pembayaran, dan siapa yang mengerjakan.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
+      <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('truck')}</span><div class="jf-sec-htx"><div class="jf-sec-tt"><h3>Pengiriman Foto</h3><span class="jf-badge" id="badgePengiriman">${isDiantarAwal?'Diantar':'Dijemput'}</span></div><p>Dijemput atau diantar, termasuk ongkos antar.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
+        ${pengirimanFieldHtml(d)}
+      </div>
+
+      </section>
+      <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('settings')}</span><div class="jf-sec-htx"><h3>Proses &amp; Vendor</h3><p>Progres edit dan cetak, vendor asal job, dan tim yang mengerjakan.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
         <div><label>Proses Edit</label><select name="prosesEdit">${opt(['Belum Selesai','Selesai'], d.prosesEdit)}</select></div>
         <div><label>Proses Cetak</label><select name="prosesCetak">${opt(['Belum Selesai','Selesai'], d.prosesCetak)}</select></div>
-        <div><label>Status Pembayaran</label><select name="statusPembayaran">${opt(STATUS_BAYAR_LIST, d.statusPembayaran)}</select></div>
-        ${pengirimanFieldHtml(d, jarakAwalJalan)}
         <div>
           <label>Vendor Asal Job</label>
           <select name="vendor" onchange="onVendorChange(this)">
@@ -6394,16 +6949,36 @@ function buildJobFormHtml(j){
         </div>
 
       </section>
-      <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('money')}</span><div class="jf-sec-htx"><h3>Keuangan</h3><p>Uang masuk dan keluar. Sisa bayar dan laba dihitung otomatis.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
-        ${rpField('Penghasilan Dari Klien/Mitra','penghasilan',d.penghasilan)}
-        ${rpField('Diskon','diskon',d.diskon)}
-        ${rpField('DP','dp',d.dp)}
-        ${rpField('Biaya Cetak','biayaCetak',d.biayaCetak)}
-        <div id="shiaSetoranWrap" class="full" style="display:${d.vendor && d.vendor!=='Kaone Motret'?'block':'none'}"><label>Harga Paket Vendor</label>${rpInput('setoranShia',d.setoranShia)}</div>
-        <div class="full" id="honorTimSection">${renderHonorTimSectionHtml()}</div>
-        <div><label>Sedekah (otomatis)</label>${rpInput('sedekahNominal',d.sedekahNominal||hitungSedekah(d),'id="sedekahNominalInput" readonly',true)}</div>
-        <div><label>Status Sedekah</label><select name="sedekahStatus" onchange="updateCalc()">${opt(['Belum','Sudah'], d.sedekahStatus)}</select></div>
+      <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('money')}</span><div class="jf-sec-htx"><div class="jf-sec-tt"><h3>Keuangan</h3><span class="jf-badge" id="badgeKeuangan">${escapeHtml(d.statusPembayaran||'Belum Bayar')}</span></div><p>Pemasukan, pengeluaran, dan sedekah. Sisa bayar dan laba dihitung otomatis.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="jf-body jf-panel jf-fin">
+        <div class="fin-group">
+          <div class="fin-title"><i class="fin-dot is-in"></i>Pemasukan dari klien</div>
+          <div class="form-grid">
+            ${rpField('Penghasilan Dari Klien/Mitra','penghasilan',d.penghasilan)}
+            ${rpField('Diskon','diskon',d.diskon)}
+            ${rpField('DP (uang muka)','dp',d.dp)}
+            <div>
+              <label>Status Pembayaran</label>
+              <select name="statusPembayaran" onchange="this.dataset.autoDp='0'; this.dataset.auto=''; updateCalc();">${opt(STATUS_BAYAR_LIST, d.statusPembayaran)}</select>
+              <div class="field-hint" id="statusBayarHint"></div>
+            </div>
+          </div>
         </div>
+        <div class="fin-group">
+          <div class="fin-title"><i class="fin-dot is-out"></i>Pengeluaran job</div>
+          <div class="form-grid">
+            <div><label>Biaya Cetak</label>${rpInput('biayaCetak',d.biayaCetak)}<div class="field-hint">Terisi otomatis dari Hasil Cetak, tetap bisa diubah manual.</div></div>
+            <div id="shiaSetoranWrap" style="display:${d.vendor && d.vendor!=='Kaone Motret'?'block':'none'}"><label>Harga Paket Vendor</label>${rpInput('setoranShia',d.setoranShia)}<div class="field-hint">Dikurangkan dari penghasilan bersih.</div></div>
+            <div class="full" id="honorTimSection">${renderHonorTimSectionHtml()}</div>
+          </div>
+        </div>
+        <div class="fin-group">
+          <div class="fin-title"><i class="fin-dot is-sed"></i>Sedekah</div>
+          <div class="form-grid">
+            <div><label>Sedekah (otomatis)</label>${rpInput('sedekahNominal',d.sedekahNominal||hitungSedekah(d),'id="sedekahNominalInput" readonly',true)}<div class="field-hint">Rp10.000 per kelipatan Rp100.000 dari sisa setelah honor, cetak, dan diskon. Shia Makeup tetap Rp20.000.</div></div>
+            <div><label>Status Sedekah</label><select name="sedekahStatus" onchange="updateCalc()">${opt(['Belum','Sudah'], d.sedekahStatus)}</select></div>
+          </div>
+        </div>
+      </div>
 
       </section>
       <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('note')}</span><div class="jf-sec-htx"><h3>Catatan Tambahan</h3><p>Permintaan khusus atau hal yang perlu diingat.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
@@ -6414,15 +6989,41 @@ function buildJobFormHtml(j){
       </div>
 
       </section>
-      <div class="jf-bar">
-        <div class="jf-totals">
-          <div><span>Sisa pembayaran</span><b id="calcSisa">${fmtRp(hitungSisaPembayaran(d))}</b></div>
-          <div><span>Penghasilan bersih</span><b id="calcBersih">${fmtRp(hitungBersih({...d, sedekahNominal: d.sedekahNominal||hitungSedekah(d)}))}</b></div>
+      <div class="jf-bar" id="jfBar">
+        <div class="jf-bd" id="jfBd">
+          <div class="jf-bd-grid">
+            <div>
+              <h5>Tagihan klien</h5>
+              <div class="jf-bd-row"><span>Penghasilan dari klien</span><b id="bdPenghasilan">Rp 0</b></div>
+              <div class="jf-bd-row is-minus"><span>Diskon</span><b id="bdDiskon">Rp 0</b></div>
+              <div class="jf-bd-row is-minus"><span>DP diterima</span><b id="bdDp">Rp 0</b></div>
+              <div class="jf-bd-row is-total"><span>Sisa pembayaran</span><b id="bdSisa">Rp 0</b></div>
+            </div>
+            <div>
+              <h5>Penghasilan bersih</h5>
+              <div class="jf-bd-row"><span>Penghasilan dari klien</span><b id="bd2Penghasilan">Rp 0</b></div>
+              <div class="jf-bd-row is-minus"><span>Biaya cetak</span><b id="bd2Cetak">Rp 0</b></div>
+              <div class="jf-bd-row is-minus"><span>Honor tim</span><b id="bd2Honor">Rp 0</b></div>
+              <div class="jf-bd-row is-minus"><span>Diskon</span><b id="bd2Diskon">Rp 0</b></div>
+              <div class="jf-bd-row is-minus"><span id="bd2SedekahLbl">Sedekah</span><b id="bd2Sedekah">Rp 0</b></div>
+              <div class="jf-bd-row is-minus"><span id="bd2VendorLbl">Harga paket vendor</span><b id="bd2Vendor">Rp 0</b></div>
+              <div class="jf-bd-row is-total"><span>Penghasilan bersih</span><b id="bd2Bersih">Rp 0</b></div>
+            </div>
+          </div>
         </div>
-      <div class="form-actions">
-        <button type="button" class="btn btn-outline" id="btnCancelForm">Batal</button>
-        <button type="submit" class="btn btn-primary">${j?'Simpan Perubahan':'Simpan Job'}</button>
-      </div>
+        <div class="jf-bar-row">
+          <div class="jf-sum">
+            <div class="jf-totals">
+              <div><span>Sisa pembayaran</span><b id="calcSisa">${fmtRp(hitungSisaPembayaran(d))}</b></div>
+              <div><span>Penghasilan bersih</span><b id="calcBersih">${fmtRp(hitungBersih({...d, sedekahNominal: d.sedekahNominal||hitungSedekah(d)}))}</b></div>
+            </div>
+            <button type="button" class="jf-bd-toggle" id="btnJfBd" title="Lihat rincian perhitungan" aria-label="Lihat rincian perhitungan" aria-expanded="false" aria-controls="jfBd" onclick="toggleJfBreakdown()">${ic('receipt')}<span>Rincian</span></button>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" id="btnCancelForm">Batal</button>
+            <button type="submit" class="btn btn-primary">${j?'Simpan Perubahan':'Simpan Job'}</button>
+          </div>
+        </div>
       </div>
     </form>
   `;
@@ -6496,6 +7097,39 @@ function bindJobFormEvents(scopeEl, onDone){
   const form = scopeEl.querySelector('#jobForm');
   if(!form) return;
   plBindPanel(scopeEl);
+  // Link Maps Antar (hanya tampil saat Pengiriman = Diantar) + status bayar otomatis dari DP
+  {
+    const linkIn = scopeEl.querySelector('#linkMapsAntarInput');
+    linkIn?.addEventListener('input', ()=>updateOngkirAntarCalc());
+    scopeEl.querySelector('#btnBukaLinkAntar')?.addEventListener('click', ()=>{
+      const url = mapsAntarUrl({linkMapsAntar: linkIn ? linkIn.value : ''});
+      if(!url){ toast('Isi Link Maps Antar yang valid dulu'); return; }
+      window.open(url, '_blank', 'noopener');
+    });
+    scopeEl.querySelector('#btnTempelLinkAntar')?.addEventListener('click', async ()=>{
+      try{
+        const t = (await navigator.clipboard.readText() || '').trim();
+        if(!t){ toast('Clipboard kosong'); return; }
+        linkIn.value = t;
+        updateOngkirAntarCalc();
+      }catch(e){
+        toast('Tidak bisa membaca clipboard. Tempel manual di kolom.');
+        linkIn?.focus();
+      }
+    });
+    scopeEl.querySelector('#btnSamakanLinkAntar')?.addEventListener('click', ()=>{
+      const c = parseCoordString(scopeEl.querySelector('#koordinatInput')?.value || '');
+      if(!c){ toast('Titik Koordinat di Lokasi Acara masih kosong'); return; }
+      linkIn.value = `https://www.google.com/maps?q=${c.lat},${c.lng}`;
+      updateOngkirAntarCalc();
+      toast('Link antar disamakan dengan lokasi acara');
+    });
+    form.addEventListener('input', e=>{
+      if(e.target && e.target.name==='dp') syncStatusBayarDariDp();
+    });
+    updateOngkirAntarCalc({initial:true});
+    updateCalc();
+  }
   // Kalau koordinat sudah terisi (mode edit), langsung picu pengecekan jarak jalan
   // (OSRM) begitu form tampil — biar tidak menunggu user mengetik ulang di kolom.
   if(scopeEl.querySelector('#koordinatInput')?.value.trim()) updateJarakCalc();
@@ -6545,13 +7179,42 @@ function bindJobFormEvents(scopeEl, onDone){
       const metodeOn = form.querySelector('#pengirimanMetodeToggle')?.checked;
       const statusVal = form.querySelector('#pengirimanStatusSelect')?.value;
       data.pengiriman = buildPengirimanValue(metodeOn?'diantar':'dijemput', statusVal==='Sudah');
-      if(!metodeOn) data.ongkirAntar = 0; // metode Dijemput tidak pakai ongkos antar
+      if(!metodeOn){
+        // metode Dijemput tidak pakai ongkos antar, link, maupun jarak antar
+        data.ongkirAntar = 0; data.linkMapsAntar = ''; data.koordinatAntar = ''; data.jarakAntarKm = null;
+      }else{
+        const hid = form.querySelector('#ongkirAntarHidden');
+        const stt = hid ? hid.dataset.state : 'none';
+        const lk = String(data.linkMapsAntar||'').trim();
+        const linkEl = form.querySelector('#linkMapsAntarInput');
+        data.linkMapsAntar = lk;
+        const ca = parseMapsAntar(lk);
+        data.koordinatAntar = ca ? `${ca.lat}, ${ca.lng}` : '';
+        if(stt==='loading'){
+          toast('Ongkos antar masih dihitung. Tunggu sebentar lalu simpan lagi.');
+          return;
+        }
+        if(stt==='short' || stt==='invalid'){
+          openJfSectionFor(linkEl); linkEl?.focus();
+          toast('Link Maps Antar belum bisa dibaca. Tempel link lengkap atau koordinat, atau kosongkan kolomnya.');
+          return;
+        }
+        if(stt==='fail' && !confirm('Ongkos antar belum bisa dihitung (cek koneksi). Simpan dengan ongkos ' + fmtRp(parseRibuan(data.ongkirAntar)) + '?')) return;
+        if(stt==='none' && !(Number(hid && hid.dataset.saved)>0) && !confirm('Link Maps Antar belum diisi, jadi ongkos antar belum terhitung (Rp0). Tetap simpan?')){
+          openJfSectionFor(linkEl); linkEl?.focus();
+          return;
+        }
+        const jk = parseFloat(data.jarakAntarKm);
+        data.jarakAntarKm = isFinite(jk) ? Math.round(jk*10)/10 : null;
+      }
     }
     // Kolom Instagram dinamis (jumlah & nama kolomnya ikut Jenis Acara) dikumpulkan
     // manual di sini, bukan lewat FormData, karena elemennya tidak pakai atribut name.
     data.instagramList = Array.from(form.querySelectorAll('.ig-role-input')).map(inp=>({
       role: inp.dataset.igRole, username: igUsername(inp.value)
     }));
+    // Detail Acara (kolom khusus per jenis acara) — hanya kolom yang berlaku untuk jenis acara saat ini.
+    data.detailAcara = kumpulkanDetailAcara(form);
     // Hilangkan spasi berlebih di awal/akhir tiap isian teks (mis. "Portibi " dan "Portibi"
     // supaya dianggap sama di pencarian, filter, maupun rekap).
     Object.keys(data).forEach(k=>{
@@ -6659,8 +7322,101 @@ function updateCalc(){
   const sedekah = hitungSedekah(tmp);
   const sedekahInput = document.getElementById('sedekahNominalInput');
   if(sedekahInput) sedekahInput.value = fmtRibuan(sedekah);
-  document.getElementById('calcSisa').textContent = fmtRp(hitungSisaPembayaran(tmp));
-  document.getElementById('calcBersih').textContent = fmtRp(hitungBersih({...tmp, sedekahNominal:sedekah}));
+  const sisa = hitungSisaPembayaran(tmp);
+  const bersih = hitungBersih({...tmp, sedekahNominal:sedekah});
+  document.getElementById('calcSisa').textContent = fmtRp(sisa);
+  document.getElementById('calcBersih').textContent = fmtRp(bersih);
+
+  // Rincian (panel "Rincian" di bar bawah) — angka yang tampil = angka yang benar-benar dipakai rumus.
+  const sedekahEff = tmp.sedekahStatus==='Sudah' ? sedekah : 0;
+  const vendorAktif = !!(tmp.vendor && tmp.vendor!=='Kaone Motret');
+  const vendorEff = vendorAktif ? tmp.setoranShia : 0;
+  const put = (id, val)=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.textContent = fmtRp(val);
+    const row = el.parentElement;
+    if(row && row.classList.contains('is-minus')) row.classList.toggle('is-muted', !val);
+  };
+  put('bdPenghasilan', tmp.penghasilan);
+  put('bdDiskon', tmp.diskon);
+  put('bdDp', tmp.dp);
+  put('bdSisa', sisa);
+  put('bd2Penghasilan', tmp.penghasilan);
+  put('bd2Cetak', tmp.biayaCetak);
+  put('bd2Honor', tmp.honorTim);
+  put('bd2Diskon', tmp.diskon);
+  put('bd2Sedekah', sedekahEff);
+  put('bd2Vendor', vendorEff);
+  put('bd2Bersih', bersih);
+  const lblSed = document.getElementById('bd2SedekahLbl');
+  if(lblSed) lblSed.textContent = tmp.sedekahStatus==='Sudah' ? 'Sedekah' : 'Sedekah (belum disalurkan)';
+  const lblVen = document.getElementById('bd2VendorLbl');
+  if(lblVen) lblVen.textContent = vendorAktif ? 'Harga paket vendor' : 'Harga paket vendor (tidak berlaku)';
+
+  // Petunjuk kecil di bawah Status Pembayaran
+  const sel = f.querySelector('select[name="statusPembayaran"]');
+  const hintEl = document.getElementById('statusBayarHint');
+  if(sel && hintEl){
+    let msg = sel.dataset.auto || '';
+    if(!msg){
+      if(tmp.penghasilan>0 && sisa<=0 && sel.value!=='Lunas') msg = 'Sisa pembayaran sudah Rp0. Status bisa diubah ke Lunas.';
+      else if(sel.value==='Lunas' && sisa>0) msg = 'Status Lunas, tapi masih ada sisa ' + fmtRp(sisa) + '.';
+    }
+    hintEl.textContent = msg;
+  }
+  refreshJfBadges();
+}
+// Status Pembayaran otomatis mengikuti DP: DP terisi -> "DP". Status "Lunas" tidak pernah
+// diturunkan. Kalau DP dikosongkan lagi, status kembali ke "Belum Bayar" HANYA kalau
+// perubahan ke "DP" tadi dilakukan otomatis (bukan pilihan manual user).
+function syncStatusBayarDariDp(){
+  const f = document.getElementById('jobForm');
+  if(!f) return;
+  const sel = f.querySelector('select[name="statusPembayaran"]');
+  const dpEl = f.elements['dp'];
+  if(!sel || !dpEl) return;
+  const dp = parseRibuan(dpEl.value);
+  if(dp>0 && sel.value==='Belum Bayar'){
+    sel.value = 'DP';
+    sel.dataset.autoDp = '1';
+    sel.dataset.auto = 'Status otomatis jadi DP karena DP sudah diisi.';
+  }else if(dp===0 && sel.value==='DP' && sel.dataset.autoDp==='1'){
+    sel.value = 'Belum Bayar';
+    sel.dataset.autoDp = '0';
+    sel.dataset.auto = 'DP dikosongkan, status kembali ke Belum Bayar.';
+  }
+  updateCalc();
+}
+// Label status di header bagian Keuangan & Pengiriman (tetap terlihat walau bagian dilipat).
+function refreshJfBadges(){
+  const f = document.getElementById('jobForm');
+  if(!f) return;
+  const bk = document.getElementById('badgeKeuangan');
+  const sel = f.querySelector('select[name="statusPembayaran"]');
+  if(bk && sel){
+    bk.textContent = sel.value;
+    bk.className = 'jf-badge ' + ({'Lunas':'is-ok','DP':'is-dp','Belum Bayar':'is-warn'}[sel.value] || '');
+  }
+  const bp = document.getElementById('badgePengiriman');
+  const tg = document.getElementById('pengirimanMetodeToggle');
+  if(bp && tg){
+    if(!tg.checked){ bp.textContent = 'Dijemput'; bp.className = 'jf-badge'; }
+    else{
+      const h = document.getElementById('ongkirAntarHidden');
+      const st = h ? h.dataset.state : 'none';
+      const v = h ? (Number(h.value)||0) : 0;
+      const tahu = st==='ok' || (st==='none' && v>0);
+      bp.textContent = 'Diantar' + (tahu ? ' · ' + (v>0 ? fmtRp(v) : 'Gratis') : '');
+      bp.className = 'jf-badge is-dp';
+    }
+  }
+}
+function toggleJfBreakdown(){
+  const bar = document.getElementById('jfBar');
+  if(!bar) return;
+  const open = bar.classList.toggle('bd-open');
+  document.getElementById('btnJfBd')?.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
 
 /* =========================================================
@@ -6700,7 +7456,7 @@ function renderDaftarTable(){
   if(q){
     const qDigits = q.replace(/[^0-9]/g,'');
     list = list.filter(j=>{
-      const hay = [j.namaKlien,j.namaMempelai,j.desa,j.dusun,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket]
+      const hay = [j.namaKlien,j.namaMempelai,j.desa,j.dusun,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket, ...Object.values(j.detailAcara || {})]
         .join(' ').toLowerCase();
       if(hay.includes(q)) return true;
       if(qDigits && String(j.noWhatsapp||'').replace(/[^0-9]/g,'').includes(qDigits)) return true;
@@ -8106,11 +8862,13 @@ function openJobDetailModal(jobId){
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
     ]},
+    ...(detailAcaraRows(j).length ? [{title:'Detail Acara', rows:detailAcaraRows(j)}] : []),
     {title:'Status & Proses', rows:[
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
       ...(pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
+      ...(pengirimanMetode(j.pengiriman)==='diantar' && j.linkMapsAntar ? [['Link Maps Antar', j.linkMapsAntar]] : []),
       ['Status Pembayaran', j.statusPembayaran||'-'],
       ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
@@ -8230,6 +8988,7 @@ function buildJobPosterHtml(j){
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', truncateText(j.deskripsiPaket, 160) || '-'],
     ]},
+    ...(detailAcaraRows(j,{tanpaUmum:true, maks:70}).length ? [{title:'Detail Acara', rows:detailAcaraRows(j,{tanpaUmum:true, maks:70})}] : []),
     {title:'Status & Proses', rows:[
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
@@ -8476,11 +9235,13 @@ function copyJobDetails(jobId){
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
     ]},
+    ...(detailAcaraRows(j).length ? [{title:ic('clipboard')+' Detail Acara', rows:detailAcaraRows(j)}] : []),
     {title:ic('settings')+' Status & Proses', rows:[
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
       ...(pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
+      ...(pengirimanMetode(j.pengiriman)==='diantar' && j.linkMapsAntar ? [['Link Maps Antar', j.linkMapsAntar]] : []),
       ['Status Pembayaran', j.statusPembayaran||'-'],
       ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
@@ -8808,6 +9569,7 @@ function jobEventDetails(j){
   if((j.deskripsiPaket||'').trim()) detailLines.push(`Deskripsi Paket: ${j.deskripsiPaket.trim()}`);
   if(j.namaKlien) detailLines.push(`Klien: ${j.namaKlien}`);
   if(isJenisMempelai(j.jenisAcara) && (j.namaMempelai||'').trim()) detailLines.push(`Mempelai: ${j.namaMempelai.trim()}`);
+  detailAcaraRows(j).forEach(([l,v])=>detailLines.push(`${l}: ${v}`));
   if(j.noWhatsapp) detailLines.push(`WhatsApp: ${j.noWhatsapp}`);
   const details = detailLines.length ? detailLines.join('\n') : '-';
   return {title, location, details};
@@ -11085,6 +11847,8 @@ function downloadExcelTemplate(){
     'Proses Edit (Selesai/Belum Selesai)':'Belum Selesai',
     'Proses Cetak (Selesai/Belum Selesai)':'Belum Selesai',
     'Pengiriman':'Belum Diantar',
+    'Link Maps Antar (jika Diantar)':'https://www.google.com/maps?q=-1.5,101.4',
+    'Ongkos Antar':50000,
     'Status Pembayaran':'DP',
     'Vendor (Shia Makeup/Kaone Motret/Lainnya)':'Kaone Motret',
     'Vendor Lainnya (jika Vendor = Lainnya)':'',
@@ -11149,7 +11913,7 @@ function importExcelFile(file){
         EXCEL_FIELD_MAP.forEach(f=>{
           // File Excel lama (dibuat sebelum kolom Nama Kedua Mempelai ada) tidak punya kolom ini —
           // lewati saja supaya nama mempelai yang sudah tersimpan di job tidak terhapus saat update.
-          if(f.field==='namaMempelai' && !Object.prototype.hasOwnProperty.call(row, f.header)) return;
+          if(['namaMempelai','linkMapsAntar','ongkirAntar'].includes(f.field) && !Object.prototype.hasOwnProperty.call(row, f.header)) return;
           let v = row[f.header];
           if(f.field==='tanggalAcara'){
             if(v instanceof Date){
@@ -11164,6 +11928,15 @@ function importExcelFile(file){
           newJobData[f.field] = (v===undefined || v===null) ? '' : (typeof v === 'string' ? v.trim() : v);
         });
 
+        // Kolom antar: ongkos hanya berlaku untuk pengiriman "Diantar"; titik antar diturunkan dari link-nya.
+        if(Object.prototype.hasOwnProperty.call(newJobData,'ongkirAntar')) newJobData.ongkirAntar = parseRibuan(newJobData.ongkirAntar);
+        if(Object.prototype.hasOwnProperty.call(newJobData,'linkMapsAntar')){
+          const ca = parseMapsAntar(newJobData.linkMapsAntar);
+          newJobData.koordinatAntar = ca ? `${ca.lat}, ${ca.lng}` : '';
+        }
+        if(newJobData.pengiriman && pengirimanMetode(newJobData.pengiriman)!=='diantar'){
+          newJobData.ongkirAntar = 0; newJobData.linkMapsAntar = ''; newJobData.koordinatAntar = '';
+        }
         // Cari job yang sudah ada dengan tanggal + nama klien + desa yang sama persis (mengabaikan
         // besar/kecil huruf & spasi berlebih). Kalau ketemu -> update job itu. Kalau tidak -> job baru.
         const matchKey = excelJobMatchKey(newJobData.tanggalAcara, newJobData.namaKlien, newJobData.desa);
@@ -11510,12 +12283,40 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.13.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.14.1'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.14.1',
+    tanggal: '2 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Tombol \"Ambil & Isi\" dari Pricelist sekarang membaca ulang setiap kolom setelah diisi. Laporannya memisahkan kolom yang benar-benar masuk dan terverifikasi dari kolom yang ditolak form (misalnya jam yang formatnya tidak valid), jadi tidak ada lagi kolom yang tampak terisi padahal kosong.' },
+      { kategori: 'Perbaikan', teks: 'Kolom di data pricelist yang belum punya kolom di form (misalnya kolom baru yang ditambahkan di formulir website) tidak lagi hilang diam-diam. Isinya dipindahkan ke Catatan dan namanya disebut di laporan.' },
+      { kategori: 'Perbaikan', teks: 'Link Maps dari pricelist yang titiknya tidak terbaca (umumnya link pendek) sekarang disimpan di job dan di Catatan, sehingga tombol peta tetap bisa membukanya. Sebelumnya link itu terbuang.' },
+      { kategori: 'Perbaikan', teks: 'Catatan yang Anda ketik sendiri tidak lagi tertimpa saat menarik data pricelist. Data pricelist ditaruh di blok \"Dari pricelist\", dan menarik ulang hanya mengganti blok itu tanpa menumpuk. Baris \"Hasil cetak\" di Deskripsi Paket juga tidak terhapus oleh Add-On dari pricelist.' },
+      { kategori: 'Fitur', teks: 'Laporan penarikan pricelist kini juga menampilkan kolom penting yang masih kosong (misalnya Provinsi, yang memang tidak ada di pricelist) supaya mudah dilengkapi.' },
+      { kategori: 'Fitur', teks: 'Template dan impor Excel punya dua kolom baru: Link Maps Antar dan Ongkos Antar. File Excel lama yang tidak memiliki kedua kolom ini tetap bisa diimpor dan tidak menghapus data antar yang sudah tersimpan.' },
+      { kategori: 'Fitur', teks: 'Input/Edit Job punya bagian baru \"Detail Acara\" yang kolomnya menyesuaikan Jenis Acara. Marbagas dan Patuaekkon: Adat/Konsep Pakaian. Margondang: Waktu Selesai Acara. Mangayun/Aqiqah: Nama Anak, Ibu, dan Ayah. Wisuda: Universitas/Institusi, Jenjang, Lokasi Acara, Sesi Diminati, dan Lokasi Foto Outdoor. Undangan: Nama Acara, Tema/Warna, Estimasi Tamu, dan Deadline. Semua jenis acara juga punya Pemilihan Foto, Instagram Vendor, dan Kode Voucher.' },
+      { kategori: 'Peningkatan', teks: 'Tombol \"Ambil & Isi\" dari Pricelist dan Isi Biodata sekarang mengisi kolom Detail Acara langsung, tidak lagi menumpuk di Catatan. Catatan hanya berisi catatan klien dan kolom baru dari website yang memang belum punya tempat. Kalau job lama ditarik ulang, blok \"Dari pricelist\" yang sudah tidak diperlukan di Catatan ikut dibersihkan, sedangkan catatan yang Anda ketik sendiri tetap utuh.' },
+      { kategori: 'Peningkatan', teks: 'Detail Acara ikut tampil di Detail Job, gambar poster, Salin Detail, dan catatan Google Calendar/.ics. Isinya juga bisa dicari lewat kolom pencarian. Kalau Jenis Acara diganti, ketikan di kolom yang cocok tidak hilang, dan kolom yang tidak berlaku tidak ikut tersimpan.' },
+      { kategori: 'Perbaikan', teks: 'Form Input/Edit Job di HP tidak lagi melebar keluar layar. Kolom Jam Acara, Jenis Acara, Paket, Instagram, dan kolom lainnya kini pas selebar panel dan tidak terpotong di sisi kanan.' },
+      { kategori: 'Perbaikan', teks: 'Tulisan \"Sisa pembayaran\" dan \"Penghasilan bersih\" di bar bawah form tidak lagi saling menimpa. Keduanya sekarang berdampingan rapi dengan batas tengah, dan di layar sempit tombol Rincian cukup berupa ikon supaya angka tetap lega dibaca.' },
+    ]
+  },
+  {
+    version: '1.14.0',
+    tanggal: '2 Oktober 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Kolom baru \"Link Maps Antar\" di Input/Edit Job. Kolom ini muncul saat Pengiriman diatur ke \"Diantar\", dan ongkos antar sekarang dihitung dari titik di link itu (bukan dari lokasi acara), jadi foto bisa diantar ke alamat yang berbeda. Bisa tempel link Google Maps yang lengkap atau koordinat. Ada tombol Tempel dari clipboard, Samakan dengan lokasi acara, dan Buka. Link pendek maps.app.goo.gl belum bisa dibaca otomatis, jadi pakai link panjang atau koordinatnya.' },
+      { kategori: 'Fitur', teks: 'Pesan WhatsApp \"Kabari Klien\" untuk job yang diantar sekarang ikut memuat link titik antar dan jarak pengantaran, selain nominal ongkos antar.' },
+      { kategori: 'Fitur', teks: 'Status Pembayaran otomatis berubah menjadi \"DP\" begitu kolom DP di bagian Keuangan diisi. Kalau DP dikosongkan lagi, status kembali ke \"Belum Bayar\" selama perubahan ke DP tadi dilakukan otomatis. Status \"Lunas\" tidak pernah diturunkan sendiri.' },
+      { kategori: 'Peningkatan', teks: 'Tampilan Input/Edit Job dirombak. Pengiriman punya bagian sendiri, Status Pembayaran pindah ke bagian Keuangan, dan Keuangan dikelompokkan menjadi Pemasukan, Pengeluaran, dan Sedekah. Status Pembayaran dan Pengiriman juga tampil sebagai label kecil di judul bagian, jadi tetap terlihat walau bagiannya dilipat.' },
+      { kategori: 'Peningkatan', teks: 'Bar total di bagian bawah form kini punya tombol \"Rincian\". Ketuk untuk melihat cara Sisa pembayaran dan Penghasilan bersih dihitung, baris demi baris, dan angkanya ikut berubah saat Anda mengisi kolom.' },
+    ]
+  },
   {
     version: '1.13.0',
     tanggal: '1 Oktober 2026',

@@ -5871,6 +5871,7 @@ function openMoreSheet(){
   layer.classList.add('open');
   document.body.classList.add('more-open');
   document.getElementById('bnMore')?.setAttribute('aria-expanded','true');
+  kbOpen('more');
   setTimeout(()=>document.querySelector('#moreList .more-item')?.focus(), 60);
 }
 function closeMoreSheet(returnFocus){
@@ -5881,6 +5882,7 @@ function closeMoreSheet(returnFocus){
   const btn = document.getElementById('bnMore');
   btn?.setAttribute('aria-expanded','false');
   if(returnFocus) btn?.focus();
+  kbClose('more');
 }
 // Menandai tab yang aktif. "Lainnya" menyala kalau halaman yang dibuka ada di dalam sheet-nya.
 function syncBottomNav(view){
@@ -5951,7 +5953,154 @@ function playAppTransition(dir){
   btn.addEventListener('click', ()=> window.scrollTo({top:0, behavior:'smooth'}));
   sync();
 })();
-function navigate(view){
+/* ---------- Tombol KEMBALI (Android / browser / PWA) ----------
+   Tombol Kembali tidak lagi langsung menutup aplikasi. Setiap "lapisan" yang terbuka
+   (pop-up/modal, menu Lainnya, panel notifikasi, halaman selain Beranda) memakai satu
+   entri riwayat browser. Menekan Kembali menutup lapisan paling atas lebih dulu, lalu
+   mundur ke halaman sebelumnya, dan di Beranda harus ditekan dua kali untuk keluar.
+   Entri riwayat yang dibuat hanya mencerminkan isi KB.stack di bawah ini; semua
+   perubahan riwayat lewat antrean (kbRun) supaya tidak saling menabrak. */
+const KB = { ready:false, sid:String(Date.now())+Math.random().toString(36).slice(2), stack:[], suppress:0, queue:[], timer:null, armed:false, armTimer:null, exiting:false };
+function kbRun(fn){ if(KB.suppress>0) KB.queue.push(fn); else fn(); }
+function kbFlush(){ while(KB.suppress===0 && KB.queue.length){ try{ KB.queue.shift()(); }catch(e){ console.error(e); } } }
+// Mundur k entri secara "diam-diam" (tidak ditangani sebagai tekanan tombol Kembali).
+function kbBack(k){
+  if(k<=0) return;
+  KB.suppress++;
+  clearTimeout(KB.timer);
+  KB.timer = setTimeout(()=>{ KB.suppress=0; kbFlush(); }, 600);
+  history.go(-k);
+}
+function kbPushRaw(entry){
+  KB.stack.push(entry);
+  try{ history.pushState({kb:KB.stack.length, sid:KB.sid}, ''); }catch(e){}
+}
+function kbEnsureGuard(){ if(KB.ready && KB.stack.length===0) kbPushRaw({type:'guard'}); }
+function kbLive(e){
+  if(e.dead) return false;
+  if(e.type==='modal') return !!document.getElementById('modalOverlay');
+  if(e.type==='more') return !!document.getElementById('moreLayer')?.classList.contains('open');
+  if(e.type==='notif') return !!document.getElementById('notifPanel');
+  return true;
+}
+function kbOpen(type){
+  kbRun(()=>{
+    if(!KB.ready) return;
+    kbEnsureGuard();
+    if(KB.stack.some(e=>e.type===type && !e.dead)) return;
+    kbPushRaw({type});
+  });
+}
+function kbClose(type){
+  kbRun(()=>{
+    if(!KB.ready) return;
+    let idx = -1;
+    for(let i=KB.stack.length-1;i>=0;i--){ if(KB.stack[i].type===type && !KB.stack[i].dead){ idx=i; break; } }
+    if(idx<1) return;
+    if(idx !== KB.stack.length-1){ KB.stack[idx].dead = true; return; }
+    KB.stack.pop(); let k = 1;
+    while(KB.stack.length>1 && KB.stack[KB.stack.length-1].dead){ KB.stack.pop(); k++; }
+    kbBack(k);
+  });
+}
+// Dipanggil navigate() untuk perpindahan halaman yang dilakukan pengguna.
+function kbOnNavigate(prev, view){
+  if(prev===view) return;
+  kbRun(()=>{
+    if(!KB.ready) return;
+    kbEnsureGuard();
+    const S = KB.stack;
+    // Sudah pernah dibuka di tumpukan? Kembali ke sana (hindari tumpukan menggelembung).
+    let tIdx = -1;
+    if(view==='beranda') tIdx = 0;
+    else for(let i=S.length-1;i>=1;i--){ if(S[i].type==='view' && S[i].view===view){ tIdx=i; break; } }
+    if(tIdx>=0){
+      const above = S.slice(tIdx+1);
+      if(above.every(e=>e.type==='view' || e.dead || !kbLive(e))){
+        const k = above.length;
+        S.length = tIdx+1;
+        kbBack(k);
+        return;
+      }
+    }
+    const top = S[S.length-1];
+    if(prev==='form' && top && top.type==='view' && top.view==='form'){
+      top.view = view;               // form tidak disimpan di riwayat: ganti saja
+      try{ history.replaceState({kb:S.length, sid:KB.sid}, ''); }catch(e){}
+      return;
+    }
+    kbPushRaw({type:'view', view});
+  });
+}
+function kbRootBack(){
+  if(KB.armed){
+    KB.exiting = true; KB.ready = false;
+    history.back();
+    return;
+  }
+  KB.armed = true;
+  toast('Tekan Kembali sekali lagi untuk keluar');
+  clearTimeout(KB.armTimer);
+  KB.armTimer = setTimeout(()=>{ KB.armed=false; }, 2400);
+  KB.stack = [];
+  kbEnsureGuard();
+}
+function kbHandleBack(n, foreign){
+  if(foreign){ KB.stack = []; kbRootBack(); return; }
+  if(n>KB.stack.length){ kbBack(n-KB.stack.length); return; }
+  if(KB.stack.length===0){ kbRootBack(); return; }
+  if(n===KB.stack.length) return;
+  const popped = KB.stack.splice(n);
+  let extra = 0;
+  // Kalau yang terlepas hanya entri "mati" (lapisannya sudah ditutup lewat tombol di layar),
+  // lanjut mundur sampai menemukan lapisan yang benar-benar terbuka.
+  while(!popped.some(kbLive) && KB.stack.length>0){ popped.unshift(KB.stack.pop()); extra++; }
+  if(extra) kbBack(extra);
+  const live = popped.filter(kbLive);
+  let goView = false, root = false;
+  for(let i=live.length-1;i>=0;i--){
+    const e = live[i];
+    if(e.type==='modal'){
+      if(typeof taskFormJobDropdownOpen!=='undefined' && taskFormJobDropdownOpen && document.getElementById('taskJobSection')){
+        taskFormJobDropdownOpen = false; refreshTaskJobSection(); kbOpen('modal');   // tutup dropdown dulu
+      } else closeModalDom();
+    }
+    else if(e.type==='more') closeMoreSheet(false);
+    else if(e.type==='notif') closeNotifPanel();
+    else if(e.type==='view') goView = true;
+    else if(e.type==='guard') root = true;
+  }
+  if(goView){
+    let target = 'beranda';
+    for(let i=KB.stack.length-1;i>=1;i--){ if(KB.stack[i].type==='view'){ target = KB.stack[i].view; break; } }
+    if(currentView==='form') editingId = null;
+    navigate(target, {fromBack:true});
+  }
+  if(root) kbRootBack();
+}
+window.addEventListener('popstate', (e)=>{
+  if(KB.exiting){ history.back(); return; }
+  if(!KB.ready) return;
+  if(KB.suppress>0){
+    KB.suppress--;
+    if(KB.suppress===0){ clearTimeout(KB.timer); kbFlush(); }
+    return;
+  }
+  const st = e.state;
+  const foreign = !st || st.sid!==KB.sid;
+  kbHandleBack(foreign ? 0 : (st.kb|0), foreign);
+});
+function kbInit(){
+  if(KB.ready) return;
+  KB.ready = true;
+  try{ history.replaceState({kb:0, sid:KB.sid}, ''); }catch(e){}
+  // Entri pelindung baru dibuat saat pengguna pertama kali menyentuh layar — browser
+  // Android mengabaikan entri riwayat yang dibuat tanpa interaksi pengguna.
+  const arm = ()=>{ document.removeEventListener('pointerdown', arm, true); document.removeEventListener('keydown', arm, true); kbRun(kbEnsureGuard); };
+  document.addEventListener('pointerdown', arm, true);
+  document.addEventListener('keydown', arm, true);
+}
+function navigate(view, opts){
   // Peran "Tim" (non-admin) tidak boleh membuka form Input/Edit Job — karena itu
   // langsung mengubah data rekap job. Halaman lain (termasuk Pengaturan) boleh dibuka;
   // kontrol yang mengubah data di dalamnya (mis. Pulihkan Data) tetap dikunci sendiri.
@@ -5969,6 +6118,7 @@ function navigate(view){
   const isTabSwitch = prevView !== view;
   currentView = view;
   syncBottomNav(view);
+  if(!(opts && opts.fromBack)) kbOnNavigate(prevView, view);
   render();
   if(isTabSwitch){
     const fromIdx = NAV_ORDER.indexOf(prevView), toIdx = NAV_ORDER.indexOf(view);
@@ -8740,8 +8890,8 @@ function openBerandaStatModal(kind){
   showModal(html);
 }
 function showModal(innerHtml){
-  // hapus modal lama jika ada, agar tidak menumpuk
-  closeModal();
+  // hapus modal lama jika ada, agar tidak menumpuk (entri riwayatnya dipakai ulang)
+  closeModalDom();
   const ov = document.createElement('div');
   ov.className='overlay';
   ov.id='modalOverlay';
@@ -8755,6 +8905,7 @@ function showModal(innerHtml){
   ov.addEventListener('click', (e)=>{ if(e.target===ov && mouseDownOnOverlay) closeModal(); });
   document.body.appendChild(ov);
   document.addEventListener('keydown', escCloseModal);
+  kbOpen('modal');
 
   // Pasang listener LANGSUNG pada tiap tombol di dalam modal (bukan hanya delegasi
   // global) supaya dijamin selalu responsif terlepas dari cara modal ini dibuat.
@@ -8796,10 +8947,15 @@ function showModal(innerHtml){
 function escCloseModal(e){
   if(e.key==='Escape') closeModal();
 }
-function closeModal(){
+function closeModalDom(){
   const ov = document.getElementById('modalOverlay');
   if(ov) ov.remove();
   document.removeEventListener('keydown', escCloseModal);
+}
+function closeModal(){
+  const had = !!document.getElementById('modalOverlay');
+  closeModalDom();
+  if(had) kbClose('modal');
 }
 
 /* ---------- Modal Edit Job (popup, tanpa pindah halaman) ---------- */
@@ -12293,6 +12449,7 @@ const CHANGELOG = [
     version: '1.14.1',
     tanggal: '2 Oktober 2026',
     items: [
+      { kategori: 'Peningkatan', teks: 'Tombol Kembali (di HP maupun browser) tidak lagi langsung menutup aplikasi. Ia menutup lapisan paling atas lebih dulu: pop-up, menu Lainnya, atau panel notifikasi. Setelah itu ia mundur ke halaman sebelumnya. Di Beranda, tekan Kembali dua kali untuk keluar.' },
       { kategori: 'Peningkatan', teks: 'Tombol \"Ambil & Isi\" dari Pricelist sekarang membaca ulang setiap kolom setelah diisi. Laporannya memisahkan kolom yang benar-benar masuk dan terverifikasi dari kolom yang ditolak form (misalnya jam yang formatnya tidak valid), jadi tidak ada lagi kolom yang tampak terisi padahal kosong.' },
       { kategori: 'Perbaikan', teks: 'Kolom di data pricelist yang belum punya kolom di form (misalnya kolom baru yang ditambahkan di formulir website) tidak lagi hilang diam-diam. Isinya dipindahkan ke Catatan dan namanya disebut di laporan.' },
       { kategori: 'Perbaikan', teks: 'Link Maps dari pricelist yang titiknya tidak terbaca (umumnya link pendek) sekarang disimpan di job dan di Catatan, sehingga tombol peta tetap bisa membukanya. Sebelumnya link itu terbuang.' },
@@ -13080,12 +13237,14 @@ function openNotifPanel(){
 
   document.addEventListener('click', outsideNotifClick);
   document.addEventListener('keydown', escCloseNotif);
+  kbOpen('notif');
 }
 function closeNotifPanel(){
   const panel = document.getElementById('notifPanel');
   if(panel) panel.remove();
   document.removeEventListener('click', outsideNotifClick);
   document.removeEventListener('keydown', escCloseNotif);
+  if(panel) kbClose('notif');
 }
 function outsideNotifClick(e){
   const wrap = document.getElementById('notifWrap');
@@ -13529,7 +13688,7 @@ function rtHandleLaunchParam(){
     const v = u.searchParams.get('v');
     if(!v) return;
     u.searchParams.delete('v');
-    history.replaceState(null, '', u.pathname + u.search + u.hash);
+    history.replaceState(history.state, '', u.pathname + u.search + u.hash);
     setTimeout(()=>rtGoTo(v), 350);
   }catch(e){}
 }
@@ -13668,6 +13827,7 @@ function rtStart(){
 // bawah file (dipanggil langsung kalau sesi login tersimpan masih valid, atau dari
 // listener submit form login kalau belum).
 function initAppAfterAuth(){
+  kbInit();
   navigate(jobs.length ? 'beranda' : 'beranda');
 
   // Cek status auto-selesai tugas begitu app dibuka, lalu ulangi tiap 1 menit

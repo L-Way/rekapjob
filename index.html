@@ -1505,12 +1505,14 @@
     transition:transform .34s cubic-bezier(.22,.68,0,1.01), width .34s cubic-bezier(.22,.68,0,1.01), opacity .2s ease;
   }
   .nav-indicator.show{opacity:1;}
-  @keyframes navContentInRight{ from{opacity:0; transform:translateX(26px);} to{opacity:1; transform:translateX(0);} }
-  @keyframes navContentInLeft{ from{opacity:0; transform:translateX(-26px);} to{opacity:1; transform:translateX(0);} }
-  @keyframes navContentInFade{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
-  #app.nav-anim-right{animation:navContentInRight .34s cubic-bezier(.22,.68,0,1.01) both;}
-  #app.nav-anim-left{animation:navContentInLeft .34s cubic-bezier(.22,.68,0,1.01) both;}
-  #app.nav-anim-fade{animation:navContentInFade .28s ease both;}
+  /* Jalur cadangan (perpindahan halaman yang dipicu kode, bukan klik tab). Transform akhirnya
+     "none" supaya #app tidak jadi penampung elemen fixed setelah animasi selesai. */
+  @keyframes navContentInRight{ from{opacity:0; transform:translate3d(24px,6px,0);} to{opacity:1; transform:none;} }
+  @keyframes navContentInLeft{ from{opacity:0; transform:translate3d(-24px,6px,0);} to{opacity:1; transform:none;} }
+  @keyframes navContentInFade{ from{opacity:0; transform:translate3d(0,10px,0);} to{opacity:1; transform:none;} }
+  #app.nav-anim-right{animation:navContentInRight .5s cubic-bezier(.16,1,.3,1) both;}
+  #app.nav-anim-left{animation:navContentInLeft .5s cubic-bezier(.16,1,.3,1) both;}
+  #app.nav-anim-fade{animation:navContentInFade .4s cubic-bezier(.16,1,.3,1) both;}
 
   /* ---------- 3. TOMBOL "NAIK KE ATAS" ---------- */
   .to-top-btn{
@@ -2288,6 +2290,20 @@
   .bn-tab .ic{width:20px; height:20px;}
   @media(max-width:340px){ .bn-tab{font-size:9px;} .bn-tab .ic{width:19px; height:19px;} }
 
+  /* Pil penanda tab aktif yang MENGALIR dari tab lama ke tab yang diketuk (digerakkan
+     updateBottomNavIndicator() di JS). Hanya memakai transform/opacity supaya mulus di HP. */
+  .bn-pill{position:relative;}
+  .bn-tab{position:relative; z-index:1; transition:color .38s ease, transform .12s ease;}
+  .bn-tab .ic{transition:transform .5s cubic-bezier(.34,1.3,.64,1);}
+  .bn-tab.active .ic{transform:translateY(-1px) scale(1.07);}
+  .bn-ind{
+    position:absolute; left:0; top:0; width:0; height:0; z-index:0; pointer-events:none;
+    border-radius:20px; background:var(--dash-chip); opacity:0;
+    transition:opacity .25s ease; will-change:transform;
+  }
+  .bn-pill.has-ind .bn-ind{opacity:1;}
+  .bn-pill.has-ind .bn-tab.active{background:transparent;}
+
   .more-sheet{border-radius:22px 22px 0 0; padding:8px 14px calc(16px + env(safe-area-inset-bottom,0px));}
   .more-grab{width:34px; margin-bottom:8px;}
   .more-title{font-size:14.5px; margin-bottom:8px;}
@@ -2765,6 +2781,7 @@
 
 <nav class="bottomnav" id="bottomNav" aria-label="Menu utama">
   <div class="bn-pill">
+    <span class="bn-ind" id="bnInd" aria-hidden="true"></span>
     <button type="button" class="bn-tab" data-nav-view="beranda"><svg class="ic" aria-hidden="true"><use href="#ic-nav-home"></use></svg><span>Beranda</span></button>
     <button type="button" class="bn-tab" data-nav-view="daftar"><svg class="ic" aria-hidden="true"><use href="#ic-nav-list"></use></svg><span>Daftar Job</span></button>
     <button type="button" class="bn-tab" data-nav-view="kalender"><svg class="ic" aria-hidden="true"><use href="#ic-nav-calendar"></use></svg><span>Kalender</span></button>
@@ -5895,7 +5912,50 @@ function syncBottomNav(view){
   document.getElementById('bnMore')?.classList.toggle('active', moreViews.includes(view));
   document.body.classList.toggle('view-form', view==='form');
   closeMoreSheet();
+  updateBottomNavIndicator(true);
 }
+/* Menggeser pil penanda ke tab yang sedang aktif. Lebarnya sama untuk semua tab (grid 5 kolom
+   sama lebar), jadi cukup transform + sedikit efek "melar" di tengah jalan supaya terasa
+   mengalir seperti cairan. Bila menu bawah sedang tersembunyi (mis. di form Input Job)
+   posisinya tidak diukur ulang; saat menu muncul lagi ResizeObserver menaruhnya di tempat. */
+let bnIndPos = null;
+function updateBottomNavIndicator(animate){
+  const pill = document.querySelector('#bottomNav .bn-pill');
+  const ind = document.getElementById('bnInd');
+  if(!pill || !ind) return;
+  const act = pill.querySelector('.bn-tab.active');
+  if(!act){ pill.classList.remove('has-ind'); bnIndPos = null; return; }
+  const w = act.offsetWidth, h = act.offsetHeight;
+  if(!w || !h) return; // menu bawah sedang tersembunyi
+  const x = act.offsetLeft, y = act.offsetTop;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  ind.style.width = w+'px'; ind.style.height = h+'px';
+  ind.style.borderRadius = getComputedStyle(act).borderRadius;
+  const to = 'translate3d('+x+'px,'+y+'px,0)';
+  const wasShown = pill.classList.contains('has-ind') && bnIndPos;
+  if(animate && wasShown && !reduce && ind.animate && (bnIndPos.x!==x || bnIndPos.y!==y)){
+    const fx = bnIndPos.x;
+    const stretch = Math.min(1.16, 1 + Math.abs(x - fx) / Math.max(w,1) * 0.045);
+    ind.getAnimations && ind.getAnimations().forEach(a=>a.cancel());
+    const mid = 'translate3d('+((fx+x)/2 - (w*(stretch-1))/2)+'px,'+y+'px,0) scaleX('+stretch+')';
+    ind.animate(
+      [{transform:'translate3d('+fx+'px,'+bnIndPos.y+'px,0)'},
+       {transform:mid, offset:.45},
+       {transform:to}],
+      {duration:560, easing:'cubic-bezier(.22,1,.36,1)'}
+    );
+  }
+  ind.style.transform = to;
+  bnIndPos = {x:x, y:y};
+  pill.classList.add('has-ind');
+}
+(function setupBottomNavIndicator(){
+  const pill = document.querySelector('#bottomNav .bn-pill');
+  if(!pill) return;
+  if(window.ResizeObserver) new ResizeObserver(()=>updateBottomNavIndicator(false)).observe(pill);
+  window.addEventListener('resize', ()=>updateBottomNavIndicator(false), {passive:true});
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>updateBottomNavIndicator(false));
+})();
 document.getElementById('bottomNav')?.addEventListener('click', (e)=>{
   const tab = e.target.closest('.bn-tab');
   if(!tab) return;
@@ -5905,7 +5965,7 @@ document.getElementById('bottomNav')?.addEventListener('click', (e)=>{
   }
   if(!tab.dataset.navView) return;
   editingId = null;
-  navigate(tab.dataset.navView);
+  navigateSmooth(tab.dataset.navView);
 });
 document.getElementById('moreBackdrop')?.addEventListener('click', ()=>closeMoreSheet());
 document.getElementById('moreList')?.addEventListener('click', (e)=>{
@@ -5913,7 +5973,7 @@ document.getElementById('moreList')?.addEventListener('click', (e)=>{
   if(!btn) return;
   editingId = null;
   closeMoreSheet();
-  navigate(btn.dataset.moreView);
+  navigateSmooth(btn.dataset.moreView);
 });
 document.addEventListener('keydown', (e)=>{
   if(e.key==='Escape') closeMoreSheet(true);
@@ -5932,6 +5992,90 @@ function playAppTransition(dir){
   if(dir==='right') app.classList.add('nav-anim-right');
   else if(dir==='left') app.classList.add('nav-anim-left');
   else app.classList.add('nav-anim-fade');
+}
+
+/* ---------- Perpindahan tab yang "mengalir" ----------
+   Dulu urutannya: render halaman baru (berat, memblokir layar) -> baru animasi diputar, plus
+   scroll halus ke atas yang berebut dengan animasi. Hasilnya patah-patah, terutama di tab
+   yang isinya banyak (Daftar Job, Kalender, Rekap, Tugas).
+   Sekarang:
+     1. Pil menu bawah langsung meluncur ke tab yang diketuk.
+     2. Halaman lama memudar & bergeser lembut (hanya opacity/transform = jalur GPU).
+     3. Saat halaman sudah tak terlihat, halaman baru dibangun & scroll dilompatkan ke atas
+        secara instan (tak kelihatan). Dua frame ditunggu supaya layout/paint yang berat
+        selesai selagi masih transparan.
+     4. Halaman baru mengalir masuk dari arah tab yang diklik dengan pelambatan yang halus.
+   Ketukan beruntun hanya mengganti tujuan akhir, tidak menumpuk animasi. */
+const NAV_ORDER = ['beranda','daftar','kalender','tugas','rekap','laporan','ulasan','pengaturan'];
+const NAV_SMOOTH = {token:0, leaving:false, target:null, dir:0, entered:true};
+function scrollToTopInstant(){
+  const el = document.documentElement, prev = el.style.scrollBehavior;
+  el.style.scrollBehavior = 'auto'; // html memakai scroll-behavior:smooth, ini menimpanya sesaat
+  window.scrollTo(0,0);
+  el.style.scrollBehavior = prev;
+}
+function navigateSmooth(view){
+  const app = document.getElementById('app');
+  const eff = (!isAdmin() && view==='form') ? 'beranda' : view;
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!app || typeof app.animate!=='function' || reduce || (!NAV_SMOOTH.leaving && eff===currentView)){
+    navigate(view);
+    return;
+  }
+  const from = NAV_SMOOTH.leaving ? NAV_SMOOTH.target : currentView;
+  const fi = NAV_ORDER.indexOf(from), ti = NAV_ORDER.indexOf(eff);
+  const dir = (fi===-1 || ti===-1 || fi===ti) ? 0 : (ti>fi ? 1 : -1);
+  NAV_SMOOTH.target = eff;
+  syncBottomNav(eff); // pil menu langsung mulai meluncur
+  if(NAV_SMOOTH.leaving){ if(dir) NAV_SMOOTH.dir = dir; return; } // sudah memudar: cukup ganti tujuan
+  NAV_SMOOTH.leaving = true; NAV_SMOOTH.entered = false; NAV_SMOOTH.dir = dir;
+  const token = ++NAV_SMOOTH.token;
+
+  // Mulai dari kondisi tampilan saat ini (kalau animasi masuk sebelumnya belum selesai, tidak "loncat").
+  const cs = getComputedStyle(app);
+  const fromOp = cs.opacity, fromTf = cs.transform;
+  app.getAnimations && app.getAnimations().forEach(a=>a.cancel());
+  app.classList.remove('nav-anim-right','nav-anim-left','nav-anim-fade');
+  app.style.willChange = 'opacity, transform';
+  app.style.pointerEvents = 'none'; // cegah ketukan nyasar pada halaman yang sedang pergi
+  const out = app.animate(
+    [{opacity:fromOp, transform:fromTf},
+     {opacity:0, transform:'translate3d('+(-NAV_SMOOTH.dir*14)+'px,0,0)'}],
+    {duration:190, easing:'cubic-bezier(.4,0,.8,.6)', fill:'forwards'}
+  );
+  const cleanup = ()=>{
+    app.style.willChange = ''; app.style.pointerEvents = '';
+    NAV_SMOOTH.entered = true;
+  };
+  out.onfinish = ()=>{
+    if(token!==NAV_SMOOTH.token) return;
+    const d = NAV_SMOOTH.dir;
+    NAV_SMOOTH.leaving = false;
+    try{
+      navigate(NAV_SMOOTH.target, {skipAnim:true, instantScroll:true});
+    }catch(err){
+      out.cancel(); cleanup(); throw err;
+    }
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(token!==NAV_SMOOTH.token) return;
+      out.cancel();
+      const inn = app.animate(
+        [{opacity:0, transform:'translate3d('+(d*28)+'px,8px,0)'},
+         {opacity:1, transform:'translate3d(0,0,0)'}],
+        {duration:560, easing:'cubic-bezier(.16,1,.3,1)'}
+      );
+      inn.onfinish = ()=>{ if(token===NAV_SMOOTH.token) cleanup(); };
+      inn.oncancel = ()=>{ if(token===NAV_SMOOTH.token) cleanup(); };
+    }));
+    // Jaring pengaman: kalau karena sebab apa pun animasi masuk tak pernah berjalan
+    // (mis. tab browser disembunyikan), pastikan halaman tidak tertinggal transparan.
+    setTimeout(()=>{
+      if(token===NAV_SMOOTH.token && !NAV_SMOOTH.entered && !document.hidden){
+        app.getAnimations && app.getAnimations().forEach(a=>a.cancel());
+        cleanup();
+      }
+    }, 1600);
+  };
 }
 
 /* ---------- Tombol "kembali ke atas" ----------
@@ -6113,19 +6257,21 @@ function navigate(view, opts){
   // Urutan ini dipakai untuk menentukan arah animasi "berjalan pindah" (lihat
   // playAppTransition): kalau tab tujuan ada di sebelah kanan tab sebelumnya
   // di menu bawah, halaman baru masuk dari kanan, begitu juga sebaliknya.
-  const NAV_ORDER = ['beranda','daftar','kalender','tugas','rekap','laporan','ulasan','pengaturan'];
   const prevView = currentView;
   const isTabSwitch = prevView !== view;
   currentView = view;
   syncBottomNav(view);
   if(!(opts && opts.fromBack)) kbOnNavigate(prevView, view);
   render();
-  if(isTabSwitch){
+  if(isTabSwitch && !(opts && opts.skipAnim)){
     const fromIdx = NAV_ORDER.indexOf(prevView), toIdx = NAV_ORDER.indexOf(view);
     const dir = (fromIdx===-1 || toIdx===-1) ? null : (toIdx>fromIdx ? 'right' : 'left');
     playAppTransition(dir);
   }
-  window.scrollTo({top:0,behavior:'smooth'});
+  // Jalur klik tab (navigateSmooth) melompat ke atas secara instan selagi halaman masih
+  // transparan; jalur lain tetap scroll halus seperti sebelumnya.
+  if(opts && opts.instantScroll) scrollToTopInstant();
+  else window.scrollTo({top:0,behavior:'smooth'});
   if(view==='ulasan') pullUlasanFromCloud();
   if(view==='form' && isAdmin()) pullTeamAccountsPublic();
   if(view==='tugas' && isAdmin()) pullAkunFromCloud();
@@ -12131,7 +12277,7 @@ function attachHandlers(){
   // (tombol "Cadangkan Sekarang" di banner beranda sudah dihapus — cadangkan data sekarang
   // dilakukan lewat menu Pengaturan, karena data utama sudah tersinkron otomatis ke cloud)
   document.querySelectorAll('[data-goto]').forEach(el=>{
-    el.addEventListener('click', ()=> navigate(el.dataset.goto));
+    el.addEventListener('click', ()=> navigateSmooth(el.dataset.goto));
   });
   document.querySelectorAll('[data-open-status-list]').forEach(el=>{
     el.addEventListener('click', ()=> openStatusListModal(el.dataset.openStatusList, el.dataset.statusScope));
@@ -12449,6 +12595,8 @@ const CHANGELOG = [
     version: '1.14.1',
     tanggal: '2 Oktober 2026',
     items: [
+      { kategori: 'Peningkatan', teks: 'Perpindahan antar tab di menu bawah kini jauh lebih halus. Penanda tab aktif meluncur mengalir ke tab yang diketuk, halaman lama memudar pelan, lalu halaman baru mengalir masuk dari arah tab tujuan.' },
+      { kategori: 'Perbaikan', teks: 'Perpindahan ke tab yang isinya banyak (misalnya Daftar Job dan Kalender) tidak lagi terasa tersendat. Halaman disiapkan saat masih transparan, dan layar langsung kembali ke atas tanpa gulir yang berebut dengan animasi.' },
       { kategori: 'Peningkatan', teks: 'Tombol Kembali (di HP maupun browser) tidak lagi langsung menutup aplikasi. Ia menutup lapisan paling atas lebih dulu: pop-up, menu Lainnya, atau panel notifikasi. Setelah itu ia mundur ke halaman sebelumnya. Di Beranda, tekan Kembali dua kali untuk keluar.' },
       { kategori: 'Peningkatan', teks: 'Tombol \"Ambil & Isi\" dari Pricelist sekarang membaca ulang setiap kolom setelah diisi. Laporannya memisahkan kolom yang benar-benar masuk dan terverifikasi dari kolom yang ditolak form (misalnya jam yang formatnya tidak valid), jadi tidak ada lagi kolom yang tampak terisi padahal kosong.' },
       { kategori: 'Perbaikan', teks: 'Kolom di data pricelist yang belum punya kolom di form (misalnya kolom baru yang ditambahkan di formulir website) tidak lagi hilang diam-diam. Isinya dipindahkan ke Catatan dan namanya disebut di laporan.' },

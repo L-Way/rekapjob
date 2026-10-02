@@ -540,6 +540,66 @@
   .task-bonus-detail{font-size:11px;color:#5c4a12;margin-top:5px;line-height:1.6; overflow-wrap:break-word;}
   .task-bonus-detail b{color:#231f0f;}
   .bonus-adjust-btn{background:#231f0f;color:var(--gold-light);border:none;padding:8px 14px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;}
+  /* Rincian bonus: total = sudah diklaim + siap diklaim + masa tunggu */
+  .task-bonus-label.bb-label{text-transform:none; letter-spacing:0; font-size:13px; font-weight:600;}
+  .bb-hours{font-size:12px; color:var(--ink-soft); margin-top:8px; line-height:1.5;}
+  .bb-hours b{color:var(--ink);}
+  .bb-bar{display:flex; height:10px; border-radius:999px; overflow:hidden; background:#efe6bb; margin:10px 0 12px;}
+  .bb-bar i{display:block; height:100%; min-width:0;}
+  .bb-bar .bb-c{background:#8d8467;}
+  .bb-bar .bb-r{background:var(--ok);}
+  .bb-bar .bb-w{background:repeating-linear-gradient(45deg,#e0a800 0 5px,#f4d93e 5px 10px);}
+  .bb-list{margin:0; padding:0; list-style:none; display:grid; gap:10px;}
+  .bb-item{display:grid; grid-template-columns:10px minmax(0,1fr) auto; column-gap:10px; align-items:start;}
+  .bb-dot{width:10px; height:10px; border-radius:50%; margin-top:5px;}
+  .bb-dot.c{background:#8d8467;}
+  .bb-dot.r{background:var(--ok);}
+  .bb-dot.w{background:repeating-linear-gradient(45deg,#e0a800 0 3px,#f4d93e 3px 6px);}
+  .bb-name{font-size:13px; font-weight:600; color:var(--ink); line-height:1.35;}
+  .bb-note{font-size:11.5px; color:var(--ink-soft); line-height:1.5; margin-top:1px; overflow-wrap:anywhere;}
+  .bb-amt{font-size:13px; font-weight:700; color:var(--ink); white-space:nowrap; line-height:1.35;}
+  .bb-item.r .bb-amt{color:var(--ok);}
+  .bb-empty{font-size:12px; color:var(--ink-soft); margin-top:8px;}
+  /* Angka utama = bonus yang masih bisa diklaim; total keseluruhan hanya rujukan di bawahnya */
+  .task-bonus-amount.bb-main-amt{font-size:30px; line-height:1.15; margin-top:2px;}
+  @media(max-width:640px){ .task-bonus-amount.bb-main-amt{font-size:28px;} }
+  .bb-main-cap{display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:var(--ok); margin-top:3px;}
+  .bb-main-cap .ic{width:14px; height:14px;}
+  .bb-main-cap.off{color:var(--ink-soft); font-weight:500;}
+  .bb-total{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-top:14px; padding-top:12px; border-top:1px dashed var(--gold-light); font-size:12.5px; color:var(--ink-soft);}
+  .bb-total b{color:var(--ink); font-size:13px; white-space:nowrap;}
+  .bb-total + .bb-hours{margin-top:2px;}
+
+  /* Kartu klaim bonus menunggu diproses (Admin) */
+  .pc-list{display:grid; gap:12px; margin-top:14px;}
+  .pc-card{display:grid; gap:12px 16px; padding:14px; background:#fff; border:1px solid var(--line); border-radius:12px;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"top" "amt" "ml" "foot";}
+  .pc-top{grid-area:top; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; min-width:0;}
+  .pc-who{min-width:0;}
+  .pc-name{font-weight:700; font-size:14.5px; color:var(--ink); line-height:1.3; overflow-wrap:anywhere;}
+  .pc-time{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .pc-amt-wrap{grid-area:amt; min-width:0;}
+  .pc-amt{font-family:'Fraunces',serif; font-weight:700; font-size:24px; line-height:1.15; color:var(--ok); white-space:nowrap;}
+  .pc-sub{font-size:11.5px; color:var(--ink-soft); margin-top:2px; line-height:1.45;}
+  .pc-ml{grid-area:ml; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; background:#f8f4fe; border:1px solid #e6dcf8; border-radius:10px; min-width:0;}
+  .pc-ml-grid{display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; align-items:baseline; min-width:0;}
+  .pc-k{font-size:11.5px; color:var(--ink-soft);}
+  .pc-v{font-size:14px; font-weight:700; color:var(--ink); letter-spacing:.2px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere;}
+  .pc-copy{flex-shrink:0; display:inline-flex; align-items:center; gap:5px; padding:7px 12px;}
+  .pc-foot{grid-area:foot; display:flex;}
+  .pc-act{width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:12px 16px; font-size:13px;}
+  .pc-act .ic{width:15px; height:15px;}
+  .pc-card.no-ml{grid-template-areas:"top" "amt" "foot";}
+  @media(min-width:720px){
+    .pc-card{grid-template-columns:minmax(0,1fr) auto; align-items:center;
+      grid-template-areas:"top amt" "ml foot";}
+    .pc-card.no-ml{grid-template-areas:"top amt" "foot foot";}
+    .pc-top{justify-content:flex-start; gap:12px;}
+    .pc-amt-wrap{text-align:right;}
+    .pc-foot{justify-content:flex-end;}
+    .pc-act{width:auto; padding:10px 18px;}
+  }
   .bonus-modal-current{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin:14px 0 18px;}
   .bonus-modal-current .bmc-box{background:#fffdf6;border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
   .bonus-modal-current .bmc-label{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;}
@@ -5208,6 +5268,96 @@ function userClaimableBulanList(userId){ return userFinishedBulanList(userId); }
 function userClaimableBonusRupiah(userId){
   return Math.max(0, userFinishedBonusRupiah(userId) - userClaimedTotalRupiah(userId));
 }
+// Rincian bonus satu akun untuk ditampilkan: total = sudah diklaim + siap diklaim + masa tunggu.
+function userBonusBreakdown(userId){
+  const total = userBonusRupiah(userId);
+  const finished = userFinishedBonusRupiah(userId);
+  const claimed = userClaimedTotalRupiah(userId);
+  const ready = userClaimableBonusRupiah(userId);
+  const pendingRp = userPendingBonusClaims(userId).reduce((s,c)=>s+(Number(c.jumlah)||0),0);
+  const waiting = Math.max(0, total - finished);
+  const waitMonths = userBonusMonthsAll(userId)
+    .filter(b=>!isBulanSudahSelesai(b) && userTotalBonusHoursBulan(userId,b)>0)
+    .map(b=>({ label: fmtBulanLabel(b), mulai: tanggalMulaiBolehKlaim(b),
+               rp: Math.round(Math.max(0,userTotalBonusHoursBulan(userId,b)) * BONUS_PER_JAM) }));
+  return { total, claimed, ready, pendingRp, waiting, waitMonths,
+           taskHrs: userTaskHours(userId), adjHrs: userBonusAdjustHours(userId),
+           totalHrs: Math.max(0, userTotalBonusHours(userId)) };
+}
+// Keterangan di bawah angka utama kartu bonus.
+function bonusHeadCaption(ready){
+  return ready>0
+    ? `<div class="bb-main-cap">${ic('check-circle')} Siap diklaim sekarang</div>`
+    : `<div class="bb-main-cap off">Belum ada yang bisa diklaim</div>`;
+}
+// Satu kartu klaim bonus yang menunggu diproses Admin.
+function renderPendingClaimCard(c){
+  const isWdp = c.jenis==='WDP';
+  const sub = [];
+  if(isWdp && c.qty && c.hargaWdp) sub.push(`${claimQty(c)} WDP × ${fmtRp(c.hargaWdp)}`);
+  else if(!isWdp) sub.push('Dicairkan tunai');
+  if(Number(c.jam)>0) sub.push(`dari ${fmtTaskHours(c.jam)} kerja`);
+  const salin = escapeHtml((c.mlId||'-')+' (Server '+(c.mlZone||'-')+')');
+  return `
+    <div class="pc-card${isWdp?'':' no-ml'}">
+      <div class="pc-top">
+        <div class="pc-who">
+          <div class="pc-name">${escapeHtml(c.username)}</div>
+          <div class="pc-time">Mengajukan ${escapeHtml(formatCommentTime(c.createdAt))}</div>
+        </div>
+        <span class="claim-type-badge ${isWdp?'wdp':'tunai'}">${isWdp?ic('sparkle'):ic('money')} ${claimJenisLabel(c)}</span>
+      </div>
+      <div class="pc-amt-wrap">
+        <div class="pc-amt">${fmtRp(c.jumlah)}</div>
+        ${sub.length ? `<div class="pc-sub">${sub.join(' · ')}</div>` : ''}
+      </div>
+      ${isWdp ? `
+      <div class="pc-ml">
+        <div class="pc-ml-grid">
+          <span class="pc-k">ID Game</span><b class="pc-v">${escapeHtml(c.mlId||'-')}</b>
+          <span class="pc-k">Server</span><b class="pc-v">${escapeHtml(c.mlZone||'-')}</b>
+        </div>
+        <button type="button" class="claim-copy-btn pc-copy" data-copy-ml="${salin}">${ic('clipboard')} Salin</button>
+      </div>` : ''}
+      <div class="pc-foot">
+        <button type="button" class="bonus-cair-btn pc-act" data-cairkan-bonus="${escapeHtml(c.id)}">${ic('check-circle')} ${isWdp?'Tandai Terkirim':'Cairkan'}</button>
+      </div>
+    </div>`;
+}
+// HTML rincian bonus: dasar hitungan, batang proporsi, lalu tiga baris penjelasan.
+// who: 'admin' (dilihat Admin) atau 'tim' (dilihat akun Tim sendiri).
+function renderBonusBreakdown(userId, who){
+  const b = userBonusBreakdown(userId);
+  const seg = b.claimed + b.ready + b.waiting;
+  const pct = v => seg>0 ? (v/seg*100).toFixed(2) : 0;
+  const dasar = b.adjHrs
+    ? `Dihitung dari <b>${fmtTaskHours(b.taskHrs)}</b> kerja ${b.adjHrs>0?'+':'−'} <b>${fmtTaskHours(Math.abs(b.adjHrs))}</b> penyesuaian Admin = <b>${fmtTaskHours(b.totalHrs)}</b> × ${fmtRp(BONUS_PER_JAM)} per jam`
+    : `Dihitung dari <b>${fmtTaskHours(b.totalHrs)}</b> kerja × ${fmtRp(BONUS_PER_JAM)} per jam`;
+  if(seg<=0) return `<div class="bb-hours">${dasar}</div><div class="bb-empty">Belum ada bonus yang tercatat.</div>`;
+
+  const rows = [];
+  if(b.claimed>0){
+    const note = b.pendingRp<=0 ? 'Sudah diproses Admin'
+      : (b.pendingRp>=b.claimed ? 'Masih menunggu diproses Admin'
+         : `${fmtRp(b.pendingRp)} masih menunggu diproses Admin, sisanya sudah selesai`);
+    rows.push(`<li class="bb-item c"><span class="bb-dot c"></span><div><div class="bb-name">Sudah diklaim</div><div class="bb-note">${note}</div></div><div class="bb-amt">${fmtRp(b.claimed)}</div></li>`);
+  }
+  rows.push(`<li class="bb-item r"><span class="bb-dot r"></span><div><div class="bb-name">Siap diklaim sekarang</div><div class="bb-note">${
+    b.ready>0 ? (who==='tim' ? 'Bisa diajukan lewat tombol Klaim Bonus' : 'Bisa diajukan akun Tim kapan saja') : 'Belum ada yang bisa diklaim'
+  }</div></div><div class="bb-amt">${fmtRp(b.ready)}</div></li>`);
+  if(b.waiting>0){
+    const note = b.waitMonths.length
+      ? b.waitMonths.map(m=>`Bonus ${escapeHtml(m.label)} (${fmtRp(m.rp)}), bisa diklaim mulai ${escapeHtml(m.mulai)}`).join('<br>')
+      : 'Belum bisa diklaim';
+    rows.push(`<li class="bb-item w"><span class="bb-dot w"></span><div><div class="bb-name">Masa tunggu</div><div class="bb-note">${note}</div></div><div class="bb-amt">${fmtRp(b.waiting)}</div></li>`);
+  }
+  return `<div class="bb-total"><span>Total keseluruhan (termasuk yang sudah diklaim)</span><b>${fmtRp(b.total)}</b></div>
+    <div class="bb-hours">${dasar}</div>
+    <div class="bb-bar" role="img" aria-label="Pembagian total bonus">
+      <i class="bb-c" style="width:${pct(b.claimed)}%"></i><i class="bb-r" style="width:${pct(b.ready)}%"></i><i class="bb-w" style="width:${pct(b.waiting)}%"></i>
+    </div>
+    <ul class="bb-list">${rows.join('')}</ul>`;
+}
 // Bulan bonus PALING AWAL yang masih dalam masa tunggu (belum boleh diklaim) — dipakai untuk
 // memberi tahu Tim kapan bonus itu mulai masuk saldo. null kalau tidak ada yang menunggu.
 function userNextClaimInfo(userId){
@@ -6572,7 +6722,7 @@ function viewBeranda(){
   ] : [
     {v: moneyHtml(honorSayaBulanIni),         l:'Honor job bulan ini', attr:'data-open-stat="honor"'},
     {v: `${thisMonthJobs.length} job`,        l:'Terjadwal bulan ini', attr:'data-open-stat="terjadwal"'},
-    {v: moneyHtml(userBonusRupiah(currentUserId)), l:'Bonus saya', attr:'data-goto="tugas"'},
+    {v: moneyHtml(userClaimableBonusRupiah(currentUserId)), l:'Bonus siap diklaim', attr:'data-goto="tugas"'},
     {v: escapeHtml(fmtTaskHours(Math.max(0,userTotalBonusHours(currentUserId)))), l:'Jam kerja saya', attr:'data-goto="tugas"'}
   ];
   // Keempat kartu adalah tombol: ketuk untuk melihat rincian (pop-up) atau, untuk Bonus & Jam
@@ -10204,23 +10354,13 @@ function viewTugas(){
       <div class="task-bonus-box">
         <div class="task-bonus-row">
           <div>
-            <div class="task-bonus-label">${ic('money')} Bonus Tim (${fmtRp(BONUS_PER_JAM)}/jam)</div>
-            <div class="task-bonus-amount">${fmtRp(bonusRp)}</div>
+            <div class="task-bonus-label bb-label">${ic('money')} Bonus Tim</div>
+            <div class="task-bonus-amount bb-main-amt">${fmtRp(claimableRp)}</div>
+            ${bonusHeadCaption(claimableRp)}
           </div>
           <button type="button" class="bonus-adjust-btn" data-bonus-adjust="${escapeHtml(a.id)}">${ic('settings')} Atur Bonus</button>
         </div>
-        <div class="task-bonus-detail">
-          Jam kerja: <b>${fmtTaskHours(hrs)}</b>
-          ${adjustHrs ? ` &nbsp;${adjustHrs>0?'+':'−'} penyesuaian: <b>${fmtTaskHours(Math.abs(adjustHrs))}</b>` : ''}
-          &nbsp;${ic('arrow-right')} Total: <b>${fmtTaskHours(Math.max(0,totalBonusHrs))}</b>
-        </div>
-        <div class="task-bonus-detail" style="margin-top:4px;">
-          ${claimableRp>0
-            ? `${ic('check-circle')} Total bonus siap diklaim: <b>${fmtRp(claimableRp)}</b>${claimedRp>0 ? ` <span style="color:var(--ink-soft);">(sudah diklaim ${fmtRp(claimedRp)})</span>` : ''}`
-            : (nextClaimInfo
-              ? `${ic('hourglass')} Belum bisa diklaim — bonus bulan ${fmtBulanLabel(nextClaimInfo.bulan)} baru bisa diklaim mulai ${nextClaimInfo.tanggalMulai}.`
-              : (claimedRp>0 ? `${ic('check-circle')} Seluruh bonus yang bisa diklaim sudah diajukan <span style="color:var(--ink-soft);">(total diklaim ${fmtRp(claimedRp)})</span>.` : `${ic('hourglass')} Belum ada bonus yang bisa diklaim.`))}
-        </div>
+        ${renderBonusBreakdown(a.id, 'admin')}
       </div>
     </div>`;
   }).join('') : '';
@@ -10244,34 +10384,24 @@ function viewTugas(){
       <div class="task-stat"><div class="ts-label">Belum Selesai</div><div class="ts-value">${visibleTasks.length-done}</div></div>
       <div class="task-stat"><div class="ts-label">Total Jam</div><div class="ts-value">${fmtTaskHours(totalHours)}</div></div>
       <div class="task-stat"><div class="ts-label">Job Mendatang</div><div class="ts-value">${upcoming}</div></div>
-      <div class="task-stat green"><div class="ts-label">${mine?'Bonus Saya':'Total Bonus Tim'}</div><div class="ts-value">${fmtRp(totalBonusRupiah)}</div></div>
+      <div class="task-stat green"><div class="ts-label">${mine?'Bonus Siap Diklaim':'Total Bonus Tim'}</div><div class="ts-value">${fmtRp(mine ? myClaimableRp : totalBonusRupiah)}</div></div>
     </div>
 
     ${mine ? `
     <div class="task-bonus-box" style="margin:0 0 18px;">
       <div class="task-bonus-row">
         <div>
-          <div class="task-bonus-label">${ic('money')} Bonus Saya (${fmtRp(BONUS_PER_JAM)}/jam)</div>
-          <div class="task-bonus-amount">${fmtRp(userBonusRupiah(currentUserId))}</div>
+          <div class="task-bonus-label bb-label">${ic('money')} Bonus Saya</div>
+          <div class="task-bonus-amount bb-main-amt">${fmtRp(myClaimableRp)}</div>
+          ${bonusHeadCaption(myClaimableRp)}
         </div>
         <button type="button" class="bonus-claim-btn" id="btnClaimBonus" ${myClaimableRp>=Math.min(MIN_KLAIM_TUNAI,MIN_KLAIM_WDP)?'':'disabled'} title="${escapeHtml(claimButtonTitle(myClaimableRp, myNextClaim))}">${ic('phone')} Klaim Bonus</button>
       </div>
-      <div class="task-bonus-detail">
-        Jam kerja dari tugas: <b>${fmtTaskHours(userTaskHours(currentUserId))}</b>
-        ${userBonusAdjustHours(currentUserId) ? ` &nbsp;${userBonusAdjustHours(currentUserId)>0?'+':'−'} penyesuaian Admin: <b>${fmtTaskHours(Math.abs(userBonusAdjustHours(currentUserId)))}</b>` : ''}
-        &nbsp;${ic('arrow-right')} Total jam bonus: <b>${fmtTaskHours(Math.max(0,userTotalBonusHours(currentUserId)))}</b>
-      </div>
-      <div class="task-bonus-detail" style="margin-top:4px;">
-        ${ic('check-circle')} Total bonus siap diklaim: <b>${fmtRp(myClaimableRp)}</b>${myClaimedTotal>0 ? ` <span style="color:var(--ink-soft);">(sudah diklaim ${fmtRp(myClaimedTotal)})</span>` : ''}
-      </div>
+      ${renderBonusBreakdown(currentUserId, 'tim')}
       ${myPendingClaims.map(c=>`
       <div class="bonus-claim-alert">
         <span><span class="claim-type-badge ${c.jenis==='WDP'?'wdp':'tunai'}">${c.jenis==='WDP'?ic('sparkle'):ic('money')} ${claimJenisLabel(c)}</span> klaim sebesar <b>${fmtRp(c.jumlah)}</b> diajukan ${escapeHtml(formatCommentTime(c.createdAt))} — sudah dikirim ke WhatsApp Admin, menunggu ${claimVerbMenunggu(c)}.${c.jenis==='WDP'?` (ID Game: ${escapeHtml(c.mlId||'-')}, Server: ${escapeHtml(c.mlZone||'-')})`:''}</span>
       </div>`).join('')}
-      ${myNextClaim ? `
-      <div class="task-bonus-detail" style="margin-top:4px;">
-        ${ic('hourglass')} Bonus bulan <b>${escapeHtml(myNextClaim.label)}</b> baru masuk saldo klaim tanggal <b>${escapeHtml(myNextClaim.tanggalMulai)}</b>.
-      </div>` : ''}
       ${userBonusAdjustments(currentUserId).length ? `
       <div class="bonus-adjust-list">
         ${userBonusAdjustments(currentUserId).map(b=>`
@@ -10339,21 +10469,8 @@ function viewTugas(){
     ${pendingClaimsList.length ? `
     <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;border:1.5px solid var(--gold-light);">
       <div class="section-title" style="margin-top:0;">${ic('phone')} Klaim Bonus Menunggu Diproses (${pendingClaimsList.length})</div>
-      <div class="bonus-adjust-list">
-        ${pendingClaimsList.map(c=>{ const isWdp = c.jenis==='WDP'; const metaExtra = Number(c.jam)>0 ? ` · ${fmtTaskHours(c.jam)} jam kerja` : (isWdp && c.qty && c.hargaWdp ? ` · ${claimQty(c)} × ${fmtRp(c.hargaWdp)}` : ''); return `
-          <div class="bonus-adjust-item">
-            <div>
-              <div class="bonus-adjust-note"><b>${escapeHtml(c.username)}</b> mengajukan klaim <span class="claim-type-badge ${isWdp?'wdp':'tunai'}">${isWdp?ic('sparkle'):ic('money')} ${claimJenisLabel(c)}</span></div>
-              <div class="bonus-adjust-meta">${escapeHtml(formatCommentTime(c.createdAt))}${metaExtra}</div>
-              ${isWdp ? `<div class="claim-ml-info">${ic('user')} ID Game: <b>${escapeHtml(c.mlId||'-')}</b> &middot; Server: <b>${escapeHtml(c.mlZone||'-')}</b>
-                <button type="button" class="claim-copy-btn" data-copy-ml="${escapeHtml((c.mlId||'-')+' (Server '+(c.mlZone||'-')+')')}">${ic('clipboard')} Salin</button></div>` : ''}
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div class="bonus-adjust-jam plus">${fmtRp(c.jumlah)}</div>
-              <button type="button" class="bonus-cair-btn" data-cairkan-bonus="${escapeHtml(c.id)}">${ic('check-circle')} ${isWdp?'Tandai Terkirim':'Cairkan'}</button>
-            </div>
-          </div>
-        `; }).join('')}
+      <div class="pc-list">
+        ${pendingClaimsList.map(renderPendingClaimCard).join('')}
       </div>
     </div>` : ''}
 
@@ -12755,7 +12872,7 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.15.1'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.15.3'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan

@@ -24,3 +24,9 @@ Notifikasi Real-Time (dari update sebelumnya)
 Pasang di HP:
   Android (Chrome)  : muncul tombol "Pasang", atau menu titik tiga > Instal aplikasi / Tambahkan ke layar utama
   iPhone (Safari)   : tombol Bagikan > Tambah ke Layar Utama
+
+NOTIFIKASI PUSH (aplikasi DITUTUP) — v1.15.1
+- sw.js sekarang service worker asli dan memuat push-handler.js (importScripts di baris pertama).
+- Server: Edge Function "send-push" di Supabase; kunci privat VAPID tersimpan di Supabase Vault.
+- Semua file (index.html, sw.js, push-handler.js, manifest, icons) harus di-upload bersama ke hosting HTTPS.
+- Tiap pengguna: buka aplikasi > izinkan notifikasi > (iPhone: wajib Tambah ke Layar Utama dulu, iOS 16.4+).

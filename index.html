@@ -510,7 +510,8 @@
 
 
   /* ---------- PEMBAGIAN TUGAS TIM ---------- */
-  .task-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:16px 0 20px;}
+  .task-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0 20px;}
+  @media(min-width:1180px){ .task-summary-grid{grid-template-columns:repeat(6,minmax(0,1fr));} }
   .task-stat{background:#fffef9;border:1px solid var(--line);border-radius:12px;padding:15px 16px;box-shadow:var(--shadow); min-width:0; overflow:hidden;}
   .task-stat .ts-label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;}
   .task-stat .ts-value{font-family:'Fraunces',serif;font-size:25px;font-weight:700;margin-top:3px;color:#241f0f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
@@ -569,6 +570,25 @@
   .bb-total{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-top:14px; padding-top:12px; border-top:1px dashed var(--gold-light); font-size:12.5px; color:var(--ink-soft);}
   .bb-total b{color:var(--ink); font-size:13px; white-space:nowrap;}
   .bb-total + .bb-hours{margin-top:2px;}
+
+  /* Header & tile ringkasan Pembagian Tugas: angka + keterangan + (opsional) batang progres */
+  .tg-actions{display:flex; gap:8px; align-items:stretch;}
+  .tg-sub{font-size:12px; color:var(--ink-soft); margin-top:4px; line-height:1.45;}
+  .task-stat .ts-sub{font-size:11.5px; color:var(--ink-soft); margin-top:5px; line-height:1.4;}
+  .task-stat .ts-sub.warn{color:var(--warn); font-weight:600;}
+  .task-stat.gold .ts-sub{color:#231f0f; opacity:.78;}
+  .task-stat.green .ts-sub{color:#12300f; opacity:.8;}
+  .task-stat .ts-bar{height:5px; border-radius:999px; background:#efe6bb; margin-top:8px; overflow:hidden;}
+  .task-stat .ts-bar i{display:block; height:100%; border-radius:999px; background:var(--ok);}
+
+  /* Kartu Bonus Tim (Admin): angka utama + rincian + pengaturan & dampak */
+  .tbc{margin:0 0 18px;}
+  .tbc-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:14px; padding-top:14px; border-top:1px dashed var(--gold-light);}
+  .tbc-item{background:rgba(255,255,255,.6); border:1px solid #efe2a8; border-radius:10px; padding:9px 11px; min-width:0;}
+  .tbc-k{font-size:10.5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .tbc-v{font-size:14px; font-weight:700; color:var(--ink); margin-top:2px; white-space:nowrap;}
+  .tbc-n{font-size:11px; color:var(--ink-soft); margin-top:2px; line-height:1.4;}
+  @media(max-width:380px){ .tbc-grid{grid-template-columns:1fr;} }
 
   /* Kartu klaim bonus menunggu diproses (Admin) */
   .pc-list{display:grid; gap:12px; margin-top:14px;}
@@ -640,6 +660,9 @@
   .report-note-form{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
   .report-note-form textarea{flex:1;min-width:180px;}
   .task-ket{white-space:pre-wrap;min-width:180px;max-width:320px;line-height:1.45;}
+  .task-table .t-role-inline, .task-table .t-lbl{display:none;}
+  .task-table .row-actions{flex-wrap:nowrap;}
+  .task-table .row-actions .icon-btn{flex:none; min-width:34px; display:inline-flex; align-items:center; justify-content:center;}
   @media(max-width:720px){.task-ket{min-width:130px;max-width:220px;}}
   .task-comment-btn{position:relative;}
   .task-comment-count{
@@ -1395,6 +1418,11 @@
     .task-bonus-amount{font-size:16px;}
     .task-bonus-detail{font-size:10px;}
     .bonus-adjust-btn{padding:7px 11px; font-size:11px;}
+    .tg-actions{width:100%;}
+    .tg-actions .btn-primary{flex:1 1 auto;}
+    .tg-actions .btn-outline{flex:0 0 auto;}
+    .tg-actions .btn-outline:only-child{flex:1 1 auto;}
+    .task-stat .ts-sub{font-size:10.5px;}
 
     .form-actions{justify-content:stretch;}
     .form-actions .btn{flex:1; text-align:center;}
@@ -1752,6 +1780,33 @@
     }
     table.jobtable td.row-actions::before{display:none;}
     table.jobtable td.row-actions .icon-btn{width:100%; text-align:center;}
+
+    /* ---- Kartu tugas (Rekap Tugas Detail) di HP: ringkas, tanpa pemisah per baris ----
+       Baris 1: akun + role | status. Baris 2: job. Baris 3: tanggal | jam.
+       Baris 4: keterangan (hanya jika ada). Baris 5: tombol aksi dalam satu baris. */
+    table.jobtable.task-table tr{
+      display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:12px; row-gap:6px;
+      grid-template-areas:"person status" "job job" "date time" "ket ket" "act act";
+      align-items:center; padding:14px;
+    }
+    table.jobtable.task-table td{display:block; padding:0; border:none; overflow:visible; min-width:0;}
+    table.jobtable.task-table td::before{display:none;}
+    .task-table .t-person{grid-area:person; display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; font-size:15px;}
+    .task-table .t-role{display:none !important;}
+    .task-table .t-role-inline{display:inline-block;}
+    .task-table .t-status{grid-area:status; justify-self:end;}
+    .task-table .t-job{grid-area:job; padding-top:2px; font-size:13.5px; line-height:1.4;}
+    .task-table .t-date{grid-area:date; font-size:12.5px; color:var(--ink-soft); font-weight:600;}
+    .task-table .t-time{grid-area:time; justify-self:end; text-align:right; font-size:12.5px;}
+    .task-table .t-time .t-hrs{display:inline; margin-left:6px; font-size:12px; color:var(--ink-soft);}
+    .task-table .t-ket{grid-area:ket; margin-top:2px;}
+    .task-table .t-ket.is-empty{display:none;}
+    .task-table .t-ket .task-ket{min-width:0; max-width:none; font-size:12.5px; color:#5b5236; background:#faf6e5; border-radius:8px; padding:8px 10px;}
+    .task-table .t-act{grid-area:act; margin-top:6px; padding-top:12px; border-top:1px solid var(--line);}
+    .task-table .row-actions{display:flex; gap:8px; width:100%;}
+    .task-table .row-actions .icon-btn{flex:0 0 46px; width:46px; min-height:42px; padding:0; display:inline-flex; align-items:center; justify-content:center;}
+    .task-table .row-actions .icon-btn.t-toggle{flex:1 1 auto; width:auto; padding:0 14px; gap:7px; font-weight:600;}
+    .task-table .t-lbl{display:inline;}
 
     /* Tabel Rekap (bukan jobtable) tetap tabel biasa yang digeser ke samping. */
     table.rekaptable{font-size:12.5px;}
@@ -2418,6 +2473,47 @@
   .dash .ayat-arab{font-size:17px; line-height:1.9; margin-bottom:6px;}
   .dash .ayat-arti{font-size:12px; line-height:1.5;}
   .dash .ayat-ref{font-size:10.5px; margin-top:6px;}
+
+  /* ---------- Beranda v2: lebih detail, tetap ringkas & konsisten ---------- */
+  .dash-sec{display:flex; align-items:baseline; justify-content:space-between; gap:10px;}
+  .dash-sec small{font:500 11.5px 'Poppins',sans-serif; color:var(--dash-muted); white-space:nowrap;}
+  .dash-link{display:inline-flex; align-items:center; gap:2px; border:none; background:none; padding:2px 0; font:600 12px 'Poppins',sans-serif; color:var(--dash-gold-ink); white-space:nowrap;}
+  .dash-link:hover{transform:none; text-decoration:underline;}
+  .dash-link .ic{width:14px; height:14px;}
+
+  .dash-next-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .dash-when{padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; background:#fff; border:1px solid var(--dash-line); color:var(--dash-ink); white-space:nowrap;}
+  .dash-when.now{background:var(--dash-gold); border-color:var(--dash-gold); color:#241b00;}
+  .dash-det{list-style:none; margin:12px 0 0; padding:12px 0 0; border-top:1px dashed var(--dash-line); display:grid; gap:9px;}
+  .dash-det li{display:flex; gap:10px; align-items:flex-start; font-size:12.5px; line-height:1.45; color:var(--dash-ink); min-width:0;}
+  .dash-det .ic{width:16px; height:16px; flex:none; margin-top:1px; color:var(--dash-gold-ink);}
+  .dash-det li > span{min-width:0; overflow-wrap:anywhere;}
+  .dash-det .mut{color:var(--dash-muted);}
+  .pay-pill{display:inline-block; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; background:var(--dash-chip); color:var(--dash-gold-ink);}
+  .pay-pill.ok{background:#e5f5e6; color:var(--ok);}
+  .pay-pill.no{background:#fdecea; color:var(--danger);}
+
+  .dash-week{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px;}
+  .dw-day{display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 0 7px; min-width:0; background:#fff; border:1px solid var(--dash-line); border-radius:14px; font-family:inherit; color:var(--dash-ink);}
+  .dw-day:hover{transform:none; border-color:#d9cc9a;}
+  .dw-n{font-size:9.5px; font-weight:600; color:var(--dash-muted); text-transform:uppercase; letter-spacing:.3px;}
+  .dw-d{font:700 15px/1.2 'Poppins',sans-serif;}
+  .dw-c{min-width:18px; height:18px; padding:0 5px; border-radius:999px; font-size:10.5px; font-weight:700; line-height:18px; text-align:center; background:var(--dash-gold); color:#241b00;}
+  .dw-c.none{background:transparent; color:#cfc7a8; font-weight:500;}
+  .dw-day.today{background:var(--dash-chip); border-color:#e0d39a;}
+  .dw-day.today .dw-n{color:var(--dash-gold-ink);}
+
+  button.dash-stat{display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start;}
+  .dash-stat .sub{margin-top:5px; font-size:10.5px; line-height:1.4; color:#8a8369;}
+  .dash-row .pgw{display:flex; align-items:center; gap:8px; margin-top:7px;}
+  .dash-row .pgw em{font-style:normal; font-size:10.5px; font-weight:600; color:var(--dash-muted); min-width:28px; text-align:right;}
+  .dash-row .pg{display:block; flex:1; height:4px; border-radius:999px; background:#efe8cc; overflow:hidden;}
+  .dash-row .pg i{display:block; height:100%; border-radius:999px; background:var(--ok);}
+  .dash-chips{display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;}
+  .dash-mini{padding:1px 8px; border-radius:999px; font-size:10.5px; font-weight:600; background:var(--dash-chip); color:var(--dash-gold-ink);}
+  .dash-mini.ok{background:#e5f5e6; color:var(--ok);}
+  .dash-mini.no{background:#fdecea; color:var(--danger);}
+  .dash .daily-box{margin-top:0;}
   @media(min-width:720px){
     .dash-head h1{font-size:28px;} .dash-head p{font-size:13.5px;}
     .dash-next-title{font-size:18px;} .dash-next-meta{font-size:13px;}
@@ -5284,6 +5380,42 @@ function userBonusBreakdown(userId){
            taskHrs: userTaskHours(userId), adjHrs: userBonusAdjustHours(userId),
            totalHrs: Math.max(0, userTotalBonusHours(userId)) };
 }
+// Rincian bonus gabungan seluruh akun Tim (untuk Admin).
+function teamBonusBreakdown(people){
+  const list = people.map(a=>userBonusBreakdown(a.id));
+  const sum = k => list.reduce((t,x)=>t+(x[k]||0),0);
+  const months = {};
+  list.forEach(x=>x.waitMonths.forEach(m=>{
+    const e = months[m.label] || (months[m.label] = {label:m.label, mulai:m.mulai, rp:0});
+    e.rp += m.rp;
+  }));
+  return { total:sum('total'), claimed:sum('claimed'), ready:sum('ready'), pendingRp:sum('pendingRp'), waiting:sum('waiting'),
+           waitMonths:Object.values(months), taskHrs:sum('taskHrs'), adjHrs:sum('adjHrs'), totalHrs:sum('totalHrs'),
+           readyAccounts:list.filter(x=>x.ready>0).length, accounts:list.length };
+}
+// Kartu Bonus Tim (Admin): angka utama = bonus yang masih bisa diklaim, lalu rincian & pengaturan.
+function renderTeamBonusCard(people, pendingList){
+  const b = teamBonusBreakdown(people);
+  const pendRp = pendingList.reduce((t,c)=>t+(Number(c.jumlah)||0),0);
+  return `
+    <div class="task-bonus-box tbc">
+      <div class="task-bonus-row">
+        <div>
+          <div class="task-bonus-label bb-label">${ic('money')} Bonus Tim</div>
+          <div class="task-bonus-amount bb-main-amt">${fmtRp(b.ready)}</div>
+          ${bonusHeadCaption(b.ready)}
+        </div>
+        <button type="button" class="bonus-adjust-btn" id="btnEditBonusRate">${ic('edit')} Atur Tarif</button>
+      </div>
+      ${renderBonusBreakdownData(b, 'admin')}
+      <div class="tbc-grid">
+        <div class="tbc-item"><div class="tbc-k">Tarif bonus</div><div class="tbc-v">${fmtRp(BONUS_PER_JAM)} / jam</div><div class="tbc-n">Dihitung otomatis dari jam kerja</div></div>
+        <div class="tbc-item"><div class="tbc-k">Dibayar bulan ini</div><div class="tbc-v">${fmtRp(totalBonusDiklaimBulanIni())}</div><div class="tbc-n">Mengurangi penghasilan bersih Admin</div></div>
+        <div class="tbc-item"><div class="tbc-k">Klaim menunggu</div><div class="tbc-v">${pendingList.length ? pendingList.length+' klaim' : 'Tidak ada'}</div><div class="tbc-n">${pendingList.length ? fmtRp(pendRp)+' belum diproses' : 'Semua klaim sudah diproses'}</div></div>
+        <div class="tbc-item"><div class="tbc-k">Min. klaim Tunai</div><div class="tbc-v">${fmtRp(MIN_KLAIM_TUNAI)}</div><div class="tbc-n">Nominal bebas · 1 WDP = ${fmtRp(MIN_KLAIM_WDP)}</div></div>
+      </div>
+    </div>`;
+}
 // Keterangan di bawah angka utama kartu bonus.
 function bonusHeadCaption(ready){
   return ready>0
@@ -5327,7 +5459,10 @@ function renderPendingClaimCard(c){
 // HTML rincian bonus: dasar hitungan, batang proporsi, lalu tiga baris penjelasan.
 // who: 'admin' (dilihat Admin) atau 'tim' (dilihat akun Tim sendiri).
 function renderBonusBreakdown(userId, who){
-  const b = userBonusBreakdown(userId);
+  return renderBonusBreakdownData(userBonusBreakdown(userId), who);
+}
+// Sama dengan di atas, tetapi menerima data rincian (satu akun ATAU gabungan seluruh Tim).
+function renderBonusBreakdownData(b, who){
   const seg = b.claimed + b.ready + b.waiting;
   const pct = v => seg>0 ? (v/seg*100).toFixed(2) : 0;
   const dasar = b.adjHrs
@@ -5343,7 +5478,7 @@ function renderBonusBreakdown(userId, who){
     rows.push(`<li class="bb-item c"><span class="bb-dot c"></span><div><div class="bb-name">Sudah diklaim</div><div class="bb-note">${note}</div></div><div class="bb-amt">${fmtRp(b.claimed)}</div></li>`);
   }
   rows.push(`<li class="bb-item r"><span class="bb-dot r"></span><div><div class="bb-name">Siap diklaim sekarang</div><div class="bb-note">${
-    b.ready>0 ? (who==='tim' ? 'Bisa diajukan lewat tombol Klaim Bonus' : 'Bisa diajukan akun Tim kapan saja') : 'Belum ada yang bisa diklaim'
+    b.ready>0 ? (who==='tim' ? 'Bisa diajukan lewat tombol Klaim Bonus' : (b.readyAccounts!=null ? `${b.readyAccounts} dari ${b.accounts} akun Tim bisa mengajukan klaim` : 'Bisa diajukan akun Tim kapan saja')) : 'Belum ada yang bisa diklaim'
   }</div></div><div class="bb-amt">${fmtRp(b.ready)}</div></li>`);
   if(b.waiting>0){
     const note = b.waitMonths.length
@@ -6668,14 +6803,25 @@ function viewBeranda(){
   const jenisLabel = j => (j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'') : (j.jenisAcara||''));
   const jobTitle = j => [jenisLabel(j), j.namaKlien].filter(Boolean).join(' ') || 'Tanpa Nama';
   const bayarLabel = j => j.statusPembayaran==='Lunas' ? 'Lunas' : (j.statusPembayaran==='DP' ? 'DP lunas' : 'Belum bayar');
+  const bayarTone = j => j.statusPembayaran==='Lunas' ? 'ok' : (j.statusPembayaran==='DP' ? '' : 'no');
+  const startOf = j => new Date(j.tanggalAcara+'T00:00:00');
+  const endOf = j => new Date((getJobFinishDate(j) || j.tanggalAcara)+'T00:00:00');
+  const selisihHari = j => Math.round((startOf(j) - todayStart)/86400000);
   const whenText = j => {
-    const start = new Date(j.tanggalAcara+'T00:00:00');
-    const diff = Math.round((start - todayStart)/86400000);
+    const diff = selisihHari(j);
     if(diff<0) return `Sedang berlangsung (${fmtTglJob(j)})`;
     if(diff===0) return 'Hari ini';
     if(diff===1) return 'Besok';
-    if(diff<7) return namaHariID(start);
-    return `${namaHariID(start)}, ${fmtTglJob(j)}`;
+    if(diff<7) return namaHariID(startOf(j));
+    return `${namaHariID(startOf(j))}, ${fmtTglJob(j)}`;
+  };
+  // Penanda waktu singkat: "Hari ini" / "Besok" / "N hari lagi" / "Berlangsung"
+  const hariLagi = j => {
+    const diff = selisihHari(j);
+    if(diff<0) return {t:'Berlangsung', now:true};
+    if(diff===0) return {t:'Hari ini', now:true};
+    if(diff===1) return {t:'Besok', now:false};
+    return {t:`${diff} hari lagi`, now:false};
   };
   const lokasiText = j => [desaDisplay(j), (j.kecamatan||'').trim()].filter(Boolean).join(', ');
   const jobMeta = (j, withWhen) => {
@@ -6693,17 +6839,41 @@ function viewBeranda(){
     return `<span class="dash-money"><span>${v<0?'-Rp':'Rp'}</span><span>${Math.abs(v).toLocaleString('id-ID')}</span></span>`;
   };
 
-  // ----- kartu "job berikutnya" -----
-  const nextCard = nextJob ? `
-    <section class="dash-next" aria-label="Job berikutnya">
-      <span class="dash-chip">Job berikutnya, ${escapeHtml(bayarLabel(nextJob))}</span>
-      <h2 class="dash-next-title">${escapeHtml(jobTitle(nextJob))}</h2>
-      <p class="dash-next-meta">${escapeHtml(jobMeta(nextJob, true))}</p>
-      <div class="dash-actions">
-        <button type="button" class="dash-btn gold admin-only" id="btnInputJob">Tambah job</button>
-        <button type="button" class="dash-btn line" data-view-job="${nextJob.id}">Lihat detail</button>
-      </div>
-    </section>` : `
+  // ----- ringkasan angka untuk keterangan tambahan -----
+  const HARI_PENDEK = ['Ahd','Sen','Sel','Rab','Kam','Jum','Sab'];
+  const weekDays = Array.from({length:7}, (_,k)=>{
+    const d = new Date(todayStart); d.setDate(d.getDate()+k);
+    const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    return {d, iso, n: jobs.filter(x=>isJobOnDate(x, iso)).length, today:k===0};
+  });
+  const job7 = jobs.filter(x=>weekDays.some(w=>isJobOnDate(x, w.iso))).length;
+  const rentang7 = (()=>{
+    const a = weekDays[0].d, b = weekDays[6].d;
+    const bln = d => d.toLocaleDateString('id-ID',{month:'short'});
+    return a.getMonth()===b.getMonth() ? `${a.getDate()}–${b.getDate()} ${bln(b)}` : `${a.getDate()} ${bln(a)} – ${b.getDate()} ${bln(b)}`;
+  })();
+  const bulanLewat = thisMonthJobs.filter(x=>endOf(x) < todayStart).length;
+  const bulanAkan = thisMonthJobs.length - bulanLewat;
+  const jobBelumLunas = jobs.filter(x=>x.statusPembayaran!=='Lunas' && hitungSisaPembayaran(x)>0).length;
+  const bonusBulanIni = isAdmin() ? totalBonusDiklaimBulanIni() : 0;
+  const pctBersih = totalPenghasilanBulanIni>0 ? Math.round(totalBersihBulanIni/totalPenghasilanBulanIni*100) : 0;
+  const rataPerJob = thisMonthJobs.length ? totalPenghasilanBulanIni/thisMonthJobs.length : 0;
+  const taskTelat = homeTasks.filter(t=>(t.status||'Belum')!=='Selesai' && getTaskDate(t) && getTaskDate(t) < todayIso).length;
+  const honorJobCount = (!isAdmin() && currentUserId) ? thisMonthJobs.filter(x=>honorTimUntukAkun(x, currentUserId)>0).length : 0;
+  const bonusMenunggu = (!isAdmin() && currentUserId) ? userBonusBreakdown(currentUserId).waiting : 0;
+
+  // ----- sapaan + ringkasan satu kalimat -----
+  const ringkasLengkap = (() => {
+    const awal = jobHariIni>0 ? `Hari ini ada ${jobHariIni} job.` : 'Tidak ada job hari ini.';
+    if(jobHariIni>0 || !nextJob) return awal;
+    const h = hariLagi(nextJob);
+    return `${awal} Job berikutnya ${h.t.charAt(0).toLowerCase()+h.t.slice(1)}.`;
+  })();
+
+  // ----- kartu "job berikutnya" (lengkap: tanggal, jam, lokasi, pembayaran, tim) -----
+  const nextCard = (() => {
+    if(!nextJob){
+      return `
     <section class="dash-next" aria-label="Job berikutnya">
       <span class="dash-chip">Job berikutnya</span>
       <h2 class="dash-next-title">Belum ada job terjadwal</h2>
@@ -6712,50 +6882,97 @@ function viewBeranda(){
         <button type="button" class="dash-btn gold admin-only" id="btnInputJob">Tambah job</button>
       </div>
     </section>`;
+    }
+    const h = hariLagi(nextJob);
+    const dur = getJobDurasiHari(nextJob);
+    const jam = (nextJob.jamAcara||'').trim();
+    const lok = lokasiText(nextJob);
+    const sisa = Math.max(0, hitungSisaPembayaran(nextJob));
+    const timJob = [...new Set(tasks.filter(t=>String(t.jobId)===String(nextJob.id)).map(t=>getTaskPerson(t)).filter(Boolean))];
+    const rows = [
+      `<li>${ic('calendar')}<span>${escapeHtml(namaHariID(startOf(nextJob)))}, ${escapeHtml(fmtTglJob(nextJob))}${dur>1?` <span class="mut">· ${dur} hari</span>`:''}</span></li>`,
+      jam ? `<li>${ic('clock')}<span>${escapeHtml(jam.replace(':','.'))} WIB</span></li>` : '',
+      `<li>${ic('map-pin')}<span class="${lok?'':'mut'}">${lok ? escapeHtml(lok) : 'Lokasi belum diisi'}</span></li>`,
+      `<li>${ic('money')}<span><span class="pay-pill ${bayarTone(nextJob)}">${escapeHtml(bayarLabel(nextJob))}</span>${(isAdmin() && sisa>0) ? ` <span class="mut">· Sisa ${escapeHtml(fmtRp(sisa))}</span>` : ''}</span></li>`,
+      timJob.length ? `<li>${ic('user')}<span>Tim: ${escapeHtml(timJob.join(', '))}</span></li>`
+        : (isAdmin() ? `<li>${ic('user')}<span class="mut">Belum ada tugas Tim dibagikan</span></li>` : '')
+    ].filter(Boolean).join('');
+    return `
+    <section class="dash-next" aria-label="Job berikutnya">
+      <div class="dash-next-top">
+        <span class="dash-chip">Job berikutnya</span>
+        <span class="dash-when ${h.now?'now':''}">${escapeHtml(h.t)}</span>
+      </div>
+      <h2 class="dash-next-title">${escapeHtml(jobTitle(nextJob))}</h2>
+      <ul class="dash-det">${rows}</ul>
+      <div class="dash-actions">
+        <button type="button" class="dash-btn gold admin-only" id="btnInputJob">Tambah job</button>
+        <button type="button" class="dash-btn line" data-view-job="${nextJob.id}">Lihat detail</button>
+      </div>
+    </section>`;
+  })();
 
-  // ----- kartu angka -----
+  // ----- strip 7 hari ke depan -----
+  const weekHtml = `
+    <h2 class="dash-sec">7 hari ke depan <small>${escapeHtml(rentang7)} · ${job7} job</small></h2>
+    <div class="dash-week" role="list">${weekDays.map(w=>`
+      <button type="button" class="dw-day ${w.today?'today':''}" role="listitem" data-goto="kalender" aria-label="${escapeHtml(namaHariID(w.d))} ${w.d.getDate()}, ${w.n} job">
+        <span class="dw-n">${w.today ? 'Hari ini' : HARI_PENDEK[w.d.getDay()]}</span>
+        <span class="dw-d">${w.d.getDate()}</span>
+        <span class="dw-c ${w.n?'':'none'}">${w.n || '·'}</span>
+      </button>`).join('')}
+    </div>`;
+
+  // ----- kartu angka (dengan keterangan) -----
   const stats = isAdmin() ? [
-    {v: moneyHtml(totalPenghasilanBulanIni), l:'Pemasukan bulan ini', attr:'data-open-stat="pemasukan"'},
-    {v: `${thisMonthJobs.length} job`,        l:'Terjadwal bulan ini', attr:'data-open-stat="terjadwal"'},
-    {v: moneyHtml(totalBelumLunas),           l:'Belum lunas', attr:'data-open-status-list="statusPembayaran"'},
-    {v: moneyHtml(totalBersihBulanIni),       l:'Bersih bulan ini', attr:'data-open-stat="bersih"'}
+    {v: moneyHtml(totalPenghasilanBulanIni), l:'Pemasukan bulan ini', sub: thisMonthJobs.length ? `≈ ${fmtRp(rataPerJob)} per job` : 'Belum ada job bulan ini', attr:'data-open-stat="pemasukan"'},
+    {v: `${thisMonthJobs.length} job`,        l:'Terjadwal bulan ini', sub: `${bulanLewat} sudah lewat · ${bulanAkan} akan datang`, attr:'data-open-stat="terjadwal"'},
+    {v: moneyHtml(totalBelumLunas),           l:'Belum lunas', sub: jobBelumLunas ? `${jobBelumLunas} job belum lunas` : 'Semua sudah lunas', attr:'data-open-status-list="statusPembayaran"'},
+    {v: moneyHtml(totalBersihBulanIni),       l:'Bersih bulan ini', sub: `${pctBersih}% dari pemasukan${bonusBulanIni>0 ? ' · sudah dikurangi bonus Tim' : ''}`, attr:'data-open-stat="bersih"'}
   ] : [
-    {v: moneyHtml(honorSayaBulanIni),         l:'Honor job bulan ini', attr:'data-open-stat="honor"'},
-    {v: `${thisMonthJobs.length} job`,        l:'Terjadwal bulan ini', attr:'data-open-stat="terjadwal"'},
-    {v: moneyHtml(userClaimableBonusRupiah(currentUserId)), l:'Bonus siap diklaim', attr:'data-goto="tugas"'},
-    {v: escapeHtml(fmtTaskHours(Math.max(0,userTotalBonusHours(currentUserId)))), l:'Jam kerja saya', attr:'data-goto="tugas"'}
+    {v: moneyHtml(honorSayaBulanIni),         l:'Honor job bulan ini', sub: honorJobCount ? `dari ${honorJobCount} job` : 'Belum ada honor bulan ini', attr:'data-open-stat="honor"'},
+    {v: `${thisMonthJobs.length} job`,        l:'Terjadwal bulan ini', sub: `${bulanLewat} sudah lewat · ${bulanAkan} akan datang`, attr:'data-open-stat="terjadwal"'},
+    {v: moneyHtml(userClaimableBonusRupiah(currentUserId)), l:'Bonus siap diklaim', sub: bonusMenunggu>0 ? `+ ${fmtRp(bonusMenunggu)} masa tunggu` : 'Tidak ada masa tunggu', attr:'data-goto="tugas"'},
+    {v: escapeHtml(fmtTaskHours(Math.max(0,userTotalBonusHours(currentUserId)))), l:'Jam kerja saya', sub: `${homeTasks.length} tugas · ${homeTaskPending} belum selesai`, attr:'data-goto="tugas"'}
   ];
   // Keempat kartu adalah tombol: ketuk untuk melihat rincian (pop-up) atau, untuk Bonus & Jam
   // kerja milik akun Tim, langsung ke halaman Tugas tempat bonus & klaimnya berada.
   const statsHtml = stats.map(st =>
-    `<button type="button" class="dash-stat" ${st.attr}><div class="v">${st.v}</div><div class="l"><span>${st.l}</span><span class="go">${ic('chevron-right')}</span></div></button>`
+    `<button type="button" class="dash-stat" ${st.attr}><div class="v">${st.v}</div><div class="l"><span>${st.l}</span><span class="go">${ic('chevron-right')}</span></div><div class="sub">${escapeHtml(st.sub)}</div></button>`
   ).join('');
 
-  // ----- daftar "Perlu dikerjakan" (hanya yang masih ada isinya) -----
+  // ----- daftar "Perlu dikerjakan" (hanya yang masih ada isinya), lengkap dengan progres -----
+  const nBerjalan = jobsBerjalan.length;
   const todos = [];
-  if(homeTaskPending>0) todos.push({icon:'check-circle', t: isAdmin() ? 'Tugas tim belum selesai' : 'Tugas saya belum selesai', s:'Buka halaman tugas', n:homeTaskPending, attr:'data-goto="tugas"'});
-  if(belumEdit>0)       todos.push({icon:'edit',    t:'Edit belum selesai',   s:'Job yang masih dalam proses edit', n:belumEdit,  attr:'data-open-status-list="prosesEdit" data-status-scope="berjalan"'});
-  if(belumCetak>0)      todos.push({icon:'printer', t:'Cetak belum selesai',  s:'Job yang belum selesai dicetak',   n:belumCetak, attr:'data-open-status-list="prosesCetak" data-status-scope="berjalan"'});
-  if(belumPengiriman>0) todos.push({icon:'truck',   t:'Belum dijemput/diantar', s:'Foto yang belum sampai ke klien', n:belumPengiriman, attr:'data-open-status-list="pengiriman" data-status-scope="berjalan"'});
-  if(isAdmin() && sedekahBelumJobs.length>0) todos.push({icon:'hands', t:'Sedekah belum selesai', s:`Total ${fmtRp(totalSedekahBelum)}`, n:sedekahBelumJobs.length, attr:'data-open-status-list="sedekahStatus" data-status-scope="berjalan"'});
-  const todoHtml = todos.length ? `<div class="dash-list">${todos.map(td=>`
+  if(homeTaskPending>0) todos.push({icon:'check-circle', t: isAdmin() ? 'Tugas tim belum selesai' : 'Tugas saya belum selesai',
+    s:`${homeTaskPending} dari ${homeTasks.length} tugas${taskTelat?` · ${taskTelat} lewat jadwal`:''}`, n:homeTaskPending, total:homeTasks.length, attr:'data-goto="tugas"'});
+  if(belumEdit>0)       todos.push({icon:'edit',    t:'Edit belum selesai',   s:`${belumEdit} dari ${nBerjalan} job berjalan masih diedit`, n:belumEdit,  total:nBerjalan, attr:'data-open-status-list="prosesEdit" data-status-scope="berjalan"'});
+  if(belumCetak>0)      todos.push({icon:'printer', t:'Cetak belum selesai',  s:`${belumCetak} dari ${nBerjalan} job berjalan belum dicetak`, n:belumCetak, total:nBerjalan, attr:'data-open-status-list="prosesCetak" data-status-scope="berjalan"'});
+  if(belumPengiriman>0) todos.push({icon:'truck',   t:'Belum dijemput/diantar', s:`${belumPengiriman} dari ${nBerjalan} job berjalan belum sampai ke klien`, n:belumPengiriman, total:nBerjalan, attr:'data-open-status-list="pengiriman" data-status-scope="berjalan"'});
+  if(isAdmin() && sedekahBelumJobs.length>0) todos.push({icon:'hands', t:'Sedekah belum selesai', s:`${sedekahBelumJobs.length} dari ${nBerjalan} job · total ${fmtRp(totalSedekahBelum)}`, n:sedekahBelumJobs.length, total:nBerjalan, attr:'data-open-status-list="sedekahStatus" data-status-scope="berjalan"'});
+  const totalTodo = todos.reduce((a,t)=>a+t.n,0);
+  const todoHtml = todos.length ? `<div class="dash-list">${todos.map(td=>{
+      const pct = td.total>0 ? Math.max(0, Math.min(100, Math.round((td.total-td.n)/td.total*100))) : 0;
+      return `
       <button type="button" class="dash-row" ${td.attr}>
         <span class="ico">${ic(td.icon)}</span>
-        <span class="tx"><div class="t">${td.t}</div><div class="s">${td.s}</div></span>
+        <span class="tx"><div class="t">${td.t}</div><div class="s">${escapeHtml(td.s)}</div><span class="pgw" aria-label="${pct}% selesai"><span class="pg"><i style="width:${pct}%"></i></span><em>${pct}%</em></span></span>
         <span class="cnt">${td.n}</span>
         <span class="chev">${ic('chevron-right')}</span>
-      </button>`).join('')}</div>`
+      </button>`;}).join('')}</div>`
     : `<div class="dash-empty">${ic('check-circle')}<div>Semua pekerjaan sudah beres.</div></div>`;
 
-  // ----- job terdekat berikutnya -----
+  // ----- job terdekat berikutnya (dengan waktu & status bayar) -----
   const otherHtml = otherJobs.length ? `
-    <h2 class="dash-sec">Job terdekat lainnya</h2>
+    <h2 class="dash-sec">Job terdekat lainnya <button type="button" class="dash-link" data-goto="daftar">Lihat semua ${ic('chevron-right')}</button></h2>
     <div class="dash-list">${otherJobs.map(j=>{
-      const d = new Date(j.tanggalAcara+'T00:00:00');
+      const d = startOf(j);
+      const h = hariLagi(j);
       return `
       <button type="button" class="dash-row" data-view-job="${j.id}">
         <span class="date"><b>${d.getDate()}</b><span>${escapeHtml(d.toLocaleDateString('id-ID',{month:'short'}))}</span></span>
-        <span class="tx"><div class="t">${escapeHtml(jobTitle(j))}</div><div class="s">${escapeHtml(jobMeta(j, false) || 'Lokasi belum diisi')}</div></span>
+        <span class="tx"><div class="t">${escapeHtml(jobTitle(j))}</div><div class="s">${escapeHtml(jobMeta(j, false) || 'Lokasi belum diisi')}</div>
+          <div class="dash-chips"><span class="dash-mini">${escapeHtml(namaHariID(d))} · ${escapeHtml(h.t)}</span><span class="dash-mini ${bayarTone(j)}">${escapeHtml(bayarLabel(j))}</span></div></span>
         <span class="chev">${ic('chevron-right')}</span>
       </button>`;
     }).join('')}</div>` : '';
@@ -6764,18 +6981,22 @@ function viewBeranda(){
   <div class="dash">
     <header class="dash-head">
       <h1>${sapaan}${namaDepan ? ', ' + escapeHtml(namaDepan) : ''}</h1>
-      <p>${ringkasHariIni}</p>
+      <p>${escapeHtml(ringkasLengkap)}</p>
     </header>
 
     ${nextCard}
 
+    ${weekHtml}
+
+    <h2 class="dash-sec">Ringkasan bulan ini</h2>
     <div class="dash-stats">${statsHtml}</div>
 
-    <h2 class="dash-sec">Perlu dikerjakan</h2>
+    <h2 class="dash-sec">Perlu dikerjakan ${todos.length ? `<small>${totalTodo} item</small>` : ''}</h2>
     ${todoHtml}
 
     ${otherHtml}
 
+    <h2 class="dash-sec">Untuk hari ini</h2>
     <div class="daily-box">
       <div class="daily-card">
         <div class="dq-label">${ic('sparkle')} Motivasi Hari Ini</div>
@@ -10287,6 +10508,15 @@ function viewTugas(){
   const totalHours = visibleTasks.reduce((s,t)=>s+taskHours(t),0);
 
   const people = isAdmin() ? taskEligibleAccounts() : [];
+  // Keterangan tambahan untuk tile ringkasan
+  const _d = new Date();
+  const todayYmd = _d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
+  const pctDone = visibleTasks.length ? Math.round(done/visibleTasks.length*100) : 0;
+  const overdueCount = visibleTasks.filter(t=>(t.status||'Belum')!=='Selesai' && getTaskDate(t) && getTaskDate(t) < todayYmd).length;
+  const jobCount = new Set(visibleTasks.map(t=>String(t.jobId||'')).filter(Boolean)).size;
+  const accCount = new Set(visibleTasks.map(t=>String(t.userId||t.username||'')).filter(Boolean)).size;
+  const nextTaskDate = visibleTasks.map(t=>getTaskDate(t)).filter(d=>d && d>=todayYmd).sort()[0] || '';
+  const avgHours = visibleTasks.length ? totalHours/visibleTasks.length : 0;
   // Total bonus: Admin melihat gabungan seluruh akun Tim, akun Tim hanya melihat bonus miliknya sendiri.
   const totalBonusRupiah = isAdmin()
     ? people.reduce((s,a)=>s+userBonusRupiah(a.id),0)
@@ -10299,6 +10529,9 @@ function viewTugas(){
   const myClaimableRp = (mine && currentUserId) ? userClaimableBonusRupiah(currentUserId) : 0;
   const myNextClaim = (mine && currentUserId) ? userNextClaimInfo(currentUserId) : null;
   const myClaimedTotal = (mine && currentUserId) ? userClaimedTotalRupiah(currentUserId) : 0;
+  // Tile "Bonus Siap Diklaim": Admin = gabungan seluruh akun Tim, Tim = miliknya sendiri.
+  const _tb = mine ? (currentUserId ? userBonusBreakdown(currentUserId) : {ready:0, waiting:0}) : teamBonusBreakdown(people);
+  const tileReadyRp = _tb.ready, tileWaitRp = _tb.waiting;
   // Seluruh klaim bonus dari akun Tim yang masih menunggu dicairkan — khusus Admin.
   const pendingClaimsList = isAdmin() ? pendingBonusClaims() : [];
   // Penghasilan dari Honor Tim per-job (rincian yang diisi Admin di form job) — khusus akun
@@ -10367,24 +10600,26 @@ function viewTugas(){
 
   return `
   <div class="card">
-    <div class="toolbar">
+    <div class="toolbar tg-head">
       <div>
         <h2 style="margin:0;">${ic('folder')} ${mine ? 'Tugas Saya' : 'Pembagian Tugas Tim'}</h2>
-        <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">
-          ${mine ? 'Tugas untukmu dari Admin.' : 'Bagi tugas per akun & jam kerja.'}
+        <div class="tg-sub">
+          ${mine ? 'Tugas untukmu dari Admin.' : `Bagi tugas per akun & jam kerja · ${visibleTasks.length} tugas dari ${accCount} akun Tim`}
         </div>
       </div>
-      ${isAdmin()?`<button class="btn btn-primary" id="btnOpenTaskForm">＋ Bagi Tugas</button>`:''}
-      <button type="button" class="btn btn-outline" id="btnRefreshTugas">${ic('refresh')} Refresh</button>
+      <div class="tg-actions">
+        ${isAdmin()?`<button class="btn btn-primary" id="btnOpenTaskForm">＋ Bagi Tugas</button>`:''}
+        <button type="button" class="btn btn-outline" id="btnRefreshTugas">${ic('refresh')} Refresh</button>
+      </div>
     </div>
 
     <div class="task-summary-grid">
-      <div class="task-stat gold"><div class="ts-label">Total Tugas</div><div class="ts-value">${visibleTasks.length}</div></div>
-      <div class="task-stat"><div class="ts-label">Selesai</div><div class="ts-value">${done}</div></div>
-      <div class="task-stat"><div class="ts-label">Belum Selesai</div><div class="ts-value">${visibleTasks.length-done}</div></div>
-      <div class="task-stat"><div class="ts-label">Total Jam</div><div class="ts-value">${fmtTaskHours(totalHours)}</div></div>
-      <div class="task-stat"><div class="ts-label">Job Mendatang</div><div class="ts-value">${upcoming}</div></div>
-      <div class="task-stat green"><div class="ts-label">${mine?'Bonus Siap Diklaim':'Total Bonus Tim'}</div><div class="ts-value">${fmtRp(mine ? myClaimableRp : totalBonusRupiah)}</div></div>
+      <div class="task-stat gold"><div class="ts-label">Total Tugas</div><div class="ts-value">${visibleTasks.length}</div><div class="ts-sub">${jobCount} job${mine?'':` · ${accCount} akun`}</div></div>
+      <div class="task-stat"><div class="ts-label">Selesai</div><div class="ts-value">${done}</div><div class="ts-sub">${pctDone}% dari total</div><div class="ts-bar"><i style="width:${pctDone}%"></i></div></div>
+      <div class="task-stat"><div class="ts-label">Belum Selesai</div><div class="ts-value">${visibleTasks.length-done}</div><div class="ts-sub ${overdueCount?'warn':''}">${overdueCount ? overdueCount+' lewat jadwal' : (visibleTasks.length-done ? 'Semua sesuai jadwal' : 'Semua sudah selesai')}</div></div>
+      <div class="task-stat"><div class="ts-label">Total Jam</div><div class="ts-value">${fmtTaskHours(totalHours)}</div><div class="ts-sub">Rata-rata ${fmtTaskHours(avgHours)} / tugas</div></div>
+      <div class="task-stat"><div class="ts-label">Tugas Mendatang</div><div class="ts-value">${upcoming}</div><div class="ts-sub">${nextTaskDate ? 'Terdekat '+escapeHtml(formatTaskDate(nextTaskDate)) : 'Belum ada jadwal'}</div></div>
+      <div class="task-stat green"><div class="ts-label">Bonus Siap Diklaim</div><div class="ts-value">${fmtRp(mine ? myClaimableRp : tileReadyRp)}</div><div class="ts-sub">${tileWaitRp>0 ? '+ '+fmtRp(tileWaitRp)+' masa tunggu' : 'Tidak ada masa tunggu'}</div></div>
     </div>
 
     ${mine ? `
@@ -10441,30 +10676,7 @@ function viewTugas(){
     </div>` : ''}
 
     ${isAdmin()?`
-    <div class="task-bonus-box" style="margin:0 0 18px;">
-      <div class="task-bonus-row">
-        <div>
-          <div class="task-bonus-label">${ic('settings')} Pengaturan Bonus</div>
-          <div class="task-bonus-amount">${fmtRp(BONUS_PER_JAM)} / jam</div>
-        </div>
-        <button type="button" class="bonus-adjust-btn" id="btnEditBonusRate">${ic('edit')} Atur</button>
-      </div>
-      <div class="task-bonus-detail">
-        Bonus dihitung otomatis dari jam kerja. Klaim Tunai: total bonus min. <b>${fmtRp(MIN_KLAIM_TUNAI)}</b>, nominal bebas. Klaim WDP: <b>${fmtRp(MIN_KLAIM_WDP)}</b> per WDP.
-      </div>
-    </div>
-
-    <div class="task-bonus-box" style="margin:0 0 18px;">
-      <div class="task-bonus-row">
-        <div>
-          <div class="task-bonus-label">${ic('trend-down')} Bonus Sudah Diklaim (Bulan Ini)</div>
-          <div class="task-bonus-amount">${fmtRp(totalBonusDiklaimBulanIni())}</div>
-        </div>
-      </div>
-      <div class="task-bonus-detail">
-        Mengurangi Penghasilan Bersih Admin otomatis.
-      </div>
-    </div>
+    ${renderTeamBonusCard(people, pendingClaimsList)}
 
     ${pendingClaimsList.length ? `
     <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;border:1.5px solid var(--gold-light);">
@@ -10502,19 +10714,22 @@ function viewTugas(){
         <tbody>${filtered.map(t=>{
           const status=t.status||'Belum';
           const job=getTaskJob(t);
+          const canAct = (isAdmin() || String(t.userId)===String(currentUserId));
+          const nKom = taskComments(t).length;
+          const roleBadge = (cls)=>`<span class="task-role-badge ${cls}">${t.role==='Fotografer'?ic('camera'):ic('video')} ${escapeHtml(t.role||'-')}</span>`;
           return `<tr>
-            <td class="task-date">${escapeHtml(formatTaskDate(getTaskDate(t)))}${(job && getJobDurasiHari(job)>1)?`<div style="font-size:10px;color:var(--ink-soft);font-weight:400;">s/d ${escapeHtml(formatTaskDate(getJobFinishDate(job)))} (${getJobDurasiHari(job)} hari)</div>`:''}</td>
-            <td><b>${escapeHtml(getTaskPerson(t))}</b></td>
-            <td><span class="task-role-badge">${t.role==='Fotografer'?ic('camera'):ic('video')} ${escapeHtml(t.role||'-')}</span></td>
-            <td><b>${escapeHtml(getTaskJobLabel(t))}</b>${job?.jenisAcara?`<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(job.jenisAcara)}</div>`:''}</td>
-            <td class="task-time">${getTaskSlots(t).map(s=>`${escapeHtml(s.mulai||'-')} – ${escapeHtml(s.selesai||'-')}`).join('<br>')||'-'}<div style="font-size:10.5px;color:var(--ink-soft);font-weight:400;">${fmtTaskHours(taskHours(t))}</div></td>
-            <td><div class="task-ket">${escapeHtml(t.keterangan||'-')}</div></td>
-            <td><span class="task-status-badge ${status==='Selesai'?'task-status-selesai':'task-status-belum'}" ${t.autoCompleted?'title="Selesai otomatis"':''}>${status==='Selesai'?(t.autoCompleted?ic('check')+' Selesai (Otomatis)':ic('check')+' Selesai'):ic('hourglass')+' Belum'}</span></td>
-            <td><div class="row-actions">
-              ${(isAdmin() || String(t.userId)===String(currentUserId))?`<button type="button" class="icon-btn" data-task-toggle="${escapeHtml(t.id)}" title="Ubah status">${status==='Selesai'?ic('undo'):ic('check')}</button>`:''}
-              ${(isAdmin() || String(t.userId)===String(currentUserId))?`<button type="button" class="icon-btn task-comment-btn" data-task-comment="${escapeHtml(t.id)}" title="Komentar tugas">${ic('chat')}${taskComments(t).length?`<span class="task-comment-count">${taskComments(t).length}</span>`:''}${taskHasUnreadComment(t)?'<span class="task-comment-dot"></span>':''}</button>`:''}
-              ${isAdmin()?`<button type="button" class="icon-btn" data-task-edit="${escapeHtml(t.id)}" title="Edit tugas">${ic('edit')}</button>`:''}
-              ${isAdmin()?`<button type="button" class="icon-btn icon-btn-danger" data-task-delete="${escapeHtml(t.id)}" title="Hapus tugas">${ic('trash')}</button>`:''}
+            <td class="task-date t-date">${escapeHtml(formatTaskDate(getTaskDate(t)))}${(job && getJobDurasiHari(job)>1)?`<div style="font-size:10px;color:var(--ink-soft);font-weight:400;">s/d ${escapeHtml(formatTaskDate(getJobFinishDate(job)))} (${getJobDurasiHari(job)} hari)</div>`:''}</td>
+            <td class="t-person"><b>${escapeHtml(getTaskPerson(t))}</b>${roleBadge('t-role-inline')}</td>
+            <td class="t-role">${roleBadge('')}</td>
+            <td class="t-job"><b>${escapeHtml(getTaskJobLabel(t))}</b>${job?.jenisAcara?`<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(job.jenisAcara)}</div>`:''}</td>
+            <td class="task-time t-time">${getTaskSlots(t).map(s=>`${escapeHtml(s.mulai||'-')} – ${escapeHtml(s.selesai||'-')}`).join('<br>')||'-'}<div class="t-hrs" style="font-size:10.5px;color:var(--ink-soft);font-weight:400;">${fmtTaskHours(taskHours(t))}</div></td>
+            <td class="t-ket${t.keterangan?'':' is-empty'}"><div class="task-ket">${escapeHtml(t.keterangan||'-')}</div></td>
+            <td class="t-status"><span class="task-status-badge ${status==='Selesai'?'task-status-selesai':'task-status-belum'}" ${t.autoCompleted?'title="Selesai otomatis"':''}>${status==='Selesai'?(t.autoCompleted?ic('check')+' Selesai (Otomatis)':ic('check')+' Selesai'):ic('hourglass')+' Belum'}</span></td>
+            <td class="t-act"><div class="row-actions">
+              ${canAct?`<button type="button" class="icon-btn t-toggle" data-task-toggle="${escapeHtml(t.id)}" title="Ubah status" aria-label="Ubah status">${status==='Selesai'?ic('undo'):ic('check')}<span class="t-lbl">${status==='Selesai'?'Batalkan Selesai':'Tandai Selesai'}</span></button>`:''}
+              ${canAct?`<button type="button" class="icon-btn task-comment-btn" data-task-comment="${escapeHtml(t.id)}" title="Komentar tugas" aria-label="Komentar tugas">${ic('chat')}${nKom?`<span class="task-comment-count">${nKom}</span>`:''}${taskHasUnreadComment(t)?'<span class="task-comment-dot"></span>':''}</button>`:''}
+              ${isAdmin()?`<button type="button" class="icon-btn" data-task-edit="${escapeHtml(t.id)}" title="Edit tugas" aria-label="Edit tugas">${ic('edit')}</button>`:''}
+              ${isAdmin()?`<button type="button" class="icon-btn icon-btn-danger" data-task-delete="${escapeHtml(t.id)}" title="Hapus tugas" aria-label="Hapus tugas">${ic('trash')}</button>`:''}
             </div></td>
           </tr>`;
         }).join('')}</tbody>
@@ -12872,12 +13087,22 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.15.3'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.15.6'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.15.6',
+    tanggal: '3 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Beranda didesain ulang dari atas sampai bawah. Kartu \"Job berikutnya\" kini lengkap: penanda waktu (Hari ini, Besok, atau N hari lagi), tanggal, jam, lokasi, status pembayaran beserta sisanya, dan Tim yang bertugas.' },
+      { kategori: 'Fitur', teks: 'Strip \"7 hari ke depan\" di Beranda menunjukkan jumlah job tiap hari, dengan hari ini ditandai. Ketuk salah satu hari untuk membuka Kalender.' },
+      { kategori: 'Peningkatan', teks: 'Empat kartu angka di Beranda punya keterangan tambahan (misalnya rata-rata per job, job yang sudah lewat dan yang akan datang, jumlah job belum lunas, serta persen bersih dari pemasukan). Daftar \"Perlu dikerjakan\" menampilkan batang progres dan persen selesai, dan \"Job terdekat lainnya\" menampilkan waktu serta status bayar tiap job.' },
+      { kategori: 'Peningkatan', teks: 'Halaman Pembagian Tugas Tim dirapikan: tile ringkasan berketerangan, kartu Bonus Tim yang menampilkan bonus siap diklaim sebagai angka utama, kartu klaim bonus menunggu per klaim, serta kartu tugas yang lebih ringkas di HP.' }
+    ]
+  },
   {
     version: '1.15.0',
     tanggal: '3 Oktober 2026',

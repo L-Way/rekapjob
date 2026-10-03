@@ -1132,16 +1132,66 @@
   }
   .rekap-sublevel button.active{background:#241f0f; border-color:#241f0f; color:var(--gold-light);}
   #rekapPoster{background:#fffef9; padding:30px; border-radius:14px; overflow-x:hidden;}
-  #rekapPoster .rp-head{text-align:center; margin-bottom:18px;}
+  /* Judul poster hanya dipakai untuk gambar unduhan; di layar tidak ditampilkan supaya tidak dobel dengan judul halaman. */
+  #rekapPoster .rp-head{text-align:center; margin-bottom:18px; display:none;}
+  #rekapPoster .rp-head .rp-period{font-size:13px; color:var(--ink-soft); margin-top:6px;}
   #rekapPoster .rp-head .b{font-family:'Fraunces',serif; font-weight:700; font-size:15px; letter-spacing:2px; color:var(--warn); text-transform:uppercase;}
   #rekapPoster .rp-head h2{font-size:28px; margin:4px 0 0;}
   #rekapPoster .stat{border-radius:14px;}
   .rekap-block{background:#fffdf6; border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:16px;}
+  .rekap-desc{font-size:12.5px; color:var(--ink-soft); margin:-6px 0 16px; line-height:1.55;}
+  .rekap-hint{font-size:12px; color:var(--ink-soft); margin:-4px 0 12px; line-height:1.5;}
+  .rekap-group-label{font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink-soft); margin:18px 0 8px;}
+  .rekap-group-label:first-child{margin-top:0;}
+  .rekap-block .section-title{margin-bottom:12px;}
+  .rekap-block .section-title + .rekap-hint{margin-top:-6px;}
+  table.rekaptable td.rk-title{font-weight:600; white-space:normal; min-width:130px;}
+  table.rekaptable td.rk-num{text-align:right; font-variant-numeric:tabular-nums;}
+  table.rekaptable th.rk-num{text-align:right;}
+  table.rekaptable tbody tr:nth-child(even) td{background:rgba(212,175,0,.05);}
+  .pct-cell{min-width:96px;}
+  .pct-bar{display:block; height:5px; border-radius:99px; background:var(--gold-pale); margin-top:5px; overflow:hidden;}
+  .pct-bar i{display:block; height:100%; background:linear-gradient(90deg,var(--gold-light),var(--gold)); border-radius:99px;}
   .rekap-table-wrap{width:100%; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:10px; border:1px solid var(--line);}
   table.rekaptable{width:100%; min-width:520px; border-collapse:collapse; font-size:13.5px; margin-top:0;}
   table.rekaptable th{background:#241f0f; color:#f4ecd0; padding:9px 10px; text-align:left; font-size:12px; text-transform:uppercase; white-space:nowrap;}
   table.rekaptable td{padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap;}
   table.rekaptable tfoot td{font-weight:700; background:var(--gold-pale);}
+  /* ---------- Filter periode Rekap ---------- */
+  .rekap-period{margin:0 0 16px;}
+  .rekap-period .rekap-sublevel{margin:0 0 10px; flex-wrap:wrap; overflow-x:visible;}
+  .rekap-period-dates{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
+  .rekap-period-dates label{flex:1 1 140px; max-width:260px; font-size:12px; color:var(--ink-soft); display:flex; flex-direction:column; gap:4px; font-weight:600;}
+  .rekap-period-dates input{width:100%; font-family:inherit; font-size:14px; padding:9px 10px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink);}
+  .rekap-period-info{font-size:12.5px; color:var(--ink-soft);}
+  .rekap-period-info svg{width:14px; height:14px; vertical-align:-2px; margin-right:3px;}
+  .rekap-period-info b{color:var(--ink);}
+
+  /* ---------- Ringkasan Rekap: satu angka utama + baris ringkas ---------- */
+  .rk-hero{background:linear-gradient(135deg,var(--gold-light),var(--gold)); border-radius:16px; padding:18px 20px; color:#231f0f; box-shadow:var(--shadow);}
+  .rk-hero-label{font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase;}
+  .rk-hero-val{font-family:'Fraunces',serif; font-size:34px; font-weight:700; line-height:1.15; margin-top:4px; overflow-wrap:anywhere;}
+  .rk-hero-val.long{font-size:28px;}
+  .rk-hero-sub{font-size:12.5px; margin-top:6px;}
+  .rk-grid2{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px;}
+  .rk-alert{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px 12px; margin-top:10px; padding:13px 16px; border-radius:12px; background:#fff4e0; border:1px solid #f0d49a;}
+  .rk-alert.ok{background:#e9f5e8; border-color:#bfe0bd;}
+  .rk-alert-label{font-size:12px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:#8a5a00;}
+  .rk-alert.ok .rk-alert-label{color:var(--ok);}
+  .rk-alert-sub{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .rk-alert-val{font-family:'Fraunces',serif; font-size:20px; font-weight:700; color:#241f0f; text-align:right; overflow-wrap:anywhere;}
+  .rk-rows{border:1px solid var(--line); border-radius:12px; background:var(--card); overflow:hidden;}
+  .rk-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 14px; border-bottom:1px solid var(--line);}
+  .rk-row:last-child{border-bottom:none;}
+  .rk-row-label{font-size:13px; font-weight:600;}
+  .rk-row-sub{font-size:11px; color:var(--ink-soft); margin-top:2px;}
+  .rk-row-val{font-family:'Fraunces',serif; font-size:20px; font-weight:700; white-space:nowrap; color:#241f0f;}
+  .rk-clickable{cursor:pointer; transition:background-color .15s ease, transform .15s ease;}
+  .rk-clickable:hover{background:var(--gold-pale);}
+  .rk-alert.rk-clickable:hover{filter:brightness(.97);}
+  .rk-clickable:active{transform:scale(.99);}
+  table.rekaptable .pct-txt{font-variant-numeric:tabular-nums;}
+
 
   .donut-wrap{display:flex; gap:30px; align-items:center; flex-wrap:wrap; justify-content:center;
     background:#fffdf6; border:1px solid var(--line); border-radius:14px; padding:22px; margin-bottom:20px;}
@@ -1835,6 +1885,50 @@
 
     /* Tabel Rekap (bukan jobtable) tetap tabel biasa yang digeser ke samping. */
     table.rekaptable{font-size:12.5px;}
+    /* Tabel Rekap di HP: tiap baris jadi satu kartu (judul di atas, lalu pasangan "nama : nilai")
+       supaya tidak perlu digeser ke samping. Hanya untuk tabel yang diberi kelas rk-cards. */
+    .rekap-table-wrap:has(table.rk-cards){border:none; overflow:visible; border-radius:0;}
+    table.rekaptable.rk-cards{display:block; min-width:0; font-size:13px;}
+    table.rekaptable.rk-cards thead{display:none;}
+    table.rekaptable.rk-cards tbody, table.rekaptable.rk-cards tfoot{display:block;}
+    table.rekaptable.rk-cards tr{display:block; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px;}
+    table.rekaptable.rk-cards tbody tr:nth-child(even) td{background:transparent;}
+    table.rekaptable.rk-cards td{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:4px 12px; border:none; padding:4px 0; white-space:normal; text-align:right; background:transparent;}
+    table.rekaptable.rk-cards td::before{content:attr(data-label); color:var(--ink-soft); font-size:11.5px; text-align:left; flex:0 0 auto;}
+    table.rekaptable.rk-cards td.rk-title{display:block; text-align:left; font-size:14px; font-weight:700; padding:0 0 7px; margin-bottom:4px; border-bottom:1px dashed var(--line); min-width:0;}
+    table.rekaptable.rk-cards td.rk-title::before{content:none;}
+    table.rekaptable.rk-cards tfoot tr{background:var(--gold-pale); border-color:transparent;}
+    table.rekaptable.rk-cards tfoot td{font-weight:700;}
+    table.rekaptable.rk-cards .pct-cell{min-width:0;}
+    table.rekaptable.rk-cards .pct-cell .pct-bar{flex:0 0 100%; order:3; margin-top:3px;}
+    /* Tabel Rekap utama (Kategori & Tren) di HP: tiap item ringkas.
+       Baris 1 = nama + jumlah job + porsi, baris 2 = penghasilan & bersih (Admin), lalu batang perbandingan.
+       Kolom Rata-rata/Job disembunyikan di HP (tetap ada di desktop & gambar unduhan). */
+    .rekap-table-wrap:has(table.rk-compact){border:none; overflow:visible; border-radius:0;}
+    table.rekaptable.rk-compact{display:block; min-width:0; font-size:13px;}
+    table.rekaptable.rk-compact thead{display:none;}
+    table.rekaptable.rk-compact tbody, table.rekaptable.rk-compact tfoot{display:block;}
+    table.rekaptable.rk-compact tr{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); column-gap:8px; row-gap:6px; align-items:baseline; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px;}
+    table.rekaptable.rk-compact tbody tr:nth-child(even) td{background:transparent;}
+    table.rekaptable.rk-compact td{display:block; border:none; padding:0; white-space:normal; background:transparent; text-align:left; min-width:0;}
+    table.rekaptable.rk-compact td.rk-title{grid-column:1 / span 4; font-size:14px; font-weight:700; line-height:1.3; min-width:0;}
+    table.rekaptable.rk-compact td.rk-count{grid-column:5; text-align:right; font-weight:700; white-space:nowrap;}
+    table.rekaptable.rk-compact td.rk-count::after{content:' job'; font-weight:500; color:var(--ink-soft); font-size:11px;}
+    table.rekaptable.rk-compact td.pct-cell{display:contents;}
+    table.rekaptable.rk-compact .pct-txt{grid-column:6; text-align:right; font-weight:700; color:var(--warn); white-space:nowrap;}
+    table.rekaptable.rk-compact td.rk-metric{grid-column:span 3; font-size:12.5px; font-weight:600;}
+    table.rekaptable.rk-compact td.rk-metric::before{content:attr(data-label); display:block; font-size:10.5px; font-weight:500; color:var(--ink-soft);}
+    table.rekaptable.rk-compact td.rk-avg{display:none;}
+    table.rekaptable.rk-compact td.rk-metric:last-child{text-align:right;}
+    table.rekaptable.rk-compact .pct-bar{grid-column:1 / -1; order:10; margin-top:2px;}
+    table.rekaptable.rk-compact tfoot tr{background:var(--gold-pale); border-color:transparent;}
+    table.rekaptable.rk-compact tfoot td{font-weight:700;}
+    .rk-hero{padding:16px;}
+    .rk-hero-val{font-size:28px;}
+    .rk-hero-val.long{font-size:23px;}
+    .rk-row-val{font-size:18px;}
+    .rekap-period-dates input{font-size:16px;}
+
 
     /* ---- Modal jadi bottom sheet ---- */
     .overlay{padding:0; align-items:flex-end;}
@@ -4988,6 +5082,9 @@ let calYear = new Date().getFullYear();
 let rekapTab = 'bulan';
 let rekapSection = 'ringkasan';
 let rekapWilayahLevel = 'kecamatan';
+// Filter periode Rekap (Ringkasan, Kategori, Keuangan). mode: all | month | year | custom.
+// Bagian Tren sengaja tidak terpengaruh karena tugasnya membandingkan antarwaktu.
+let rekapPeriod = {mode:'all', from:'', to:''};
 let modalDateJobs = null;
 let thanksOverrides = loadThanksOverrides();
 let thanksFontSize = loadThanksFontSize();
@@ -9501,14 +9598,16 @@ function renderStatusListModalHtml(field, scope){
   // scope 'berjalan' (dari daftar "Perlu dikerjakan" di Beranda): job yang tanggal mulainya
   // belum tiba disembunyikan, sama persis dengan aturan penghitungan di Beranda.
   const hanyaBerjalan = scope==='berjalan';
-  const semuaPending = sortedJobsWithNo().filter(cfg.isPending);
+  // scope 'periode' (dari Rekap): hanya job yang masuk filter periode Rekap yang aktif.
+  const idPeriode = scope==='periode' ? new Set(rekapJobs().map(j=>j.id)) : null;
+  const semuaPending = sortedJobsWithNo().filter(cfg.isPending).filter(j=>!idPeriode || idPeriode.has(j.id));
   const list = hanyaBerjalan ? semuaPending.filter(j=>jobSudahBerjalan(j)) : semuaPending;
   const belumMulai = semuaPending.length - list.length;
   const totalAmount = cfg.getAmount ? list.reduce((s,j)=>s+cfg.getAmount(j),0) : null;
   return `
     <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
     <h3>${cfg.icon} ${cfg.label} Belum Tuntas</h3>
-    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job${hanyaBerjalan ? ' yang sudah berjalan' : ''} dengan status ${cfg.label.toLowerCase()} yang belum tuntas${totalAmount!==null ? ` · Total: <b>${fmtRp(totalAmount)}</b>` : ''}</div>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job${hanyaBerjalan ? ' yang sudah berjalan' : ''}${idPeriode ? ' pada periode ' + escapeHtml(rekapPeriodLabel()) : ''} dengan status ${cfg.label.toLowerCase()} yang belum tuntas${totalAmount!==null ? ` · Total: <b>${fmtRp(totalAmount)}</b>` : ''}</div>
     ${(hanyaBerjalan && belumMulai>0) ? `<div style="font-size:12px;color:var(--ink-soft);margin-bottom:2px;">${belumMulai} job terjadwal yang tanggalnya belum tiba tidak dihitung.</div>` : ''}
     ${list.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">${ic('check-circle')}</div>Semua ${cfg.label.toLowerCase()}${hanyaBerjalan ? ' pada job yang sudah berjalan' : ''} sudah tuntas.</div>` :
       list.map(j=>`
@@ -9531,9 +9630,9 @@ function renderStatusListModalHtml(field, scope){
    Beda dari Top 5 Klien (yang cuma 5 teratas berdasar Omzet, admin-only), modal ini
    menampilkan SEMUA klien yang sudah booking LEBIH DARI SEKALI — aman untuk Tim juga
    (tanpa kolom Omzet), supaya kartunya tetap bisa diklik oleh siapa pun yang melihatnya. */
-function renderUniqueClientsModalHtml(){
+function renderUniqueClientsModalHtml(scope){
   const map = {};
-  jobs.forEach(j=>{
+  (scope==='periode' ? rekapJobs() : jobs).forEach(j=>{
     const nama = (j.namaKlien||'').trim();
     if(!nama) return;
     const key = nama.toLowerCase();
@@ -9563,8 +9662,8 @@ function renderUniqueClientsModalHtml(){
       `).join('')}
   `;
 }
-function openUniqueClientsModal(){
-  showModal(renderUniqueClientsModalHtml());
+function openUniqueClientsModal(scope){
+  showModal(renderUniqueClientsModalHtml(scope));
 }
 // ⚠️ Kalau fungsi ini diubah (field baru ditambahkan ke STATUS_LIST_CONFIG, dsb),
 // ingat catat juga di CHANGELOG + naikkan APP_VERSION — lihat aturan wajib di atas file ini.
@@ -9591,17 +9690,18 @@ function openStatusListModal(field, scope){
 /* ---------- Modal daftar job berdasar NILAI PERSIS suatu status (bukan cuma "belum
    tuntas" seperti STATUS_LIST_CONFIG di atas) — dipakai untuk kartu rincian per-status
    Pengiriman di Rekap (mis. klik "Sudah Dijemput" -> lihat semua job berstatus itu). */
-function renderValueListModalHtml(field, value){
+function renderValueListModalHtml(field, value, scope){
   const cfg = STATUS_LIST_CONFIG[field];
   const label = cfg ? cfg.label : field;
   const icon = cfg ? cfg.icon : '';
   const options = cfg ? cfg.options : null;
-  const list = sortedJobsWithNo().filter(j=>j[field]===value);
+  const idPeriode = scope==='periode' ? new Set(rekapJobs().map(j=>j.id)) : null;
+  const list = sortedJobsWithNo().filter(j=>j[field]===value).filter(j=>!idPeriode || idPeriode.has(j.id));
   const totalAmount = cfg && cfg.getAmount ? list.reduce((s,j)=>s+cfg.getAmount(j),0) : null;
   return `
     <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
     <h3>${icon} ${escapeHtml(value)}</h3>
-    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job dengan status ${label.toLowerCase()} "${escapeHtml(value)}"${totalAmount!==null ? ` · Total: <b>${fmtRp(totalAmount)}</b>` : ''}</div>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:2px;">${list.length} job${idPeriode ? ' pada periode ' + escapeHtml(rekapPeriodLabel()) : ''} dengan status ${label.toLowerCase()} "${escapeHtml(value)}"${totalAmount!==null ? ` · Total: <b>${fmtRp(totalAmount)}</b>` : ''}</div>
     ${list.length===0 ? `<div class="empty-state" style="padding:20px;"><div class="em">${ic('mailbox-empty')}</div>Belum ada job dengan status ini.</div>` :
       list.map(j=>`
         <div class="modal-job">
@@ -9617,9 +9717,9 @@ function renderValueListModalHtml(field, value){
       `).join('')}
   `;
 }
-function openValueListModal(field, value){
+function openValueListModal(field, value, scope){
   if(!isAdmin() && field==='sedekahStatus') return;
-  showModal(renderValueListModalHtml(field, value));
+  showModal(renderValueListModalHtml(field, value, scope));
   const ov = document.getElementById('modalOverlay');
   ov?.querySelectorAll('select[data-field]').forEach(sel=>{
     sel.addEventListener('click', e=> e.stopPropagation());
@@ -9633,7 +9733,7 @@ function openValueListModal(field, value){
       saveJobs();
       toast('Status diperbarui');
       render(); // supaya angka di kartu statistik di belakang modal ikut ter-update
-      openValueListModal(field, value); // bangun ulang isi modal dgn filter nilai yang SAMA (job yang barusan diubah akan hilang dari daftar ini)
+      openValueListModal(field, value, scope); // bangun ulang isi modal dgn filter nilai yang SAMA (job yang barusan diubah akan hilang dari daftar ini)
     });
   });
 }
@@ -11850,6 +11950,9 @@ function viewRekap(){
     ['kategori','Kategori'],
     ...(admin ? [['keuangan','Keuangan']] : []),
   ];
+  const sectionName = (sections.find(x=>x[0]===rekapSection)||[])[1] || '';
+  // Tren selalu memakai seluruh data (tujuannya membandingkan antarwaktu), jadi tidak ikut filter periode.
+  const periodText = rekapSection==='tren' ? 'Semua waktu' : rekapPeriodLabel();
   return `
   <div class="card">
     <div class="toolbar">
@@ -11859,15 +11962,94 @@ function viewRekap(){
     <div class="rekap-tabs" id="rekapSectionTabs">
       ${sections.map(([k,l])=>`<button data-rsection="${k}" class="${rekapSection===k?'active':''}">${l}</button>`).join('')}
     </div>
+    <p class="rekap-desc">${rekapSectionDesc(admin)}</p>
+    ${rekapSection==='tren' ? '' : renderRekapPeriodBar()}
     <div id="rekapPoster">
       <div class="rp-head">
         <div class="b">Kaone Motret</div>
         <h2>Rekap Job${admin?' &amp; Analisis Bisnis':''}</h2>
+        <div class="rp-period">${escapeHtml(sectionName)} &middot; ${escapeHtml(periodText)}</div>
       </div>
       ${renderRekapSection(admin)}
     </div>
   </div>
   `;
+}
+/* ---------- Filter periode Rekap ---------- */
+function rkYmd(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+/* Rentang tanggal (YYYY-MM-DD) untuk filter aktif; null = semua waktu. */
+function rekapPeriodRange(){
+  const now = new Date();
+  const m = rekapPeriod.mode;
+  if(m==='month'){
+    const y = now.getFullYear(), mo = now.getMonth();
+    return {from: rkYmd(new Date(y,mo,1)), to: rkYmd(new Date(y,mo+1,0))};
+  }
+  if(m==='year'){
+    const y = now.getFullYear();
+    return {from: `${y}-01-01`, to: `${y}-12-31`};
+  }
+  if(m==='custom'){
+    let from = rekapPeriod.from || '', to = rekapPeriod.to || '';
+    if(from && to && from > to){ const t = from; from = to; to = t; } // kalau terbalik, otomatis ditukar
+    return {from, to};
+  }
+  return null;
+}
+/* Daftar job yang masuk periode terpilih. Job tanpa tanggal acara hanya ikut di "Semua". */
+function rekapJobs(){
+  const r = rekapPeriodRange();
+  if(!r) return jobs;
+  return jobs.filter(j=>{
+    const t = j.tanggalAcara;
+    if(!t) return false;
+    if(r.from && t < r.from) return false;
+    if(r.to && t > r.to) return false;
+    return true;
+  });
+}
+function rekapPeriodLabel(){
+  const m = rekapPeriod.mode;
+  const now = new Date();
+  if(m==='month') return `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+  if(m==='year') return `Tahun ${now.getFullYear()}`;
+  if(m==='custom'){
+    const r = rekapPeriodRange();
+    if(r.from && r.to) return `${fmtTgl(r.from)} – ${fmtTgl(r.to)}`;
+    if(r.from) return `Mulai ${fmtTgl(r.from)}`;
+    if(r.to) return `Sampai ${fmtTgl(r.to)}`;
+    return 'Semua waktu';
+  }
+  return 'Semua waktu';
+}
+function renderRekapPeriodBar(){
+  const chips = [['all','Semua'],['month','Bulan Ini'],['year','Tahun Ini'],['custom','Pilih Sendiri']];
+  const n = rekapJobs().length;
+  return `
+  <div class="rekap-period" id="rekapPeriodBar">
+    <div class="rekap-sublevel">
+      ${chips.map(([k,l])=>`<button type="button" data-rperiod="${k}" class="${rekapPeriod.mode===k?'active':''}">${l}</button>`).join('')}
+    </div>
+    ${rekapPeriod.mode==='custom' ? `
+    <div class="rekap-period-dates">
+      <label>Dari<input type="date" id="rekapFrom" value="${escapeHtml(rekapPeriod.from||'')}"></label>
+      <label>Sampai<input type="date" id="rekapTo" value="${escapeHtml(rekapPeriod.to||'')}"></label>
+    </div>` : ''}
+    <div class="rekap-period-info">${ic('calendar')} <b>${escapeHtml(rekapPeriodLabel())}</b> &middot; ${n} dari ${jobs.length} job</div>
+  </div>`;
+}
+/* Penjelasan singkat (bahasa awam) di bawah tab Rekap, supaya jelas apa isi tiap bagian. */
+function rekapSectionDesc(admin){
+  if(rekapSection==='tren') return admin
+    ? 'Perkembangan dari bulan ke bulan dan tahun ke tahun: jumlah job, omzet, dan laba bersih. Berguna untuk melihat bulan ramai dan bulan sepi.'
+    : 'Perkembangan jumlah job dari bulan ke bulan dan tahun ke tahun. Berguna untuk melihat bulan ramai dan bulan sepi.';
+  if(rekapSection==='kategori') return 'Job dikelompokkan menurut jenis acara atau lokasi, supaya kelihatan mana yang paling sering.';
+  if(rekapSection==='keuangan') return 'Klien dengan omzet terbesar, status pembayaran, sedekah, dan rekap per vendor. Bagian ini hanya terlihat oleh Admin.';
+  return admin
+    ? 'Gambaran cepat bisnis: kondisi keuangan, jumlah job, hal yang paling sering terjadi, dan sejauh mana pekerjaan sudah selesai.'
+    : 'Gambaran cepat: jumlah job, hal yang paling sering terjadi, dan sejauh mana pekerjaan sudah selesai.';
 }
 /* Router internal Rekap — tiap section fokus pada satu topik supaya halaman
    tidak lagi jadi satu scroll panjang tanpa henti seperti sebelumnya:
@@ -11877,6 +12059,12 @@ function viewRekap(){
    - Keuangan (Admin saja): Top Klien, Status Pembayaran, per Vendor */
 function renderRekapSection(admin){
   if(rekapSection==='tren') return renderRekapTren(admin);
+  if(rekapJobs().length===0){
+    const msg = jobs.length===0
+      ? 'Belum ada job untuk direkap. Tambahkan job lebih dulu, lalu rekapnya akan muncul di sini.'
+      : 'Tidak ada job pada periode ini. Coba pilih periode lain.';
+    return `<div class="empty-state"><div class="em">${ic('mailbox-empty')}</div>${msg}</div>`;
+  }
   if(rekapSection==='kategori') return renderRekapKategori();
   if(rekapSection==='keuangan' && admin) return renderRekapKeuangan();
   return renderRekapRingkasan();
@@ -11888,11 +12076,13 @@ function renderRekapRingkasan(){
     ${buildRekapSummaryHtml()}
   </div>
   <div class="rekap-block">
-    <div class="section-title" style="margin-top:0;">${ic('star')} Insight Cepat</div>
+    <div class="section-title" style="margin-top:0;">${ic('star')} Yang Paling Sering</div>
+    <p class="rekap-hint">Dihitung dari jumlah job, bukan dari nominal uang.</p>
     ${buildQuickInsightsHtml()}
   </div>
   <div class="rekap-block">
-    <div class="section-title" style="margin-top:0;">${ic('check-circle')} Status Operasional</div>
+    <div class="section-title" style="margin-top:0;">${ic('check-circle')} Progres Pekerjaan</div>
+    <p class="rekap-hint">Ketuk salah satu baris untuk melihat daftar job-nya.</p>
     ${buildOperationalStatusHtml()}
   </div>`;
 }
@@ -11900,13 +12090,15 @@ function renderRekapTren(admin){
   const aggs = admin ? monthlyAggregates() : [];
   let html = `
   <div class="rekap-block">
-    <div class="section-title" style="margin-top:0;">${ic('chart')} Tren Jumlah Job per Bulan</div>
+    <div class="section-title" style="margin-top:0;">${ic('chart')} Jumlah Job per Bulan</div>
+    <p class="rekap-hint">Menampilkan sampai 12 bulan terakhir yang ada job. Geser ke samping bila grafiknya panjang.</p>
     ${buildJobCountBarChart()}
   </div>`;
   if(admin){
     html += `
     <div class="rekap-block">
-      <div class="section-title" style="margin-top:0;">${ic('money')} Tren Omzet &amp; Laba Bersih</div>
+      <div class="section-title" style="margin-top:0;">${ic('money')} Omzet &amp; Laba Bersih</div>
+      <p class="rekap-hint">Panah naik/turun membandingkan bulan terbaru dengan bulan sebelumnya.</p>
       ${buildMonthComparisonHtml(aggs)}
       ${buildMonthlyBarChart(aggs)}
       ${buildYearComparisonHtml()}
@@ -11939,20 +12131,20 @@ function renderRekapKategori(){
 }
 function buildSedekahRecapHtml(){
   const cfg = STATUS_LIST_CONFIG.sedekahStatus;
-  const sudah = jobs.filter(j=>j.sedekahStatus==='Sudah');
-  const belum = jobs.filter(j=>j.sedekahStatus!=='Sudah');
+  const sudah = rekapJobs().filter(j=>j.sedekahStatus==='Sudah');
+  const belum = rekapJobs().filter(j=>j.sedekahStatus!=='Sudah');
   if(sudah.length+belum.length===0) return '';
   const totalSudah = sudah.reduce((s,j)=>s+cfg.getAmount(j),0);
   const totalBelum = belum.reduce((s,j)=>s+cfg.getAmount(j),0);
   return `
   <div class="section-title">${ic('hands')} Ringkasan Sedekah</div>
   <div class="stat-grid" style="margin-top:0;">
-    <div class="stat stat-clickable" data-open-value-list="sedekahStatus::Sudah" title="Lihat rincian">
+    <div class="stat stat-clickable" data-open-value-list="sedekahStatus::Sudah::periode" title="Lihat rincian">
       <div class="label">Sudah Disedekahkan</div>
       <div class="value${statValueSizeClass(totalSudah)}">${fmtRp(totalSudah)}</div>
       <div class="sub">${sudah.length} job</div>
     </div>
-    <div class="stat stat-clickable" data-open-status-list="sedekahStatus" title="Lihat rincian">
+    <div class="stat stat-clickable" data-open-status-list="sedekahStatus" data-status-scope="periode" title="Lihat rincian">
       <div class="label">Belum Disedekahkan</div>
       <div class="value${statValueSizeClass(totalBelum)}">${fmtRp(totalBelum)}</div>
       <div class="sub">${belum.length} job</div>
@@ -11996,11 +12188,12 @@ function monthKeyLabelShort(key){
    Bersih, Rata-rata Omzet, Belum Lunas) HANYA ditampilkan untuk Admin. Akun Tim
    sengaja tidak diberi akses ke data omset/keuangan internal vendor. */
 function buildRekapSummaryHtml(){
-  if(jobs.length===0) return '';
+  const rj = rekapJobs();
+  if(rj.length===0) return '';
   const admin = isAdmin();
-  const total = jobs.length;
+  const total = rj.length;
   const klienCounts = {};
-  jobs.forEach(j=>{
+  rj.forEach(j=>{
     const nama = (j.namaKlien||'').trim();
     if(!nama) return;
     const key = nama.toLowerCase();
@@ -12008,75 +12201,98 @@ function buildRekapSummaryHtml(){
   });
   const klienUnik = Object.keys(klienCounts).length;
   const klienBerulang = Object.values(klienCounts).filter(c=>c>1).length;
-  const bulanAktif = new Set(jobs.filter(j=>j.tanggalAcara).map(j=>j.tanggalAcara.slice(0,7))).size;
+  const bulanAktif = new Set(rj.filter(j=>j.tanggalAcara).map(j=>j.tanggalAcara.slice(0,7))).size;
   const rataJobBulan = bulanAktif ? (total/bulanAktif) : 0;
 
-  // cards: [label, val, gold, sub, clickAttr] — clickAttr (opsional) = atribut HTML
-  // data-* yang membuat kartu itu bisa diklik untuk lihat rincian/daftarnya.
-  const cards = [
-    ['Total Job', total, false],
-    ['Klien Repeat Order', klienBerulang, false, `dari ${klienUnik} klien unik`, 'data-open-unique-clients="1"'],
-    ['Rata-rata Job / Bulan', rataJobBulan.toFixed(1), false],
-  ];
-  if(admin){
-    const totalOmzet = jobs.reduce((s,j)=>s+hitungOmzet(j),0);
-    const totalBersih = jobs.reduce((s,j)=>s+hitungBersih(j),0);
-    const rataRata = total ? totalOmzet/total : 0;
-    const margin = totalOmzet>0 ? (totalBersih/totalOmzet*100) : 0;
-    const belumLunas = jobs.filter(j=>j.statusPembayaran!=='Lunas');
-    const totalBelumLunas = belumLunas.reduce((s,j)=>s+Math.max(0,hitungSisaPembayaran(j)),0);
-    cards.push(
-      ['Total Omzet', fmtRp(totalOmzet), true],
-      ['Total Laba Bersih', fmtRp(totalBersih), true],
-      ['Margin Keuntungan', `${margin.toFixed(1)}%`, false, 'Laba Bersih ÷ Omzet'],
-      ['Rata-rata Omzet / Job', fmtRp(rataRata), false],
-      // Sengaja dipisah jadi value (nominal) + sub (jumlah job) — bukan digabung
-      // jadi satu baris teks panjang — supaya tidak mepet/terpotong di kartu kecil.
-      ['Belum Lunas', fmtRp(totalBelumLunas), false, `${belumLunas.length} job belum lunas`, 'data-open-status-list="statusPembayaran"'],
-    );
-  }
-  return `
-  <div class="stat-grid" style="margin-top:0;">
-    ${cards.map(([label,val,gold,sub,clickAttr])=>{
-      const valStr = typeof val==='number' ? val.toLocaleString('id-ID') : String(val);
-      // Kartu dengan nilai uang yang panjang (misal total omzet puluhan juta/miliar)
-      // otomatis dikecilkan fontnya bertahap sesuai jumlah digit — supaya angkanya
-      // SELALU terbaca lengkap (kalau masih kurang muat, CSS akan menurunkannya ke
-      // baris ke-2, bukan memotongnya jadi "...").
-      const longCls = statValueSizeClass(valStr);
-      return `
-      <div class="stat${gold?' gold':''}${clickAttr?' stat-clickable':''}" ${clickAttr||''} ${clickAttr?'title="Lihat rincian"':''}>
-        <div class="label">${escapeHtml(label)}</div>
-        <div class="value${longCls}">${escapeHtml(valStr)}</div>
-        ${sub?`<div class="sub">${escapeHtml(sub)}</div>`:''}
+  // Baris ringkas untuk angka pendukung. [label, nilai, keterangan, atribut-klik]
+  const rows = list => `
+  <div class="rk-rows">
+    ${list.map(([label,val,sub,clickAttr])=>`
+    <div class="rk-row${clickAttr?' rk-clickable':''}" ${clickAttr||''} ${clickAttr?'title="Lihat rincian"':''}>
+      <div class="rk-row-text">
+        <div class="rk-row-label">${escapeHtml(label)}</div>
+        ${sub?`<div class="rk-row-sub">${escapeHtml(sub)}</div>`:''}
       </div>
-    `;}).join('')}
+      <div class="rk-row-val">${escapeHtml(String(val))}</div>
+    </div>`).join('')}
   </div>`;
+
+  const aktivitas = [
+    ['Klien Repeat Order', klienBerulang.toLocaleString('id-ID'), `klien yang memesan lebih dari sekali, dari ${klienUnik} klien`, 'data-open-unique-clients="1" data-rekap-scope="periode"'],
+    ['Rata-rata Job / Bulan', rataJobBulan.toFixed(1), `dihitung dari ${bulanAktif} bulan yang ada job`],
+  ];
+
+  // Tim: tidak ada data keuangan. Angka utamanya Total Job.
+  if(!admin){
+    return `
+    <div class="rk-hero">
+      <div class="rk-hero-label">Total Job</div>
+      <div class="rk-hero-val">${total.toLocaleString('id-ID')}</div>
+      <div class="rk-hero-sub">semua job pada periode ini</div>
+    </div>
+    <div class="rekap-group-label">Aktivitas</div>
+    ${rows(aktivitas)}`;
+  }
+
+  // Admin: SATU angka utama (Laba Bersih), lalu Omzet & Rata-rata, lalu Belum Lunas ditandai tersendiri.
+  const totalOmzet = rj.reduce((s,j)=>s+hitungOmzet(j),0);
+  const totalBersih = rj.reduce((s,j)=>s+hitungBersih(j),0);
+  const rataRata = total ? Math.round(totalOmzet/total) : 0;
+  const margin = totalOmzet>0 ? (totalBersih/totalOmzet*100) : 0;
+  const belumLunas = rj.filter(j=>j.statusPembayaran!=='Lunas');
+  const totalBelumLunas = belumLunas.reduce((s,j)=>s+Math.max(0,hitungSisaPembayaran(j)),0);
+  const bersihStr = fmtRp(totalBersih);
+  const heroLong = bersihStr.replace(/[^0-9]/g,'').length >= 10 ? ' long' : '';
+  const miniStat = (label, valStr, sub) => `
+    <div class="stat">
+      <div class="label">${escapeHtml(label)}</div>
+      <div class="value${statValueSizeClass(valStr)}">${escapeHtml(valStr)}</div>
+      <div class="sub">${escapeHtml(sub)}</div>
+    </div>`;
+  return `
+  <div class="rk-hero">
+    <div class="rk-hero-label">Laba Bersih</div>
+    <div class="rk-hero-val${heroLong}">${escapeHtml(bersihStr)}</div>
+    <div class="rk-hero-sub">${margin.toFixed(1)}% dari omzet &middot; ${total.toLocaleString('id-ID')} job</div>
+  </div>
+  <div class="rk-grid2">
+    ${miniStat('Total Omzet', fmtRp(totalOmzet), 'pemasukan dari semua job')}
+    ${miniStat('Rata-rata Omzet / Job', fmtRp(rataRata), 'omzet ÷ jumlah job')}
+  </div>
+  <div class="rk-alert rk-clickable${belumLunas.length===0?' ok':''}" data-open-status-list="statusPembayaran" data-status-scope="periode" title="Lihat rincian">
+    <div>
+      <div class="rk-alert-label">Belum Lunas</div>
+      <div class="rk-alert-sub">${belumLunas.length===0 ? 'Semua job sudah lunas' : `${belumLunas.length} job belum lunas · ketuk untuk lihat`}</div>
+    </div>
+    <div class="rk-alert-val">${escapeHtml(fmtRp(totalBelumLunas))}</div>
+  </div>
+  <div class="rekap-group-label">Aktivitas</div>
+  ${rows([['Total Job', total.toLocaleString('id-ID'), 'semua job pada periode ini'], ...aktivitas])}`;
 }
 /* Status Operasional — progres Edit/Cetak & distribusi status Pengiriman. Sengaja
    TIDAK memuat apa pun soal uang, jadi aman ditampilkan ke Admin maupun Tim. */
 /* Insight Cepat — sengaja HANYA memuat fakta "yang mana yang terbanyak/tersering"
    (jumlah job), bukan nominal uang, jadi aman untuk semua role. */
 function buildQuickInsightsHtml(){
-  if(jobs.length===0) return '';
-  const withDate = jobs.filter(j=>j.tanggalAcara);
+  if(rekapJobs().length===0) return '';
+  const withDate = rekapJobs().filter(j=>j.tanggalAcara);
   const byMonth = groupBy(withDate, j=>{
     const d = new Date(j.tanggalAcara+'T00:00:00');
     return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
   });
   const bulanTersibuk = Object.entries(byMonth).sort((a,b)=>b[1].length-a[1].length)[0];
 
-  const byJenis = groupBy(jobs, j=> j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : j.jenisAcara);
+  const byJenis = groupBy(rekapJobs(), j=> j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : j.jenisAcara);
   const jenisTerpopuler = Object.entries(byJenis).sort((a,b)=>b[1].length-a[1].length)[0];
 
-  const byKec = groupBy(jobs.filter(j=>(j.kecamatan||'').trim()), j=>j.kecamatan.trim());
+  const byKec = groupBy(rekapJobs().filter(j=>(j.kecamatan||'').trim()), j=>j.kecamatan.trim());
   const kecTersering = Object.entries(byKec).sort((a,b)=>b[1].length-a[1].length)[0];
 
   const HARI_NAMES = ['Minggu','Senin','Selasa','Rabu','Kamis',"Jum'at",'Sabtu'];
   const byHari = groupBy(withDate, j=> HARI_NAMES[new Date(j.tanggalAcara+'T00:00:00').getDay()]);
   const hariFavorit = Object.entries(byHari).sort((a,b)=>b[1].length-a[1].length)[0];
 
-  const byVendor = groupBy(jobs, j=>vendorDisplay(j)||'Kaone Motret');
+  const byVendor = groupBy(rekapJobs(), j=>vendorDisplay(j)||'Kaone Motret');
   const vendorTersibuk = Object.keys(byVendor).length>1 ? Object.entries(byVendor).sort((a,b)=>b[1].length-a[1].length)[0] : null;
 
   const items = [
@@ -12099,27 +12315,27 @@ function buildQuickInsightsHtml(){
   </div>`;
 }
 function buildOperationalStatusHtml(){
-  if(jobs.length===0) return '';
-  const total = jobs.length;
-  const editSelesai = jobs.filter(j=>j.prosesEdit==='Selesai').length;
-  const cetakSelesai = jobs.filter(j=>j.prosesCetak==='Selesai').length;
+  if(rekapJobs().length===0) return '';
+  const total = rekapJobs().length;
+  const editSelesai = rekapJobs().filter(j=>j.prosesEdit==='Selesai').length;
+  const cetakSelesai = rekapJobs().filter(j=>j.prosesCetak==='Selesai').length;
   const pctEdit = total ? (editSelesai/total*100) : 0;
   const pctCetak = total ? (cetakSelesai/total*100) : 0;
-  const pengGroup = groupBy(jobs, j=>j.pengiriman);
+  const pengGroup = groupBy(rekapJobs(), j=>j.pengiriman);
   const pengKeys = Object.keys(pengGroup).sort((a,b)=>pengGroup[b].length-pengGroup[a].length);
 
   return `
-  <div class="op-bar-row op-bar-clickable" data-open-status-list="prosesEdit" title="Lihat job yang belum selesai">
+  <div class="op-bar-row op-bar-clickable" data-open-status-list="prosesEdit" data-status-scope="periode" title="Lihat job yang belum selesai">
     <div class="op-bar-label"><span>${ic('edit')} Proses Edit Selesai</span><span>${editSelesai}/${total} · ${pctEdit.toFixed(0)}%</span></div>
     <div class="op-bar-track"><div class="op-bar-fill" style="width:${pctEdit.toFixed(1)}%"></div></div>
   </div>
-  <div class="op-bar-row op-bar-clickable" data-open-status-list="prosesCetak" title="Lihat job yang belum selesai">
+  <div class="op-bar-row op-bar-clickable" data-open-status-list="prosesCetak" data-status-scope="periode" title="Lihat job yang belum selesai">
     <div class="op-bar-label"><span>${ic('image')} Proses Cetak Selesai</span><span>${cetakSelesai}/${total} · ${pctCetak.toFixed(0)}%</span></div>
     <div class="op-bar-track"><div class="op-bar-fill" style="width:${pctCetak.toFixed(1)}%"></div></div>
   </div>
   <div class="op-bar-label" style="margin-bottom:8px;"><span>${ic('truck')} Status Pengiriman</span><span></span></div>
   <div class="op-pengiriman-list">
-    ${pengKeys.map(k=>`<div class="op-peng-item" data-open-value-list="pengiriman::${escapeHtml(k)}" title="Lihat daftar job"><span class="op-peng-lbl">${escapeHtml(k)}</span><span class="op-peng-cnt">${pengGroup[k].length}</span></div>`).join('')}
+    ${pengKeys.map(k=>`<div class="op-peng-item" data-open-value-list="pengiriman::${escapeHtml(k)}::periode" title="Lihat daftar job"><span class="op-peng-lbl">${escapeHtml(k)}</span><span class="op-peng-cnt">${pengGroup[k].length}</span></div>`).join('')}
   </div>`;
 }
 /* Rekap tahunan (Analisis Bulanan versi tahun) — ADMIN SAJA, karena membandingkan Omzet. */
@@ -12162,37 +12378,38 @@ function buildYearComparisonHtml(){
 }
 /* Rincian Status Pembayaran & per Vendor — ADMIN SAJA (data keuangan internal). */
 function buildPaymentStatusHtml(){
-  if(!isAdmin() || jobs.length===0) return '';
-  const grouped = groupBy(jobs, j=>j.statusPembayaran);
+  if(!isAdmin() || rekapJobs().length===0) return '';
+  const grouped = groupBy(rekapJobs(), j=>j.statusPembayaran);
   const keys = Object.keys(grouped).sort((a,b)=>grouped[b].length-grouped[a].length);
   return `
   <div class="section-title">${ic('money')} Status Pembayaran</div>
+  <p class="rekap-hint">Sisa Tertahan = uang yang belum diterima dari klien.</p>
   <div class="rekap-table-wrap">
-  <table class="rekaptable">
-    <thead><tr><th>Status</th><th>Jumlah Job</th><th>Total Sisa Tertahan</th></tr></thead>
+  <table class="rekaptable rk-cards">
+    <thead><tr><th>Status</th><th class="rk-num">Jumlah Job</th><th class="rk-num">Sisa Tertahan</th></tr></thead>
     <tbody>${keys.map(k=>{
       const list = grouped[k];
       const sisa = list.reduce((s,j)=>s+Math.max(0,hitungSisaPembayaran(j)),0);
-      return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${fmtRp(sisa)}</td></tr>`;
+      return `<tr><td class="rk-title">${escapeHtml(String(k))}</td><td class="rk-num" data-label="Jumlah job">${list.length}</td><td class="rk-num" data-label="Sisa tertahan">${fmtRp(sisa)}</td></tr>`;
     }).join('')}</tbody>
   </table>
   </div>`;
 }
 function buildVendorBreakdownHtml(){
-  if(!isAdmin() || jobs.length===0) return '';
-  const grouped = groupBy(jobs, j=> vendorDisplay(j) || 'Kaone Motret');
+  if(!isAdmin() || rekapJobs().length===0) return '';
+  const grouped = groupBy(rekapJobs(), j=> vendorDisplay(j) || 'Kaone Motret');
   const keys = Object.keys(grouped).sort((a,b)=>grouped[b].length-grouped[a].length);
   if(keys.length<=1) return ''; // tidak berguna kalau semua job cuma 1 vendor
   return `
   <div class="section-title">${ic('folder')} Rekap per Vendor</div>
   <div class="rekap-table-wrap">
-  <table class="rekaptable">
-    <thead><tr><th>Vendor</th><th>Jumlah Job</th><th>Total Omzet</th><th>Total Laba Bersih</th></tr></thead>
+  <table class="rekaptable rk-cards">
+    <thead><tr><th>Vendor</th><th class="rk-num">Jumlah Job</th><th class="rk-num">Total Omzet</th><th class="rk-num">Total Laba Bersih</th></tr></thead>
     <tbody>${keys.map(k=>{
       const list = grouped[k];
       const omzet = list.reduce((s,j)=>s+hitungOmzet(j),0);
       const bersih = list.reduce((s,j)=>s+hitungBersih(j),0);
-      return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${fmtRp(omzet)}</td><td>${fmtRp(bersih)}</td></tr>`;
+      return `<tr><td class="rk-title">${escapeHtml(String(k))}</td><td class="rk-num" data-label="Jumlah job">${list.length}</td><td class="rk-num" data-label="Total omzet">${fmtRp(omzet)}</td><td class="rk-num" data-label="Laba bersih">${fmtRp(bersih)}</td></tr>`;
     }).join('')}</tbody>
   </table>
   </div>`;
@@ -12294,7 +12511,7 @@ function buildMonthlyBarChart(aggs){
 }
 function buildTopClientsHtml(){
   const map = {};
-  jobs.forEach(j=>{
+  rekapJobs().forEach(j=>{
     const nama = (j.namaKlien||'').trim();
     if(!nama) return;
     if(!map[nama]) map[nama] = {nama, count:0, omzet:0};
@@ -12304,14 +12521,15 @@ function buildTopClientsHtml(){
   const list = Object.values(map).sort((a,b)=>b.omzet-a.omzet).slice(0,5);
   if(list.length===0) return '';
   return `
-  <div class="section-title">${ic('star')} Top ${list.length} Klien (berdasarkan Omzet)</div>
+  <div class="section-title">${ic('star')} Top ${list.length} Klien</div>
+  <p class="rekap-hint">Diurutkan dari omzet terbesar.</p>
   <div class="rekap-table-wrap">
-  <table class="rekaptable">
-    <thead><tr><th>#</th><th>Klien</th><th>Jumlah Job</th><th>Total Omzet</th></tr></thead>
-    <tbody>${list.map((c,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(c.nama)}</td><td>${c.count}</td><td>${fmtRp(c.omzet)}</td></tr>`).join('')}</tbody>
+  <table class="rekaptable rk-cards">
+    <thead><tr><th>Klien</th><th class="rk-num">Jumlah Job</th><th class="rk-num">Total Omzet</th></tr></thead>
+    <tbody>${list.map((c,i)=>`<tr><td class="rk-title">${i+1}. ${escapeHtml(c.nama)}</td><td class="rk-num" data-label="Jumlah job">${c.count}</td><td class="rk-num" data-label="Total omzet">${fmtRp(c.omzet)}</td></tr>`).join('')}</tbody>
   </table>
   </div>
-  <button type="button" class="btn btn-outline" style="margin-top:10px;" data-open-unique-clients="1">${ic('user')} Lihat Klien Repeat Order</button>`;
+  <button type="button" class="btn btn-outline" style="margin-top:10px;" data-open-unique-clients="1" data-rekap-scope="periode">${ic('user')} Lihat Klien Repeat Order</button>`;
 }
 function rekapTitle(){
   if(rekapTab==='wilayah'){
@@ -12424,7 +12642,9 @@ function renderRekapTable(){
   else if(geoLevel==='kabupaten'){ keyFn = j=>j.kabupaten; keyLabel='Kabupaten'; }
   else if(geoLevel==='provinsi'){ keyFn = j=>j.provinsi; keyLabel='Provinsi'; }
 
-  const grouped = groupBy(jobs, keyFn);
+  // Tren (Per Bulan / Per Tahun) selalu memakai seluruh data; Kategori mengikuti filter periode.
+  const sumber = (rekapTab==='bulan' || rekapTab==='tahun') ? jobs : rekapJobs();
+  const grouped = groupBy(sumber, keyFn);
   let keys = Object.keys(grouped);
   // urutkan: bulan/tahun secara kronologis jika memungkinkan, lainnya berdasar jumlah job terbanyak
   if(rekapTab==='tahun') keys.sort((a,b)=>a-b);
@@ -12447,21 +12667,29 @@ function renderRekapTable(){
   const chartHtml = PIE_TABS.includes(rekapTab) ? buildDonutChart(keys, grouped, totalJob, keyLabel) : '';
   const admin = isAdmin();
 
+  const maxCount = Math.max(1, ...keys.map(k=>grouped[k].length));
+  const pctCell = (count, pct) => `<td class="pct-cell" data-label="Porsi"><span class="pct-txt">${pct}%</span><span class="pct-bar"><i style="width:${(count/maxCount*100).toFixed(1)}%"></i></span></td>`;
+  const hint = admin
+    ? 'Porsi = bagian dari seluruh job (batang menunjukkan perbandingan antar baris). Rata-rata/Job = Total Penghasilan ÷ Jumlah Job.'
+    : 'Porsi = bagian dari seluruh job. Batang menunjukkan perbandingan antar baris.';
+
   return `
   ${chartHtml}
+  <p class="rekap-hint">${hint}</p>
   <div class="rekap-table-wrap">
-  <table class="rekaptable">
-    <thead><tr><th>${keyLabel}</th><th>Jumlah Job</th><th>%</th>${admin?'<th>Total Penghasilan</th><th>Rata-rata/Job</th><th>Total Bersih</th>':''}</tr></thead>
+  <table class="rekaptable rk-compact">
+    <thead><tr><th>${keyLabel}</th><th class="rk-num">Jumlah Job</th><th>Porsi</th>${admin?'<th class="rk-num">Total Penghasilan</th><th class="rk-num">Rata-rata/Job</th><th class="rk-num">Total Bersih</th>':''}</tr></thead>
     <tbody>${keys.map(k=>{
       const list = grouped[k];
       const pct = totalJob ? (list.length/totalJob*100).toFixed(1) : '0.0';
-      if(!admin) return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${pct}%</td></tr>`;
+      const head = `<td class="rk-title">${escapeHtml(String(k))}</td><td class="rk-num rk-count" data-label="Jumlah job">${list.length}</td>${pctCell(list.length, pct)}`;
+      if(!admin) return `<tr>${head}</tr>`;
       const penghasilan = list.reduce((s,j)=>s+hitungOmzet(j),0);
       const bersih = list.reduce((s,j)=>s+hitungBersih(j),0);
-      const rata = list.length ? penghasilan/list.length : 0;
-      return `<tr><td>${escapeHtml(String(k))}</td><td>${list.length}</td><td>${pct}%</td><td>${fmtRp(penghasilan)}</td><td>${fmtRp(rata)}</td><td>${fmtRp(bersih)}</td></tr>`;
+      const rata = list.length ? Math.round(penghasilan/list.length) : 0;
+      return `<tr>${head}<td class="rk-num rk-metric" data-label="Penghasilan">${fmtRp(penghasilan)}</td><td class="rk-num rk-metric rk-avg" data-label="Rata-rata/job">${fmtRp(rata)}</td><td class="rk-num rk-metric" data-label="Bersih">${fmtRp(bersih)}</td></tr>`;
     }).join('')}</tbody>
-    <tfoot><tr><td>TOTAL</td><td>${totalJob}</td><td>100%</td>${admin?`<td>${fmtRp(totalPenghasilan)}</td><td>${fmtRp(totalJob?totalPenghasilan/totalJob:0)}</td><td>${fmtRp(totalBersih)}</td>`:''}</tr></tfoot>
+    <tfoot><tr><td class="rk-title">TOTAL</td><td class="rk-num rk-count" data-label="Jumlah job">${totalJob}</td><td class="pct-cell" data-label="Porsi"><span class="pct-txt">100%</span></td>${admin?`<td class="rk-num rk-metric" data-label="Penghasilan">${fmtRp(totalPenghasilan)}</td><td class="rk-num rk-metric rk-avg" data-label="Rata-rata/job">${fmtRp(totalJob?Math.round(totalPenghasilan/totalJob):0)}</td><td class="rk-num rk-metric" data-label="Bersih">${fmtRp(totalBersih)}</td>`:''}</tr></tfoot>
   </table>
   </div>
   `;
@@ -12963,12 +13191,12 @@ function attachHandlers(){
     el.addEventListener('click', ()=> openBerandaStatModal(el.dataset.openStat));
   });
   document.querySelectorAll('[data-open-unique-clients]').forEach(el=>{
-    el.addEventListener('click', openUniqueClientsModal);
+    el.addEventListener('click', ()=> openUniqueClientsModal(el.dataset.rekapScope));
   });
   document.querySelectorAll('[data-open-value-list]').forEach(el=>{
     el.addEventListener('click', ()=>{
-      const [field, value] = el.dataset.openValueList.split('::');
-      openValueListModal(field, value);
+      const [field, value, scope] = el.dataset.openValueList.split('::');
+      openValueListModal(field, value, scope);
     });
   });
   if(document.getElementById('dailyQuoteText')){
@@ -13075,6 +13303,11 @@ function attachHandlers(){
   document.querySelectorAll('[data-rwlevel]').forEach(b=>{
     b.addEventListener('click', ()=>{ rekapWilayahLevel = b.dataset.rwlevel; refreshView(); });
   });
+  document.querySelectorAll('[data-rperiod]').forEach(b=>{
+    b.addEventListener('click', ()=>{ rekapPeriod.mode = b.dataset.rperiod; refreshView(); });
+  });
+  document.getElementById('rekapFrom')?.addEventListener('change', e=>{ rekapPeriod.from = e.target.value; refreshView(); });
+  document.getElementById('rekapTo')?.addEventListener('change', e=>{ rekapPeriod.to = e.target.value; refreshView(); });
   document.getElementById('btnDownloadRekap')?.addEventListener('click', downloadRekapImage);
 
   // PEMBAGIAN TUGAS
@@ -13216,12 +13449,27 @@ function downloadRekapImage(){
     return;
   }
   const el = document.getElementById('rekapPoster');
+  if(!el) return;
+  // Gambar selalu dibuat dengan tata letak lebar (seperti di komputer), meski diunduh dari HP:
+  // windowWidth membuat html2canvas menghitung tampilan seolah layarnya 1000px, jadi tabel tetap
+  // berbentuk tabel (lengkap dengan kolom Rata-rata/Job) dan gambarnya tidak memanjang berlebihan.
+  // Judul poster (tersembunyi di layar) ditampilkan khusus di salinan yang difoto.
+  const kecil = window.innerWidth <= 640;
   try{
     toast('Menyiapkan gambar rekap...');
-    html2canvas(el, {scale:2, backgroundColor:'#fffef9'}).then(canvas=>{
+    html2canvas(el, {
+      scale: kecil ? 1.5 : 2,
+      backgroundColor:'#fffef9',
+      windowWidth:1000,
+      scrollX:0, scrollY:0,
+      onclone: doc=>{
+        const h = doc.querySelector('#rekapPoster .rp-head');
+        if(h) h.style.display = 'block';
+      }
+    }).then(canvas=>{
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
-      a.download = `rekap-${rekapTab}-kaonemotret.png`;
+      a.download = `rekap-${rekapSection}-kaonemotret.png`;
       a.click();
     }).catch(()=>{
       alert('Gagal membuat gambar rekap. Coba lagi.');
@@ -13272,6 +13520,12 @@ const CHANGELOG = [
     version: '1.15.7',
     tanggal: '3 Oktober 2026',
     items: [
+      { kategori: 'Fitur', teks: 'Rekap kini punya filter periode: Semua, Bulan Ini, Tahun Ini, atau Pilih Sendiri (tentukan tanggal awal dan akhir). Jadi pertanyaan seperti bulan ini berapa job dan labanya langsung terjawab. Filter berlaku di Ringkasan, Kategori, dan Keuangan; bagian Tren tetap menampilkan seluruh waktu supaya bisa dibandingkan antarbulan.' },
+      { kategori: 'Peningkatan', teks: 'Ringkasan Rekap untuk Admin kini punya satu angka utama, yaitu Laba Bersih, lalu Total Omzet dan Rata-rata per job. Jumlah yang Belum Lunas ditandai tersendiri (hijau kalau semua sudah lunas), dan angka aktivitas dibuat lebih ringkas.' },
+      { kategori: 'Peningkatan', teks: 'Tabel rekap di HP jauh lebih ringkas: satu item cukup dua baris (nama, jumlah job, porsi, penghasilan, bersih) dengan batang perbandingan di bawahnya, jadi daftar kecamatan atau jenis acara tidak lagi menggulir panjang. Kolom Rata-rata/Job tetap ada di komputer dan di gambar unduhan.' },
+      { kategori: 'Perbaikan', teks: 'Judul Rekap Job tidak lagi muncul dobel di halaman Rekap. Judul di dalam poster sekarang hanya ikut tampil di gambar unduhan, lengkap dengan nama bagian dan periodenya.' },
+      { kategori: 'Perbaikan', teks: 'Unduh Rekap sebagai Gambar dari HP kini memakai tampilan tabel lebar seperti di komputer, sehingga gambarnya tidak menjadi sangat panjang. Gambar juga mengikuti bagian dan periode yang sedang dipilih.' },
+      { kategori: 'Peningkatan', teks: 'Halaman Rekap dirapikan supaya lebih mudah dipahami. Tiap bagian kini punya penjelasan singkat, kartu Ringkasan dikelompokkan menjadi Keuangan dan Aktivitas dengan keterangan di setiap angka, dan tabel rekap diberi batang perbandingan. Di HP, tabel tidak perlu digeser lagi karena tiap baris tampil sebagai kartu.' },
       { kategori: 'Perbaikan', teks: 'Keamanan login dan data diperkuat. Login kini memakai sistem akun resmi dengan sandi terenkripsi, dan akun Tim benar-benar tidak menerima data keuangan (DP, harga, diskon, biaya, honor orang lain) dari server, bukan hanya disembunyikan di tampilan. Akun yang mendaftar sendiri harus disetujui Admin dulu di Pengaturan > Kelola Akun. Sandi minimal 6 karakter, dan semua pengguna perlu login ulang satu kali.' },
       { kategori: 'Fitur', teks: 'Tim kini bisa langsung melihat sisa pembayaran klien untuk ditagih di hari H. Di Detail Job ada kartu \"Tagihan hari H\" berisi sisa yang harus ditagih beserta rinciannya (untuk akun Tim hanya sisa yang ditagih; rincian total dan DP khusus Admin), tombol Salin pesan tagihan, dan tombol WhatsApp klien.' },
       { kategori: 'Fitur', teks: 'Beranda menampilkan bagian \"Tagihan hari H\": job yang akan atau sedang berjalan dan masih ada sisa pembayaran, lengkap dengan nominal dan penanda waktunya. Akun Tim hanya melihat job yang ia ikuti.' },

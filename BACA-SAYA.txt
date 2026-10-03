@@ -30,3 +30,59 @@ NOTIFIKASI PUSH (aplikasi DITUTUP) — v1.15.1
 - Server: Edge Function "send-push" di Supabase; kunci privat VAPID tersimpan di Supabase Vault.
 - Semua file (index.html, sw.js, push-handler.js, manifest, icons) harus di-upload bersama ke hosting HTTPS.
 - Tiap pengguna: buka aplikasi > izinkan notifikasi > (iPhone: wajib Tambah ke Layar Utama dulu, iOS 16.4+).
+
+TAMPILAN RINCIAN BONUS — v1.15.2
+- Kartu bonus (Admin: Pembagian Tugas; Tim: Bonus Saya) kini menampilkan: Total bonus = Sudah diklaim + Siap diklaim sekarang + Masa tunggu,
+  lengkap dengan batang proporsi dan keterangan tiap bagian. Cukup ganti index.html (sw.js tidak berubah).
+
+ANGKA UTAMA BONUS & KARTU KLAIM — v1.15.3
+- Angka terbesar di kartu bonus kini = bonus yang SIAP DIKLAIM (bukan total keseluruhan). Total keseluruhan tetap ada
+  sebagai rujukan di bawahnya, lengkap dengan rincian Sudah diklaim / Siap diklaim / Masa tunggu.
+- Berlaku di kartu Admin, kotak "Bonus Saya" (Tim), tile ringkasan Tugas, dan tile Beranda akun Tim.
+- "Klaim Bonus Menunggu Diproses" dirombak: satu kartu per klaim (nama, waktu, jenis, nominal, ID Game & Server + Salin,
+  tombol proses) tanpa area gulir; susunan HP menumpuk, desktop dua kolom. Cukup ganti index.html.
+
+KARTU TUGAS DI HP — v1.15.4
+- "Rekap Tugas Detail" di HP kini satu kartu ringkas per tugas: akun + role + status, job, tanggal | jam,
+  keterangan (hanya jika diisi), lalu satu baris tombol (Tandai/Batalkan Selesai berlabel + Komentar, Edit, Hapus).
+  Tabel di desktop tetap seperti biasa. Cukup ganti index.html.
+
+PEMBAGIAN TUGAS TIM — v1.15.5
+- Header: judul + ringkasan (jumlah tugas & akun), tombol Bagi Tugas dan Refresh dalam satu baris.
+- 6 tile ringkasan kini punya keterangan: Total Tugas (jumlah job & akun), Selesai (persen + batang progres),
+  Belum Selesai (jumlah lewat jadwal), Total Jam (rata-rata per tugas), Tugas Mendatang (tanggal terdekat;
+  sebelumnya berlabel "Job Mendatang"), Bonus Siap Diklaim (+ nilai masa tunggu). Susunan 2 kolom di HP, 3 di tablet, 6 di layar lebar.
+- Dua kotak bonus Admin (Pengaturan Bonus & Bonus Sudah Diklaim) digabung jadi satu kartu "Bonus Tim": angka utama = bonus siap
+  diklaim seluruh Tim, rincian (Sudah diklaim / Siap diklaim / Masa tunggu), serta kotak Tarif, Dibayar bulan ini,
+  Klaim menunggu, Min. klaim Tunai. Tombol "Atur Tarif" tetap membuka pengaturan tarif. Cukup ganti index.html.
+
+BERANDA BARU — v1.15.6
+- Job berikutnya: penanda waktu, tanggal, jam, lokasi, status bayar + sisa (Admin), dan Tim bertugas.
+- Strip "7 hari ke depan" (ketuk -> Kalender). Kartu angka berketerangan. "Perlu dikerjakan" dengan batang progres & persen.
+- "Job terdekat lainnya" dengan chip waktu & status bayar, plus tautan "Lihat semua". Cukup ganti index.html.
+
+TAGIHAN HARI H — v1.15.7
+- Detail Job: kartu "Tagihan hari H" di bagian atas (sisa yang ditagih, rincian total/DP/sisa, penanda waktu,
+  tombol Salin pesan & WhatsApp klien). Job lunas menampilkan "Sudah lunas".
+- Beranda: bagian "Tagihan hari H" untuk job yang akan/sedang berjalan dan masih ada sisa. Admin melihat semua job,
+  akun Tim hanya job yang ia ikuti (dari Tugas atau Honor Tim). Cukup ganti index.html.
+
+PRIVASI KEUANGAN TIM — v1.15.7 (lanjutan)
+- Akun Tim hanya melihat: Sisa Pembayaran klien dan honor/bonus miliknya sendiri.
+- Detail Job, gambar unduhan, dan Salin Detail untuk Tim tidak lagi memuat DP, harga, diskon, biaya cetak,
+  sedekah, harga paket vendor, honor anggota lain, penghasilan bersih, Status Pembayaran, Ongkos Antar, dan Saran Transport.
+- Beranda Tim: label status bayar diganti "Sisa Rp..." atau "Lunas"; keterangan DP di Tagihan hari H dihapus.
+- Daftar Job Tim: kolom Bayar dan Bersih diganti kolom Sisa.
+- Kwitansi (PDF/Gambar) kini khusus Admin.
+- Akun Tim tidak bisa mengirim pesan ke klien: Kabari Klien, pesan template (Booking/DP, H-1), Salin pesan tagihan, dan WhatsApp klien khusus Admin.
+Cukup ganti index.html.
+- Nomor WhatsApp klien hanya terlihat Admin (Detail Job, gambar unduhan, Salin Detail, rincian Kalender, Google Calendar/.ics, pencarian Daftar Job).
+
+KEAMANAN LOGIN & DATA — v1.15.7 (3 Oktober 2026)
+- Login memakai Supabase Auth (sandi ter-hash). Akun lama sudah dipindahkan dengan username & sandi yang sama.
+- Akun Tim TIDAK menerima DP, harga, diskon, biaya cetak, honor orang lain, sedekah, dan ongkos antar dari server
+  (hanya Sisa Pembayaran & honor miliknya). Tim menyimpan data lewat fungsi tim_push yang memvalidasi di server.
+- Akun yang daftar sendiri harus disetujui Admin dulu (Pengaturan > Kelola Akun). Sandi minimal 6 karakter.
+- Semua pengguna harus login ulang satu kali setelah update ini.
+- Urutan pasang: (1) upload semua file ke hosting, (2) jalankan keamanan-langkah-2.sql di Supabase (atau minta Claude),
+  (3) deploy ulang Edge Function send-push versi baru.

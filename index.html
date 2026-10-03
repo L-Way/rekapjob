@@ -571,6 +571,29 @@
   .bb-total b{color:var(--ink); font-size:13px; white-space:nowrap;}
   .bb-total + .bb-hours{margin-top:2px;}
 
+  /* Tagihan hari H */
+  .tagih-box{margin:0 0 14px; padding:14px; border-radius:14px; background:#fff8dc; border:1.5px solid var(--gold-light);}
+  .tagih-box.now{background:#fff1b8; border-color:#e0b93a;}
+  .tagih-box.ok{background:#eef8ee; border-color:#bfe0c1;}
+  .tagih-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .tagih-label{display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; color:var(--ink);}
+  .tagih-when{padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; background:#fff; border:1px solid var(--gold-light); color:var(--ink); white-space:nowrap;}
+  .tagih-when.now{background:#e0b93a; border-color:#e0b93a; color:#241b00;}
+  .tagih-amt{font-family:'Fraunces',serif; font-weight:700; font-size:30px; line-height:1.15; margin-top:8px; color:var(--ink);}
+  .tagih-sub{font-size:12px; color:var(--ink-soft); margin-top:2px; line-height:1.45;}
+  .tagih-rows{display:grid; gap:5px; margin-top:12px; padding-top:12px; border-top:1px dashed var(--gold-light);}
+  .tagih-rows div{display:flex; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--ink-soft);}
+  .tagih-rows b{color:var(--ink); white-space:nowrap;}
+  .tagih-rows div:last-child{padding-top:5px; border-top:1px solid var(--gold-light);}
+  .tagih-rows div:last-child span, .tagih-rows div:last-child b{color:var(--ink); font-weight:700;}
+  .tagih-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+  .tagih-actions .btn{flex:1 1 140px; display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; text-decoration:none; text-align:center;}
+  .tagih-ok{display:flex; align-items:center; gap:8px; margin-top:6px; font-size:13px; font-weight:600; color:var(--ok);}
+  .tagih-ok .ic{width:18px; height:18px;}
+  .dash-row .amt{font-weight:700; font-size:13.5px; color:var(--dash-ink); white-space:nowrap; text-align:right;}
+  .dash-row.tagih-now{border-color:#e0b93a; background:#fffaf0;}
+  .dash-mini.now{background:var(--dash-gold); color:#241b00;}
+
   /* Header & tile ringkasan Pembagian Tugas: angka + keterangan + (opsional) batang progres */
   .tg-actions{display:flex; gap:8px; align-items:stretch;}
   .tg-sub{font-size:12px; color:var(--ink-soft); margin-top:4px; line-height:1.45;}
@@ -1022,6 +1045,8 @@
      Google Calendar, melihat & mengirim Saran & Penilaian, dsb) tetap terbuka
      untuk Tim. */
   body.role-tim .admin-only{display:none !important;}
+  /* Kebalikannya: hanya tampil untuk akun Tim (mis. kolom Sisa di Daftar Job). */
+  body:not(.role-tim) .tim-only{display:none !important;}
 
   /* ---------- SARAN & PENILAIAN (daftar ulasan klien) ---------- */
   .ulasan-list{display:flex; flex-direction:column; gap:14px; margin-top:22px;}
@@ -3103,51 +3128,65 @@ function applyRoleToUI(){
   if(btnOut) btnOut.onclick = ()=>{ closeMoreSheet(); logout(); };
 }
 
+/* Memuat profil akun (peran & status persetujuan) dari server. Peran ini HANYA dipakai untuk
+   tampilan; yang menentukan hak akses sebenarnya adalah aturan RLS & fungsi di Supabase. */
+async function kaoneMuatProfil(uid){
+  const { data, error } = await supabaseClient
+    .from('kaone_profiles')
+    .select('id,username,role,nama_lengkap,disetujui')
+    .eq('id', uid)
+    .maybeSingle();
+  if(error) throw error;
+  return data;
+}
+function kaoneSimpanSesi(d){
+  currentUserId = d.id;
+  currentUsername = d.username;
+  currentUserRole = d.role;
+  currentNamaLengkap = d.nama_lengkap || '';
+  try{ localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({id:d.id, username:d.username, role:d.role, namaLengkap:currentNamaLengkap})); }catch(e){}
+}
 async function attemptLogin(username, password){
   if(!cloudSyncEnabled) return {ok:false, reason:'offline'};
   try{
-    const { data, error } = await supabaseClient
-      .from(USERS_TABLE)
-      .select('id,username,role,nama_lengkap')
-      .eq('username', username)
-      .eq('password', password)
-      .maybeSingle();
-    if(error) throw error;
-    if(!data) return {ok:false, reason:'invalid'};
-    currentUserId = data.id;
-    currentUsername = data.username;
-    currentUserRole = data.role;
-    currentNamaLengkap = data.nama_lengkap || '';
-    try{ localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({id:data.id, username:data.username, role:data.role, namaLengkap:currentNamaLengkap})); }catch(e){}
+    const { data: email, error: e1 } = await supabaseClient.rpc('kaone_cari_email', { p_username: username });
+    if(e1) throw e1;
+    const { data: au, error: e2 } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if(e2){
+      if(e2.status===400 || /invalid/i.test(e2.message||'')) return {ok:false, reason:'invalid'};
+      throw e2;
+    }
+    const prof = await kaoneMuatProfil(au.user.id);
+    if(!prof){ await supabaseClient.auth.signOut(); return {ok:false, reason:'invalid'}; }
+    if(!prof.disetujui){ await supabaseClient.auth.signOut(); return {ok:false, reason:'pending'}; }
+    kaoneSimpanSesi(prof);
+    kaoneBersihkanCacheTim();
     return {ok:true};
   }catch(e){
-    console.error('Gagal login (pastikan tabel kaone_motret_users sudah dibuat, lihat komentar dekat SUPABASE_URL)', e);
+    console.error('Gagal login', e);
     return {ok:false, reason:'error'};
   }
+}
+
+/* Akun Tim yang pernah login di versi lama menyimpan data lengkap di cache perangkat.
+   Hapus bagian yang bukan haknya (harga, tarif, template pesan ke klien). */
+function kaoneBersihkanCacheTim(){
+  if(currentUserRole==='admin') return;
+  try{
+    [HARGA_CETAK_KEY, ONGKIR_ANTAR_KEY, PESAN_SELESAI_KEY, PESAN_BOOKING_KEY, PESAN_H1_KEY, CPB_FORMAT_KEY]
+      .forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
 }
 
 async function attemptRegister(username, password, namaLengkap){
   if(!cloudSyncEnabled) return {ok:false, reason:'offline'};
   try{
-    const { data: existing, error: checkErr } = await supabaseClient
-      .from(USERS_TABLE).select('id').eq('username', username).maybeSingle();
-    if(checkErr) throw checkErr;
-    if(existing) return {ok:false, reason:'taken'};
-    // Akun yang mendaftar sendiri lewat halaman login selalu berperan "tim" (bukan admin).
-    const { data, error } = await supabaseClient
-      .from(USERS_TABLE)
-      .insert({ username, password, role:'tim', nama_lengkap:namaLengkap })
-      .select('id,username,role,nama_lengkap')
-      .single();
+    const { data, error } = await supabaseClient.rpc('kaone_daftar', { p_username: username, p_password: password, p_nama: namaLengkap });
     if(error) throw error;
-    currentUserId = data.id;
-    currentUsername = data.username;
-    currentUserRole = data.role;
-    currentNamaLengkap = data.nama_lengkap || '';
-    try{ localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({id:data.id, username:data.username, role:data.role, namaLengkap:currentNamaLengkap})); }catch(e){}
-    return {ok:true};
+    if(data && data.ok) return {ok:true};
+    return {ok:false, reason: (data && data.reason) || 'error'};
   }catch(e){
-    console.error('Gagal mendaftar (pastikan tabel kaone_motret_users sudah dibuat, lihat komentar dekat SUPABASE_URL)', e);
+    console.error('Gagal mendaftar', e);
     return {ok:false, reason:'error'};
   }
 }
@@ -3158,13 +3197,16 @@ function logout(){
   // Cabut push perangkat ini dulu supaya pemilik akun sebelumnya tidak menerima notifikasi
   // di perangkat ini lagi; batas tunggu 2 detik agar logout tidak pernah tertahan.
   let done = false;
-  const go = ()=>{ if(done) return; done = true; location.reload(); };
+  const go = ()=>{ if(done) return; done = true; const r = ()=>location.reload(); try{ Promise.resolve(supabaseClient.auth.signOut()).then(r, r); setTimeout(r, 1500); }catch(e){ r(); } };
   try{ Promise.race([pushUnsubscribe(), new Promise(r=>setTimeout(r, 2000))]).then(go, go); }catch(e){ go(); }
   setTimeout(go, 2500);
 }
 function checkAuthSession(){
   let saved = null;
   try{ saved = JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null'); }catch(e){}
+  let adaSesi = false;
+  try{ adaSesi = Object.keys(localStorage).some(k=>/^sb-.*-auth-token$/.test(k) && localStorage.getItem(k)); }catch(e){}
+  if(!adaSesi){ try{ localStorage.removeItem(AUTH_SESSION_KEY); }catch(e){} return false; } // sesi lama (sebelum Supabase Auth) -> login ulang
   if(saved && saved.id && saved.username && saved.role){
     currentUserId = saved.id;
     currentUserRole = saved.role;
@@ -3181,22 +3223,17 @@ function checkAuthSession(){
 async function updateOwnAccount(newUsername, newPassword, newNamaLengkap){
   if(!cloudSyncEnabled) return {ok:false, reason:'offline'};
   if(!currentUserId) return {ok:false, reason:'error'};
-  const payload = {};
-  if(newUsername && newUsername !== currentUsername) payload.username = newUsername;
-  if(newPassword) payload.password = newPassword;
-  if(typeof newNamaLengkap === 'string' && newNamaLengkap !== (currentNamaLengkap||'')) payload.nama_lengkap = newNamaLengkap;
-  if(Object.keys(payload).length===0) return {ok:false, reason:'nochange'};
+  const ubahUser = newUsername && newUsername !== currentUsername;
+  const ubahNama = typeof newNamaLengkap === 'string' && newNamaLengkap !== (currentNamaLengkap||'');
+  if(!ubahUser && !newPassword && !ubahNama) return {ok:false, reason:'nochange'};
   try{
-    if(payload.username){
-      const { data: existing, error: checkErr } = await supabaseClient
-        .from(USERS_TABLE).select('id').eq('username', payload.username).maybeSingle();
-      if(checkErr) throw checkErr;
-      if(existing && existing.id !== currentUserId) return {ok:false, reason:'taken'};
-    }
-    const { error } = await supabaseClient.from(USERS_TABLE).update(payload).eq('id', currentUserId);
+    const { data, error } = await supabaseClient.rpc('kaone_ubah_akun_saya', {
+      p_username: ubahUser ? newUsername : '', p_password: newPassword || '', p_nama: ubahNama ? newNamaLengkap : null
+    });
     if(error) throw error;
-    if(payload.username) currentUsername = payload.username;
-    if(typeof payload.nama_lengkap === 'string') currentNamaLengkap = payload.nama_lengkap;
+    if(!data || !data.ok) return {ok:false, reason: (data && data.reason) || 'error'};
+    if(ubahUser) currentUsername = newUsername;
+    if(ubahNama) currentNamaLengkap = newNamaLengkap;
     try{ localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({id:currentUserId, username:currentUsername, role:currentUserRole, namaLengkap:currentNamaLengkap})); }catch(e){}
     applyRoleToUI();
     return {ok:true};
@@ -3206,6 +3243,23 @@ async function updateOwnAccount(newUsername, newPassword, newNamaLengkap){
   }
 }
 
+async function kaoneSetujuiAkun(id, setuju){
+  if(!isAdmin()) return;
+  if(!confirm(setuju ? 'Setujui akun ini agar bisa masuk dan melihat data Tim?' : 'Nonaktifkan akun ini? Akun tidak akan bisa membuka data lagi.')) return;
+  const { error } = await supabaseClient.rpc('kaone_setujui_akun', { p_id:id, p_setuju:setuju });
+  if(error){ alert('Gagal mengubah status akun.'); return; }
+  toast(setuju ? 'Akun disetujui' : 'Akun dinonaktifkan');
+  pullAkunFromCloud();
+}
+async function kaoneAturPassword(id){
+  if(!isAdmin()) return;
+  const baru = prompt('Masukkan sandi baru untuk akun ini (minimal 6 karakter):');
+  if(baru===null) return;
+  if(baru.length < 6){ alert('Sandi minimal 6 karakter.'); return; }
+  const { error } = await supabaseClient.rpc('kaone_atur_password', { p_id:id, p_password:baru });
+  if(error){ alert('Gagal mengatur sandi.'); return; }
+  toast('Sandi diperbarui. Sampaikan sandi baru ke pemilik akun.');
+}
 /* Daftar seluruh akun — hanya diambil & ditampilkan di panel "Kelola Akun" milik
    Admin (menu Pengaturan). Akun biasa tidak pernah menarik daftar lengkap ini. */
 let akunList = [];
@@ -3216,8 +3270,8 @@ async function pullAkunFromCloud(){
   if(currentView==='pengaturan') render();
   try{
     const { data, error } = await supabaseClient
-      .from(USERS_TABLE)
-      .select('id,username,password,role,nama_lengkap,created_at')
+      .from('kaone_profiles')
+      .select('id,username,role,nama_lengkap,disetujui,created_at')
       .order('created_at', { ascending:true });
     if(error) throw error;
     akunList = data || [];
@@ -3249,6 +3303,10 @@ document.getElementById('authForm')?.addEventListener('submit', async function(e
   } else {
     errEl.textContent = res.reason==='offline'
       ? 'Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.'
+      : res.reason==='pending'
+      ? 'Akun Anda belum disetujui Admin. Hubungi Admin untuk meminta persetujuan.'
+      : res.reason==='error'
+      ? 'Gagal masuk karena gangguan koneksi atau server. Coba lagi sebentar lagi.'
       : 'Username atau password salah.';
     errEl.classList.add('show');
   }
@@ -3265,17 +3323,20 @@ document.getElementById('registerForm')?.addEventListener('submit', async functi
   errEl.classList.remove('show');
   if(!nama){ errEl.textContent = 'Nama lengkap wajib diisi.'; errEl.classList.add('show'); return; }
   if(!u || !p){ errEl.textContent = 'Username dan password wajib diisi.'; errEl.classList.add('show'); return; }
-  if(p.length < 4){ errEl.textContent = 'Password minimal 4 karakter.'; errEl.classList.add('show'); return; }
+  if(p.length < 6){ errEl.textContent = 'Password minimal 6 karakter.'; errEl.classList.add('show'); return; }
   if(p !== p2){ errEl.textContent = 'Ulangi password tidak sama.'; errEl.classList.add('show'); return; }
   if(btn){ btn.disabled = true; btn.textContent = 'Memproses...'; }
   const res = await attemptRegister(u, p, nama);
   if(btn){ btn.disabled = false; btn.textContent = 'Daftar & Masuk'; }
   if(res.ok){
-    document.getElementById('authGate')?.remove();
-    applyRoleToUI();
-    initAppAfterAuth();
+    errEl.textContent = 'Pendaftaran berhasil. Akun Anda menunggu persetujuan Admin sebelum bisa dipakai masuk.';
+    errEl.classList.add('show');
+    e.target.reset();
   } else {
     errEl.textContent = res.reason==='taken' ? 'Username sudah digunakan, coba username lain.'
+      : res.reason==='username' ? 'Username harus 3-40 karakter.'
+      : res.reason==='password' ? 'Password harus 6-72 karakter.'
+      : res.reason==='penuh' ? 'Terlalu banyak pendaftar yang menunggu. Hubungi Admin.'
       : res.reason==='offline' ? 'Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.'
       : 'Gagal mendaftar. Coba lagi.';
     errEl.classList.add('show');
@@ -3696,6 +3757,7 @@ function switchWaTplTab(key){
 
 /* ---- Kotak "Foto sudah selesai" (otomatis, kondisional) di Detail Job ---- */
 function waSelesaiBoxHtml(j){
+  if(!isAdmin()) return ''; // mengirim pesan ke klien: khusus Admin
   if(j.prosesCetak!=='Selesai') return '';
   if((j.pengiriman||'').startsWith('Sudah')) return '';
   const adaNo=!!waDigits(j.noWhatsapp);
@@ -3713,6 +3775,7 @@ const WA_TPL_META = {
   h1:      { label:'Pengingat H-1', builder:bangunPesanH1, sentField:'waH1At', modalTitle:'Pengingat H-1 ke Klien' },
 };
 function waQuickSendHtml(j){
+  if(!isAdmin()) return ''; // mengirim pesan ke klien: khusus Admin
   const adaNo=!!waDigits(j.noWhatsapp);
   const items=['booking','h1'];
   if(!adaNo){
@@ -3729,6 +3792,7 @@ function waQuickSendHtml(j){
 function openWaTemplateModal(jobId,key){
   const j=jobs.find(x=>x.id===jobId); if(!j) return;
   const meta=WA_TPL_META[key]; if(!meta) return;
+  if(!isAdmin()) return; // Tim tidak boleh mengirim pesan ke klien
   if(!waDigits(j.noWhatsapp)){ alert('Nomor WhatsApp klien belum diisi. Isi dulu lewat Edit Job.'); return; }
   const namaKlien=(j.namaKlien||'Klien').trim();
   const inisial=(namaKlien.match(/\b\w/g)||['?']).slice(0,2).join('').toUpperCase();
@@ -4186,10 +4250,23 @@ function pushToCloud(){
     try{
       const stamp = new Date().toISOString();
       rtRememberOwnPush(stamp);
-      const { error } = await supabaseClient
-        .from(SYNC_TABLE)
-        .upsert({ id: SYNC_ROW_ID, payload: collectAllData(), updated_at: stamp });
-      if(error) throw error;
+      if(isAdmin()){
+        const { error } = await supabaseClient
+          .from(SYNC_TABLE)
+          .upsert({ id: SYNC_ROW_ID, payload: collectAllData(), updated_at: stamp });
+        if(error) throw error;
+      }else{
+        // Akun Tim tidak boleh menulis seluruh data. Hanya tugas, klaim bonus, dan laporan miliknya
+        // yang dikirim; server memeriksa ulang dan menggabungkannya.
+        const mine = x => String(x.userId)===String(currentUserId);
+        const { data: sv, error } = await supabaseClient.rpc('tim_push', {
+          p_tasks: (tasks||[]).filter(mine),
+          p_claims: (bonusClaims||[]).filter(mine),
+          p_reports: (reports||[]).filter(r=>String(r.reporterId)===String(currentUserId))
+        });
+        if(error) throw error;
+        if(sv) rtRememberOwnPush(sv);
+      }
       setSyncStatus('synced');
     }catch(e){
       console.error('Gagal sinkron ke cloud', e);
@@ -4220,24 +4297,32 @@ async function pullFromCloud(){
   if(!cloudSyncEnabled){ setSyncStatus('offline'); return false; }
   setSyncStatus('loading');
   try{
-    const { data, error } = await supabaseClient
-      .from(SYNC_TABLE)
-      .select('payload')
-      .eq('id', SYNC_ROW_ID)
-      .maybeSingle();
-    if(error) throw error;
-    if(data && data.payload){
-      applyAllData(data.payload);
+    let remote = null;
+    if(isAdmin()){
+      const { data, error } = await supabaseClient
+        .from(SYNC_TABLE)
+        .select('payload')
+        .eq('id', SYNC_ROW_ID)
+        .maybeSingle();
+      if(error) throw error;
+      remote = data && data.payload;
+    }else{
+      const { data, error } = await supabaseClient.rpc('tim_pull');
+      if(error) throw error;
+      remote = data;
+    }
+    if(remote){
+      applyAllData(remote);
       persistAllLocal();
       setSyncStatus('synced');
       // Jaga-jaga tabel publik kaone_motret_pengaturan_publik sempat tertinggal
       // (mis. baru pertama kali dipasang, atau sempat gagal saat disimpan dari
       // device lain) — diterbitkan ulang tiap kali berhasil memuat dari cloud,
       // supaya keempat halaman pricelist selalu dapat tarif Ongkos Antar terbaru.
-      pushOngkirAntarPublic();
+      if(isAdmin()) pushOngkirAntarPublic();
       return true;
     }else{
-      await pushToCloud();
+      if(isAdmin()) await pushToCloud();
       return false;
     }
   }catch(e){
@@ -5051,11 +5136,7 @@ function saveReports(){
 async function pullTeamAccountsPublic(){
   if(!cloudSyncEnabled) return false;
   try{
-    const { data, error } = await supabaseClient
-      .from(USERS_TABLE)
-      .select('id,username,role,nama_lengkap')
-      .eq('role','tim')
-      .order('username', { ascending:true });
+    const { data, error } = await supabaseClient.rpc('daftar_tim');
     if(error) throw error;
     teamAccountsPublic = data || [];
     if(currentView==='laporan') render();
@@ -5200,6 +5281,7 @@ function getJobPaymentDeadline(job){
 // (misalnya sengaja mengembalikan ke "Belum Bayar" karena pembayaran dibatalkan) tetap
 // dihormati dan tidak langsung ditimpa balik jadi "Lunas" di siklus berikutnya.
 function autoUpdateJobPaymentStatuses(){
+  if(!isAdmin()) return false; // data keuangan Tim sengaja disederhanakan; penentuan Lunas otomatis hanya di sisi Admin
   if(!Array.isArray(jobs) || !jobs.length) return false;
   const now = new Date();
   let changed = false;
@@ -6057,6 +6139,94 @@ function hitungSisaPembayaran(j){
   return penghasilan - diskon - dp;
 }
 
+/* ---------- Tagihan hari H ----------
+   Sisa yang harus ditagih ke klien saat hari acara. Aturan hitungnya sama dengan
+   Sisa Pembayaran di seluruh aplikasi: (Penghasilan - Diskon) - DP. Job dianggap
+   tidak perlu ditagih kalau statusnya Lunas atau sisanya sudah 0. */
+function tagihanHariH(j){
+  const harga = Math.max(0, (Number(j.penghasilan)||0) - (Number(j.diskon)||0));
+  const dp = Number(j.dp)||0;
+  const sisa = Math.max(0, hitungSisaPembayaran(j));
+  return { harga, dp, sisa, lunas: j.statusPembayaran==='Lunas' || sisa<=0 };
+}
+/* ---------- Privasi keuangan per peran ----------
+   Admin melihat seluruh rincian keuangan job. Akun Tim HANYA melihat (1) Sisa Pembayaran
+   klien dan (2) honor miliknya sendiri di job itu. DP, harga paket, diskon, biaya cetak,
+   sedekah, harga paket vendor, honor anggota lain, dan penghasilan bersih tidak pernah
+   dikirim ke tampilan Tim. Dipakai oleh Detail Job, gambar unduhan, dan Salin Detail. */
+function keuanganRowsUntukRole(j){
+  if(isAdmin()){
+    return [
+      ['DP', fmtRp(j.dp)],
+      ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
+      ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
+      ['Biaya Cetak', fmtRp(j.biayaCetak)],
+      ['Honor Tim', fmtRp(j.honorTim)],
+      ['Diskon', fmtRp(j.diskon)],
+      ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
+      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
+      ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
+    ];
+  }
+  const rows = [['Sisa Pembayaran', fmtRp(Math.max(0, hitungSisaPembayaran(j)))]];
+  const honorSaya = currentUserId ? honorTimUntukAkun(j, currentUserId) : 0;
+  if(honorSaya>0) rows.push(['Honor Saya', fmtRp(honorSaya)]);
+  return rows;
+}
+// Apakah akun ini bertugas di job tersebut (dari Tugas yang dibagikan atau Honor Tim).
+function isTimDiJob(j, userId){
+  if(!j || !userId) return false;
+  if(honorTimUntukAkun(j, userId)>0) return true;
+  return tasks.some(t=>String(t.jobId)===String(j.id) && (String(t.userId)===String(userId) || (t.username && t.username===currentUsername)));
+}
+// Penanda waktu hari H: { t: teks, now: true bila hari ini/sedang berlangsung, past: true bila sudah lewat }
+function tagihanWaktu(j){
+  const now = new Date();
+  const hariIni = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const mulai = new Date(j.tanggalAcara+'T00:00:00');
+  const akhir = new Date((getJobFinishDate(j) || j.tanggalAcara)+'T00:00:00');
+  if(akhir < hariIni) return {t:'Sudah lewat', now:false, past:true};
+  const diff = Math.round((mulai - hariIni)/86400000);
+  if(diff<0) return {t:'Berlangsung', now:true, past:false};
+  if(diff===0) return {t:'Hari ini', now:true, past:false};
+  if(diff===1) return {t:'Besok', now:false, past:false};
+  return {t:`${diff} hari lagi`, now:false, past:false};
+}
+function pesanTagihanKlien(j){
+  const t = tagihanHariH(j);
+  const acara = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'acara') : (j.jenisAcara||'acara');
+  return `Halo Kak ${(j.namaKlien||'').trim()},\n\nKami dari Kaone Motret 🙏📸 Izin menginformasikan, untuk ${acara} Kakak pada ${fmtTglJob(j)}, sisa pembayaran yang perlu diselesaikan sebesar ${fmtRp(t.sisa)}.\n\nPembayaran dapat dilakukan pada hari acara. Terima kasih banyak, Kak 🙏`.replace(/Kak\s+,/g,'Kak,');
+}
+function salinPesanTagihan(jobId){
+  if(!isAdmin()) return;
+  const j = jobs.find(x=>x.id===jobId); if(!j) return;
+  copyToClipboard(pesanTagihanKlien(j), 'Pesan tagihan disalin');
+}
+// Kartu "Tagihan hari H" di atas Detail Job — terlihat untuk Admin dan Tim.
+function tagihanBoxHtml(j){
+  const t = tagihanHariH(j);
+  if(t.lunas){
+    return `<div class="tagih-box ok"><div class="tagih-top"><span class="tagih-label">${ic('money')} Tagihan hari H</span></div>
+      <div class="tagih-ok">${ic('check-circle')} Sudah lunas. Tidak ada yang perlu ditagih.</div></div>`;
+  }
+  const w = tagihanWaktu(j);
+  const adaWa = !!waDigits(j.noWhatsapp);
+  return `<div class="tagih-box ${w.now?'now':''}">
+    <div class="tagih-top"><span class="tagih-label">${ic('money')} Tagihan hari H</span><span class="tagih-when ${w.now?'now':''}">${escapeHtml(w.t)}</span></div>
+    <div class="tagih-amt">${fmtRp(t.sisa)}</div>
+    <div class="tagih-sub">Ditagih ke klien saat hari H, ${escapeHtml(fmtTglJob(j))}</div>
+    ${isAdmin() ? `<div class="tagih-rows">
+      <div><span>Total tagihan klien</span><b>${fmtRp(t.harga)}</b></div>
+      <div><span>Sudah dibayar (DP)</span><b>− ${fmtRp(t.dp)}</b></div>
+      <div><span>Sisa yang ditagih</span><b>${fmtRp(t.sisa)}</b></div>
+    </div>` : ''}
+    ${isAdmin() ? `<div class="tagih-actions">
+      <button type="button" class="btn btn-outline" onclick="salinPesanTagihan('${j.id}')">${ic('clipboard')} Salin pesan</button>
+      ${adaWa ? `<a class="btn btn-wa-quick" target="_blank" rel="noopener" href="${waLinkKlien(j.noWhatsapp, pesanTagihanKlien(j))}">${ic('phone')} WhatsApp klien</a>` : ''}
+    </div>` : ''}
+  </div>`;
+}
+
 /* Honor Tim per anggota: sejak fitur "pilih anggota tim & honor masing-masing" di
    form Input/Edit Job, satu job bisa membagi Honor Tim ke lebih dari satu akun Tim
    sekaligus (j.honorTimList). Dipakai untuk menghitung "penghasilan" milik masing-
@@ -6802,8 +6972,14 @@ function viewBeranda(){
     : 'Tidak ada job hari ini.';
   const jenisLabel = j => (j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'') : (j.jenisAcara||''));
   const jobTitle = j => [jenisLabel(j), j.namaKlien].filter(Boolean).join(' ') || 'Tanpa Nama';
-  const bayarLabel = j => j.statusPembayaran==='Lunas' ? 'Lunas' : (j.statusPembayaran==='DP' ? 'DP lunas' : 'Belum bayar');
-  const bayarTone = j => j.statusPembayaran==='Lunas' ? 'ok' : (j.statusPembayaran==='DP' ? '' : 'no');
+  // Akun Tim tidak melihat status bayar (DP/Belum bayar) — hanya sisa yang ditagih, atau Lunas.
+  const sisaTimLunas = j => j.statusPembayaran==='Lunas' || Math.max(0, hitungSisaPembayaran(j))<=0;
+  const bayarLabel = j => !isAdmin()
+    ? (sisaTimLunas(j) ? 'Lunas' : 'Sisa ' + fmtRp(Math.max(0, hitungSisaPembayaran(j))))
+    : (j.statusPembayaran==='Lunas' ? 'Lunas' : (j.statusPembayaran==='DP' ? 'DP lunas' : 'Belum bayar'));
+  const bayarTone = j => !isAdmin()
+    ? (sisaTimLunas(j) ? 'ok' : '')
+    : (j.statusPembayaran==='Lunas' ? 'ok' : (j.statusPembayaran==='DP' ? '' : 'no'));
   const startOf = j => new Date(j.tanggalAcara+'T00:00:00');
   const endOf = j => new Date((getJobFinishDate(j) || j.tanggalAcara)+'T00:00:00');
   const selisihHari = j => Math.round((startOf(j) - todayStart)/86400000);
@@ -6893,7 +7069,7 @@ function viewBeranda(){
       `<li>${ic('calendar')}<span>${escapeHtml(namaHariID(startOf(nextJob)))}, ${escapeHtml(fmtTglJob(nextJob))}${dur>1?` <span class="mut">· ${dur} hari</span>`:''}</span></li>`,
       jam ? `<li>${ic('clock')}<span>${escapeHtml(jam.replace(':','.'))} WIB</span></li>` : '',
       `<li>${ic('map-pin')}<span class="${lok?'':'mut'}">${lok ? escapeHtml(lok) : 'Lokasi belum diisi'}</span></li>`,
-      `<li>${ic('money')}<span><span class="pay-pill ${bayarTone(nextJob)}">${escapeHtml(bayarLabel(nextJob))}</span>${(isAdmin() && sisa>0) ? ` <span class="mut">· Sisa ${escapeHtml(fmtRp(sisa))}</span>` : ''}</span></li>`,
+      `<li>${ic('money')}<span><span class="pay-pill ${bayarTone(nextJob)}">${escapeHtml(bayarLabel(nextJob))}</span>${sisa>0 && isAdmin() ? ` <span class="mut">· Sisa ${escapeHtml(fmtRp(sisa))}</span>` : ''}</span></li>`,
       timJob.length ? `<li>${ic('user')}<span>Tim: ${escapeHtml(timJob.join(', '))}</span></li>`
         : (isAdmin() ? `<li>${ic('user')}<span class="mut">Belum ada tugas Tim dibagikan</span></li>` : '')
     ].filter(Boolean).join('');
@@ -6911,6 +7087,23 @@ function viewBeranda(){
       </div>
     </section>`;
   })();
+
+  // ----- Tagihan hari H: job yang akan/sedang berjalan dan masih ada sisa pembayaran -----
+  // Admin melihat semua job; akun Tim hanya job yang ia ikuti (dari Tugas atau Honor Tim).
+  const tagihJobs = upcomingAll.filter(x=>!tagihanHariH(x).lunas && (isAdmin() || isTimDiJob(x, currentUserId)));
+  const tagihTotal = tagihJobs.reduce((a,x)=>a+tagihanHariH(x).sisa, 0);
+  const tagihHtml = tagihJobs.length ? `
+    <h2 class="dash-sec">Tagihan hari H <small>${tagihJobs.length} job · ${escapeHtml(fmtRp(tagihTotal))}</small></h2>
+    <div class="dash-list">${tagihJobs.slice(0,4).map(x=>{
+      const d = startOf(x), w = tagihanWaktu(x), t = tagihanHariH(x);
+      return `
+      <button type="button" class="dash-row ${w.now?'tagih-now':''}" data-view-job="${x.id}">
+        <span class="date"><b>${d.getDate()}</b><span>${escapeHtml(d.toLocaleDateString('id-ID',{month:'short'}))}</span></span>
+        <span class="tx"><div class="t">${escapeHtml(jobTitle(x))}</div><div class="s">Tagih saat hari H${isAdmin() ? ` · DP ${escapeHtml(fmtRp(t.dp)).replace(' ','&nbsp;')}` : ''}</div>
+          <div class="dash-chips"><span class="dash-mini ${w.now?'now':''}">${escapeHtml(w.t)}</span>${isAdmin() ? `<span class="dash-mini ${bayarTone(x)}">${escapeHtml(bayarLabel(x))}</span>` : ''}</div></span>
+        <span class="amt">${escapeHtml(fmtRp(t.sisa))}</span>
+        <span class="chev">${ic('chevron-right')}</span>
+      </button>`;}).join('')}</div>${tagihJobs.length>4 ? `<div class="tg-sub" style="margin-top:8px;">+ ${tagihJobs.length-4} job lainnya. Buka Daftar Job untuk melihat semuanya.</div>` : ''}` : '';
 
   // ----- strip 7 hari ke depan -----
   const weekHtml = `
@@ -6987,6 +7180,8 @@ function viewBeranda(){
     ${nextCard}
 
     ${weekHtml}
+
+    ${tagihHtml}
 
     <h2 class="dash-sec">Ringkasan bulan ini</h2>
     <div class="dash-stats">${statsHtml}</div>
@@ -8242,7 +8437,7 @@ function viewDaftar(){
     <div class="toolbar">
       <h2 style="margin:0;">${ic('clipboard')} Daftar Semua Job</h2>
       <div class="search-box">
-        <input type="text" id="searchBox" placeholder="Cari nama klien, No WA, desa, jenis acara...">
+        <input type="text" id="searchBox" placeholder="${isAdmin() ? 'Cari nama klien, No WA, desa, jenis acara...' : 'Cari nama klien, desa, jenis acara...'}">
         <select id="filterJenis">
           <option value="">Semua Jenis Acara</option>
           ${JENIS_ACARA_LIST.map(j=>`<option value="${j}">${j}</option>`).join('')}
@@ -8272,7 +8467,7 @@ function renderDaftarTable(){
       const hay = [j.namaKlien,j.namaMempelai,j.desa,j.dusun,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket, ...Object.values(j.detailAcara || {})]
         .join(' ').toLowerCase();
       if(hay.includes(q)) return true;
-      if(qDigits && String(j.noWhatsapp||'').replace(/[^0-9]/g,'').includes(qDigits)) return true;
+      if(isAdmin() && qDigits && String(j.noWhatsapp||'').replace(/[^0-9]/g,'').includes(qDigits)) return true;
       return false;
     });
   }
@@ -8288,7 +8483,7 @@ function renderDaftarTable(){
   <table class="jobtable">
     <thead><tr>
       <th>No</th><th>Tanggal</th><th>Klien</th><th>Jenis Acara</th><th>Lokasi</th>
-      <th>Edit</th><th>Cetak</th><th>Pengiriman</th><th>Bayar</th><th>Bersih</th><th>Aksi</th>
+      <th>Edit</th><th>Cetak</th><th>Pengiriman</th><th class="admin-only">Bayar</th><th class="admin-only">Bersih</th><th class="tim-only">Sisa</th><th>Aksi</th>
     </tr></thead>
     <tbody>
     ${list.map(j=>`
@@ -8301,8 +8496,9 @@ function renderDaftarTable(){
         <td data-label="Edit">${badgeSelect(j.id, 'prosesEdit', ['Belum Selesai','Selesai'], j.prosesEdit)}</td>
         <td data-label="Cetak">${badgeSelect(j.id, 'prosesCetak', ['Belum Selesai','Selesai'], j.prosesCetak)}</td>
         <td data-label="Pengiriman">${badgeSelect(j.id, 'pengiriman', PENGIRIMAN_LIST, j.pengiriman)}</td>
-        <td data-label="Bayar">${badgeSelect(j.id, 'statusPembayaran', STATUS_BAYAR_LIST, j.statusPembayaran)}</td>
-        <td data-label="Bersih">${fmtRp(hitungBersih(j))}</td>
+        <td data-label="Bayar" class="admin-only">${badgeSelect(j.id, 'statusPembayaran', STATUS_BAYAR_LIST, j.statusPembayaran)}</td>
+        <td data-label="Bersih" class="admin-only">${fmtRp(hitungBersih(j))}</td>
+        <td data-label="Sisa" class="tim-only">${(j.statusPembayaran==='Lunas' || hitungSisaPembayaran(j)<=0) ? 'Lunas' : fmtRp(hitungSisaPembayaran(j))}</td>
         <td class="row-actions">
           <button class="icon-btn admin-only" data-edit="${j.id}">Edit</button>
           <button class="icon-btn" data-view-job="${j.id}">Lihat</button>
@@ -9245,7 +9441,7 @@ function openDateModal(dateIso){
         <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}, ${escapeHtml(j.kabupaten||'-')}</span></div>
         <div class="mj-row"><span>Paket</span><span>${escapeHtml(j.paket||'-')}</span></div>
         ${(j.deskripsiPaket||'').trim() ? `<div class="mj-row"><span>Deskripsi Paket</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.deskripsiPaket.trim())}</span></div>` : ''}
-        <div class="mj-row"><span>WhatsApp</span><span>${escapeHtml(j.noWhatsapp||'-')}</span></div>
+        ${isAdmin() ? `<div class="mj-row"><span>WhatsApp</span><span>${escapeHtml(j.noWhatsapp||'-')}</span></div>` : ''}
         <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
         <div class="mj-row"><span>Tim/Freelancer</span><span>${escapeHtml(j.timFreelancer||'-')}</span></div>
         <div class="modal-actions">
@@ -9373,6 +9569,7 @@ function openUniqueClientsModal(){
 // ⚠️ Kalau fungsi ini diubah (field baru ditambahkan ke STATUS_LIST_CONFIG, dsb),
 // ingat catat juga di CHANGELOG + naikkan APP_VERSION — lihat aturan wajib di atas file ini.
 function openStatusListModal(field, scope){
+  if(!isAdmin() && field==='sedekahStatus') return;
   showModal(renderStatusListModalHtml(field, scope));
   const ov = document.getElementById('modalOverlay');
   ov?.querySelectorAll('select[data-field]').forEach(sel=>{
@@ -9421,6 +9618,7 @@ function renderValueListModalHtml(field, value){
   `;
 }
 function openValueListModal(field, value){
+  if(!isAdmin() && field==='sedekahStatus') return;
   showModal(renderValueListModalHtml(field, value));
   const ov = document.getElementById('modalOverlay');
   ov?.querySelectorAll('select[data-field]').forEach(sel=>{
@@ -9674,9 +9872,9 @@ function openJobDetailModal(jobId){
       ['Link Maps', j.linkMaps||'-'],
       ['Titik Koordinat', j.koordinat||'-'],
       ['Jarak dari Kaone Motret (Real)', jarakJalanTeksAwal, 'jdJarakJalanText'],
-      ['Saran Transport', jarakJalanBiayaTeksAwal, 'jdJarakJalanBiayaText'],
+      ...(isAdmin() ? [['Saran Transport', jarakJalanBiayaTeksAwal, 'jdJarakJalanBiayaText']] : []),
       ['Perkiraan Waktu Tempuh', durasiTempuhTeksAwal, 'jdDurasiTempuhText'],
-      ['No. WhatsApp', j.noWhatsapp||'-'],
+      ...(isAdmin() ? [['No. WhatsApp', j.noWhatsapp||'-']] : []),
       ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
@@ -9686,23 +9884,13 @@ function openJobDetailModal(jobId){
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
-      ...(pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
+      ...(isAdmin() && pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
       ...(pengirimanMetode(j.pengiriman)==='diantar' && j.linkMapsAntar ? [['Link Maps Antar', j.linkMapsAntar]] : []),
-      ['Status Pembayaran', j.statusPembayaran||'-'],
+      ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
     ]},
-    {title:'Keuangan', rows:[
-      ['DP', fmtRp(j.dp)],
-      ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
-      ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
-      ['Biaya Cetak', fmtRp(j.biayaCetak)],
-      ['Honor Tim', fmtRp(j.honorTim)],
-      ['Diskon', fmtRp(j.diskon)],
-      ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
-      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
-      ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
-    ]},
+    {title:'Keuangan', rows:keuanganRowsUntukRole(j)},
     {title:'Catatan', rows:[
       ['Catatan', j.catatan||'-'],
     ]},
@@ -9715,6 +9903,7 @@ function openJobDetailModal(jobId){
     <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
     <h3 style="margin-bottom:2px;">Detail Job</h3>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">#${getJobNo(j.id)} — ${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
+    ${tagihanBoxHtml(j)}
     <div class="job-detail-card" id="jobDetailCard" style="${cardStyle}">
       <div class="jd-header">
         <div class="jd-header-top">
@@ -9746,8 +9935,8 @@ function openJobDetailModal(jobId){
       <button type="button" class="btn btn-outline" data-detail-download="${j.id}">${ic('image')} Unduh Gambar</button>
       <button type="button" class="btn btn-outline" data-detail-story="${j.id}">${ic('phone')} Unduh Gambar Story</button>
       <button type="button" class="btn btn-outline" data-detail-copy="${j.id}">${ic('clipboard')} Salin Detail</button>
-      <button type="button" class="btn ${isKwitansiOutdated(j)?'btn-warning':'btn-outline'}" data-kwitansi="${j.id}">${ic('receipt')} ${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (PDF)':'Cetak Kwitansi (PDF)'}</button>
-      <button type="button" class="btn ${isKwitansiOutdated(j)?'btn-warning':'btn-outline'}" data-kwitansi-img="${j.id}">${ic('image')} ${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (Gambar)':'Cetak Kwitansi (Gambar)'}</button>
+      <button type="button" class="btn admin-only ${isKwitansiOutdated(j)?'btn-warning':'btn-outline'}" data-kwitansi="${j.id}">${ic('receipt')} ${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (PDF)':'Cetak Kwitansi (PDF)'}</button>
+      <button type="button" class="btn admin-only ${isKwitansiOutdated(j)?'btn-warning':'btn-outline'}" data-kwitansi-img="${j.id}">${ic('image')} ${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (Gambar)':'Cetak Kwitansi (Gambar)'}</button>
       <button type="button" class="btn btn-outline" data-ics="${j.id}">${ic('download')} Unduh .ics</button>
       <button type="button" class="btn btn-outline" data-gcal="${j.id}">${ic('calendar')} Tambah ke Google Calendar</button>
       <button type="button" class="btn btn-primary admin-only" data-edit="${j.id}">${ic('edit')} Edit Job</button>
@@ -9801,8 +9990,8 @@ function buildJobPosterHtml(j){
       ['Lokasi', lokasiFull],
       ['Link Maps', j.linkMaps||'-'],
       ...(jarakJalanPoster!==null ? [['Jarak dari Kaone Motret (Real)', fmtJarakJalan(jarakJalanPoster)]] : []),
-      ...(jarakJalanPoster!==null ? [['Saran Transport', fmtRp(hitungSaranTransport(jarakJalanPoster))]] : []),
-      ['No. WhatsApp', j.noWhatsapp||'-'],
+      ...(isAdmin() && jarakJalanPoster!==null ? [['Saran Transport', fmtRp(hitungSaranTransport(jarakJalanPoster))]] : []),
+      ...(isAdmin() ? [['No. WhatsApp', j.noWhatsapp||'-']] : []),
       ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', truncateText(j.deskripsiPaket, 160) || '-'],
@@ -9812,22 +10001,12 @@ function buildJobPosterHtml(j){
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
-      ...(pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
-      ['Status Pembayaran', j.statusPembayaran||'-'],
+      ...(isAdmin() && pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
+      ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
     ]},
-    {title:'Keuangan', rows:[
-      ['DP', fmtRp(j.dp)],
-      ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
-      ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
-      ['Biaya Cetak', fmtRp(j.biayaCetak)],
-      ['Honor Tim', fmtRp(j.honorTim)],
-      ['Diskon', fmtRp(j.diskon)],
-      ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
-      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
-      ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
-    ], highlightLast:true},
+    {title:'Keuangan', rows:keuanganRowsUntukRole(j), highlightLast:isAdmin()},
     {title:'Catatan', rows:[
       ['Catatan', truncateText(j.catatan, 190) || '-'],
     ]},
@@ -10048,8 +10227,8 @@ function copyJobDetails(jobId){
       ['Link Maps', j.linkMaps||'-'],
       ['Titik Koordinat', j.koordinat||'-'],
       ['Jarak dari Kaone Motret (Real)', jarakJalanCopy===null?'- (belum dihitung, buka Detail Job dulu)':fmtJarakJalan(jarakJalanCopy)],
-      ['Saran Transport', jarakJalanCopy===null?'-':fmtRp(hitungSaranTransport(jarakJalanCopy))],
-      ['No. WhatsApp', j.noWhatsapp||'-'],
+      ...(isAdmin() ? [['Saran Transport', jarakJalanCopy===null?'-':fmtRp(hitungSaranTransport(jarakJalanCopy))]] : []),
+      ...(isAdmin() ? [['No. WhatsApp', j.noWhatsapp||'-']] : []),
       ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
@@ -10059,23 +10238,13 @@ function copyJobDetails(jobId){
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
-      ...(pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
+      ...(isAdmin() && pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
       ...(pengirimanMetode(j.pengiriman)==='diantar' && j.linkMapsAntar ? [['Link Maps Antar', j.linkMapsAntar]] : []),
-      ['Status Pembayaran', j.statusPembayaran||'-'],
+      ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', j.timFreelancer||'-'],
     ]},
-    {title:ic('money')+' Keuangan', rows:[
-      ['DP', fmtRp(j.dp)],
-      ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
-      ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
-      ['Biaya Cetak', fmtRp(j.biayaCetak)],
-      ['Honor Tim', fmtRp(j.honorTim)],
-      ['Diskon', fmtRp(j.diskon)],
-      ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
-      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
-      ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
-    ]},
+    {title:ic('money')+' Keuangan', rows:keuanganRowsUntukRole(j)},
   ];
   if((j.catatan||'').trim()){
     groups.push({title:ic('note')+' Catatan', rows:[[null, j.catatan.trim()]]});
@@ -10129,6 +10298,7 @@ function fmtKwitansiPrintedAt(j){
   }catch(e){ return '-'; }
 }
 function kwitansiStatusHtml(j){
+  if(!isAdmin()) return ''; // kwitansi memuat harga, diskon, DP — khusus Admin
   const kp = j.kwitansiPrinted;
   if(!kp) return '';
   if(isKwitansiOutdated(j)){
@@ -10144,6 +10314,7 @@ function kwitansiStatusHtml(j){
    dan TIDAK memuat biaya/keuntungan internal (Biaya Cetak, Honor Tim, Sedekah,
    Penghasilan Bersih). */
 function downloadKwitansiPdf(jobId){
+  if(!isAdmin()) return;
   const j = jobs.find(x=>x.id===jobId);
   if(!j) return;
   if(typeof window.jspdf === 'undefined'){
@@ -10318,6 +10489,7 @@ function buildKwitansiPosterHtml(j){
   `;
 }
 function downloadKwitansiImage(jobId){
+  if(!isAdmin()) return;
   if(typeof html2canvas === 'undefined'){
     alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
     return;
@@ -10389,7 +10561,7 @@ function jobEventDetails(j){
   if(j.namaKlien) detailLines.push(`Klien: ${j.namaKlien}`);
   if(isJenisMempelai(j.jenisAcara) && (j.namaMempelai||'').trim()) detailLines.push(`Mempelai: ${j.namaMempelai.trim()}`);
   detailAcaraRows(j).forEach(([l,v])=>detailLines.push(`${l}: ${v}`));
-  if(j.noWhatsapp) detailLines.push(`WhatsApp: ${j.noWhatsapp}`);
+  if(j.noWhatsapp && isAdmin()) detailLines.push(`WhatsApp: ${j.noWhatsapp}`);
   const details = detailLines.length ? detailLines.join('\n') : '-';
   return {title, location, details};
 }
@@ -10490,7 +10662,7 @@ function downloadIcs(jobId){
    PEMBAGIAN TUGAS TIM
 ========================================================= */
 function taskEligibleAccounts(){
-  return (akunList||[]).filter(a=>a.role==='tim');
+  return (akunList||[]).filter(a=>a.role==='tim' && a.disetujui!==false);
 }
 function taskJobOptions(){
   return [...jobs].sort((a,b)=>{
@@ -12482,7 +12654,7 @@ function viewPengaturan(){
       <div>
         <label>Password Baru</label>
         <div class="pw-wrap">
-          <input type="password" id="akunPassword" autocomplete="new-password" minlength="4" placeholder="••••••••">
+          <input type="password" id="akunPassword" autocomplete="new-password" minlength="6" placeholder="••••••••">
           <button type="button" class="pw-toggle" data-pw-target="akunPassword" aria-label="Lihat/sembunyikan password">${ic('eye')}</button>
         </div>
       </div>
@@ -12495,22 +12667,25 @@ function viewPengaturan(){
   <div class="card admin-only">
     <h2 style="margin-top:0;">${ic('folder')} Kelola Akun (Admin)</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">
-      Admin hanya bisa melihat.
+      Akun yang mendaftar sendiri harus Anda setujui dulu sebelum bisa masuk. Sandi tersimpan terenkripsi dan tidak bisa dilihat; kalau ada yang lupa, gunakan Atur Sandi.
     </p>
     ${akunLoading ? `<div class="info-box">${ic('hourglass')} Memuat daftar akun...</div>` : `
     <div style="overflow-x:auto;">
       <table class="rekaptable akun-table">
-        <thead><tr><th>Nama Lengkap</th><th>Username</th><th>Password</th><th>Peran</th><th>Terdaftar</th></tr></thead>
+        <thead><tr><th>Nama Lengkap</th><th>Username</th><th>Status</th><th>Peran</th><th>Terdaftar</th><th>Aksi</th></tr></thead>
         <tbody>
           ${akunList.length ? akunList.map(a=>`
             <tr class="${a.id===currentUserId ? 'akun-me' : ''}">
               <td>${escapeHtml(a.nama_lengkap || '-')}</td>
               <td>${escapeHtml(a.username)}${a.id===currentUserId?' <span class="pill">Kamu</span>':''}</td>
-              <td class="akun-pw">${escapeHtml(a.password)}</td>
+              <td>${a.disetujui ? 'Aktif' : '<b>Menunggu persetujuan</b>'}</td>
               <td>${a.role==='admin' ? 'Admin' : 'Tim'}</td>
               <td>${a.created_at ? new Date(a.created_at).toLocaleDateString('id-ID') : '-'}</td>
+              <td>${a.id===currentUserId ? '-' : `
+                <button type="button" class="btn btn-outline" onclick="kaoneSetujuiAkun('${a.id}', ${a.disetujui?'false':'true'})">${a.disetujui?'Nonaktifkan':'Setujui'}</button>
+                <button type="button" class="btn btn-outline" onclick="kaoneAturPassword('${a.id}')">Atur Sandi</button>`}</td>
             </tr>
-          `).join('') : `<tr><td colspan="5">Belum ada akun terdaftar.</td></tr>`}
+          `).join('') : `<tr><td colspan="6">Belum ada akun terdaftar.</td></tr>`}
         </tbody>
       </table>
     </div>
@@ -12953,7 +13128,7 @@ function attachHandlers(){
     const p = document.getElementById('akunPassword').value;
     if(!nama){ alert('Nama lengkap tidak boleh kosong.'); return; }
     if(!u){ alert('Username tidak boleh kosong.'); return; }
-    if(p && p.length < 4){ alert('Password baru minimal 4 karakter.'); return; }
+    if(p && p.length < 6){ alert('Password baru minimal 6 karakter.'); return; }
     if(btn){ btn.disabled = true; btn.textContent = 'Menyimpan...'; }
     const res = await updateOwnAccount(u, p, nama);
     if(btn){ btn.disabled = false; btn.textContent = '💾 Simpan Perubahan Akun'; }
@@ -13087,12 +13262,25 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.15.6'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.15.7'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.15.7',
+    tanggal: '3 Oktober 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Keamanan login dan data diperkuat. Login kini memakai sistem akun resmi dengan sandi terenkripsi, dan akun Tim benar-benar tidak menerima data keuangan (DP, harga, diskon, biaya, honor orang lain) dari server, bukan hanya disembunyikan di tampilan. Akun yang mendaftar sendiri harus disetujui Admin dulu di Pengaturan > Kelola Akun. Sandi minimal 6 karakter, dan semua pengguna perlu login ulang satu kali.' },
+      { kategori: 'Fitur', teks: 'Tim kini bisa langsung melihat sisa pembayaran klien untuk ditagih di hari H. Di Detail Job ada kartu \"Tagihan hari H\" berisi sisa yang harus ditagih beserta rinciannya (untuk akun Tim hanya sisa yang ditagih; rincian total dan DP khusus Admin), tombol Salin pesan tagihan, dan tombol WhatsApp klien.' },
+      { kategori: 'Fitur', teks: 'Beranda menampilkan bagian \"Tagihan hari H\": job yang akan atau sedang berjalan dan masih ada sisa pembayaran, lengkap dengan nominal dan penanda waktunya. Akun Tim hanya melihat job yang ia ikuti.' },
+      { kategori: 'Perbaikan', teks: 'Privasi keuangan akun Tim dirapikan. Di Detail Job, gambar unduhan, dan Salin Detail, Tim kini hanya melihat Sisa Pembayaran dan honornya sendiri. DP, harga, diskon, biaya cetak, sedekah, harga vendor, dan penghasilan bersih hanya terlihat oleh Admin.' },
+      { kategori: 'Perbaikan', teks: 'Untuk akun Tim, Beranda dan Daftar Job tidak lagi menampilkan status bayar (DP atau Belum bayar) dan kolom Bersih, tetapi menampilkan sisa yang ditagih. Kwitansi, Ongkos Antar, dan Saran Transport kini khusus Admin.' },
+      { kategori: 'Perbaikan', teks: 'Akun Tim tidak lagi bisa mengirim pesan ke klien. Tombol Kabari Klien, pesan template (Booking/DP dan Pengingat H-1), Salin pesan tagihan, dan WhatsApp klien kini khusus Admin.' },
+      { kategori: 'Perbaikan', teks: 'Nomor WhatsApp klien kini hanya terlihat oleh Admin: di Detail Job, gambar unduhan, Salin Detail, rincian Kalender, catatan Google Calendar dan .ics, serta pencarian di Daftar Job.' }
+    ]
+  },
   {
     version: '1.15.6',
     tanggal: '3 Oktober 2026',
@@ -14175,8 +14363,13 @@ async function rtCatchUp(reason){
   if(rtPushPending){ rtScheduleCatchUp(1500); return; }
   rtCatchUpBusy = true;
   try{
-    const { data, error } = await supabaseClient.from(SYNC_TABLE).select('payload').eq('id', SYNC_ROW_ID).maybeSingle();
-    if(!error && data && data.payload) rtIngest(data.payload);
+    if(isAdmin()){
+      const { data, error } = await supabaseClient.from(SYNC_TABLE).select('payload').eq('id', SYNC_ROW_ID).maybeSingle();
+      if(!error && data && data.payload) rtIngest(data.payload);
+    }else{
+      const { data, error } = await supabaseClient.rpc('tim_pull');
+      if(!error && data) rtIngest(data);
+    }
     const r2 = await supabaseClient.from(ULASAN_TABLE).select('*').order('created_at', { ascending:false });
     if(!r2.error && Array.isArray(r2.data)) rtMergeUlasan(r2.data);
   }catch(e){
@@ -14329,11 +14522,10 @@ async function pushEnsureSubscribed(force){
     let last = null;
     try{ last = JSON.parse(localStorage.getItem(PUSH_SYNC_KEY) || 'null'); }catch(e){}
     if(!force && last && last.stamp === stamp && (Date.now() - last.at) < 24*60*60*1000) return true;
-    const { error } = await supabaseClient.from(PUSH_SUBS_TABLE).upsert({
-      endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth,
-      user_id: String(currentUserId), role: currentUserRole || 'tim', username: currentUsername || '',
-      user_agent: String(navigator.userAgent||'').slice(0,200), updated_at: new Date().toISOString()
-    }, { onConflict:'endpoint' });
+    const { error } = await supabaseClient.rpc('kaone_daftar_push', {
+      p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth,
+      p_ua: String(navigator.userAgent||'').slice(0,200)
+    });
     if(error){ console.warn('Gagal menyimpan pendaftaran push', error.message || error); return false; }
     try{ localStorage.setItem(PUSH_SYNC_KEY, JSON.stringify({ stamp, at: Date.now() })); }catch(e){}
     return true;
@@ -14351,7 +14543,7 @@ async function pushUnsubscribe(){
     const sub = reg && reg.pushManager ? await reg.pushManager.getSubscription() : null;
     if(!sub) return;
     if(supabaseClient && cloudSyncEnabled){
-      try{ await supabaseClient.from(PUSH_SUBS_TABLE).delete().eq('endpoint', sub.endpoint); }catch(e){}
+      try{ await supabaseClient.rpc('kaone_cabut_push', { p_endpoint: sub.endpoint }); }catch(e){}
     }
     await sub.unsubscribe();
   }catch(e){ console.warn('Gagal mencabut push', e); }
@@ -14364,10 +14556,14 @@ async function pushUnsubscribe(){
 function pushNotify(target, notif){
   try{
     if(!pushConfigured() || !currentUserId || !notif) return;
-    fetch(PUSH_FUNCTION_URL, {
-      method:'POST', keepalive:true,
-      headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY },
-      body: JSON.stringify({ fromUserId:String(currentUserId), target, notif })
+    supabaseClient.auth.getSession().then(({ data })=>{
+      const token = data && data.session && data.session.access_token;
+      if(!token) return;
+      fetch(PUSH_FUNCTION_URL, {
+        method:'POST', keepalive:true,
+        headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+token },
+        body: JSON.stringify({ target, notif })
+      }).catch(()=>{});
     }).catch(()=>{});
   }catch(e){}
 }
@@ -14523,7 +14719,10 @@ function rtConnect(){
   try{
     const ch = supabaseClient.channel('kaone-live-' + Math.random().toString(36).slice(2, 8));
     rtChannel = ch;
-    ch.on('postgres_changes', { event:'*', schema:'public', table:SYNC_TABLE, filter:'id=eq.' + SYNC_ROW_ID }, rtOnDataEvent)
+    // Admin menerima data lengkap; Tim hanya menerima "sinyal" ada perubahan lalu menarik versi miliknya.
+    ch.on('postgres_changes', isAdmin()
+        ? { event:'*', schema:'public', table:SYNC_TABLE, filter:'id=eq.' + SYNC_ROW_ID }
+        : { event:'*', schema:'public', table:'kaone_sinyal', filter:'id=eq.1' }, rtOnDataEvent)
       .on('postgres_changes', { event:'*', schema:'public', table:ULASAN_TABLE }, rtOnUlasan)
       .subscribe((status, err)=>{
         if(ch !== rtChannel) return;                        // abaikan callback dari channel lama
@@ -14591,7 +14790,21 @@ function rtStart(){
 // dijalankan SETELAH login berhasil — lihat pemanggilan initAppAfterAuth() di paling
 // bawah file (dipanggil langsung kalau sesi login tersimpan masih valid, atau dari
 // listener submit form login kalau belum).
+async function kaoneVerifikasiSesi(){
+  try{
+    const { data } = await supabaseClient.auth.getSession();
+    const uid = data && data.session && data.session.user && data.session.user.id;
+    const keluar = ()=>{ try{ localStorage.removeItem(AUTH_SESSION_KEY); }catch(e){} location.reload(); };
+    if(!uid){ keluar(); return; }
+    const prof = await kaoneMuatProfil(uid);
+    if(!prof || !prof.disetujui){ try{ await supabaseClient.auth.signOut(); }catch(e){} keluar(); return; }
+    if(prof.role !== currentUserRole){ kaoneSimpanSesi(prof); location.reload(); return; }
+    kaoneBersihkanCacheTim();
+  }catch(e){ console.warn('Verifikasi sesi ditunda (kemungkinan offline)', e); }
+}
 function initAppAfterAuth(){
+  kaoneVerifikasiSesi();
+  try{ supabaseClient.auth.onAuthStateChange((ev)=>{ if(ev==='SIGNED_OUT'){ try{ localStorage.removeItem(AUTH_SESSION_KEY); }catch(e){} location.reload(); } }); }catch(e){}
   kbInit();
   navigate(jobs.length ? 'beranda' : 'beranda');
 

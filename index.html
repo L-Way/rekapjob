@@ -15523,6 +15523,12 @@ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
 #kc .pf{flex:none}#kc .pa{flex:none;aspect-ratio:1/1;min-width:104px;min-height:104px}
 #kc #kpw{flex:1 1 auto;min-width:0}
 #kc #kn,#kc #ks{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Daftar pesan: tanpa scrollbar samping/bawah yang mengganggu */
+#kc{overflow:hidden;overflow:clip;max-width:100vw;overscroll-behavior:none}
+html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
+#kc .m{overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;-ms-overflow-style:none;touch-action:pan-y;overflow-wrap:anywhere}
+#kc .rw2 .b,#kc .nt{overflow-wrap:anywhere;min-width:0}
+#kc .m::-webkit-scrollbar{display:none;width:0;height:0}
 /* Ubah sandi */
 #kc .pw{position:relative}
 #kc .sc .pw input:not([type=range]){width:100%;box-sizing:border-box;padding-right:50px;font-size:16px}
@@ -16087,6 +16093,7 @@ if(m=='send'){if(lp){lp=0;return}kSendTap()}else if(m=='rsend')recStop(true);els
 $('krdel').addEventListener('click',function(){recStop(false)});
 document.addEventListener('keydown',function(e){if(e.key=='Escape'&&rcS)recStop(false)});
 document.addEventListener('visibilitychange',function(){if(document.visibilityState=='hidden'&&rcS)recStop(false)});
+['km','kc'].forEach(function(i){var e=$(i);if(e)e.addEventListener('scroll',function(){if(e.scrollLeft)e.scrollLeft=0},{passive:true})});
 kGrow();kSync()})();
 /* ---- ubah sandi (akun hanya-chat, lewat menu titik tiga) ---- */
 function pwMsg(t,ok){var e=$('kpwe');e.textContent=t||'';e.className=ok?'ok':''}

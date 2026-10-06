@@ -13,6 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script>if(/^#paket=/.test(location.hash)){document.documentElement.classList.add('paket-view');window.__kaonePaketView=true;}</script>
 <title>Kaone Motret — Buku Job Fotografer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Italiana&family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -949,6 +950,88 @@
   .kwitansi-poster .kw-footer-brand{font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:#241f0f; margin-bottom:6px;}
   .kwitansi-poster .kw-footer-text{font-size:14px; color:var(--ink-soft); letter-spacing:.3px;}
   .kwitansi-poster .kw-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:14px; background:linear-gradient(90deg,var(--jp-hdr1,#1c1530),var(--jp-accent,#d4af00),var(--jp-hdr2,#332750));}
+  /* QR di kwitansi versi gambar */
+  .kwitansi-poster .kw-package.has-qr{display:flex; align-items:center; gap:28px; padding:14px 16px 14px 22px; margin-bottom:18px;}
+  .kwitansi-poster .kw-package-main{flex:1; min-width:0;}
+  .kwitansi-poster .kw-package-hint{margin-top:12px; font-size:14.5px; font-weight:600; line-height:1.45; color:var(--jp-hdr2,#332750);}
+  .kwitansi-poster .kw-qr{flex-shrink:0;}
+  .kwitansi-poster .kw-qr-box{background:#fff; padding:10px; border-radius:16px; border:1px solid var(--line); box-shadow:0 6px 18px rgba(36,31,15,.08); line-height:0; display:block;}
+  .kwitansi-poster .kw-qr-box img{display:block;}
+  /* Dipasang otomatis (lihat kwFitPoster) kalau isi poster hampir menabrak footer */
+  .kwitansi-poster.kw-compact .kw-body{padding-top:28px;}
+  .kwitansi-poster.kw-compact .kw-row{padding:10px 0;}
+  .kwitansi-poster.kw-compact .kw-row.kw-highlight{padding:13px 0;}
+  .kwitansi-poster.kw-compact .kw-status-row{margin-top:16px;}
+  .kwitansi-poster.kw-compact .kw-note{margin-top:12px;}
+  .kwitansi-poster.kw-compact2 .kw-client-name{font-size:42px;}
+  .kwitansi-poster.kw-compact2 .kw-client-block{padding-top:24px;}
+
+  /* ===== Halaman publik "Isi Paket" (tujuan QR di kwitansi) ===== */
+  html.paket-view body>*:not(#paketView):not(svg):not(script):not(style){display:none!important}
+  html.paket-view,html.paket-view body{background:#fffdf6; margin:0;}
+  .pv-root{position:fixed; inset:0; z-index:2147483000; overflow-y:auto; -webkit-overflow-scrolling:touch; font-family:'Poppins',sans-serif; color:#1c1a12;
+    background:radial-gradient(circle at 12% 0%,var(--pv-soft,#f4d93e) 0%,transparent 46%),radial-gradient(circle at 100% 100%,var(--pv-soft,#f4d93e) 0%,transparent 42%),linear-gradient(165deg,#fffdf6 0%,#fffaeb 55%,#fdf6e0 100%);}
+  .pv-stage{min-height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:max(20px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom)); box-sizing:border-box;}
+  .pv-card{width:100%; max-width:440px; background:#fffefa; border-radius:26px; overflow:hidden; box-shadow:0 28px 80px rgba(28,21,48,.30); animation:pvIn .55s cubic-bezier(.2,.8,.2,1) both;}
+  .pv-card.pv-out{animation:pvOut .22s ease-in both;}
+  @keyframes pvIn{from{opacity:0; transform:translateY(34px) scale(.96)}to{opacity:1; transform:none}}
+  @keyframes pvOut{to{opacity:0; transform:translateY(18px) scale(.97)}}
+  .pv-hdr{position:relative; padding:20px 22px 22px; color:#fff6d8; background:linear-gradient(135deg,var(--pv-h1,#1c1a12),var(--pv-h2,#2c2712));}
+  .pv-hdr::after{content:''; position:absolute; left:0; right:0; bottom:0; height:4px; background:linear-gradient(90deg,transparent,var(--pv-accent,#d4af00),transparent);}
+  .pv-brand{display:flex; align-items:center; gap:12px;}
+  .pv-badge{width:40px; height:40px; border-radius:12px; display:grid; place-items:center; font-family:'Fraunces',serif; font-weight:700; font-size:16px; color:#241f0f; background:var(--pv-accent,#d4af00);}
+  .pv-bn{font-family:'Fraunces',serif; font-weight:700; font-size:18px; line-height:1.2;}
+  .pv-bt{font-size:10.5px; letter-spacing:2.4px; text-transform:uppercase; opacity:.7; margin-top:2px;}
+  .pv-x{position:absolute; top:14px; right:14px; width:34px; height:34px; border-radius:50%; border:0; cursor:pointer; font-size:22px; line-height:1; color:#fff6d8; background:rgba(255,255,255,.14);}
+  .pv-x:active{background:rgba(255,255,255,.28);}
+  .pv-for{margin-top:18px; font-size:11.5px; letter-spacing:2px; text-transform:uppercase; opacity:.72;}
+  .pv-forname{font-family:'Fraunces',serif; font-weight:600; font-size:22px; line-height:1.25; margin-top:3px; word-break:break-word;}
+  .pv-body{padding:22px 22px 20px;}
+  .pv-kicker{font-size:12px; font-weight:700; letter-spacing:3.5px; text-transform:uppercase; color:var(--pv-h2,#332750);}
+  .pv-title{font-family:'Fraunces',serif; font-weight:700; font-size:30px; line-height:1.18; margin:6px 0 0; color:#201c0d; word-break:break-word;}
+  .pv-chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;}
+  .pv-chip{display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; font-size:12.5px; font-weight:600; color:#3a3423; background:var(--pv-soft,#f6f1e2); border:1px solid rgba(0,0,0,.06);}
+  .pv-sec{margin-top:22px; padding-bottom:6px; font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#8a8061; border-bottom:2px solid var(--pv-accent,#d4af00);}
+  .pv-list{list-style:none; margin:0; padding:0;}
+  .pv-item{display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px dashed #e8dfc4; font-size:15px; line-height:1.45; color:#2b2616; animation:pvItem .45s ease both; animation-delay:calc(var(--i,0)*70ms + 280ms);}
+  .pv-item>span:last-child{min-width:0; word-break:break-word;}
+  @keyframes pvItem{from{opacity:0; transform:translateX(-10px)}to{opacity:1; transform:none}}
+  .pv-tick{flex:0 0 22px; width:22px; height:22px; margin-top:1px; border-radius:50%; display:grid; place-items:center; color:#241f0f; background:var(--pv-accent,#d4af00);}
+  .pv-note{margin:14px 0 0; font-size:14px; line-height:1.55; color:#5c543b;}
+  .pv-actions{display:flex; flex-direction:column; gap:10px; margin-top:22px;}
+  .pv-btn{display:flex; align-items:center; justify-content:center; gap:9px; padding:13px 18px; border-radius:14px; border:0; cursor:pointer; font:600 14.5px 'Poppins',sans-serif; text-decoration:none; transition:transform .12s;}
+  .pv-btn:active{transform:scale(.97);}
+  .pv-primary{color:#231f0f; background:linear-gradient(135deg,#F4D93E,var(--pv-accent,#D4AF00)); box-shadow:0 8px 20px rgba(212,175,0,.28);}
+  .pv-ghost{color:var(--pv-h2,#332750); background:transparent; border:1.5px solid rgba(0,0,0,.14);}
+  .pv-foot{margin-top:16px; font-size:11.5px; text-align:center; color:#8a8061; line-height:1.5;}
+  .pv-after{text-align:center; max-width:360px;}
+  .pv-after .pv-brand{justify-content:center; margin-bottom:18px;}
+  .pv-after .pv-bn{color:#201c0d;}
+  .pv-after .pv-bt{color:#8a8061; opacity:1;}
+  .pv-after h2{font-family:'Fraunces',serif; font-weight:600; font-size:21px; line-height:1.4; margin:0 0 20px; color:#2b2616;}
+  .pv-after[hidden],.pv-card[hidden]{display:none;}
+  .pv-ig{display:inline-block; margin-top:16px; font-size:13px; font-weight:600; color:var(--pv-h2,#332750); text-decoration:none;}
+  .pv-seal{display:flex; align-items:center; gap:14px; padding:16px 22px;}
+  .pv-s-load{background:#f3efe0; color:#5c543b;}
+  .pv-s-ok{background:linear-gradient(135deg,#0d6a39,#1a9a5b); color:#fff;}
+  .pv-s-warn{background:linear-gradient(135deg,#a85d00,#dc8d14); color:#fff;}
+  .pv-s-bad{background:linear-gradient(135deg,#8a1b1b,#c53b2c); color:#fff;}
+  .pv-s-off{background:#ece8da; color:#4b4430;}
+  .pv-seal-ic{position:relative; flex:0 0 46px; width:46px; height:46px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.22);}
+  .pv-s-off .pv-seal-ic,.pv-s-load .pv-seal-ic{background:rgba(0,0,0,.07);}
+  .pv-s-ok .pv-seal-ic::after{content:''; position:absolute; inset:0; border-radius:50%; border:2px solid rgba(255,255,255,.6); animation:pvPulse 2.2s ease-out infinite;}
+  @keyframes pvPulse{from{transform:scale(1); opacity:.9}to{transform:scale(1.55); opacity:0}}
+  .pv-draw{stroke-dasharray:30; stroke-dashoffset:30; animation:pvDraw .55s .15s ease-out forwards;}
+  @keyframes pvDraw{to{stroke-dashoffset:0}}
+  .pv-spin{width:22px; height:22px; border:3px solid rgba(0,0,0,.14); border-top-color:#8a8061; border-radius:50%; animation:pvSpin .9s linear infinite;}
+  @keyframes pvSpin{to{transform:rotate(360deg)}}
+  .pv-seal-t{font-weight:800; font-size:15px; letter-spacing:1.4px;}
+  .pv-seal-s{margin-top:3px; font-size:12.5px; line-height:1.5; opacity:.96;}
+  .pv-seal-c{margin-top:6px; font-size:11px; opacity:.8;}
+  .pv-retry{margin-top:10px; border:1.5px solid rgba(0,0,0,.25); background:#fff; color:#2b2616; border-radius:999px; padding:7px 16px; font:600 12.5px 'Poppins',sans-serif; cursor:pointer;}
+  .pv-card.pv-unver .pv-list{opacity:.5; filter:grayscale(1);}
+  .pv-card.pv-unver .pv-sec::after{content:' · TIDAK TERVERIFIKASI'; color:#b3261e;}
+  @media (prefers-reduced-motion:reduce){.pv-card,.pv-item,.pv-s-ok .pv-seal-ic::after,.pv-draw{animation:none!important} .pv-draw{stroke-dashoffset:0}}
 
   /* ---------- Gambar Story Instagram (ringkas & nama disensor, untuk diunggah publik) ---------- */
   .job-story{
@@ -3557,6 +3640,13 @@ const SUPABASE_URL = 'https://gyleppavsgbtrlgbyztv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5bGVwcGF2c2didHJsZ2J5enR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3NjU0MDQsImV4cCI6MjEwMzM0MTQwNH0.0t7bMoTjgd-c48O37wo1QyGFsFnjrRiAkDzH8VMgw-Q';
 const SYNC_TABLE = 'kaone_motret_data';
 const SYNC_ROW_ID = 'main';
+
+/* VERIFIKASI KEASLIAN KWITANSI (QR) — butuh dijalankan SEKALI di Supabase (SQL Editor):
+   isi lengkapnya ada di file "kwitansi_verifikasi.sql" (tabel tertutup kaone_kwitansi + fungsi
+   kaone_kwitansi_daftar / kaone_kwitansi_batalkan / kaone_kwitansi_cek). Sebelum skrip itu
+   dijalankan, kwitansi tetap bisa dicetak dan QR-nya tetap menampilkan isi paket, tetapi
+   halaman hasil pindai akan menyatakan "belum bisa diverifikasi / tidak terdaftar" — BUKAN
+   "valid". Pendaftaran yang tertunda otomatis dikirim ulang begitu skripnya aktif. */
 
 /* Tabel kecil TERPISAH dari kaone_motret_data di atas — isinya BUKAN data job/klien,
    cuma pengaturan yang memang sengaja dibuat bisa dibaca publik: tarif Ongkos Antar
@@ -8438,6 +8528,7 @@ function bindJobFormEvents(scopeEl, onDone){
   });
   scopeEl.querySelector('#btnDeleteJob')?.addEventListener('click', ()=>{
     if(confirm('Yakin ingin menghapus job ini? Tindakan ini tidak bisa dibatalkan.')){
+      { const jj = jobs.find(x=>x.id===editingId); if(jj && (jj.kwitansiQr || jj.kwitansiPrinted)) kwBatalkan(jj.id); }   // kwitansinya ikut dinyatakan batal
       jobs = jobs.filter(x=>x.id!==editingId);
       saveJobs();
       toast('Job dihapus');
@@ -10486,7 +10577,455 @@ function kwitansiStatusHtml(j){
    relevan buat klien (paket, deskripsi paket, harga, diskon, DP, sisa, status bayar)
    dan TIDAK memuat biaya/keuntungan internal (Biaya Cetak, Honor Tim, Sedekah,
    Penghasilan Bersih). */
-function downloadKwitansiPdf(jobId){
+/* ---------- QR CODE (encoder mandiri, mode byte, koreksi L/M) ---------- */
+const KaoneQR = (function(){
+  var ECC_PER_BLOCK = {
+    L:[-1,7,10,15,20,26,18,20,24,30,18,20,24,26,30,22,24,28,30,28,28,28,28,30,30,26,28,30,30,30,30,30,30,30,30,30,30,30,30,30,30],
+    M:[-1,10,16,26,18,24,16,18,22,22,26,30,22,22,24,24,28,28,26,26,26,26,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28]
+  };
+  var NUM_BLOCKS = {
+    L:[-1,1,1,1,1,1,2,2,2,2,4,4,4,4,4,6,6,6,6,7,8,8,9,9,10,12,12,12,13,14,15,16,17,18,19,19,20,21,22,24,25],
+    M:[-1,1,1,1,2,2,4,4,4,5,5,5,8,9,9,10,10,11,13,14,16,17,17,18,20,21,23,25,26,28,29,31,33,35,37,38,40,43,45,47,49]
+  };
+  var FMT_BITS = {L:1, M:0};
+  function rawModules(v){
+    var r=(16*v+128)*v+64;
+    if(v>=2){ var n=Math.floor(v/7)+2; r-=(25*n-10)*n-55; if(v>=7) r-=36; }
+    return r;
+  }
+  function dataCodewords(v,e){ return Math.floor(rawModules(v)/8) - ECC_PER_BLOCK[e][v]*NUM_BLOCKS[e][v]; }
+  function gfMul(x,y){ var z=0; for(var i=7;i>=0;i--){ z=(z<<1)^((z>>>7)*0x11D); z^=((y>>>i)&1)*x; } return z; }
+  function rsDivisor(deg){
+    var r=[]; for(var i=0;i<deg-1;i++) r.push(0); r.push(1); var root=1;
+    for(var i=0;i<deg;i++){ for(var j=0;j<r.length;j++){ r[j]=gfMul(r[j],root); if(j+1<r.length) r[j]^=r[j+1]; } root=gfMul(root,2); }
+    return r;
+  }
+  function rsRemainder(data,div){
+    var r=div.map(function(){return 0;});
+    data.forEach(function(b){ var f=b^r.shift(); r.push(0); div.forEach(function(c,i){ r[i]^=gfMul(c,f); }); });
+    return r;
+  }
+  function utf8Bytes(str){ return Array.prototype.slice.call(new TextEncoder().encode(str)); }
+  function alignPos(v){
+    if(v===1) return [];
+    var n=Math.floor(v/7)+2, size=v*4+17, step=(v===32)?26:Math.ceil((v*4+4)/(n*2-2))*2, res=[6];
+    for(var pos=size-7; res.length<n; pos-=step) res.splice(1,0,pos);
+    return res;
+  }
+  function make(text, ecl){
+    ecl = ecl||'M';
+    var bytes = utf8Bytes(text), v, e = ecl;
+    for(v=1; v<=40; v++){
+      var cc = v<=9?8:16, bits = 4+cc+bytes.length*8;
+      if(bits <= dataCodewords(v,e)*8) break;
+    }
+    if(v>40) throw new Error('QR terlalu besar');
+    var bb=[]; function put(val,len){ for(var i=len-1;i>=0;i--) bb.push((val>>>i)&1); }
+    put(4,4); put(bytes.length, v<=9?8:16); bytes.forEach(function(b){ put(b,8); });
+    var cap = dataCodewords(v,e)*8;
+    put(0, Math.min(4, cap-bb.length)); put(0, (8-bb.length%8)%8);
+    for(var pad=0xEC; bb.length<cap; pad^=0xEC^0x11) put(pad,8);
+    var data=[]; for(var i=0;i<bb.length;i+=8){ var x=0; for(var k=0;k<8;k++) x=(x<<1)|bb[i+k]; data.push(x); }
+    // ECC + interleave
+    var nb=NUM_BLOCKS[e][v], eccLen=ECC_PER_BLOCK[e][v], raw=Math.floor(rawModules(v)/8),
+        nShort=nb-raw%nb, shortLen=Math.floor(raw/nb), blocks=[], div=rsDivisor(eccLen);
+    for(var i=0,k=0;i<nb;i++){
+      var d=data.slice(k, k+shortLen-eccLen+(i<nShort?0:1)); k+=d.length;
+      var ec=rsRemainder(d,div); if(i<nShort) d.push(0); blocks.push(d.concat(ec));
+    }
+    var all=[]; for(var i=0;i<blocks[0].length;i++) blocks.forEach(function(b,j){ if(i!==shortLen-eccLen || j>=nShort) all.push(b[i]); });
+    // matrix
+    var size=v*4+17, M=[], F=[];
+    for(var y=0;y<size;y++){ M.push(new Array(size).fill(false)); F.push(new Array(size).fill(false)); }
+    function setF(x,y,d){ M[y][x]=d; F[y][x]=true; }
+    for(var i=0;i<size;i++){ setF(6,i,i%2===0); setF(i,6,i%2===0); }
+    function finder(cx,cy){ for(var dy=-4;dy<=4;dy++) for(var dx=-4;dx<=4;dx++){ var dist=Math.max(Math.abs(dx),Math.abs(dy)), xx=cx+dx, yy=cy+dy; if(xx>=0&&xx<size&&yy>=0&&yy<size) setF(xx,yy,dist!==2&&dist!==4); } }
+    finder(3,3); finder(size-4,3); finder(3,size-4);
+    var ap=alignPos(v), na=ap.length;
+    for(var i=0;i<na;i++) for(var j=0;j<na;j++){
+      if((i===0&&j===0)||(i===0&&j===na-1)||(i===na-1&&j===0)) continue;
+      for(var dy=-2;dy<=2;dy++) for(var dx=-2;dx<=2;dx++) setF(ap[i]+dx, ap[j]+dy, Math.max(Math.abs(dx),Math.abs(dy))!==1);
+    }
+    function fmt(mask){
+      var d=(FMT_BITS[e]<<3)|mask, r=d; for(var i=0;i<10;i++) r=(r<<1)^((r>>>9)*0x537);
+      var b=((d<<10)|r)^0x5412; function g(i){ return ((b>>>i)&1)!==0; }
+      for(var i=0;i<=5;i++) setF(8,i,g(i)); setF(8,7,g(6)); setF(8,8,g(7)); setF(7,8,g(8));
+      for(var i=9;i<15;i++) setF(14-i,8,g(i));
+      for(var i=0;i<8;i++) setF(size-1-i,8,g(i));
+      for(var i=8;i<15;i++) setF(8,size-15+i,g(i));
+      setF(8,size-8,true);
+    }
+    fmt(0);
+    if(v>=7){
+      var r=v; for(var i=0;i<12;i++) r=(r<<1)^((r>>>11)*0x1F25);
+      var vb=(v<<12)|r;
+      for(var i=0;i<18;i++){ var c=((vb>>>i)&1)!==0, a=size-11+i%3, b2=Math.floor(i/3); setF(a,b2,c); setF(b2,a,c); }
+    }
+    var bi=0;
+    for(var right=size-1; right>=1; right-=2){
+      if(right===6) right=5;
+      for(var vert=0; vert<size; vert++) for(var j=0;j<2;j++){
+        var x=right-j, up=((right+1)&2)===0, y=up?size-1-vert:vert;
+        if(!F[y][x] && bi<all.length*8){ M[y][x]=((all[bi>>>3]>>>(7-(bi&7)))&1)!==0; bi++; }
+      }
+    }
+    function applyMask(mask){
+      for(var y=0;y<size;y++) for(var x=0;x<size;x++){
+        var inv;
+        switch(mask){
+          case 0: inv=(x+y)%2===0; break; case 1: inv=y%2===0; break; case 2: inv=x%3===0; break;
+          case 3: inv=(x+y)%3===0; break; case 4: inv=(Math.floor(x/3)+Math.floor(y/2))%2===0; break;
+          case 5: inv=x*y%2+x*y%3===0; break; case 6: inv=(x*y%2+x*y%3)%2===0; break;
+          default: inv=((x+y)%2+x*y%3)%2===0;
+        }
+        if(!F[y][x] && inv) M[y][x]=!M[y][x];
+      }
+    }
+    function penalty(){
+      var p=0, y, x, run, s;
+      for(var pass=0;pass<2;pass++){
+        for(var a=0;a<size;a++){
+          run=1; s='';
+          for(var b=0;b<size;b++){
+            var c=pass?M[b][a]:M[a][b]; s+=c?'1':'0';
+            if(b>0){ var pc=pass?M[b-1][a]:M[a][b-1]; if(c===pc){ run++; if(run===5) p+=3; else if(run>5) p++; } else run=1; }
+          }
+          var m1=s.match(/(?=(00001011101|10111010000))/g); if(m1) p+=40*m1.length;
+        }
+      }
+      for(y=0;y<size-1;y++) for(x=0;x<size-1;x++){ var c=M[y][x]; if(c===M[y][x+1]&&c===M[y+1][x]&&c===M[y+1][x+1]) p+=3; }
+      var dark=0; for(y=0;y<size;y++) for(x=0;x<size;x++) if(M[y][x]) dark++;
+      p+=Math.floor(Math.abs(dark*20-size*size*10)/(size*size))*10;
+      return p;
+    }
+    var best=0, bestP=Infinity;
+    for(var m=0;m<8;m++){ applyMask(m); fmt(m); var pp=penalty(); if(pp<bestP){ bestP=pp; best=m; } applyMask(m); }
+    applyMask(best); fmt(best);
+    return {size:size, version:v, isDark:function(x,y){ return M[y][x]; }};
+  }
+  return { make:make };
+})();
+
+/* ---------- QR DI KWITANSI → HALAMAN "ISI PAKET" UNTUK KLIEN ----------
+   Kwitansi (PDF & gambar) memuat kode QR. Klien yang memindainya langsung diarahkan ke
+   halaman rincian isi paket (popup) — TANPA login. Seluruh datanya dibawa di dalam
+   alamat QR itu sendiri (bagian setelah tanda #, yang tidak pernah dikirim ke server),
+   jadi tidak butuh tabel/izin baru di server. Sengaja HANYA memuat info paket & acara:
+   tidak ada harga, diskon, DP, status bayar, nomor WhatsApp, maupun data internal. */
+const KWQR_BASE_URL = '';   // opsional: isi alamat aplikasi (mis. 'https://namamu.example/index.html') kalau QR harus selalu mengarah ke sana
+const KWQR_WA_NUMBER = BONUS_CLAIM_WA_NUMBER; // tujuan tombol "Tanya via WhatsApp" di halaman paket
+const KWQR_IG = 'kaonemotret';
+function kwQrBaseUrl(){
+  if(KWQR_BASE_URL) return KWQR_BASE_URL;
+  if(!/^https?:$/.test(location.protocol)) return '';
+  return location.origin + location.pathname;
+}
+function kwB64Enc(bytes){
+  let s=''; for(let i=0;i<bytes.length;i+=0x8000) s+=String.fromCharCode.apply(null, bytes.subarray(i,i+0x8000));
+  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function kwB64Dec(str){
+  str = String(str).replace(/-/g,'+').replace(/_/g,'/'); while(str.length%4) str+='=';
+  const bin = atob(str), out = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i);
+  return out;
+}
+async function kwStream(bytes, stream){
+  const w = stream.writable.getWriter(); w.write(bytes); w.close();
+  return new Uint8Array(await new Response(stream.readable).arrayBuffer());
+}
+/* SHA-256 mandiri (sinkron, tanpa bergantung pada crypto.subtle yang hanya ada di https) */
+const KW_K = new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+function kwSha256(str){
+  const m = new TextEncoder().encode(str), l = m.length, n = ((l+9+63)>>6)<<6, buf = new Uint8Array(n);
+  buf.set(m); buf[l] = 0x80;
+  const dv = new DataView(buf.buffer);
+  dv.setUint32(n-8, Math.floor(l*8/0x100000000)); dv.setUint32(n-4, (l*8)>>>0);
+  let h = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const w = new Uint32Array(64);
+  for(let o=0;o<n;o+=64){
+    for(let i=0;i<16;i++) w[i] = dv.getUint32(o+i*4);
+    for(let i=16;i<64;i++){
+      const x = w[i-15], y = w[i-2];
+      const s0 = ((x>>>7)|(x<<25)) ^ ((x>>>18)|(x<<14)) ^ (x>>>3);
+      const s1 = ((y>>>17)|(y<<15)) ^ ((y>>>19)|(y<<13)) ^ (y>>>10);
+      w[i] = (w[i-16]+s0+w[i-7]+s1)>>>0;
+    }
+    let a=h[0], b=h[1], c=h[2], d=h[3], e=h[4], f=h[5], g=h[6], hh=h[7];
+    for(let i=0;i<64;i++){
+      const S1 = ((e>>>6)|(e<<26)) ^ ((e>>>11)|(e<<21)) ^ ((e>>>25)|(e<<7));
+      const ch = (e&f) ^ (~e&g);
+      const t1 = (hh+S1+ch+KW_K[i]+w[i])>>>0;
+      const S0 = ((a>>>2)|(a<<30)) ^ ((a>>>13)|(a<<19)) ^ ((a>>>22)|(a<<10));
+      const mj = (a&b) ^ (a&c) ^ (b&c);
+      const t2 = (S0+mj)>>>0;
+      hh=g; g=f; f=e; e=(d+t1)>>>0; d=c; c=b; b=a; a=(t1+t2)>>>0;
+    }
+    h = [(h[0]+a)>>>0,(h[1]+b)>>>0,(h[2]+c)>>>0,(h[3]+d)>>>0,(h[4]+e)>>>0,(h[5]+f)>>>0,(h[6]+g)>>>0,(h[7]+hh)>>>0];
+  }
+  return h.map(x=>x.toString(16).padStart(8,'0')).join('');
+}
+
+function kwQrData(j){
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'') : (j.jenisAcara||'');
+  const akhir = getJobFinishDate(j) || '';
+  const t = (v,n)=>String(v==null?'':v).trim().slice(0,n);
+  const a = [1, Number(getJobNo(j.id))||0, t(j.paket,80), t(j.deskripsiPaket,300), t(j.namaKlien,60), t(jenis,40),
+             j.tanggalAcara||'', (akhir && akhir!==j.tanggalAcara) ? akhir : '', t(mempelaiTeks(j),60)];
+  while(a.length>3 && a[a.length-1]==='') a.pop();
+  return a;
+}
+/* ---------- Keaslian kwitansi: pendaftaran ke server (Admin) ---------- */
+function kwTokenBaru(){ const b = new Uint8Array(9); crypto.getRandomValues(b); return kwB64Enc(b); }   // 12 karakter acak
+// Bentuk baku isi kwitansi untuk dihitung sidik jarinya — HARUS sama persis di sisi Admin & sisi pemindai.
+function kwIsiKanon(a){
+  const t = i=>String(a[i]==null ? '' : a[i]);
+  return JSON.stringify([Number(a[1])||0, t(2), t(3), t(4), t(5), t(6), t(7), t(8)]);
+}
+async function kwRpc(nama, args){
+  if(!supabaseClient) throw new Error('Supabase belum aktif');
+  const r = await Promise.race([supabaseClient.rpc(nama, args), new Promise((_,tolak)=>setTimeout(()=>tolak(new Error('timeout')), 9000))]);
+  if(r && r.error) throw r.error;
+  return r ? r.data : null;
+}
+const KWQ_PENDING_KEY = 'kaoneMotret_kwPending_v1';
+function kwPendingGet(){ try{ return JSON.parse(localStorage.getItem(KWQ_PENDING_KEY)||'[]') || []; }catch(e){ return []; } }
+function kwPendingSet(q){ try{ localStorage.setItem(KWQ_PENDING_KEY, JSON.stringify(q)); }catch(e){} }
+// Gagal (offline / SQL belum dijalankan) → masuk antrean, dicoba lagi otomatis saat aplikasi dibuka / online.
+async function kwDaftar(token, jobId, sidik){
+  try{ await kwRpc('kaone_kwitansi_daftar', {p_token:token, p_job_id:jobId, p_sidik:sidik}); return true; }
+  catch(e){
+    console.warn('Kwitansi belum terdaftar di server, masuk antrean', e);
+    const q = kwPendingGet().filter(x=>!(x.aksi==='daftar' && x.token===token));
+    q.push({aksi:'daftar', token, jobId, sidik}); kwPendingSet(q);
+    return false;
+  }
+}
+async function kwBatalkan(jobId){
+  if(!jobId) return;
+  try{ await kwRpc('kaone_kwitansi_batalkan', {p_job_id:jobId}); }
+  catch(e){ const q = kwPendingGet(); q.push({aksi:'batal', jobId}); kwPendingSet(q); }
+}
+let kwFlushing = false;
+async function kwPendingFlush(){
+  if(kwFlushing || !supabaseClient || typeof isAdmin!=='function' || !isAdmin()) return;
+  const q = kwPendingGet(); if(!q.length) return;
+  kwFlushing = true;
+  const sisa = []; let ubah = false;
+  for(const it of q){
+    try{
+      if(it.aksi==='batal') await kwRpc('kaone_kwitansi_batalkan', {p_job_id:it.jobId});
+      else {
+        await kwRpc('kaone_kwitansi_daftar', {p_token:it.token, p_job_id:it.jobId, p_sidik:it.sidik});
+        const jb = jobs.find(x=>x.id===it.jobId);
+        if(jb && jb.kwitansiQr && jb.kwitansiQr.token===it.token){ jb.kwitansiQr.reg = true; ubah = true; }
+      }
+    }catch(e){ sisa.push(it); }
+  }
+  kwPendingSet(sisa);
+  if(ubah){ try{ saveJobsLocal(); }catch(e){} }
+  kwFlushing = false;
+}
+window.addEventListener('online', ()=>setTimeout(kwPendingFlush, 1500));
+
+// Hasilnya alamat lengkap untuk dijadikan QR, atau '' kalau aplikasi dibuka bukan dari alamat web.
+async function kwQrBuildUrl(j){
+  const base = kwQrBaseUrl();
+  if(!base){ toast('Kwitansi dibuat tanpa kode QR — buka aplikasi lewat alamat web (https) supaya QR aktif.'); return ''; }
+  const a = kwQrData(j);
+  while(a.length<9) a.push('');
+  const isi = kwIsiKanon(a), ch = kwSha256(isi);
+  // Isi sama persis dengan kwitansi sebelumnya → pakai kode yang sama (PDF & gambar tetap sama-sama valid).
+  // Isi berubah → kode baru; kode lama otomatis berstatus "diganti" di server.
+  let rec = j.kwitansiQr;
+  if(!rec || !rec.token || rec.ch!==ch) rec = j.kwitansiQr = {token:kwTokenBaru(), ch, reg:false};
+  a[9] = rec.token;
+  if(!rec.reg){
+    if(await kwDaftar(rec.token, j.id, kwSha256(rec.token+'|'+isi))) rec.reg = true;
+    else toast('Kwitansi dibuat. Keaslian QR baru aktif setelah perangkat ini tersambung internet.');
+  }
+  const raw = new TextEncoder().encode(JSON.stringify(a));
+  let tok = 'p.' + kwB64Enc(raw);
+  // Teks panjang dikompres supaya QR tidak terlalu padat (lebih mudah dipindai).
+  if(tok.length>260 && typeof CompressionStream==='function'){
+    try{ const z = 'z.' + kwB64Enc(await kwStream(raw, new CompressionStream('deflate-raw'))); if(z.length<tok.length) tok=z; }catch(e){}
+  }
+  return base + '#paket=' + tok;
+}
+
+// Kalau isi poster hampir menabrak footer, rapatkan jarak antar baris (bertahap) supaya tetap muat.
+function kwFitPoster(el){
+  const muat = ()=>{ const b = el.querySelector('.kw-body'), f = el.querySelector('.kw-footer'); return !b || !f || b.getBoundingClientRect().bottom <= f.getBoundingClientRect().top - 10; };
+  if(muat()) return;
+  el.classList.add('kw-compact'); if(muat()) return;
+  el.classList.add('kw-compact2');
+}
+function kwQrMake(url){ return KaoneQR.make(url, url.length<=330 ? 'M' : 'L'); }
+// Gambar PNG QR (untuk kwitansi versi gambar). Ukuran modul dibulatkan agar tajam.
+function kwQrImage(url, target){
+  const q = kwQrMake(url), quiet = 2;
+  const scale = (q.size+quiet*2)*4 <= (target||320) ? 4 : 3;   // modul 4 piksel (lebih mudah dipindai) selama muat
+  const px = (q.size+quiet*2)*scale;
+  const cv = document.createElement('canvas'); cv.width = cv.height = px;
+  const cx = cv.getContext('2d');
+  cx.fillStyle = '#ffffff'; cx.fillRect(0,0,px,px);
+  cx.fillStyle = '#14120a';
+  for(let y=0;y<q.size;y++) for(let x=0;x<q.size;x++) if(q.isDark(x,y)) cx.fillRect((x+quiet)*scale,(y+quiet)*scale,scale,scale);
+  return {src: cv.toDataURL('image/png'), px};
+}
+
+/* ---------- Halaman publik "Isi Paket" (tujuan QR) ---------- */
+async function kwQrDecode(token){
+  const kind = token.slice(0,2);
+  let bytes = kwB64Dec(token.slice(2));
+  if(kind==='z.'){
+    if(typeof DecompressionStream!=='function') throw new Error('nodecomp');
+    bytes = await kwStream(bytes, new DecompressionStream('deflate-raw'));
+  } else if(kind!=='p.') throw new Error('bad');
+  const a = JSON.parse(new TextDecoder().decode(bytes));
+  if(!Array.isArray(a) || a[0]!==1) throw new Error('bad');
+  const s = (v,n)=>String(v==null?'':v).slice(0,n);
+  const iso = v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'') ? v : '';
+  const tgl = iso(a[6]), nomor = parseInt(a[1],10);
+  const no = nomor>0 ? `KWT-${String(nomor).padStart(3,'0')}-${tgl.replace(/-/g,'')}` : '';
+  return {no, paket:s(a[2],120), deskripsi:s(a[3],1200), klien:s(a[4],80), jenis:s(a[5],60),
+          tgl, tglAkhir:iso(a[7]), mempelai:s(a[8],100), raw:a};
+}
+// Memeriksa keaslian ke server. Hasil: valid | diganti | batal | palsu | tidak | gagal
+async function kwVerifikasi(a){
+  const token = String(a[9]||'');
+  if(!/^[A-Za-z0-9_-]{10,40}$/.test(token)) return {s:'tidak'};          // QR tanpa kode resmi
+  let r;
+  try{ r = await kwRpc('kaone_kwitansi_cek', {p_token:token}); }catch(e){ return {s:'gagal'}; }
+  if(!r || typeof r!=='object') return {s:'gagal'};
+  if(!r.ada) return {s:'tidak'};
+  if(kwSha256(token+'|'+kwIsiKanon(a)) !== r.sidik) return {s:'palsu', at:r.dicetak_at};   // data pada QR diubah
+  return {s: r.status==='aktif' ? 'valid' : r.status==='diganti' ? 'diganti' : 'batal', at:r.dicetak_at};
+}
+function kwWaktu(iso){
+  try{ return new Date(iso).toLocaleString('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'}) + ' WIB'; }
+  catch(e){ return ''; }
+}
+// Memecah deskripsi paket jadi daftar butir (per baris, atau per koma/titik koma kalau cuma satu baris).
+function kwItemsPaket(txt){
+  let parts = String(txt||'').split(/\r?\n+/).map(x=>x.trim()).filter(Boolean);
+  if(parts.length===1) parts = parts[0].split(/\s*[;,]\s*|\s+\+\s+/).map(x=>x.trim()).filter(Boolean);
+  return parts.map(x=>x.replace(/^[-•*·]\s*/,'').replace(/^\d+[.)]\s+/,'').replace(/[.;,]+$/,'').trim())
+    .map(x=>/^(dll|dsb|dst|dan lain[- ]?lain(nya)?)$/i.test(x) ? 'Dan lainnya' : x)
+    .filter(Boolean).slice(0,40);
+}
+function kwSalin(t){
+  if(navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
+  return new Promise((ok,gagal)=>{
+    const ta=document.createElement('textarea'); ta.value=t; ta.style.cssText='position:fixed;opacity:0;top:0;left:0;';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy') ? ok() : gagal(); }catch(e){ gagal(e); } ta.remove();
+  });
+}
+const PV_CHECK = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4.5,12.5 9.5,17.5 19.5,6.5"/></svg>';
+const PV_CAL = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>';
+const PV_WA = '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1.1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.8-.1 1.4Z"/></svg>';
+const PV_SEAL_IC = {
+  ok:   '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline class="pv-draw" points="5,12.5 10,17.5 19.5,7"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 2.8 19.5h18.4Z"/><line x1="12" y1="10" x2="12" y2="14.5"/><circle cx="12" cy="17.2" r=".6" fill="#fff"/></svg>',
+  bad:  '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="6.5" y1="6.5" x2="17.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="6.5" y2="17.5"/></svg>',
+  off:  '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 9a13 13 0 0 1 18 0"/><path d="M6.5 12.5a8 8 0 0 1 11 0"/><circle cx="12" cy="17" r="1" fill="currentColor"/><line x1="4" y1="4" x2="20" y2="20"/></svg>'
+};
+function kwSealHtml(st, r){
+  r = r || {};
+  const cek = `Dicek langsung ke server · ${kwWaktu(new Date().toISOString())}`;
+  const M = {
+    load:    ['load','', 'Memeriksa keaslian kwitansi…', 'Mencocokkan dengan catatan resmi Kaone Motret.', ''],
+    valid:   ['ok','ok', 'KWITANSI VALID', `Terdaftar resmi di Kaone Motret. Diterbitkan ${kwWaktu(r.at)}. Isi di bawah cocok dengan catatan kami.`, cek],
+    diganti: ['warn','warn', 'KWITANSI SUDAH DIGANTI', 'Kwitansi ini memang asli, tetapi sudah ada versi yang lebih baru. Mohon konfirmasi ke Kaone Motret.', cek],
+    batal:   ['bad','bad', 'KWITANSI DIBATALKAN', 'Kwitansi ini sudah dibatalkan oleh Kaone Motret dan tidak berlaku.', cek],
+    palsu:   ['bad','bad', 'TIDAK VALID', 'Isi pada kode QR ini tidak cocok dengan catatan resmi kami. Jangan dipercaya, dan segera hubungi Kaone Motret.', cek],
+    tidak:   ['bad','bad', 'TIDAK TERDAFTAR', 'Kwitansi ini tidak ada di catatan resmi kami. Jika ini kwitansi asli yang baru diterbitkan, minta Admin membuka aplikasinya sebentar lalu pindai ulang.', cek],
+    gagal:   ['off','off', 'BELUM BISA DIVERIFIKASI', 'Tidak dapat terhubung ke server. Periksa koneksi internet, lalu coba lagi.', '']
+  }[st] || ['off','off','',''];
+  const ikon = st==='load' ? '<div class="pv-spin" aria-hidden="true"></div>' : PV_SEAL_IC[M[1]];
+  return `<div class="pv-seal pv-s-${M[0]}" role="status" aria-live="polite">
+      <div class="pv-seal-ic">${ikon}</div>
+      <div class="pv-seal-tx"><div class="pv-seal-t">${M[2]}</div><div class="pv-seal-s">${escapeHtml(M[3])}</div>${M[4]?`<div class="pv-seal-c">${escapeHtml(M[4])}</div>`:''}
+      ${st==='gagal' ? '<button type="button" class="pv-retry">Coba lagi</button>' : ''}</div>
+    </div>`;
+}
+async function kaonePaketView(){
+  document.getElementById('authGate')?.remove();
+  const host = document.createElement('div'); host.id = 'paketView'; host.className = 'pv-root';
+  document.body.appendChild(host);
+  try{ document.title = 'Isi Paket · Kaone Motret'; }catch(e){}
+  const waUrl = (pesan)=>`https://wa.me/${KWQR_WA_NUMBER}?text=${encodeURIComponent(pesan)}`;
+  const brand = `<div class="pv-brand"><div class="pv-badge">KM</div><div><div class="pv-bn">Kaone Motret</div><div class="pv-bt">Buku Job Fotografer</div></div></div>`;
+  let d;
+  try{ d = await kwQrDecode(location.hash.replace(/^#paket=/,'')); }
+  catch(e){
+    const nodecomp = e && e.message==='nodecomp';
+    host.innerHTML = `<div class="pv-stage"><div class="pv-card"><div class="pv-hdr">${brand}</div><div class="pv-body">
+      <div class="pv-kicker">Ups</div><h1 class="pv-title">Rincian paket tidak dapat dibuka</h1>
+      <p class="pv-note">${nodecomp ? 'Peramban di HP ini belum mendukung tautan ini. Coba buka lewat Chrome atau Safari versi terbaru.' : 'Kode QR mungkin terpotong atau kurang utuh. Coba pindai ulang dari kwitansi, atau hubungi kami.'}</p>
+      <div class="pv-actions"><a class="pv-btn pv-primary" href="${waUrl('Halo Kaone Motret, saya ingin menanyakan isi paket saya.')}" target="_blank" rel="noopener">${PV_WA}<span>Hubungi via WhatsApp</span></a></div>
+    </div></div></div>`;
+    return;
+  }
+  const col = jenisAcaraColor(d.jenis);
+  host.style.setProperty('--pv-h1', col.hdr1); host.style.setProperty('--pv-h2', col.hdr2);
+  host.style.setProperty('--pv-accent', col.accent); host.style.setProperty('--pv-soft', col.soft);
+  const items = kwItemsPaket(d.deskripsi);
+  const tgl = d.tgl ? fmtTglRange(d.tgl, d.tglAkhir || d.tgl) : '';
+  const acara = d.jenis + (d.mempelai ? ' — ' + d.mempelai : '');
+  const judul = d.paket || 'Paket Anda';
+  try{ document.title = judul + ' · Isi Paket · Kaone Motret'; }catch(e){}
+  const teksSalin = `Isi Paket ${judul}${acara?' ('+acara+')':''}\n` + (items.length ? items.map(x=>'• '+x).join('\n') : '') + `\n\nKaone Motret`;
+  const pesanWa = `Halo Kaone Motret, saya ${d.klien ? d.klien + ', ' : ''}ingin bertanya tentang paket "${judul}"${d.no ? ' (kwitansi ' + d.no + ')' : ''}.`;
+  host.innerHTML = `<div class="pv-stage">
+    <div class="pv-card" role="dialog" aria-modal="true" aria-labelledby="pvTitle">
+      <div class="pv-hdr">${brand}<button type="button" class="pv-x" aria-label="Tutup">&times;</button>
+        ${d.klien ? `<div class="pv-for">Rincian paket untuk</div><div class="pv-forname">${escapeHtml(d.klien)}</div>` : ''}
+      </div>
+      <div class="pv-seal-slot"></div>
+      <div class="pv-body">
+        <div class="pv-kicker">Isi Paket</div>
+        <h1 class="pv-title" id="pvTitle">${escapeHtml(judul)}</h1>
+        ${(acara||tgl) ? `<div class="pv-chips">${acara?`<span class="pv-chip">${escapeHtml(acara)}</span>`:''}${tgl?`<span class="pv-chip">${PV_CAL}${escapeHtml(tgl)}</span>`:''}</div>` : ''}
+        <div class="pv-sec">Yang Anda dapatkan</div>
+        ${items.length ? `<ul class="pv-list">${items.map((x,i)=>`<li class="pv-item" style="--i:${i}"><span class="pv-tick">${PV_CHECK}</span><span>${escapeHtml(x)}</span></li>`).join('')}</ul>`
+          : `<p class="pv-note">Rincian isi paket belum dicantumkan di kwitansi ini. Silakan tanyakan langsung kepada kami ya.</p>`}
+        <div class="pv-actions">
+          <a class="pv-btn pv-primary" href="${waUrl(pesanWa)}" target="_blank" rel="noopener">${PV_WA}<span>Tanya via WhatsApp</span></a>
+          ${items.length ? `<button type="button" class="pv-btn pv-ghost" id="pvCopy">Salin rincian</button>` : ''}
+        </div>
+        <div class="pv-foot">${d.no ? `Sesuai kwitansi <b>${escapeHtml(d.no)}</b> · ` : ''}rincian saat kwitansi dicetak</div>
+      </div>
+    </div>
+    <div class="pv-after" hidden>
+      ${brand}
+      <h2>Terima kasih sudah mempercayakan momen Anda kepada Kaone Motret 🙏</h2>
+      <button type="button" class="pv-btn pv-primary" id="pvReopen">Lihat isi paket lagi</button>
+      <a class="pv-ig" href="https://instagram.com/${KWQR_IG}" target="_blank" rel="noopener">@${KWQR_IG}</a>
+    </div>
+  </div>`;
+  const card = host.querySelector('.pv-card'), after = host.querySelector('.pv-after');
+  const tutup = ()=>{ card.classList.add('pv-out'); setTimeout(()=>{ card.hidden = true; after.hidden = false; }, 220); };
+  host.querySelector('.pv-x').onclick = tutup;
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !card.hidden) tutup(); });
+  host.querySelector('#pvReopen').onclick = ()=>{ after.hidden = true; card.hidden = false; card.classList.remove('pv-out'); card.style.animation='none'; void card.offsetHeight; card.style.animation=''; };
+  const slot = host.querySelector('.pv-seal-slot'), waBtn = host.querySelector('.pv-actions .pv-primary');
+  const LABEL = {diganti:'sudah diganti', batal:'dibatalkan', palsu:'data tidak cocok', tidak:'tidak terdaftar', gagal:'belum bisa diverifikasi'};
+  const periksa = async ()=>{
+    slot.innerHTML = kwSealHtml('load');
+    const r = await kwVerifikasi(d.raw);
+    slot.innerHTML = kwSealHtml(r.s, r);
+    card.classList.toggle('pv-unver', r.s==='palsu' || r.s==='tidak' || r.s==='batal');
+    if(r.s!=='valid' && waBtn) waBtn.href = waUrl(`Halo Kaone Motret, saya ingin memverifikasi kwitansi${d.no ? ' ' + d.no : ''}. Hasil pemeriksaan QR: ${LABEL[r.s]||r.s}.`);
+    const rt = slot.querySelector('.pv-retry'); if(rt) rt.onclick = periksa;
+  };
+  periksa();
+  const cp = host.querySelector('#pvCopy');
+  if(cp) cp.onclick = ()=>{ kwSalin(teksSalin).then(()=>{ cp.textContent='Tersalin ✓'; setTimeout(()=>cp.textContent='Salin rincian',1800); }).catch(()=>{ cp.textContent='Gagal menyalin'; setTimeout(()=>cp.textContent='Salin rincian',1800); }); };
+}
+
+async function downloadKwitansiPdf(jobId){
   if(!isAdmin()) return;
   const j = jobs.find(x=>x.id===jobId);
   if(!j) return;
@@ -10494,6 +11033,7 @@ function downloadKwitansiPdf(jobId){
     alert('Pustaka pembuat PDF belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
     return;
   }
+  const qrUrl = await kwQrBuildUrl(j);
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({unit:'mm', format:'a5'});
   const pageW = doc.internal.pageSize.getWidth();
@@ -10575,12 +11115,42 @@ function downloadKwitansiPdf(jobId){
     y += catatanLines.length*4.3 + 6;
   }
 
-  const footY = Math.max(y+10, pageH-22);
-  doc.setDrawColor(225); doc.line(marginX, footY-8, pageW-marginX, footY-8);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(130);
-  doc.text(`Dicetak ${printedAt} · Kaone Motret`, marginX, footY);
-  doc.setFont('helvetica','italic');
-  doc.text('Terima kasih atas kepercayaannya', pageW-marginX, footY, {align:'right'});
+  if(!qrUrl){
+    const footY = Math.max(y+10, pageH-22);
+    doc.setDrawColor(225); doc.line(marginX, footY-8, pageW-marginX, footY-8);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(130);
+    doc.text(`Dicetak ${printedAt} · Kaone Motret`, marginX, footY);
+    doc.setFont('helvetica','italic');
+    doc.text('Terima kasih atas kepercayaannya', pageW-marginX, footY, {align:'right'});
+  } else {
+    // Dengan QR: footer dipadatkan di kiri-bawah, QR di pojok kanan-bawah (A5 sempit, jadi tetap 1 halaman).
+    const q = kwQrMake(qrUrl);
+    const mm = Math.max(0.34, 24/q.size), qrW = q.size*mm;   // modul min. 0,34 mm: masih nyaman dipindai dari kertas A5
+    let top = pageH - 8 - qrW;
+    if(y > top - 1){ doc.addPage(); top = 16; }   // isi kwitansi terlalu panjang: QR pindah ke halaman berikutnya
+    doc.setDrawColor(225); doc.setLineWidth(0.3); doc.line(marginX, top-4, pageW-marginX, top-4);
+    const qx = pageW - marginX - qrW;
+    doc.setFillColor(20,18,10);
+    for(let r=0;r<q.size;r++){
+      let c=0;
+      while(c<q.size){
+        if(!q.isDark(c,r)){ c++; continue; }
+        let e=c; while(e<q.size && q.isDark(e,r)) e++;
+        doc.rect(qx+c*mm, top+r*mm, (e-c)*mm, mm+0.03, 'F');   // satu persegi panjang per deret modul gelap
+        c=e;
+      }
+    }
+    const tw = qx - marginX - 6;
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(20);
+    doc.text('Scan untuk verifikasi kwitansi', marginX, top+4);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(110);
+    doc.text(doc.splitTextToSize('Pindai QR di samping untuk memastikan kwitansi ini asli dan melihat isi paket. Tanpa login.', tw), marginX, top+9);
+    doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(130);
+    doc.text('Terima kasih atas kepercayaannya', marginX, top+qrW-5);
+    doc.setFont('helvetica','normal');
+    doc.text(`Dicetak ${printedAt} · Kaone Motret`, marginX, top+qrW);
+    doc.setLineWidth(0.2);
+  }
 
   markKwitansiPrinted(j);
   doc.save(`Kwitansi-${(j.namaKlien||'kaonemotret').replace(/\s+/g,'_')}-${j.tanggalAcara}.pdf`);
@@ -10591,7 +11161,7 @@ function downloadKwitansiPdf(jobId){
    tanpa data keuangan internal) — cuma bentuk file & tampilannya berbeda, supaya
    Admin bisa pilih mau kirim sebagai PDF atau sebagai gambar (lebih mudah dibuka
    & dikirim ulang lewat WhatsApp). */
-function buildKwitansiPosterHtml(j){
+function buildKwitansiPosterHtml(j, qr){
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
   const col = jenisAcaraColor(j.jenisAcara);
   const hargaPaket = Number(j.penghasilan)||0;
@@ -10635,10 +11205,14 @@ function buildKwitansiPosterHtml(j){
         </div>
       </div>
       <div class="kw-body">
-        ${(j.deskripsiPaket||'').trim() ? `
-        <div class="kw-package">
-          <div class="kw-package-label">Isi Paket</div>
-          <div class="kw-package-text">${escapeHtml(truncateText(j.deskripsiPaket, 200))}</div>
+        ${((j.deskripsiPaket||'').trim() || qr) ? `
+        <div class="kw-package${qr?' has-qr':''}">
+          <div class="kw-package-main">
+            <div class="kw-package-label">Isi Paket</div>
+            <div class="kw-package-text">${escapeHtml(truncateText((j.deskripsiPaket||'').trim() || j.paket || 'Rincian paket ada di kode QR', 200))}</div>
+            ${qr ? `<div class="kw-package-hint">Scan QR di samping untuk memastikan kwitansi ini asli dan melihat isi paket lengkap.</div>` : ''}
+          </div>
+          ${qr ? `<div class="kw-qr"><div class="kw-qr-box"><img src="${qr.src}" width="${qr.px}" height="${qr.px}" alt="QR isi paket"></div></div>` : ''}
         </div>` : ''}
         ${rows.map(([label,val,highlight])=>`
           <div class="kw-row${highlight?' kw-highlight':''}">
@@ -10661,7 +11235,7 @@ function buildKwitansiPosterHtml(j){
     </div>
   `;
 }
-function downloadKwitansiImage(jobId){
+async function downloadKwitansiImage(jobId){
   if(!isAdmin()) return;
   if(typeof html2canvas === 'undefined'){
     alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
@@ -10670,16 +11244,19 @@ function downloadKwitansiImage(jobId){
   const j = jobs.find(x=>x.id===jobId);
   if(!j) return;
   toast('Menyiapkan gambar kwitansi...');
+  let qr = null;
+  try{ const u = await kwQrBuildUrl(j); if(u) qr = kwQrImage(u, 320); }catch(e){ console.warn('QR kwitansi gagal dibuat', e); }
 
   // Sama seperti poster Detail Job/Story: dirender di luar tampilan (opacity:0) hanya
   // untuk keperluan pengambilan gambar, lalu dihapus lagi begitu selesai diunduh.
   const holder = document.createElement('div');
   holder.style.cssText = 'position:fixed;top:-10000px;left:-10000px;opacity:0;pointer-events:none;z-index:-1;';
-  holder.innerHTML = buildKwitansiPosterHtml(j);
+  holder.innerHTML = buildKwitansiPosterHtml(j, qr);
   document.body.appendChild(holder);
   const posterEl = holder.querySelector('#kwitansiPosterExport');
 
   const capture = ()=>{
+    kwFitPoster(posterEl);
     html2canvas(posterEl, {width:1080, height:1350, scale:1, backgroundColor:'#fffdf6'}).then(canvas=>{
       holder.remove();
       const a = document.createElement('a');
@@ -13591,9 +14168,10 @@ const APP_VERSION = '1.16.0'; // ⚠️ naikkan tiap ada perubahan — lihat cat
 const CHANGELOG = [
   {
     version: '1.16.0',
-    tanggal: '6 Oktober 2026',
+    tanggal: '7 Oktober 2026',
     items: [
-      { kategori: 'Peningkatan', teks: 'Akun dengan akses terbatas kini langsung masuk ke satu halaman yang diizinkan begitu login, dan tidak punya jalan ke bagian aplikasi lain. Pembatasannya juga dikunci di server, jadi tidak bisa ditembus lewat cara apa pun dari sisi aplikasi.' },
+      { kategori: 'Fitur', teks: 'Halaman hasil pindai QR kini menampilkan status keaslian kwitansi: segel hijau "Kwitansi Valid" bila terdaftar resmi di Kaone Motret, atau peringatan merah bila datanya tidak cocok, tidak terdaftar, sudah diganti, atau dibatalkan.' },
+      { kategori: 'Fitur', teks: 'Kwitansi (PDF maupun gambar) kini punya kode QR. Saat klien memindainya dengan kamera HP, langsung terbuka halaman rincian isi paket: nama paket, daftar isinya, dan info acara. Tanpa login, dan tidak menampilkan harga atau pembayaran.' },
     ]
   },
   {
@@ -14543,6 +15121,7 @@ document.addEventListener('click', (e)=>{
     const job = jobs.find(x=>x.id===id);
     const nama = job ? (job.namaKlien || 'job ini') : 'job ini';
     if(confirm(`Yakin ingin menghapus job "${nama}"? Tindakan ini tidak bisa dibatalkan.`)){
+      if(job && (job.kwitansiQr || job.kwitansiPrinted)) kwBatalkan(job.id);   // kwitansinya ikut dinyatakan batal
       jobs = jobs.filter(x=>x.id!==id);
       saveJobs();
       toast('Job dihapus');
@@ -15250,11 +15829,14 @@ function initAppAfterAuth(){
 
   // Nyalakan notifikasi real-time (Supabase Realtime) — lihat bagian "NOTIFIKASI REAL-TIME".
   rtStart();
+  setTimeout(kwPendingFlush, 4000);   // daftarkan kwitansi yang tadinya belum sempat tercatat di server
 }
 
 // Kalau sesi login sebelumnya masih tersimpan & valid, langsung masuk tanpa perlu
 // login ulang. Kalau belum, gerbang login (#authGate) tetap tampil menunggu submit.
-if(checkAuthSession()){
+if(window.__kaonePaketView){
+  kaonePaketView();   // tautan dari QR kwitansi: halaman publik "Isi Paket", tanpa login
+} else if(checkAuthSession()){
   kaoneMasukApp();
 }
 </script>
@@ -15286,6 +15868,7 @@ if(checkAuthSession()){
   document.head.appendChild(css);
 
   function showBar(message, goLabel, onGo, noLabel, onNo){
+    if(window.__kaonePaketView) return null;
     var bar = document.createElement('div');
     bar.className = 'pwa-bar';
     bar.setAttribute('role', 'status');
@@ -15860,7 +16443,7 @@ var TY='<div class="rw2 ty"><div class="b"><span class="td"></span><span class="
 function chips(m){var r=m.reaksi||{},ks=Object.keys(r).filter(function(k){return typeof r[k]=='string'&&r[k]&&r[k].length<=8});if(!ks.length)return '';
 var c={};ks.forEach(function(k){c[r[k]]=(c[r[k]]||0)+1});var sig=ks.map(function(k){return k+r[k]}).sort().join();rgn[m.id]=sig;
 return '<div class="rx'+(dr0&&rg[m.id]!==sig?' pop':'')+'">'+Object.keys(c).map(function(e){return '<span>'+E(e)+'</span>'+(c[e]>1?'<small>'+c[e]+'</small>':'')}).join('')+'</div>'}
-async function put(o){o.pengirim=me;var r=await sb.from('kaone_chat_pesan').insert(o).select().single();if(r.data){msgs[r.data.id]=r.data;draw();cpush(r.data.id)}else toast('Gagal kirim')}
+async function put(o){o.pengirim=me;var r=await sb.from('kaone_chat_pesan').insert(o).select().single();if(r.data){msgs[r.data.id]=r.data;draw();if(!(lo&&lo.on))cpush(r.data.id)}else toast('Gagal kirim')}
 async function kirim(){var v=$('ki').value.trim();if(!v)return;kBurst();$('ki').value='';kGrow();kSync();var o={tipe:'teks',isi:v};if(rep)o.balas_ke=rep;rp(null);await put(o)}
 function rp(id){rep=id;$('krp').classList.toggle('on',!!id);if(id){var m=msgs[id];$('krt').textContent=m.tipe=='teks'?kPlain(m):'['+m.tipe+']'}}
 function thumb(blob,big){return new Promise(function(res){try{var im=new Image(),u=URL.createObjectURL(blob);
@@ -15942,6 +16525,7 @@ var wn=null,wme=null,wperan=null,wbusy=false,wlp=0;
 function kBody(m){if(!m||m.dihapus_at)return '';if(m.tipe=='teks'){var t=String(m.isi||'');return t.indexOf('::stk:')==0?'Stiker':t.replace(/\s+/g,' ').trim().slice(0,160)}return {foto:'Foto',video:'Video',suara:'Pesan suara'}[m.tipe]||''}
 function wping(c){if(document.visibilityState=='visible'&&Date.now()-wlp>55000){wlp=Date.now();try{c.rpc('kaone_chat_ping')}catch(e){}}}
 function cnotif(m){var tag='kaone-chat-'+m.id;
+if($('kc').classList.contains('on'))return;
 if(document.visibilityState=='visible'){
 if(typeof rtToast=='function')rtToast({icon:ic('send'),title:'Kaone Motret'});
 try{if(snd()&&typeof rtChime=='function')rtChime()}catch(e){}return}
@@ -15960,10 +16544,14 @@ var p=(await c.rpc('kaone_chat_peran')).data;if(!p)return;
 wme=s.user.id;wperan=p;wping(c);
 wn=c.channel('kaone-chat-notif').on('postgres_changes',{event:'INSERT',schema:'public',table:'kaone_chat_pesan'},function(e){
 var m=e.new;if(!m||m.pengirim==wme)return;
-var lihat=$('kc').classList.contains('on')&&document.visibilityState=='visible';
-try{kcBellSet(wme,m.id);if(lihat)markNotifRead('chat_'+m.id);else{try{rtRingBell()}catch(x){}try{refreshNotifPanel()}catch(x){}}}catch(x){}
-if(lihat)return;
-cnotif(m)}).subscribe();
+var lihat=$('kc').classList.contains('on');
+if(lihat){try{kcBellSet(wme,m.id);markNotifRead('chat_'+m.id)}catch(x){}return}
+setTimeout(async function(){var lain=false;
+try{var q=await c.from('kaone_chat_pesan').select('diterima_at,dilihat_at').eq('id',m.id).maybeSingle();lain=!!(q&&q.data&&(q.data.diterima_at||q.data.dilihat_at))}catch(x){}
+if($('kc').classList.contains('on'))lain=true;
+try{kcBellSet(wme,m.id);if(lain)markNotifRead('chat_'+m.id);else{try{rtRingBell()}catch(x){}try{refreshNotifPanel()}catch(x){}}}catch(x){}
+if(lain)return;
+cnotif(m)},1500)}).subscribe();
 try{var u=await c.from('kaone_chat_pesan').select('id,dikirim_at').neq('pengirim',wme).is('diterima_at',null).is('dihapus_at',null).order('dikirim_at',{ascending:false}).limit(1);
 var nw=u&&u.data&&u.data[0],bl=kcBellGet();
 if(bl&&bl.uid&&bl.uid!=wme){kcBellClear();bl=null}

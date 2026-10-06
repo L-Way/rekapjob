@@ -15804,14 +15804,15 @@ $('kf').addEventListener('change',function(){var f=this.files[0];this.value='';i
 function cpush(id){try{var c=window.supabaseClient||supabaseClient;if(!c||typeof PUSH_FUNCTION_URL=='undefined')return;
 c.auth.getSession().then(function(x){var t=x.data&&x.data.session&&x.data.session.access_token;if(!t)return;
 fetch(PUSH_FUNCTION_URL,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+t},body:JSON.stringify({target:{chat:true},notif:{tag:String(id)}})}).catch(function(){})}).catch(function(){})}catch(e){}}
-var wn=null,wme=null,wbusy=false,wlp=0;
+var wn=null,wme=null,wperan=null,wbusy=false,wlp=0;
+function kBody(m){if(!m||m.dihapus_at)return '';if(m.tipe=='teks'){var t=String(m.isi||'');return t.indexOf('::stk:')==0?'Stiker':t.replace(/\s+/g,' ').trim().slice(0,160)}return {foto:'Foto',video:'Video',suara:'Pesan suara'}[m.tipe]||''}
 function wping(c){if(document.visibilityState=='visible'&&Date.now()-wlp>55000){wlp=Date.now();try{c.rpc('kaone_chat_ping')}catch(e){}}}
 function cnotif(m){var tag='kaone-chat-'+m.id;
 if(document.visibilityState=='visible'){
 if(typeof rtToast=='function')rtToast({icon:ic('send'),title:'Kaone Motret'});
 try{if(snd()&&typeof rtChime=='function')rtChime()}catch(e){}return}
 try{if(!('Notification' in window)||Notification.permission!=='granted')return;
-var o={body:'',icon:'icons/icon-192.png',tag:tag,lang:'id',data:{id:null,view:null}};
+var o={body:wperan=='lawan'?kBody(m):'',icon:'icons/icon-192.png',tag:tag,lang:'id',data:{id:null,view:null}};
 if(navigator.serviceWorker&&navigator.serviceWorker.ready){navigator.serviceWorker.ready.then(function(r){if(r&&r.showNotification)r.showNotification('Kaone Motret',o);else new Notification('Kaone Motret',o)}).catch(function(){})}
 else new Notification('Kaone Motret',o)}catch(e){}}
 async function watch(){if(wbusy)return;wbusy=true;try{var c=window.supabaseClient||supabaseClient;if(!c)return;
@@ -15821,7 +15822,7 @@ try{var b0=kcBellGet();if(b0&&b0.uid&&b0.uid!=s.user.id)kcBellClear()}catch(x){}
 if(wn&&wme==s.user.id){wping(c);return}
 if(wn){c.removeChannel(wn);wn=null}
 var p=(await c.rpc('kaone_chat_peran')).data;if(!p)return;
-wme=s.user.id;wping(c);
+wme=s.user.id;wperan=p;wping(c);
 wn=c.channel('kaone-chat-notif').on('postgres_changes',{event:'INSERT',schema:'public',table:'kaone_chat_pesan'},function(e){
 var m=e.new;if(!m||m.pengirim==wme)return;
 var lihat=$('kc').classList.contains('on')&&document.visibilityState=='visible';

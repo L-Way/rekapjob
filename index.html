@@ -1045,6 +1045,8 @@
      Google Calendar, melihat & mengirim Saran & Penilaian, dsb) tetap terbuka
      untuk Tim. */
   body.role-tim .admin-only{display:none !important;}
+  /* Chat rahasia: tidak pernah tampil untuk akun Tim */
+  body.role-tim:not(.chat-only) #kc, body.role-tim:not(.chat-only) #kcg{display:none !important;}
   /* Kebalikannya: hanya tampil untuk akun Tim (mis. kolom Sisa di Daftar Job). */
   body:not(.role-tim) .tim-only{display:none !important;}
 
@@ -2879,6 +2881,14 @@
     .modal.modal-form .jf-sum .jf-totals > div + div{padding-left:14px; padding-right:0;}
   }
 </style>
+<style>
+/* Mode akun hanya-chat: seluruh aplikasi utama disembunyikan, hanya ruang chat yang tampil. */
+body.chat-only{overflow:hidden}
+body.chat-only .topbar,body.chat-only #app,body.chat-only .footer-note,body.chat-only .copyright-bar,
+body.chat-only .to-top-btn,body.chat-only .bottomnav,body.chat-only .more-layer,body.chat-only #authGate{display:none!important}
+body.chat-only #kx{display:none!important}
+body.chat-only::before{content:"Memuat chat\2026";position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 15px system-ui,sans-serif;color:#7a7468;background:#fffdf6}
+</style>
 </head>
 <body>
 
@@ -3202,6 +3212,64 @@ let currentUsername = null;
 let currentUserId = null;
 let currentNamaLengkap = null;
 function isAdmin(){ return currentUserRole === 'admin'; }
+/* GERBANG CHAT RAHASIA — daftar putih (gagal-tutup): ruang chat HANYA boleh dibuka akun Admin
+   atau akun hanya-chat yang ditandai server. Peran Tim, peran kosong, atau sesi yang belum
+   termuat TIDAK PERNAH boleh membuka, memantau, atau diberi notifikasi chat. Ini hanya penjaga
+   tampilan; penguncian sebenarnya ada di server (lihat kunci-chat-dari-tim.sql). */
+function kaoneChatBoleh(){ return currentUserRole === 'admin' || currentHanyaChat === true; }
+
+/* =========================================================
+   AKUN HANYA-CHAT
+   Akun di daftar ini begitu login langsung masuk ke ruang chat dan TIDAK punya jalan
+   ke bagian aplikasi lain. Di sisi aplikasi ini hanya penjaga tampilan; yang benar-benar
+   mengunci akses data adalah aturan di server (lihat file kunci-akun-hanya-chat.sql:
+   kolom kaone_profiles.hanya_chat + pembatas permintaan + RLS). Server yang menentukan,
+   daftar nama di bawah hanya jaring pengaman tambahan.
+========================================================= */
+const KAONE_AKUN_HANYA_CHAT = ['liaww'];
+let currentHanyaChat = false;
+function isHanyaChatUsername(u){ return KAONE_AKUN_HANYA_CHAT.indexOf(String(u||'').trim().toLowerCase()) !== -1; }
+function isHanyaChat(){ return currentHanyaChat === true; }
+function kaonePersistSesi(){
+  try{ localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({id:currentUserId, username:currentUsername, role:currentUserRole, namaLengkap:currentNamaLengkap, hanyaChat:currentHanyaChat})); }catch(e){}
+}
+/* true = server menandai akun ini hanya-chat, false = bukan, null = tidak bisa dicek (offline / SQL belum dijalankan) */
+async function kaoneCekHanyaChat(){
+  try{
+    const { data, error } = await supabaseClient.rpc('kaone_hanya_chat');
+    if(error) return null;
+    return data === true;
+  }catch(e){ return null; }
+}
+function kaoneKeluarPaksa(){ try{ localStorage.removeItem(AUTH_SESSION_KEY); }catch(e){} location.reload(); }
+async function kaoneVerifikasiHanyaChat(){
+  try{
+    const { data } = await supabaseClient.auth.getSession();
+    const uid = data && data.session && data.session.user && data.session.user.id;
+    if(!uid){ kaoneKeluarPaksa(); return; }
+    const prof = await kaoneMuatProfil(uid);
+    if(!prof || !prof.disetujui){ try{ await supabaseClient.auth.signOut(); }catch(e){} kaoneKeluarPaksa(); }
+  }catch(e){ console.warn('Verifikasi sesi ditunda (kemungkinan offline)', e); }
+}
+function kaoneMasukHanyaChat(){
+  document.body.classList.add('chat-only');
+  window.__kaoneChatOnly = true;
+  try{ document.title = 'Kaone Motret'; }catch(e){}
+  // Matikan semua pintu menuju aplikasi utama di sisi browser.
+  const kosong = ()=>Promise.resolve(false);
+  ['navigate','render','refreshView','pullFromCloud','pushToCloud','rtStart','kbInit','pullAkunFromCloud','pullUlasanFromCloud','openMoreSheet']
+    .forEach(n=>{ try{ if(typeof window[n]==='function') window[n]=kosong; }catch(e){} });
+  const app = document.getElementById('app'); if(app) app.innerHTML = '';
+  kaoneVerifikasiHanyaChat();
+  try{ supabaseClient.auth.onAuthStateChange((ev)=>{ if(ev==='SIGNED_OUT') kaoneKeluarPaksa(); }); }catch(e){}
+  if(typeof window.kaoneChatMulai === 'function') window.kaoneChatMulai(); // kalau skrip chat belum dimuat, ia mulai sendiri
+}
+function kaoneMasukApp(){
+  document.getElementById('authGate')?.remove();
+  if(isHanyaChat()){ kaoneMasukHanyaChat(); return; }
+  applyRoleToUI();
+  initAppAfterAuth();
+}
 
 function applyRoleToUI(){
   document.body.classList.toggle('role-tim', currentUserRole==='tim');
@@ -3239,7 +3307,8 @@ function kaoneSimpanSesi(d){
   currentUsername = d.username;
   currentUserRole = d.role;
   currentNamaLengkap = d.nama_lengkap || '';
-  try{ localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({id:d.id, username:d.username, role:d.role, namaLengkap:currentNamaLengkap})); }catch(e){}
+  currentHanyaChat = isHanyaChatUsername(d.username);
+  kaonePersistSesi();
 }
 async function attemptLogin(username, password){
   if(!cloudSyncEnabled) return {ok:false, reason:'offline'};
@@ -3255,6 +3324,8 @@ async function attemptLogin(username, password){
     if(!prof){ await supabaseClient.auth.signOut(); return {ok:false, reason:'invalid'}; }
     if(!prof.disetujui){ await supabaseClient.auth.signOut(); return {ok:false, reason:'pending'}; }
     kaoneSimpanSesi(prof);
+    const hc = await kaoneCekHanyaChat();
+    if(hc === true && !currentHanyaChat){ currentHanyaChat = true; kaonePersistSesi(); }
     kaoneBersihkanCacheTim();
     return {ok:true};
   }catch(e){
@@ -3309,6 +3380,7 @@ function checkAuthSession(){
     currentUserRole = saved.role;
     currentUsername = saved.username;
     currentNamaLengkap = saved.namaLengkap || '';
+    currentHanyaChat = saved.hanyaChat === true || isHanyaChatUsername(saved.username);
     return true;
   }
   return false;
@@ -3331,7 +3403,7 @@ async function updateOwnAccount(newUsername, newPassword, newNamaLengkap){
     if(!data || !data.ok) return {ok:false, reason: (data && data.reason) || 'error'};
     if(ubahUser) currentUsername = newUsername;
     if(ubahNama) currentNamaLengkap = newNamaLengkap;
-    try{ localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({id:currentUserId, username:currentUsername, role:currentUserRole, namaLengkap:currentNamaLengkap})); }catch(e){}
+    kaonePersistSesi();
     applyRoleToUI();
     return {ok:true};
   }catch(e){
@@ -3394,9 +3466,7 @@ document.getElementById('authForm')?.addEventListener('submit', async function(e
   const res = await attemptLogin(u, p);
   if(btn){ btn.disabled = false; btn.textContent = 'Masuk'; }
   if(res.ok){
-    document.getElementById('authGate')?.remove();
-    applyRoleToUI();
-    initAppAfterAuth();
+    kaoneMasukApp();
   } else {
     errEl.textContent = res.reason==='offline'
       ? 'Tidak bisa terhubung ke server. Periksa koneksi internet lalu coba lagi.'
@@ -13513,12 +13583,19 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.15.7'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.16.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.16.0',
+    tanggal: '6 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Akun dengan akses terbatas kini langsung masuk ke satu halaman yang diizinkan begitu login, dan tidak punya jalan ke bagian aplikasi lain. Pembatasannya juga dikunci di server, jadi tidak bisa ditembus lewat cara apa pun dari sisi aplikasi.' },
+    ]
+  },
   {
     version: '1.15.7',
     tanggal: '3 Oktober 2026',
@@ -14054,7 +14131,7 @@ function kcBellClear(){ try{ localStorage.removeItem(KC_BELL_KEY); }catch(e){} }
 function buildNotifications(){
   const list = [];
   const kcb = kcBellGet();
-  if(kcb && kcb.id && kcb.uid && currentUserId && String(kcb.uid) === String(currentUserId)){
+  if(kaoneChatBoleh() && kcb && kcb.id && kcb.uid && currentUserId && String(kcb.uid) === String(currentUserId)){
     list.push({
       id: 'chat_' + kcb.id,
       icon: ic('chat'),
@@ -15116,6 +15193,8 @@ async function kaoneVerifikasiSesi(){
     const prof = await kaoneMuatProfil(uid);
     if(!prof || !prof.disetujui){ try{ await supabaseClient.auth.signOut(); }catch(e){} keluar(); return; }
     if(prof.role !== currentUserRole){ kaoneSimpanSesi(prof); location.reload(); return; }
+    const hc = await kaoneCekHanyaChat();
+    if(hc === true && !currentHanyaChat){ currentHanyaChat = true; kaonePersistSesi(); location.reload(); return; }
     kaoneBersihkanCacheTim();
   }catch(e){ console.warn('Verifikasi sesi ditunda (kemungkinan offline)', e); }
 }
@@ -15176,9 +15255,7 @@ function initAppAfterAuth(){
 // Kalau sesi login sebelumnya masih tersimpan & valid, langsung masuk tanpa perlu
 // login ulang. Kalau belum, gerbang login (#authGate) tetap tampil menunggu submit.
 if(checkAuthSession()){
-  document.getElementById('authGate')?.remove();
-  applyRoleToUI();
-  initAppAfterAuth();
+  kaoneMasukApp();
 }
 </script>
 <!-- ========================= PWA (bisa dihapus tanpa mengganggu aplikasi) ========================= -->
@@ -15688,7 +15765,7 @@ return d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:d.getFullY
 function st(){var e=$('ks');if(lo&&lo.k){e.innerHTML='sedang mengetik<span class="dd"><i></i><i></i><i></i></span>'}
 else e.textContent=lo?(lo.on?'online':(lo.t?'terakhir online '+lastTxt(lo.t):'')):'';
 if($('kop')&&$('kop').classList.contains('on'))opRef()}
-async function open(){sb=window.supabaseClient||supabaseClient;if(!sb)return;var s=(await sb.auth.getSession()).data.session;if(!s)return;
+async function open(){if(!kaoneChatBoleh())return;sb=window.supabaseClient||supabaseClient;if(!sb)return;var s=(await sb.auth.getSession()).data.session;if(!s)return;
 var p=(await sb.rpc('kaone_chat_peran')).data;if(!p)return;me=s.user.id;peran=p;dn={};dr0=false;
 var kLt=kTG('kcTema_'),kLp=kTG('kcTemaP_');if(kLt)th(kLt);
 $('kc').classList.add('on');
@@ -15783,8 +15860,8 @@ cn.addEventListener('pointermove',function(e){if(!dr||!cim)return;ox+=e.clientX-
 cn.addEventListener('pointerup',function(){dr=null});$('kzm').addEventListener('input',function(){cz=+this.value;if(cim)crDraw()});
 $('kpfile').addEventListener('change',function(){var f=this.files[0];this.value='';if(f)crOpen(f)});
 var kcT=0;
-document.addEventListener('click',function(e){var t=e.target.closest('button,[data-t],[data-o]')||e.target;if(t.closest('#kcSym')){var nw=Date.now();if(nw-kcT<700){kcT=0;open()}else kcT=nw;return}if(!$('kc'))return;
-if(t.closest('#kx'))close();
+document.addEventListener('click',function(e){var t=e.target.closest('button,[data-t],[data-o]')||e.target;if(t.closest('#kcSym')){if(!kaoneChatBoleh()){kcT=0;return}var nw=Date.now();if(nw-kcT<700){kcT=0;open()}else kcT=nw;return}if(!$('kc'))return;
+if(t.closest('#kx')){if(!window.__kaoneChatOnly)close()}
 else if(t.dataset.e!==undefined&&t.closest('#kpk')){pkPickB(t.dataset.e,t)}else if(t.closest('#kpksal')){selClear();pkCopy()}else if(t.closest('#kpk')&&!t.closest('.pkb')){if(Date.now()-pkAt>450)pkClose()}
 else if(t.closest('#kmn')){$('kmst').classList.toggle('on',snd());$('kst').classList.add('on')}
 else if(t.closest('#kmp')){shut('kst');pfOpen()}else if(t.closest('#kmt')){shut('kst');$('ktm').classList.add('on')}
@@ -15801,7 +15878,7 @@ $('ki').addEventListener('keydown',function(e){if(e.key=='Enter'&&!e.shiftKey&&w
 var tk0=0;$('ki').addEventListener('input',function(){if($('ki').value&&Date.now()-tk0>1200){tk0=Date.now();rm&&rm.send({type:'broadcast',event:'ketik',payload:{}})}});
 $('kf').addEventListener('change',function(){var f=this.files[0];this.value='';if(f)up(f,f.type.indexOf('video')==0?'video':'foto',f.type)});
 /* ---- NOTIFIKASI CHAT (realtime + push) ---- isi notifikasi hanya "Kaone Motret" */
-function cpush(id){try{var c=window.supabaseClient||supabaseClient;if(!c||typeof PUSH_FUNCTION_URL=='undefined')return;
+function cpush(id){try{if(!kaoneChatBoleh())return;var c=window.supabaseClient||supabaseClient;if(!c||typeof PUSH_FUNCTION_URL=='undefined')return;
 c.auth.getSession().then(function(x){var t=x.data&&x.data.session&&x.data.session.access_token;if(!t)return;
 fetch(PUSH_FUNCTION_URL,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+t},body:JSON.stringify({target:{chat:true},notif:{tag:String(id)}})}).catch(function(){})}).catch(function(){})}catch(e){}}
 var wn=null,wme=null,wperan=null,wbusy=false,wlp=0;
@@ -15816,6 +15893,7 @@ var o={body:wperan=='lawan'?kBody(m):'',icon:'icons/icon-192.png',tag:tag,lang:'
 if(navigator.serviceWorker&&navigator.serviceWorker.ready){navigator.serviceWorker.ready.then(function(r){if(r&&r.showNotification)r.showNotification('Kaone Motret',o);else new Notification('Kaone Motret',o)}).catch(function(){})}
 else new Notification('Kaone Motret',o)}catch(e){}}
 async function watch(){if(wbusy)return;wbusy=true;try{var c=window.supabaseClient||supabaseClient;if(!c)return;
+if(!kaoneChatBoleh()){if(wn){c.removeChannel(wn);wn=null;wme=null}try{kcBellClear()}catch(x){}return}
 var s=(await c.auth.getSession()).data.session;
 if(!s){if(wn){c.removeChannel(wn);wn=null;wme=null}return}
 try{var b0=kcBellGet();if(b0&&b0.uid&&b0.uid!=s.user.id)kcBellClear()}catch(x){}
@@ -15952,6 +16030,28 @@ var T1=0;function c(){clearTimeout(T1)}sbtn.addEventListener('pointerdown',funct
 ['pointerup','pointerleave','pointercancel'].forEach(function(n){sbtn.addEventListener(n,c)});sbtn.addEventListener('contextmenu',function(e){e.preventDefault()})})();
 var kLP=0;
 document.addEventListener('visibilitychange',function(){if(document.visibilityState=='hidden'&&$('kc').classList.contains('on')&&!pc){close()}});
+/* ---- MODE HANYA-CHAT: ruang chat selalu terbuka, tidak bisa ditutup, hanya bisa Keluar akun ---- */
+(function(){var busy=0,gagal=0,mulai=0;
+function layar(msg){var kc=$('kc');if(!kc||$('kcg'))return;var d=document.createElement('div');d.id='kcg';
+d.style.cssText='position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;background:var(--kb);color:var(--kt)';
+var t=document.createElement('b');t.style.fontSize='16px';t.textContent=msg;d.appendChild(t);
+var r=document.createElement('div');r.style.cssText='display:flex;gap:10px';
+var a=document.createElement('button');a.type='button';a.className='it';a.style.cssText='padding:11px 18px;border-radius:16px;font-weight:700;background:var(--ki);color:inherit;box-shadow:var(--ks)';a.textContent='Coba lagi';
+var k=document.createElement('button');k.type='button';k.className='it';k.style.cssText='padding:11px 18px;border-radius:16px;font-weight:700;background:var(--ki);color:inherit;box-shadow:var(--ks)';k.textContent='Keluar akun';
+a.addEventListener('click',function(){d.remove();gagal=0;pastikan()});k.addEventListener('click',function(){logout()});
+r.appendChild(a);r.appendChild(k);d.appendChild(r);kc.appendChild(d)}
+async function pastikan(){if(!window.__kaoneChatOnly||busy||gagal)return;var kc=$('kc');if(!kc||kc.classList.contains('on')||document.visibilityState!='visible')return;
+busy=1;try{await open()}catch(e){}busy=0;if(kc.classList.contains('on'))return;
+var s=null;try{s=(await (window.supabaseClient||supabaseClient).auth.getSession()).data.session}catch(e){}
+if(!s){kaoneKeluarPaksa();return}
+gagal=1;layar('Ruang chat belum bisa dibuka. Periksa koneksi internet, lalu coba lagi.')}
+window.kaoneChatMulai=function(){if(mulai)return;mulai=1;
+if(!$('kmo')){var b=document.createElement('button');b.className='it';b.id='kmo';b.type='button';b.innerHTML='<span></span>Keluar akun';
+b.addEventListener('click',function(){shut('kst');logout()});$('kstx').parentNode.before(b)}
+pastikan();setInterval(pastikan,2500);
+document.addEventListener('visibilitychange',pastikan);window.addEventListener('pageshow',pastikan);
+setTimeout(function(){try{pushGuardOwner().then(function(){pushEnsureSubscribed(false)},function(){pushEnsureSubscribed(false)})}catch(e){}},3000)};
+if(window.__kaoneChatOnly)window.kaoneChatMulai()})();
 })();
 </script>
 

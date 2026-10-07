@@ -714,6 +714,23 @@
   .task-akun-block{border:1.5px solid #e5ddc0;border-radius:9px;background:#fffef9;padding:10px 12px;}
   .task-akun-detail{margin-top:10px;padding-top:10px;border-top:1px dashed #e5ddc0;display:flex;flex-direction:column;gap:10px;}
   .task-akun-detail label{font-size:12px;}
+  /* Pembagian tugas PER HARI untuk job berdurasi 2 hari atau lebih */
+  .task-day-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .task-day-chip{padding:6px 11px;border-radius:999px;border:1.5px solid #e5ddc0;background:#fffef9;color:#5c4a12;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1.3;}
+  .task-day-chip.on{background:var(--gold-pale);border-color:var(--gold);color:#231f0f;}
+  .task-day-chip.all{border-style:dashed;}
+  .task-day-block{border:1px solid #efe6bb;border-radius:8px;background:#fffdf3;padding:8px 10px;margin-bottom:8px;}
+  .task-day-title{font-size:11.5px;font-weight:700;color:#5c4a12;margin-bottom:6px;}
+  .task-coverage{border:1px solid #efe6bb;border-radius:10px;background:#fffdf3;padding:10px 12px;}
+  .task-coverage-title{font-size:12px;font-weight:700;color:#5c4a12;margin-bottom:4px;}
+  .task-cov-row{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-top:1px dashed #efe6bb;font-size:12px;}
+  .task-cov-row.first{border-top:none;}
+  .task-cov-day{flex:0 0 104px;font-weight:700;color:#5c4a12;}
+  .task-cov-who{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:4px;}
+  .task-cov-chip{background:#f5efd6;color:#5c4a12;padding:2px 8px;border-radius:999px;font-size:11px;overflow-wrap:anywhere;}
+  .task-cov-chip.new{background:#e5f5e6;color:var(--ok);}
+  .task-cov-empty{color:var(--warn);font-weight:600;}
+  .task-hari-badge{display:inline-block;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700;background:#ece4ff;color:#4b3a8c;margin-top:3px;white-space:nowrap;}
   /* Dropdown kustom Job/Tanggal Acara — dipakai (bukan <select> bawaan) supaya opsi
      "Tampilkan job yang sudah lewat" bisa menambah daftar tanpa menutup panel dulu. */
   .task-job-picker{position:relative;}
@@ -5463,9 +5480,47 @@ async function pullTeamAccountsPublic(){
 function getTaskJob(task){
   return jobs.find(j=>String(j.id)===String(task.jobId)) || null;
 }
+// Hari ke-berapa (1, 2, ...) dalam rentang job yang menjadi jatah tugas ini.
+// Tugas BARU selalu menyimpan hari-nya, jadi di job 2 hari ada tugas terpisah untuk
+// Hari 1 dan Hari 2 (status selesai, komentar, dan jam bonusnya pun terpisah per hari).
+// 0 = tugas LAMA yang dibuat sebelum ada pembagian per hari: berlaku untuk seluruh
+// rentang job, perilakunya sengaja tidak diubah supaya data lama tidak bergeser maknanya.
+function getTaskHari(task){
+  const h = parseInt(task?.hari, 10);
+  return Number.isFinite(h) && h>=1 ? h : 0;
+}
+// Tanggal kerja tugas. Tugas per-hari dihitung dari Tanggal Acara job + (hari-1), jadi
+// kalau Admin menggeser tanggal job, tanggal tugasnya ikut bergeser otomatis.
 function getTaskDate(task){
   const j = getTaskJob(task);
+  const h = getTaskHari(task);
+  if(h && j?.tanggalAcara){
+    const rentang = getJobDateRange(j);
+    if(rentang.length) return rentang[Math.min(h, rentang.length)-1];
+  }
+  if(h && !j) return task.tanggal || '';
   return j?.tanggalAcara || task.tanggal || '';
+}
+// Tanggal TERAKHIR tugas: tugas per-hari = harinya sendiri; tugas lama = hari terakhir job.
+function getTaskFinishDate(task){
+  const j = getTaskJob(task);
+  if(getTaskHari(task) || !j) return getTaskDate(task);
+  return getJobFinishDate(j) || getTaskDate(task);
+}
+// Apakah tugas ini berlaku pada tanggal tertentu (YYYY-MM-DD).
+function taskCoversDate(task, iso){
+  if(!iso) return false;
+  if(getTaskHari(task)) return getTaskDate(task)===iso;
+  const j = getTaskJob(task);
+  return j ? isJobOnDate(j, iso) : getTaskDate(task)===iso;
+}
+// Label "Hari 2 dari 2" — kosong kalau job-nya cuma 1 hari atau tugasnya tugas lama.
+function taskHariLabel(task){
+  const h = getTaskHari(task);
+  const j = getTaskJob(task);
+  if(!h || !j) return '';
+  const n = getJobDurasiHari(j);
+  return n>1 ? `Hari ${Math.min(h,n)} dari ${n}` : '';
 }
 // Tanggal hari TERAKHIR job. Sumber utamanya field job.tanggalSelesai (dipilih langsung
 // lewat rentang tanggal di form Input/Edit Job). Untuk job lama yang dibuat sebelum fitur
@@ -5550,11 +5605,15 @@ function jobOverlapsMonth(job, monthKey){
 // Batas waktu tugas dianggap "selesai otomatis": pukul 23.59 pada hari TERAKHIR job
 // (hari job itu sendiri kalau 1 hari, atau hari kedua kalau job berdurasi 2 hari, dst).
 function getTaskDeadline(task){
-  const j = getTaskJob(task);
-  const tglAkhir = j ? getJobFinishDate(j) : (task.tanggal || '');
+  // Tugas per-hari selesai otomatis di akhir HARI-nya sendiri (bukan menunggu hari terakhir
+  // job). Tugas lama tetap mengikuti hari terakhir job.
+  const tglAkhir = getTaskFinishDate(task);
   if(!tglAkhir) return null;
   const d = new Date(tglAkhir+'T23:59:00');
-  return Number.isNaN(d.getTime()) ? null : d;
+  if(Number.isNaN(d.getTime())) return null;
+  // Sesi yang melewati tengah malam (mis. 22:00–01:00) baru benar-benar selesai keesokan harinya.
+  if(getTaskHari(task) && getTaskSlots(task).some(s=>s.mulai && s.selesai && s.selesai<=s.mulai)) d.setDate(d.getDate()+1);
+  return d;
 }
 // Menandai tugas menjadi "Selesai" secara otomatis begitu waktu sekarang sudah melewati
 // batas 23.59 di hari terakhir job-nya. Tugas yang statusnya sudah pernah diubah manual
@@ -5633,6 +5692,44 @@ function slotHours(slot){
 }
 function taskHours(task){
   return getTaskSlots(task).reduce((sum,slot)=>sum+slotHours(slot),0);
+}
+// Rentang sesi dalam menit (akhir > 1440 kalau sesinya melewati tengah malam).
+function slotRange(s){
+  const [h1,m1] = String(s?.mulai||'').split(':').map(Number);
+  const [h2,m2] = String(s?.selesai||'').split(':').map(Number);
+  if([h1,m1,h2,m2].some(Number.isNaN)) return null;
+  const a = h1*60+m1; let b = h2*60+m2;
+  if(b<=a) b += 1440;
+  return [a,b];
+}
+// Ada sesi di daftar A yang bertumpuk dengan sesi di daftar B?
+function slotListsOverlap(listA, listB){
+  for(const x of (listA||[])){
+    const rx = slotRange(x); if(!rx) continue;
+    for(const y of (listB||[])){
+      const ry = slotRange(y); if(!ry) continue;
+      if(rx[0]<ry[1] && ry[0]<rx[1]) return true;
+    }
+  }
+  return false;
+}
+// Ada dua sesi dalam SATU daftar yang saling bertumpuk?
+function slotsSelfOverlap(list){
+  const arr = (list||[]).map(slotRange).filter(Boolean);
+  for(let i=0;i<arr.length;i++) for(let k=i+1;k<arr.length;k++){
+    if(arr[i][0]<arr[k][1] && arr[k][0]<arr[i][1]) return true;
+  }
+  return false;
+}
+function fmtSlotsLabel(slots){
+  return (slots||[]).map(s=>`${s.mulai||'-'}–${s.selesai||'-'}`).join(', ');
+}
+// Tugas lain milik akun yang sama pada tanggal yang sama dengan jam yang bertabrakan.
+function findTaskConflicts(userId, iso, slots, excludeTaskId){
+  return tasks.filter(t=> String(t.userId)===String(userId)
+    && String(t.id)!==String(excludeTaskId||'')
+    && taskCoversDate(t, iso)
+    && slotListsOverlap(getTaskSlots(t), slots));
 }
 function fmtTaskHours(n){
   n=Number(n)||0;
@@ -7347,7 +7444,7 @@ function viewBeranda(){
   const bonusBulanIni = isAdmin() ? totalBonusDiklaimBulanIni() : 0;
   const pctBersih = totalPenghasilanBulanIni>0 ? Math.round(totalBersihBulanIni/totalPenghasilanBulanIni*100) : 0;
   const rataPerJob = thisMonthJobs.length ? totalPenghasilanBulanIni/thisMonthJobs.length : 0;
-  const taskTelat = homeTasks.filter(t=>(t.status||'Belum')!=='Selesai' && getTaskDate(t) && getTaskDate(t) < todayIso).length;
+  const taskTelat = homeTasks.filter(t=>(t.status||'Belum')!=='Selesai' && getTaskFinishDate(t) && getTaskFinishDate(t) < todayIso).length;
   const honorJobCount = (!isAdmin() && currentUserId) ? thisMonthJobs.filter(x=>honorTimUntukAkun(x, currentUserId)>0).length : 0;
   const bonusMenunggu = (!isAdmin() && currentUserId) ? userBonusBreakdown(currentUserId).waiting : 0;
 
@@ -11561,7 +11658,10 @@ function viewTugas(){
   const visibleTasks = mine
     ? tasks.filter(t=>String(t.userId)===String(currentUserId) || t.username===currentUsername)
     : tasks;
-  const upcoming = visibleTasks.filter(t=>getTaskDate(t) && new Date(getTaskDate(t)+'T00:00:00') >= new Date(new Date().toDateString())).length;
+  const _hari0 = new Date();
+  const _todayStr = _hari0.getFullYear()+'-'+String(_hari0.getMonth()+1).padStart(2,'0')+'-'+String(_hari0.getDate()).padStart(2,'0');
+  // "Mendatang" = tugas yang harinya belum lewat (tugas per-hari dihitung dari harinya sendiri).
+  const upcoming = visibleTasks.filter(t=>{ const f=getTaskFinishDate(t); return f && f >= _todayStr; }).length;
   const done = visibleTasks.filter(t=>t.status==='Selesai').length;
   const totalHours = visibleTasks.reduce((s,t)=>s+taskHours(t),0);
 
@@ -11570,7 +11670,7 @@ function viewTugas(){
   const _d = new Date();
   const todayYmd = _d.getFullYear()+'-'+String(_d.getMonth()+1).padStart(2,'0')+'-'+String(_d.getDate()).padStart(2,'0');
   const pctDone = visibleTasks.length ? Math.round(done/visibleTasks.length*100) : 0;
-  const overdueCount = visibleTasks.filter(t=>(t.status||'Belum')!=='Selesai' && getTaskDate(t) && getTaskDate(t) < todayYmd).length;
+  const overdueCount = visibleTasks.filter(t=>(t.status||'Belum')!=='Selesai' && getTaskFinishDate(t) && getTaskFinishDate(t) < todayYmd).length;
   const jobCount = new Set(visibleTasks.map(t=>String(t.jobId||'')).filter(Boolean)).size;
   const accCount = new Set(visibleTasks.map(t=>String(t.userId||t.username||'')).filter(Boolean)).size;
   const nextTaskDate = visibleTasks.map(t=>getTaskDate(t)).filter(d=>d && d>=todayYmd).sort()[0] || '';
@@ -11611,11 +11711,11 @@ function viewTugas(){
   const filterTo = taskRekapFilter.to || '';
 
   let filtered = visibleTasks.filter(t=>{
-    const d=getTaskDate(t);
+    const d=getTaskDate(t), dEnd=getTaskFinishDate(t);
     return (!filterUser || String(t.userId)===String(filterUser))
       && (!filterRole || t.role===filterRole)
       && (!filterStatus || (t.status||'Belum')===filterStatus)
-      && (!filterFrom || d>=filterFrom)
+      && (!filterFrom || dEnd>=filterFrom)
       && (!filterTo || d<=filterTo);
   }).sort((a,b)=>(getTaskDate(a)||'').localeCompare(getTaskDate(b)||'') || (getTaskSlots(a)[0]?.mulai||'').localeCompare(getTaskSlots(b)[0]?.mulai||''));
 
@@ -11776,7 +11876,7 @@ function viewTugas(){
           const nKom = taskComments(t).length;
           const roleBadge = (cls)=>`<span class="task-role-badge ${cls}">${t.role==='Fotografer'?ic('camera'):ic('video')} ${escapeHtml(t.role||'-')}</span>`;
           return `<tr>
-            <td class="task-date t-date">${escapeHtml(formatTaskDate(getTaskDate(t)))}${(job && getJobDurasiHari(job)>1)?`<div style="font-size:10px;color:var(--ink-soft);font-weight:400;">s/d ${escapeHtml(formatTaskDate(getJobFinishDate(job)))} (${getJobDurasiHari(job)} hari)</div>`:''}</td>
+            <td class="task-date t-date">${escapeHtml(formatTaskDate(getTaskDate(t)))}${taskHariLabel(t)?`<div><span class="task-hari-badge">${escapeHtml(taskHariLabel(t))}</span></div>`:((job && getJobDurasiHari(job)>1)?`<div style="font-size:10px;color:var(--ink-soft);font-weight:400;">s/d ${escapeHtml(formatTaskDate(getJobFinishDate(job)))} (${getJobDurasiHari(job)} hari, semua hari)</div>`:'')}</td>
             <td class="t-person"><b>${escapeHtml(getTaskPerson(t))}</b>${roleBadge('t-role-inline')}</td>
             <td class="t-role">${roleBadge('')}</td>
             <td class="t-job"><b>${escapeHtml(getTaskJobLabel(t))}</b>${job?.jenisAcara?`<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(job.jenisAcara)}</div>`:''}</td>
@@ -11805,18 +11905,55 @@ function viewTugas(){
    State ini hanya dipakai saat menambah tugas baru (bukan mode edit, yang tetap satu
    akun/role/jam saja). Tiap akun Tim yang dicentang punya entri sendiri, sehingga role
    dan jam kerjanya bisa diatur berbeda-beda per akun. */
-let taskFormAkunTugas = []; // [{userId, username, role, slots:[{mulai,selesai}]}, ...]
+let taskFormAkunTugas = []; // [{userId, username, role, days:{1:[{mulai,selesai}], 2:[...]}}, ...]  (kunci days = nomor hari job)
+let taskFormEditHari = '1';  // mode edit: hari bertugas yang dipilih ('0' = tugas lama, seluruh hari)
+function taskDefaultSlot(){ return {mulai:'08:00', selesai:'10:00'}; }
+function taskFormJob(){ return jobs.find(j=>String(j.id)===String(taskFormEditingJobId)) || null; }
+function taskFormJobDurasi(){ const j = taskFormJob(); return j ? Math.max(1, getJobDurasiHari(j)) : 1; }
+function taskFormItem(userId){ return taskFormAkunTugas.find(x=>String(x.userId)===String(userId)); }
+function taskHariOptionLabel(job, h){
+  const iso = getJobDateRange(job)[h-1];
+  const tgl = iso ? new Date(iso+'T00:00:00').toLocaleDateString('id-ID',{weekday:'short', day:'numeric', month:'short'}) : '';
+  return `Hari ${h}${tgl?' · '+tgl:''}`;
+}
+function renderTaskSlotRowsHtml(userId, hari, slots){
+  return slots.map((s,idx)=>`
+            <div class="task-slot-row">
+              <input type="time" required value="${escapeHtml(s.mulai||'08:00')}" onchange="onTaskAkunSlotChange(this,'${escapeHtml(userId)}',${hari},${idx},'mulai')">
+              <span class="task-slot-sep">–</span>
+              <input type="time" required value="${escapeHtml(s.selesai||'10:00')}" onchange="onTaskAkunSlotChange(this,'${escapeHtml(userId)}',${hari},${idx},'selesai')">
+              <button type="button" class="icon-btn icon-btn-danger" title="Hapus sesi jam ini" onclick="removeTaskAkunSlot('${escapeHtml(userId)}',${hari},${idx})">${ic('trash')}</button>
+            </div>`).join('');
+}
 function renderTaskAkunListHtml(){
   const people = taskEligibleAccounts();
+  const job = taskFormJob();
+  const n = taskFormJobDurasi();
   return people.map(a=>{
-    const sel = taskFormAkunTugas.find(x=>String(x.userId)===String(a.id));
-    return `
-    <div class="task-akun-block">
-      <label class="honor-tim-check" style="cursor:pointer;">
-        <input type="checkbox" data-task-akun="${escapeHtml(a.id)}" data-task-akun-nama="${escapeHtml(a.username)}" ${sel?'checked':''} onchange="toggleTaskAkun(this)">
-        <span>${ic('user')} ${escapeHtml(a.username)}</span>
-      </label>
-      ${sel ? `
+    const sel = taskFormItem(a.id);
+    let detail = '';
+    if(sel){
+      let jamHtml;
+      if(n>1 && job){
+        const aktif = Object.keys(sel.days).map(Number).filter(h=>h>=1 && h<=n).sort((x,y)=>x-y);
+        const chips = Array.from({length:n},(_,i)=>i+1).map(h=>`<button type="button" class="task-day-chip${sel.days[h]?' on':''}" onclick="toggleTaskAkunHari('${escapeHtml(a.id)}',${h})">${sel.days[h]?'✓ ':''}${escapeHtml(taskHariOptionLabel(job,h))}</button>`).join('');
+        const blocks = aktif.map(h=>`
+          <div class="task-day-block">
+            <div class="task-day-title">${escapeHtml(taskHariOptionLabel(job,h))}</div>
+            ${renderTaskSlotRowsHtml(a.id, h, sel.days[h])}
+            <button type="button" class="btn btn-outline" style="margin-top:2px;" onclick="addTaskAkunSlot('${escapeHtml(a.id)}',${h})">${ic('plus')} Tambah Jam</button>
+          </div>`).join('');
+        jamHtml = `
+          <label>Hari &amp; Jam Kerja *</label>
+          <div class="task-day-chips">${chips}<button type="button" class="task-day-chip all" title="Salin jam kerja hari pertama yang aktif ke semua hari" onclick="salinTaskAkunKeSemuaHari('${escapeHtml(a.id)}')">Salin jam ke semua hari</button></div>
+          ${blocks}`;
+      } else {
+        jamHtml = `
+          <label>Jam Kerja *</label>
+          <div class="task-akun-slots">${renderTaskSlotRowsHtml(a.id, 1, sel.days[1]||[])}</div>
+          <button type="button" class="btn btn-outline" style="margin-top:2px;" onclick="addTaskAkunSlot('${escapeHtml(a.id)}',1)">${ic('plus')} Tambah Jam</button>`;
+      }
+      detail = `
       <div class="task-akun-detail">
         <div>
           <label>Role Tugas *</label>
@@ -11826,20 +11963,16 @@ function renderTaskAkunListHtml(){
             <option value="Videografer" ${sel.role==='Videografer'?'selected':''}>${ic('video')} Videografer</option>
           </select>
         </div>
-        <div>
-          <label>Jam Kerja *</label>
-          <div class="task-akun-slots">
-            ${sel.slots.map((s,idx)=>`
-            <div class="task-slot-row">
-              <input type="time" required value="${escapeHtml(s.mulai||'08:00')}" onchange="onTaskAkunSlotChange(this,'${escapeHtml(a.id)}',${idx},'mulai')">
-              <span class="task-slot-sep">–</span>
-              <input type="time" required value="${escapeHtml(s.selesai||'10:00')}" onchange="onTaskAkunSlotChange(this,'${escapeHtml(a.id)}',${idx},'selesai')">
-              <button type="button" class="icon-btn icon-btn-danger" title="Hapus sesi jam ini" onclick="removeTaskAkunSlot('${escapeHtml(a.id)}',${idx})">${ic('trash')}</button>
-            </div>`).join('')}
-          </div>
-          <button type="button" class="btn btn-outline" style="margin-top:2px;" onclick="addTaskAkunSlot('${escapeHtml(a.id)}')">${ic('plus')} Tambah Jam</button>
-        </div>
-      </div>` : ''}
+        <div>${jamHtml}</div>
+      </div>`;
+    }
+    return `
+    <div class="task-akun-block">
+      <label class="honor-tim-check" style="cursor:pointer;">
+        <input type="checkbox" data-task-akun="${escapeHtml(a.id)}" data-task-akun-nama="${escapeHtml(a.username)}" ${sel?'checked':''} onchange="toggleTaskAkun(this)">
+        <span>${ic('user')} ${escapeHtml(a.username)}</span>
+      </label>
+      ${detail}
     </div>`;
   }).join('');
 }
@@ -11851,34 +11984,161 @@ function toggleTaskAkun(cb){
   const id = cb.dataset.taskAkun;
   const username = cb.dataset.taskAkunNama || '';
   if(cb.checked){
-    if(!taskFormAkunTugas.find(x=>String(x.userId)===String(id))){
-      taskFormAkunTugas.push({userId:id, username, role:'', slots:[{mulai:'08:00',selesai:'10:00'}]});
+    if(!taskFormItem(id)){
+      taskFormAkunTugas.push({userId:id, username, role:'', days:{1:[taskDefaultSlot()]}});
     }
   } else {
     taskFormAkunTugas = taskFormAkunTugas.filter(x=>String(x.userId)!==String(id));
   }
   refreshTaskAkunList();
+  refreshTaskCoverage();
 }
 function onTaskAkunRoleChange(sel){
-  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(sel.dataset.taskAkunRole));
+  const item = taskFormItem(sel.dataset.taskAkunRole);
   if(item) item.role = sel.value;
+  refreshTaskCoverage();
 }
-function onTaskAkunSlotChange(inp, userId, idx, field){
-  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(userId));
-  if(item && item.slots[idx]) item.slots[idx][field] = inp.value;
+function onTaskAkunSlotChange(inp, userId, hari, idx, field){
+  const item = taskFormItem(userId);
+  if(item && item.days[hari] && item.days[hari][idx]) item.days[hari][idx][field] = inp.value;
+  refreshTaskCoverage();
 }
-function addTaskAkunSlot(userId){
-  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(userId));
-  if(!item) return;
-  item.slots.push({mulai:'08:00', selesai:'10:00'});
+function addTaskAkunSlot(userId, hari){
+  const item = taskFormItem(userId);
+  if(!item || !item.days[hari]) return;
+  item.days[hari].push(taskDefaultSlot());
   refreshTaskAkunList();
+  refreshTaskCoverage();
 }
-function removeTaskAkunSlot(userId, idx){
-  const item = taskFormAkunTugas.find(x=>String(x.userId)===String(userId));
-  if(!item) return;
-  if(item.slots.length<=1){ toast('Minimal harus ada satu sesi jam kerja.'); return; }
-  item.slots.splice(idx,1);
+function removeTaskAkunSlot(userId, hari, idx){
+  const item = taskFormItem(userId);
+  if(!item || !item.days[hari]) return;
+  if(item.days[hari].length<=1){ toast('Minimal harus ada satu sesi jam kerja.'); return; }
+  item.days[hari].splice(idx,1);
   refreshTaskAkunList();
+  refreshTaskCoverage();
+}
+// Menyalakan/mematikan satu hari bertugas untuk satu akun (job berdurasi >1 hari).
+// Hari yang baru dinyalakan memakai salinan jam kerja dari hari aktif pertama.
+function toggleTaskAkunHari(userId, hari){
+  const item = taskFormItem(userId);
+  if(!item) return;
+  if(item.days[hari]){
+    if(Object.keys(item.days).length<=1){ toast('Minimal harus ada satu hari bertugas.'); return; }
+    delete item.days[hari];
+  } else {
+    const ref = Object.keys(item.days).map(Number).sort((x,y)=>x-y)[0];
+    item.days[hari] = (item.days[ref]||[taskDefaultSlot()]).map(s=>({mulai:s.mulai, selesai:s.selesai}));
+  }
+  refreshTaskAkunList();
+  refreshTaskCoverage();
+}
+// Satu klik: akun ini bertugas di SEMUA hari job dengan jam kerja yang sama
+// seperti hari aktif pertamanya.
+function salinTaskAkunKeSemuaHari(userId){
+  const item = taskFormItem(userId);
+  if(!item) return;
+  const n = taskFormJobDurasi();
+  const ref = Object.keys(item.days).map(Number).sort((x,y)=>x-y)[0];
+  const src = item.days[ref] || [taskDefaultSlot()];
+  for(let h=1; h<=n; h++) item.days[h] = src.map(s=>({mulai:s.mulai, selesai:s.selesai}));
+  refreshTaskAkunList();
+  refreshTaskCoverage();
+}
+// Dipanggil setelah job di form diganti: sesuaikan hari tiap akun dengan lama job yang baru.
+function syncTaskFormHariWithJob(){
+  const n = taskFormJobDurasi();
+  if(editingTaskId){
+    refreshTaskHariSection();
+  } else {
+    taskFormAkunTugas.forEach(it=>{
+      Object.keys(it.days).forEach(h=>{ if(parseInt(h,10)>n) delete it.days[h]; });
+      if(!Object.keys(it.days).length) it.days[1] = [taskDefaultSlot()];
+    });
+    refreshTaskAkunList();
+  }
+  refreshTaskCoverage();
+}
+function setTaskFormEditHari(v){
+  taskFormEditHari = String(v);
+  refreshTaskCoverage();
+}
+// Pemilih hari di mode EDIT (satu tugas = satu hari).
+function renderTaskHariSectionHtml(){
+  const job = taskFormJob();
+  if(!job) return '';
+  const n = getJobDurasiHari(job);
+  if(n<=1) return '';
+  const editTask = editingTaskId ? tasks.find(x=>String(x.id)===String(editingTaskId)) : null;
+  const legacyOk = !!editTask && !getTaskHari(editTask);
+  let cur = parseInt(taskFormEditHari, 10);
+  if(!Number.isFinite(cur) || cur>n || (cur===0 && !legacyOk)) cur = 1;
+  taskFormEditHari = String(cur);
+  return `
+    <label>Hari Bertugas *</label>
+    <select id="taskHari" onchange="setTaskFormEditHari(this.value)">
+      ${legacyOk?`<option value="0" ${cur===0?'selected':''}>Seluruh hari (belum dipisah per hari)</option>`:''}
+      ${Array.from({length:n},(_,i)=>i+1).map(h=>`<option value="${h}" ${cur===h?'selected':''}>${escapeHtml(taskHariOptionLabel(job,h))}</option>`).join('')}
+    </select>
+    <div class="field-hint">Job ini berlangsung ${n} hari. Satu tugas = satu hari; untuk hari lain, bagi tugas baru.</div>`;
+}
+function refreshTaskHariSection(){
+  const wrap = document.getElementById('taskHariSection');
+  if(wrap) wrap.innerHTML = renderTaskHariSectionHtml();
+}
+// Isi form saat ini sebagai daftar penugasan: [{userId, username, role, hari, slots}].
+// hari 0 = tugas lama yang berlaku untuk seluruh hari.
+function currentTaskFormAssignments(){
+  const out = [];
+  if(editingTaskId){
+    const form = document.getElementById('taskForm');
+    if(!form) return out;
+    const userId = form.querySelector('#taskUserId')?.value || '';
+    if(!userId) return out;
+    const akun = taskEligibleAccounts().find(a=>String(a.id)===String(userId));
+    const slots = Array.from(form.querySelectorAll('#taskTimeSlots [data-slot-row]')).map(r=>({
+      mulai: r.querySelector('.task-slot-start')?.value || '',
+      selesai: r.querySelector('.task-slot-end')?.value || ''
+    })).filter(x=>x.mulai && x.selesai);
+    const hv = form.querySelector('#taskHari') ? parseInt(form.querySelector('#taskHari').value,10) : 1;
+    out.push({userId, username: akun?.username || '-', role: form.querySelector('#taskRole')?.value || '', hari: Number.isFinite(hv)?hv:1, slots});
+    return out;
+  }
+  taskFormAkunTugas.forEach(it=>{
+    Object.keys(it.days).forEach(h=>out.push({userId:it.userId, username:it.username, role:it.role, hari:parseInt(h,10), slots:it.days[h]}));
+  });
+  return out;
+}
+// Ringkasan "siapa bertugas di hari apa" untuk job berdurasi >1 hari: gabungan tugas yang
+// sudah tersimpan + yang sedang diisi di form (hijau). Hari tanpa petugas diberi peringatan.
+function renderTaskCoverageHtml(){
+  const job = taskFormJob();
+  if(!job) return '';
+  const n = getJobDurasiHari(job);
+  if(n<=1) return '';
+  const rentang = getJobDateRange(job);
+  const pending = currentTaskFormAssignments();
+  const rows = [];
+  for(let h=1; h<=n; h++){
+    const iso = rentang[h-1];
+    const chips = [];
+    tasks.forEach(t=>{
+      if(String(t.jobId)!==String(job.id)) return;
+      if(editingTaskId && String(t.id)===String(editingTaskId)) return;
+      if(!taskCoversDate(t, iso)) return;
+      chips.push(`<span class="task-cov-chip">${escapeHtml(getTaskPerson(t))}${t.role?' · '+escapeHtml(t.role):''}${fmtSlotsLabel(getTaskSlots(t))?' · '+escapeHtml(fmtSlotsLabel(getTaskSlots(t))):''}</span>`);
+    });
+    pending.forEach(p=>{
+      if(p.hari!==h && p.hari!==0) return;
+      chips.push(`<span class="task-cov-chip new">${escapeHtml(p.username)}${p.role?' · '+escapeHtml(p.role):''}${fmtSlotsLabel(p.slots)?' · '+escapeHtml(fmtSlotsLabel(p.slots)):''}</span>`);
+    });
+    rows.push(`<div class="task-cov-row${h===1?' first':''}"><div class="task-cov-day">${escapeHtml(taskHariOptionLabel(job,h))}</div><div class="task-cov-who">${chips.length?chips.join(''):'<span class="task-cov-empty">Belum ada yang bertugas</span>'}</div></div>`);
+  }
+  return `<div class="task-coverage"><div class="task-coverage-title">${ic('clipboard')} Pembagian per hari</div>${rows.join('')}</div>`;
+}
+function refreshTaskCoverage(){
+  const box = document.getElementById('taskCoverageBox');
+  if(box) box.innerHTML = renderTaskCoverageHtml();
 }
 /* ---------- Dropdown kustom Job / Tanggal Acara ----------
    Dipakai (bukan <select> bawaan) supaya opsi "Tampilkan job yang sudah lewat" bisa
@@ -11930,6 +12190,10 @@ function renderTaskJobDropdownPanelHtml(){
 }
 function renderTaskJobSectionHtml(){
   const editJob = jobs.find(j=>String(j.id)===String(taskFormEditingJobId));
+  const nHari = editJob ? getJobDurasiHari(editJob) : 1;
+  const hint = nHari>1
+    ? `Job ini berlangsung ${nHari} hari (${formatTaskDate(editJob.tanggalAcara)} s/d ${formatTaskDate(getJobFinishDate(editJob))}). Atur tiap akun bertugas di hari yang mana.`
+    : 'Tanggal ikut tanggal acara job.';
   return `
     <label>Job / Tanggal Acara *</label>
     <div class="task-job-picker" id="taskJobPicker">
@@ -11940,7 +12204,7 @@ function renderTaskJobSectionHtml(){
       <input type="hidden" id="taskJobId" value="${escapeHtml(taskFormEditingJobId||'')}">
       ${taskFormJobDropdownOpen ? `<div class="task-job-dropdown-panel" id="taskJobDropdownPanel" onclick="event.stopPropagation()">${renderTaskJobDropdownPanelHtml()}</div>` : ''}
     </div>
-    <div class="field-hint">Tanggal ikut tanggal acara job.</div>
+    <div class="field-hint">${escapeHtml(hint)}</div>
   `;
 }
 function refreshTaskJobSection(){
@@ -11955,6 +12219,7 @@ function selectTaskJob(jobId){
   taskFormEditingJobId = jobId;
   taskFormJobDropdownOpen = false;
   refreshTaskJobSection();
+  syncTaskFormHariWithJob(); // job baru bisa punya lama hari berbeda -> sesuaikan hari tiap akun
 }
 // Menyalakan/mematikan daftar job yang sudah lewat DI DALAM panel yang sama, tanpa
 // mengubah status buka/tutup dropdown-nya — jadi dropdown tetap terbuka dan daftar
@@ -11980,6 +12245,7 @@ function buildTaskFormHtml(editTask){
   const editSlots = editTask ? getTaskSlots(editTask) : [];
   if(!editTask) taskFormAkunTugas = []; // reset tiap kali form "Bagi Tugas Baru" dibuka
   taskFormEditingJobId = editTask ? editTask.jobId : null;
+  taskFormEditHari = editTask ? String(getTaskHari(editTask)) : '1';
   taskFormJobDropdownOpen = false;
   // Kalau job milik tugas yang sedang diedit sudah lewat, otomatis nyalakan status
   // "tampilkan job yang sudah lewat" supaya job itu tetap muncul & tersorot di daftar
@@ -12001,17 +12267,14 @@ function buildTaskFormHtml(editTask){
       <div>
         <label>Role Tugas *</label>
         <select id="taskRole" required><option value="">Pilih role...</option><option value="Fotografer" ${editTask?.role==='Fotografer'?'selected':''}>${ic('camera')} Fotografer</option><option value="Videografer" ${editTask?.role==='Videografer'?'selected':''}>${ic('video')} Videografer</option></select>
-      </div>` : `
-      <div class="full">
-        <label>Akun Tim, Role &amp; Jam Kerja *</label>
-        <div class="honor-tim-list" id="taskAkunList">
-          ${renderTaskAkunListHtml()}
-        </div>
-      </div>`}
+      </div>` : ''}
       <div class="full" id="taskJobSection">
         ${renderTaskJobSectionHtml()}
       </div>
       ${editTask ? `
+      <div class="full" id="taskHariSection">
+        ${renderTaskHariSectionHtml()}
+      </div>
       <div class="full">
         <label>Jam Kerja *</label>
         <div id="taskTimeSlots">
@@ -12024,7 +12287,14 @@ function buildTaskFormHtml(editTask){
           </div>`).join('')}
         </div>
         <button type="button" class="btn btn-outline" id="btnAddTaskSlot" style="margin-top:8px;">${ic('plus')} Tambah Jam</button>
-      </div>` : ''}
+      </div>` : `
+      <div class="full">
+        <label>Akun Tim, Role, Hari &amp; Jam Kerja *</label>
+        <div class="honor-tim-list" id="taskAkunList">
+          ${renderTaskAkunListHtml()}
+        </div>
+      </div>`}
+      <div class="full" id="taskCoverageBox">${renderTaskCoverageHtml()}</div>
       <div class="full">
         <label>Keterangan</label>
         <textarea id="taskNote" rows="4" placeholder="Contoh: Foto akad, ambil detail dekorasi, backup file setelah acara...">${escapeHtml(editTask?.keterangan||'')}</textarea>
@@ -12094,7 +12364,13 @@ function bindTaskFormEvents(scopeEl, onDone){
     const rows=container?.querySelectorAll('[data-slot-row]');
     if(!rows || rows.length<=1){ toast('Minimal harus ada satu sesi jam kerja.'); return; }
     btn.closest('[data-slot-row]')?.remove();
+    refreshTaskCoverage();
   });
+  // Ringkasan "siapa bertugas di hari apa" ikut diperbarui tiap isian form berubah
+  // (handler inline di elemen jalan lebih dulu, jadi state sudah terbarui di sini).
+  form.addEventListener('change',()=>refreshTaskCoverage());
+  refreshTaskCoverage();
+
   form.addEventListener('submit',(e)=>{
     e.preventDefault();
     if(!isAdmin()) return;
@@ -12102,11 +12378,14 @@ function bindTaskFormEvents(scopeEl, onDone){
     const keterangan=(scopeEl.querySelector('#taskNote')?.value||'').trim();
     const job=jobs.find(j=>String(j.id)===String(jobId));
     if(!job){alert('Pilih job yang sudah ada.');return;}
+    const durasi = Math.max(1, getJobDurasiHari(job));
+    const rentang = getJobDateRange(job);
+    const tglHari = (h)=> rentang[Math.min(Math.max(h,1), rentang.length||1)-1] || job.tanggalAcara;
+    const warnLabel = (h)=> durasi>1 ? ` pada Hari ${h} (${formatTaskDate(tglHari(h))})` : ` pada ${formatTaskDate(tglHari(1))}`;
 
     if(editingTaskId){
-      // Mode edit: satu tugas yang sudah ada tetap terikat ke SATU akun, SATU role, dan
-      // SATU set jam kerja saja (pilihan beberapa tim/role dengan jam sendiri-sendiri
-      // hanya berlaku saat membuat tugas baru — lihat cabang di bawah).
+      // Mode edit: satu tugas = SATU akun, SATU role, SATU hari, dan satu set jam kerja.
+      // (Membagi beberapa akun/hari sekaligus hanya berlaku saat membuat tugas baru.)
       const role=scopeEl.querySelector('#taskRole')?.value;
       if(!role){alert('Pilih role tugas.');return;}
       const userId=scopeEl.querySelector('#taskUserId')?.value;
@@ -12123,12 +12402,39 @@ function bindTaskFormEvents(scopeEl, onDone){
         slots.push({mulai, selesai});
       }
       if(!slots.length){alert('Tambahkan minimal satu sesi jam kerja.');return;}
+      if(slotsSelfOverlap(slots)){alert('Ada sesi jam yang saling tumpang tindih. Perbaiki dulu.');return;}
 
       const t = tasks.find(x=>String(x.id)===String(editingTaskId));
       if(!t){ alert('Tugas yang diedit sudah tidak ditemukan (mungkin sudah dihapus).'); editingTaskId=null; onDone(); return; }
+
+      // Hari bertugas: job 1 hari = Hari 1; job multi-hari = pilihan Admin ('0' = tugas lama
+      // yang sengaja dibiarkan berlaku untuk seluruh hari).
+      let hariVal = 1;
+      if(durasi>1){
+        const hv = parseInt(scopeEl.querySelector('#taskHari')?.value, 10);
+        hariVal = Number.isFinite(hv) ? hv : 1;
+      }
+      const warnings = [];
+      if(hariVal>0){
+        const tgl = tglHari(hariVal);
+        const dobel = tasks.filter(x=>String(x.id)!==String(t.id) && String(x.jobId)===String(job.id) && String(x.userId)===String(akun.id) && taskCoversDate(x, tgl));
+        if(dobel.length) warnings.push(`${akun.username} sudah punya tugas lain di job ini${warnLabel(hariVal)}.`);
+        findTaskConflicts(akun.id, tgl, slots, t.id).filter(c=>String(c.jobId)!==String(job.id)).forEach(c=>{
+          warnings.push(`${akun.username} bentrok jam dengan tugas di ${getTaskJobLabel(c)} (${fmtSlotsLabel(getTaskSlots(c))})${warnLabel(hariVal)}.`);
+        });
+      }
+      if(warnings.length && !confirm('Periksa dulu:\n\n• '+warnings.join('\n• ')+'\n\nTetap simpan perubahan ini?')) return;
+
       t.userId=akun.id; t.username=akun.username; t.role=role;
-      t.jobId=job.id; t.jobName=job.namaKlien||'Tanpa Nama'; t.tanggal=job.tanggalAcara;
+      t.jobId=job.id; t.jobName=job.namaKlien||'Tanpa Nama';
+      if(hariVal>0){ t.hari=hariVal; t.tanggal=tglHari(hariVal); }
+      else { delete t.hari; t.tanggal=job.tanggalAcara; }
       t.slots=slots; t.keterangan=keterangan;
+      // Tugas yang tadinya selesai OTOMATIS lalu dipindah ke hari yang belum lewat dibuka lagi.
+      if(t.autoCompleted && !t.manualStatusSet){
+        const dl = getTaskDeadline(t);
+        if(dl && new Date() < dl){ t.status='Belum'; t.autoCompleted=false; }
+      }
       t.updatedAt=Date.now(); t.updatedBy=currentUserId;
       saveTasks();
       toast('Perubahan tugas berhasil disimpan');
@@ -12136,48 +12442,82 @@ function bindTaskFormEvents(scopeEl, onDone){
       return;
     }
 
-    // Mode tambah baru: boleh centang lebih dari satu akun Tim sekaligus, dan tiap akun
-    // punya role serta jam kerjanya SENDIRI-SENDIRI (lihat taskFormAkunTugas, diisi lewat
-    // toggleTaskAkun/onTaskAkunRoleChange/onTaskAkunSlotChange). Job dan keterangan tetap
-    // sama untuk semua akun karena satu pembagian tugas ini merujuk ke satu job yang sama.
+    // Mode tambah baru: boleh centang beberapa akun Tim sekaligus; tiap akun punya role,
+    // HARI, dan jam kerjanya sendiri-sendiri (lihat taskFormAkunTugas). Untuk job berdurasi
+    // 2 hari atau lebih, tiap hari yang dipilih dibuat sebagai tugas tersendiri.
     if(!taskFormAkunTugas.length){alert('Pilih minimal satu akun Tim.');return;}
+    const baru = []; // {item, hari, tanggal, slots}
     for(const item of taskFormAkunTugas){
       if(!item.role){alert(`Pilih role tugas untuk akun ${item.username}.`);return;}
-      if(!item.slots.length){alert(`Tambahkan minimal satu sesi jam kerja untuk akun ${item.username}.`);return;}
-      for(const s of item.slots){
-        if(!s.mulai || !s.selesai){alert(`Jam mulai dan jam selesai wajib diisi untuk akun ${item.username}.`);return;}
-        if(s.mulai===s.selesai){alert(`Jam mulai dan jam selesai tidak boleh sama pada satu sesi jam (akun ${item.username}).`);return;}
+      const hariAktif = Object.keys(item.days).map(Number).filter(h=>h>=1 && h<=durasi).sort((x,y)=>x-y);
+      if(!hariAktif.length){alert(`Pilih minimal satu hari bertugas untuk akun ${item.username}.`);return;}
+      for(const h of hariAktif){
+        const slots = item.days[h] || [];
+        const lbl = durasi>1 ? ` (Hari ${h})` : '';
+        if(!slots.length){alert(`Tambahkan minimal satu sesi jam kerja untuk akun ${item.username}${lbl}.`);return;}
+        for(const sl of slots){
+          if(!sl.mulai || !sl.selesai){alert(`Jam mulai dan jam selesai wajib diisi untuk akun ${item.username}${lbl}.`);return;}
+          if(sl.mulai===sl.selesai){alert(`Jam mulai dan jam selesai tidak boleh sama pada satu sesi jam (akun ${item.username}${lbl}).`);return;}
+        }
+        if(slotsSelfOverlap(slots)){alert(`Ada sesi jam yang saling tumpang tindih untuk akun ${item.username}${lbl}. Perbaiki dulu.`);return;}
+        baru.push({item, hari:h, tanggal:tglHari(h), slots});
       }
     }
 
+    // Peringatan (bukan larangan): dobel tugas, jam bentrok dengan job lain, hari tanpa petugas.
+    const warnings = [];
+    baru.forEach(b=>{
+      const dobel = tasks.filter(x=>String(x.jobId)===String(job.id) && String(x.userId)===String(b.item.userId) && taskCoversDate(x, b.tanggal));
+      if(dobel.length) warnings.push(`${b.item.username} sudah punya tugas di job ini${warnLabel(b.hari)}.`);
+      findTaskConflicts(b.item.userId, b.tanggal, b.slots, null).filter(c=>String(c.jobId)!==String(job.id)).forEach(c=>{
+        warnings.push(`${b.item.username} bentrok jam dengan tugas di ${getTaskJobLabel(c)} (${fmtSlotsLabel(getTaskSlots(c))})${warnLabel(b.hari)}.`);
+      });
+    });
+    if(durasi>1){
+      for(let h=1; h<=durasi; h++){
+        const iso = tglHari(h);
+        const adaBaru = baru.some(b=>b.hari===h);
+        const adaLama = tasks.some(x=>String(x.jobId)===String(job.id) && taskCoversDate(x, iso));
+        if(!adaBaru && !adaLama) warnings.push(`Hari ${h} (${formatTaskDate(iso)}) belum ada yang bertugas.`);
+      }
+    }
+    if(warnings.length && !confirm('Periksa dulu:\n\n• '+warnings.join('\n• ')+'\n\nTetap simpan pembagian tugas ini?')) return;
+
     const pushSince = Date.now();
-    taskFormAkunTugas.forEach(item=>{
-      const akun=taskEligibleAccounts().find(a=>String(a.id)===String(item.userId));
+    baru.forEach(b=>{
+      const akun=taskEligibleAccounts().find(a=>String(a.id)===String(b.item.userId));
       if(!akun) return;
       tasks.push({
         id:'task_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
-        userId:akun.id, username:akun.username, role:item.role,
-        jobId:job.id, jobName:job.namaKlien||'Tanpa Nama', tanggal:job.tanggalAcara,
-        slots:item.slots.map(s=>({mulai:s.mulai, selesai:s.selesai})), keterangan, status:'Belum',
+        userId:akun.id, username:akun.username, role:b.item.role,
+        jobId:job.id, jobName:job.namaKlien||'Tanpa Nama', tanggal:b.tanggal, hari:b.hari,
+        slots:b.slots.map(sl=>({mulai:sl.mulai, selesai:sl.selesai})), keterangan, status:'Belum',
         createdAt:Date.now(), createdBy:currentUserId
       });
     });
     saveTasks();
+    // Satu notifikasi per akun (walau akun itu dapat tugas di beberapa hari sekaligus).
+    const perAkun = {};
     tasks.filter(t=>t.createdAt>=pushSince && String(t.createdBy)===String(currentUserId) && String(t.userId)!==String(currentUserId)).forEach(t=>{
-      const s0 = Array.isArray(t.slots) && t.slots[0] ? t.slots[0] : null;
-      pushNotify({ userIds:[String(t.userId)] }, {
-        title: `Tugas baru: ${getTaskJobLabel(t)}`,
-        body: [formatTaskDate(t.tanggal), s0 ? `${s0.mulai}–${s0.selesai}` : '', t.role || ''].filter(Boolean).join(' • '),
-        tag: 'tasknew_' + t.id, view: 'tugas'
+      (perAkun[String(t.userId)] = perAkun[String(t.userId)] || []).push(t);
+    });
+    Object.keys(perAkun).forEach(uid=>{
+      const list = perAkun[uid].sort((x,y)=>(getTaskDate(x)||'').localeCompare(getTaskDate(y)||''));
+      const t0 = list[0];
+      const s0 = Array.isArray(t0.slots) && t0.slots[0] ? t0.slots[0] : null;
+      const body = list.length>1
+        ? [`${list.length} hari: ${list.map(t=>formatTaskDate(getTaskDate(t))).join(', ')}`, t0.role || ''].filter(Boolean).join(' • ')
+        : [formatTaskDate(getTaskDate(t0)), s0 ? `${s0.mulai}–${s0.selesai}` : '', t0.role || ''].filter(Boolean).join(' • ');
+      pushNotify({ userIds:[uid] }, {
+        title: `Tugas baru: ${getTaskJobLabel(t0)}`,
+        body, tag: 'tasknew_' + t0.id, view: 'tugas'
       });
     });
-    toast(taskFormAkunTugas.length>1 ? `Pembagian tugas untuk ${taskFormAkunTugas.length} akun berhasil disimpan` : 'Pembagian tugas berhasil disimpan');
+    toast(baru.length>1 ? `Pembagian tugas berhasil disimpan (${baru.length} tugas)` : 'Pembagian tugas berhasil disimpan');
     taskFormAkunTugas = [];
     onDone();
   });
 }
-
-
 function applyTaskFilters(){
   taskRekapFilter = {
     userId: document.getElementById('taskFilterUser')?.value || '',
@@ -14306,6 +14646,9 @@ const CHANGELOG = [
     version: '1.16.5',
     tanggal: '7 Oktober 2026',
     items: [
+      { kategori: 'Fitur', teks: 'Pembagian Tugas untuk acara 2 hari atau lebih kini diatur per hari. Saat membagi tugas, tiap akun Tim bisa dipilihkan hari bertugasnya (Hari 1, Hari 2, atau semuanya) dengan jam kerja yang boleh berbeda tiap hari, dan ada tombol \"Salin jam ke semua hari\". Tiap hari menjadi tugas tersendiri di Rekap Tugas, lengkap dengan label \"Hari 1 dari 2\".' },
+      { kategori: 'Fitur', teks: 'Form Bagi Tugas untuk job multi-hari menampilkan ringkasan \"Pembagian per hari\" (siapa bertugas di hari apa) dan memberi peringatan kalau ada hari yang belum ada petugasnya, kalau akun yang sama dibagi dobel di hari yang sama, atau kalau jamnya bentrok dengan tugas di job lain. Sesi jam yang saling tumpang tindih dalam satu hari tidak bisa disimpan.' },
+      { kategori: 'Perbaikan', teks: 'Tugas di acara 2 hari kini otomatis selesai pukul 23.59 pada harinya masing-masing (sebelumnya baru selesai setelah hari terakhir acara, sehingga tugas Hari 1 tetap terlihat \"belum selesai\" sampai Hari 2 usai). Hitungan \"Tugas Mendatang\", \"lewat jadwal\", dan filter tanggal di Rekap Tugas juga mengikuti hari tugasnya. Tugas lama yang sudah ada tidak berubah dan tetap berlaku untuk seluruh hari acara.' },
       { kategori: 'Peningkatan', teks: 'Jenis acara Mangayun/Aqiqah kini punya kolom Nama Orang Tua, Nama Bayi, dan Tanggal Lahir Bayi. Margondang kini punya kolom Adat / Konsep Pakaian. Keduanya terisi otomatis dari Isi Biodata.' },
       { kategori: 'Peningkatan', teks: 'Kolom "Harga Tidak Cocok" dari pricelist kini muncul sebagai peringatan saat data ditarik, tidak lagi masuk Catatan.' },
     ]
@@ -15005,7 +15348,7 @@ function buildNotifications(){
       view: 'tugas',
       icon: ic('clipboard'),
       title: `Tugas baru: ${getTaskJobLabel(t)}`,
-      desc: [formatTaskDate(t.tanggal), s0 ? `${s0.mulai}–${s0.selesai}` : '', t.role || ''].filter(Boolean).join(' • '),
+      desc: [formatTaskDate(getTaskDate(t)), taskHariLabel(t), s0 ? `${s0.mulai}–${s0.selesai}` : '', t.role || ''].filter(Boolean).join(' • '),
       onClick: ()=>{ closeNotifPanel(); navigate('tugas'); }
     });
   });

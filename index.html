@@ -16605,6 +16605,73 @@ document.head.appendChild(s);
 document.addEventListener('animationiteration',function(e){var el=e.target;if(!el.classList)return;if(el.classList.contains('kwr')){var c=el.firstChild;if(c&&c.classList.contains('ksc')){c.style.left=Math.round(kR(3,c.classList.contains('mpop')?78:56))+'%';if(c.style.top)c.style.top=Math.round(kR(12,80))+'%'}}else if(el.classList.contains('kch'))el.style.top=Math.round(kR(14,82))+'%'})})();
 function kCheer(){var f=$('kfx');if(!f)return;f.classList.remove('chr');void f.offsetWidth;f.classList.add('chr');setTimeout(function(){f.classList.remove('chr')},650)}
 var KVL={kucing:['Meong~ elus aku dong','Purrr… makasih! 💕'],permen:['Mau permen kapas? 🍬','Manis banget! ✨'],mint:['Mau wortel? Hehe 🥕','Nyam nyam! 💚'],boba:['Traktir boba dong 🧋','Slurrp! Makasih~'],pastel:['Main bareng yuk 🌈','Yeay!! 🌈'],stroberi:['Aku manis kan? 🍓','Hihi malu~ 💕'],beruang:['Mau dipeluk? 🧸','Hangat banget 💛'],bebek:['Kwek! Ada roti?','Kwek kwek! Senang~'],kodok:['Ribbit! Main yuk 🐸','Ribbit! Hebat! 💚'],hantu:['Buu~ kaget ya? 👻','Hihi, kena deh!'],eskrim:['Jangan dimakan ya 🍦','Dingin-dingin enak!'],pingu:['Ayo meluncur! 🐧','Wiiii! ❄️'],jamur:['Aku tumbuh buat kamu 🍄','Yeay, makasih!']},kVT=0;
+/* ===== 6 TEMA ANIME INTERAKTIF ===== */
+(function(){
+var D='fill="#3b2230"',P='fill="#ff7fa8" opacity=".75"';
+function ey(a,b,y){return '<circle cx="'+a+'" cy="'+y+'" r="1.05" '+D+'/><circle cx="'+b+'" cy="'+y+'" r="1.05" '+D+'/>'}
+function f2(y,d){var h='<circle cx="10.3" cy="'+y+'" r=".95" '+D+'/><circle cx="13.7" cy="'+y+'" r=".95" '+D+'/><path d="M11.2 '+(y+1.8)+'q.8.9 1.6 0" fill="none" stroke="#3b2230" stroke-width=".8" stroke-linecap="round"/>';if(d)h+='<ellipse cx="'+(12-d)+'" cy="'+(y+1.3)+'" rx="1.3" ry=".85" '+P+'/><ellipse cx="'+(12+d)+'" cy="'+(y+1.3)+'" rx="1.3" ry=".85" '+P+'/>';return h}
+var gr='';for(var i=0;i<8;i++)gr+='<rect x="10.4" y="1.8" width="3.2" height="4" rx=".8" transform="rotate('+(i*45)+' 12 12)"/>';
+Object.assign(M,{
+asakura:'<circle cx="12" cy="5.8" r="4.4"/><circle cx="18" cy="10.2" r="4.4"/><circle cx="15.7" cy="17.2" r="4.4"/><circle cx="8.3" cy="17.2" r="4.4"/><circle cx="6" cy="10.2" r="4.4"/><circle cx="12" cy="12" r="5"/>'+fc(11.4,14,[8,16]),
+acrystal:'<path d="M12 2.2l7.6 5.8-2.6 12.6H7L4.4 8z"/><path d="M12 2.2L9.6 8h4.8zM4.4 8h15.2" fill="none" stroke="#fff" stroke-width=".7" opacity=".55"/>'+fc(12.2,15,[8.4,15.6]),
+adango:'<path d="M12 1.6v20.8" stroke="#c9915a" stroke-width="1.2"/><circle cx="12" cy="5.4" r="3.8" fill="#ff9fc4"/><circle cx="12" cy="12" r="4.4" fill="#fff" stroke="#e6dfe8" stroke-width=".5"/><circle cx="12" cy="18.6" r="3.8" fill="#9bd97a"/>'+f2(11.4,3.2),
+aonigiri:'<path d="M12 2.8c2 0 3.4 1.2 5 4.6 1.8 3.8 3.6 7.4 3.6 9.6 0 2.4-1.8 3.6-3.6 3.6H7c-1.8 0-3.6-1.2-3.6-3.6 0-2.2 1.8-5.8 3.6-9.6C8.6 4 10 2.8 12 2.8z" stroke="#d9d2c2" stroke-width=".6"/><path d="M8.2 15.6h7.6l.9 5.6H7.3z" fill="#2b3a3a"/>'+f2(11.6,3.4),
+aramen:'<path d="M15 1.6l-3 8.4M18.4 2.6l-3.6 7.4" stroke="#8a5a2c" stroke-width="1.1" stroke-linecap="round"/><path d="M5 11q1.6-3.2 3.2 0t3.2 0 3.2 0 3.2 0" fill="none" stroke="#ffd98a" stroke-width="1.7" stroke-linecap="round"/><circle cx="7.4" cy="8.2" r="2.1" fill="#fff"/><circle cx="7.4" cy="8.2" r=".9" fill="#ff6b9a"/><path d="M2.6 11h18.8a9.4 9.4 0 0 1-18.8 0z"/>'+fc(14.6,17,[6.6,17.4]),
+anaruto:'<circle cx="12" cy="12" r="9.4" fill="#fff" stroke="#e6dfe8" stroke-width=".6"/><path d="M12 12a1.6 1.6 0 0 1 3.2 0 3.6 3.6 0 0 1-7.2 0 5.6 5.6 0 0 1 11.2 0" fill="none" stroke="#ff6b9a" stroke-width="1.5" stroke-linecap="round"/><circle cx="10.6" cy="12.4" r=".8" '+D+'/><circle cx="13.4" cy="12.4" r=".8" '+D+'/>',
+afox:'<path d="M2.6 3l6 4h6.8l6-4-.8 11a9.2 7.6 0 0 1-17.2 0z"/><path d="M5 14.4q7 .4 14 0-1.6 6-7 6.4-5.4-.4-7-6.4z" fill="#fff4e6"/><path d="M6.4 8.4l2.4 2.6M17.6 8.4l-2.4 2.6" stroke="#d4452a" stroke-width="1.2" stroke-linecap="round"/><ellipse cx="12" cy="17.6" rx="1.2" ry=".9" '+D+'/>'+ey(8.6,15.4,12.4)+'<ellipse cx="6.2" cy="14" rx="1.4" ry=".9" '+P+'/><ellipse cx="17.8" cy="14" rx="1.4" ry=".9" '+P+'/>',
+atorii:'<path d="M1.6 5.4q10.4-3.4 20.8 0v2.6H1.6z"/><rect x="3.6" y="9" width="16.8" height="2"/><rect x="5.4" y="7" width="2.6" height="15"/><rect x="16" y="7" width="2.6" height="15"/>'+f2(14.4,2.6),
+arobot:'<path d="M12 6.4V3.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="2.8" r="1.6" fill="#ff6b8a"/><rect x="4" y="6.4" width="16" height="14" rx="4"/><rect x="1.8" y="11" width="2.2" height="4.4" rx="1"/><rect x="20" y="11" width="2.2" height="4.4" rx="1"/><rect x="6.4" y="9.4" width="11.2" height="7.6" rx="2.6" fill="#16324a"/><circle cx="9.6" cy="12.6" r="1.3" fill="#7be3ff"/><circle cx="14.4" cy="12.6" r="1.3" fill="#7be3ff"/><path d="M10.6 15q1.4 1.2 2.8 0" stroke="#7be3ff" fill="none" stroke-width=".8" stroke-linecap="round"/><ellipse cx="6" cy="18.4" rx="1.3" ry=".8" '+P+'/><ellipse cx="18" cy="18.4" rx="1.3" ry=".8" '+P+'/>',
+agear:gr+'<circle cx="12" cy="12" r="7.8"/><circle cx="12" cy="12" r="7.8" fill="none" stroke="#fff" stroke-width=".6" opacity=".4"/>'+fc(11.4,14,[7.6,16.4]),
+ashuri:'<path d="M12 1.6l2.6 7.6 7.8 2.8-7.8 2.8L12 22.4l-2.6-7.6-7.8-2.8 7.8-2.8z"/><circle cx="12" cy="12" r="3.6" fill="#fff" opacity=".9"/><circle cx="10.8" cy="11.6" r=".8" '+D+'/><circle cx="13.2" cy="11.6" r=".8" '+D+'/><path d="M11.2 13.3q.8.8 1.6 0" fill="none" stroke="#3b2230" stroke-width=".7" stroke-linecap="round"/>',
+ascroll:'<rect x="4" y="6" width="16" height="12" rx="1.4" fill="#f6e6c4"/><rect x="2.6" y="4.8" width="3.6" height="14.4" rx="1.8"/><rect x="17.8" y="4.8" width="3.6" height="14.4" rx="1.8"/><rect x="2.6" y="10.8" width="3.6" height="1.5" fill="#d6363a"/><rect x="17.8" y="10.8" width="3.6" height="1.5" fill="#d6363a"/>'+fc(11,13.6,[8.2,15.8])
+});
+var B={n:'',g:'imut',i:'#ffffff',c:'#ffffff',r:cu,f:F2};
+function mk(o){return Object.assign({},B,o)}
+Object.assign(T,{
+hanami:mk({n:'Sakura Sekolah',bg:'#fff2f6',h:['#f58fb0','#e56591'],o:'#ffd3e0',a:'#e0508a',t:'#4a1d30',p:'#ffbcd2',m:['asakura','kheart','kbunny','asakura','kstar'],l:5,z:360,x:1,y:1,pk:['asakura','asakura','kheart']}),
+sihir:mk({n:'Gadis Sihir',bg:'#f7f0ff',h:['#b57cf0','#8f55db'],o:'#e5d3ff',a:'#8f55db',t:'#34205a',p:'#d9c2ff',m:['acrystal','kstar','kcat','kheart','acrystal'],l:6,z:380,x:-1,y:1,pk:['acrystal','kstar','kstar']}),
+jajan:mk({n:'Jajan Jepang',bg:'#fff6ea',h:['#f5a04a','#e07a22'],o:'#ffe0b8',a:'#e07a22',t:'#4a2a10',p:'#ffd2a0',m:['aramen','adango','aonigiri','anaruto','kstar'],l:5,z:370,x:1,y:-1,pk:['adango','aramen','aonigiri']}),
+kitsune:mk({n:'Rubah Kitsune',bg:'#fff1ec',h:['#f0623c','#d4452a'],o:'#ffd0c2',a:'#d4452a',t:'#4a1c12',p:'#ffb8a4',m:['afox','atorii','kheart','afox','kstar'],l:6,z:380,x:0,y:1,pk:['atorii','afox','kstar']}),
+mecha:mk({n:'Robot Mecha',bg:'#eaf7fb',h:['#3fb6d8','#2490b8'],o:'#bfe8f4',a:'#2490b8',t:'#10384a',p:'#a8dcee',m:['arobot','agear','kstar','kheart','arobot'],l:5,z:360,x:-1,y:-1,pk:['agear','kstar','arobot']}),
+ninja:mk({n:'Ninja Daun (Naruto)',bg:'#fff4e0',h:['#ff9b1f','#e8730a'],o:'#ffdca0',i:'#fffdf8',a:'#e8730a',t:'#4a2606',p:'#ffcf80',m:['ashuri','anaruto','aramen','ascroll','kstar'],l:6,z:380,x:1,y:1,pk:['ashuri','ashuri','anaruto','kstar']})
+});
+function cp(k){return JSON.parse(JSON.stringify(CHD[k]))}
+var X={hanami:['pastel',{c:['#ffffff','#ffc2d6','#ff9fbf'],k:'#e0508a'}],sihir:['kucing',{c:['#3b2a5a','#7d56c9','#b57cf0'],k:'#d9c2ff'}],jajan:['bebek',{c:['#fff0c2','#ffd98a','#ffc060'],k:'#c96a10'}],kitsune:['kucing',{c:['#ff8a3d','#ffb27a','#f6d9a4'],k:'#8a2f08'}],mecha:['pingu',{c:['#3b8cb8','#4fbbe3','#2a6a94'],k:'#ffffff'}],ninja:['kodok',{c:['#ff9b1f','#ffc266','#e8730a'],k:'#7a3300'}]};
+Object.keys(X).forEach(function(k){var o=cp(X[k][0]);Object.assign(o,X[k][1]);CHD[k]=o});
+Object.assign(KVL,{hanami:['Sakura mekar, kamu juga ya 🌸','Kyaa~ makasih! 💕'],sihir:['Abrakadabra! Mau sihir? ✨','Sihirnya berhasil! 🔮'],jajan:['Itadakimasu! 🍜','Oishii~ makasih! 🍡'],kitsune:['Kon kon! Aku rubah baik 🦊','Kon! Senang deh~ ⛩️'],mecha:['Bip bop! Sistem siap 🤖','Baterai penuh! ⚡'],ninja:['Ayo jadi ninja hebat! 🥷','Yosh! Semangat! 🍥']});
+})();
+/* ===== 5 TEMA HERO MOBILE LEGENDS ===== */
+(function(){
+var D='fill="#3b2230"',P='fill="#ff7fa8" opacity=".75"';
+function ey(a,b,y){return '<circle cx="'+a+'" cy="'+y+'" r="1.05" '+D+'/><circle cx="'+b+'" cy="'+y+'" r="1.05" '+D+'/>'}
+function f2(y,d){var h='<circle cx="10.3" cy="'+y+'" r=".95" '+D+'/><circle cx="13.7" cy="'+y+'" r=".95" '+D+'/><path d="M11.2 '+(y+1.8)+'q.8.9 1.6 0" fill="none" stroke="#3b2230" stroke-width=".8" stroke-linecap="round"/>';if(d)h+='<ellipse cx="'+(12-d)+'" cy="'+(y+1.3)+'" rx="1.3" ry=".85" '+P+'/><ellipse cx="'+(12+d)+'" cy="'+(y+1.3)+'" rx="1.3" ry=".85" '+P+'/>';return h}
+Object.assign(M,{
+afirework:'<path d="M12 1.8v4M12 18.2v4M1.8 12h4M18.2 12h4M4.8 4.8l2.8 2.8M16.4 16.4l2.8 2.8M4.8 19.2l2.8-2.8M16.4 7.6l2.8-2.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><circle cx="12" cy="12" r="5.6"/>'+fc(11.4,13.8,[8.4,15.6]),
+afan:'<path d="M12 21L2.4 8.2a14 14 0 0 1 19.2 0z"/><path d="M12 21L6 7.4M12 21l6-13.6M12 21V5.4" stroke="#fff" stroke-width=".6" opacity=".55"/><circle cx="12" cy="21" r="1.2" fill="#8a5a2c"/>'+fc(12.6,15,[7.8,16.2]),
+amoon:'<circle cx="12" cy="12.5" r="8.8"/><circle cx="16.8" cy="8.4" r="1.4" fill="#000" opacity=".1"/><circle cx="7.2" cy="17" r="1.1" fill="#000" opacity=".1"/><path d="M7.4 11.8q1.3-1.6 2.6 0M14 11.8q1.3-1.6 2.6 0M10.8 14.6q1.2 1.3 2.4 0" fill="none" stroke="#3b2230" stroke-width=".9" stroke-linecap="round"/><ellipse cx="6.8" cy="14" rx="1.5" ry=".9" '+P+'/><ellipse cx="17.2" cy="14" rx="1.5" ry=".9" '+P+'/>',
+abow:'<path d="M6 2.6q12 9.4 0 18.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M6 2.6V21.4" stroke="#8a6a4a" stroke-width=".6"/><path d="M3 12h17.4M20.4 12l-2.4-2M20.4 12l-2.4 2" stroke="#8a5a2c" stroke-width="1.2" stroke-linecap="round" fill="none"/><circle cx="13" cy="8.2" r=".95" '+D+'/><circle cx="16.4" cy="8.2" r=".95" '+D+'/><path d="M13.6 9.6q1.1 1.2 2.2 0" fill="none" stroke="#3b2230" stroke-width=".8" stroke-linecap="round"/>',
+awingh:'<ellipse cx="4" cy="11.4" rx="3" ry="4.6" transform="rotate(-20 4 11.4)" fill="#fff" stroke="currentColor" stroke-width=".7"/><ellipse cx="20" cy="11.4" rx="3" ry="4.6" transform="rotate(20 20 11.4)" fill="#fff" stroke="currentColor" stroke-width=".7"/><path d="M12 21.5s-6.8-4-8.2-8.4A4.6 4.6 0 0 1 12 8.2a4.6 4.6 0 0 1 8.2 4.9c-1.4 4.4-8.2 8.4-8.2 8.4z"/>'+fc(13.2,15.6,[7.8,16.2]),
+aribbon:'<path d="M10.6 14l-2.6 7M13.4 14l2.6 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><path d="M12 12L3 6.4v11.2zM12 12l9-5.6v11.2z"/><circle cx="12" cy="12" r="2.8"/><circle cx="11.2" cy="11.2" r=".9" fill="#fff" opacity=".5"/><circle cx="6.6" cy="12" r=".95" '+D+'/><circle cx="17.4" cy="12" r=".95" '+D+'/><path d="M5.6 14.4q1 1 2 0M16.4 14.4q1 1 2 0" fill="none" stroke="#3b2230" stroke-width=".7" stroke-linecap="round"/>',
+asword:'<path d="M12 1.6l3.2 3.6v11H8.8V5.2z"/><path d="M12 3v12" stroke="#fff" stroke-width=".6" opacity=".45"/><rect x="5.2" y="16" width="13.6" height="2.8" rx="1.4" fill="#ffc83d"/><rect x="10.6" y="18.8" width="2.8" height="3.4" rx="1" fill="#8a5a2c"/>'+f2(8.2,0),
+aflame:'<path d="M12 1.6c1 3.6 6 6.4 6 12.4a6 6 0 0 1-12 0c0-2.8 1.4-4 2.4-5.6.6 1.8 1.4 2.4 2.2 2.6C10.2 8 10.2 4 12 1.6z"/><path d="M12 11c.6 2.2 3.2 3.4 3.2 6.2a3.2 3.2 0 0 1-6.4 0c0-1.6.8-2.2 1.4-3.2.4.8.8 1.2 1.2 1.2.2-1.6.2-3 .6-4.2z" fill="#ffd23f"/>'+f2(15.6,0),
+ashield:'<path d="M12 2.2l8 2.8v6.6c0 5-3.6 8.6-8 10.2-4.4-1.6-8-5.2-8-10.2V5z"/><path d="M12 5l5.2 1.8v4.8c0 3.4-2.4 5.8-5.2 7-2.8-1.2-5.2-3.6-5.2-7V6.8z" fill="#ffc83d"/>'+f2(10.6,3.2),
+acrow:'<path d="M4.6 12.4L1.4 9.6l1.2 5z"/><ellipse cx="11" cy="13.6" rx="7.6" ry="6.2"/><circle cx="16.4" cy="8.6" r="4.4"/><path d="M19.8 7.6l3.2 1.4-3.2 1.6z" fill="#ffb02e"/><path d="M7 12q4-2 7 2-4 3-7-2z" fill="#fff" opacity=".2"/><circle cx="16.4" cy="7.8" r=".95" fill="#fff"/><circle cx="16.6" cy="7.9" r=".5" '+D+'/><ellipse cx="14.4" cy="10" rx="1.1" ry=".7" '+P+'/><path d="M9.6 19.6v2.2M12.6 19.6v2.2" stroke="#ffb02e" stroke-width="1" stroke-linecap="round"/>',
+amask:'<circle cx="12" cy="12.4" r="9"/><rect x="4" y="9" width="16" height="6.2" rx="3.1" fill="#ffd9b8"/><rect x="3.4" y="5.4" width="17.2" height="2.8" fill="#d63a4a"/><path d="M18.4 18l3.6 3.2-4.4.4z" fill="#d63a4a"/>'+ey(8.6,15.4,12)+'<ellipse cx="6.4" cy="13.8" rx="1.3" ry=".8" '+P+'/><ellipse cx="17.6" cy="13.8" rx="1.3" ry=".8" '+P+'/>'
+});
+var B={n:'',g:'imut',i:'#ffffff',c:'#ffffff',r:cu,f:F2};
+function mk(o){return Object.assign({},B,o)}
+Object.assign(T,{
+hanabi:mk({n:'Hanabi',bg:'#fff0f5',h:['#e8457f','#b92d6a'],o:'#ffd1e0',a:'#c92f72',t:'#4a1230',p:'#ffb3cc',m:['afirework','afan','asakura','ashuri','kstar'],l:6,z:380,x:1,y:1,pk:['afirework','afan','asakura','kstar']}),
+miya:mk({n:'Miya',bg:'#eef6ff',h:['#5b8def','#3b66d1'],o:'#cfe0ff',a:'#3b66d1',t:'#16284f',p:'#b5cdff',m:['amoon','abow','kstar','kcloud','amoon'],l:5,z:370,x:-1,y:1,pk:['amoon','kstar','abow']}),
+angela:mk({n:'Angela',bg:'#fdf0ff',h:['#f58cc8','#c767d6'],o:'#f1d3f8',a:'#c767d6',t:'#431a4f',p:'#f0bff2',m:['awingh','aribbon','kheart','kstar','awingh'],l:6,z:380,x:1,y:-1,pk:['awingh','kheart','aribbon']}),
+lukas:mk({n:'Lukas',bg:'#fff2ea',h:['#e5502a','#b8321a'],o:'#ffd2bd',a:'#c8381c',t:'#4a1608',p:'#ffb89a',m:['asword','aflame','ashield','kstar','aflame'],l:5,z:360,x:0,y:1,pk:['aflame','asword','kstar']}),
+hayabusa:mk({n:'Hayabusa',bg:'#eceffa',h:['#2e3a78','#1c2557'],o:'#c8cff0',a:'#d63a4a',t:'#1a1f45',p:'#b9c3ee',m:['amask','acrow','ashuri','amoon','kstar'],l:6,z:380,x:-1,y:-1,pk:['ashuri','acrow','amoon']})
+});
+function cp(k){return JSON.parse(JSON.stringify(CHD[k]))}
+var X={hanabi:['pastel',{c:['#ffffff','#ff9fc0','#e8457f'],k:'#b92d6a'}],miya:['mint',{c:['#ffffff','#b5cdff','#5b8def'],k:'#3b66d1'}],angela:['hantu',{c:['#ffffff','#ffd0e8','#f2b6dd'],k:'#c767d6'}],lukas:['beruang',{c:['#d9442a','#ffb23f','#a8321a'],k:'#4a1608'}],hayabusa:['kucing',{c:['#2e3a78','#4a5bb0','#1c2557'],k:'#d63a4a'}]};
+Object.keys(X).forEach(function(k){var o=cp(X[k][0]);Object.assign(o,X[k][1]);CHD[k]=o});
+Object.assign(KVL,{hanabi:['Kembang api buat kamu! 🎆','Boom! Cantik kan? ✨'],miya:['Cahaya bulan menyertaimu 🌙','Tepat sasaran! 🏹'],angela:['Aku siap bantu! 💖','Hehe, peluk dulu~ 🎀'],lukas:['Ayo bertarung! 🔥','Kuat banget! 💪'],hayabusa:['Bayangan bergerak diam-diam 🥷','Swoosh! Hilang~ 🌑']});
+})();
 function kVClear(){clearTimeout(kVT);var o=document.querySelector('#kc .kvs');if(o)o.remove()}
 function kVSched(){clearTimeout(kVT);if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)return;kVT=setTimeout(kVGo,kR(8000,20000))}
 function kVGo(){var k=$('kc'),t=T[tema],C=CHD[tema],L=KVL[tema];if(!k||!C||!L||!t||t.g!='imut')return;
@@ -16641,7 +16708,7 @@ f.innerHTML=h;kVSched()}
 function kPoke(x,y){try{var f=$('kfx'),k=$('kc'),t=T[tema];if(!f||!t||t.g!='imut')return;if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)return;
 var near=null,best=75;Array.prototype.forEach.call(f.querySelectorAll('.kcw,.kcp,.kcat'),function(c){var r=c.getBoundingClientRect(),d=Math.hypot(x-(r.left+r.width/2),y-(r.top+r.height/2));if(d<best){best=d;near=c}});
 if(near){var yy=near.classList.contains('kcat')?near:near.querySelector('.kcy');yy.classList.remove('kcb');void yy.offsetWidth;yy.classList.add('kcb');setTimeout(function(){yy.classList.remove('kcb')},850)}
-var kr=k.getBoundingClientRect(),n=near?7:4;for(var i=0;i<n;i++)(function(i){var d=document.createElement('span');d.className='kcf';d.innerHTML=mo(i%3?'kheart':'kstar',i%2?t.a:t.p);
+var kr=k.getBoundingClientRect(),n=near?7:4;for(var i=0;i<n;i++)(function(i){var d=document.createElement('span');d.className='kcf';d.innerHTML=mo(t.pk?t.pk[i%t.pk.length]:(i%3?'kheart':'kstar'),i%2?t.a:t.p);
 d.style.cssText='left:'+Math.round(x-kr.left-11)+'px;top:'+Math.round(y-kr.top-11)+'px;--dx:'+Math.round(kR(-80,80))+'px;--dy:-'+Math.round(kR(50,130))+'px;--rot:'+Math.round(kR(-60,60))+'deg;animation-delay:'+(i*30)+'ms;animation-duration:.95s';
 k.appendChild(d);setTimeout(function(){if(d.parentNode)d.parentNode.removeChild(d)},1400)})(i)}catch(e){}}
 function kTS(id){try{localStorage.setItem('kcTema_'+me,id);localStorage.setItem('kcTemaP_'+me,'1')}catch(e){}
@@ -16649,7 +16716,7 @@ return Promise.resolve(sb.rpc('kaone_chat_set_tema',{p_tema:id})).then(function(
 function kTG(k){try{return localStorage.getItem(k+me)}catch(e){return null}}
 function th(id){id=AL2[id]||id;var t=T[id]||T.salju;tema=T[id]?id:'salju';var r=$('kc').style,g=t.d?'0 1px 0 #0006':t.g=='imut'?'0 2px 0 rgba(0,0,0,.09)':'0 1px 1px #1e28391f';$('kc').classList.toggle('imut',t.g=='imut');
 r.setProperty('--kb',t.bg);r.setProperty('--kh','linear-gradient(135deg,'+t.h[0]+','+t.h[1]+')');r.setProperty('--ko',t.o);r.setProperty('--ki',t.i);r.setProperty('--ka',t.a);r.setProperty('--kt',t.t);
-r.setProperty('--kw',t.g=='imut'?btile(t.m,t.p,.34,t.l%3):dots(t.p));r.setProperty('--kac',t.c);r.setProperty('--kz',(t.z||360)+'px');r.setProperty('--kdx',t.x==null?1:t.x);r.setProperty('--kdy',t.y==null?1:t.y);r.setProperty('--kr',t.r[0]);r.setProperty('--kro',t.r[1]);r.setProperty('--kf',t.g=='imut'?F1:FP);r.setProperty('--ks',g);var kiE=$('ki');if(kiE)kiE.placeholder=t.g=='imut'?'Ketik pesan lucu ✿':'Ketik pesan';try{kFx()}catch(e){}av();try{kkTema(t)}catch(e){}}
+r.setProperty('--kw',t.g=='imut'?btile(t.m,t.p,.34,t.l%3):dots(t.p));r.setProperty('--kac',t.c);r.setProperty('--kz',(t.z||360)+'px');r.setProperty('--kdx',t.x==null?1:t.x);r.setProperty('--kdy',t.y==null?1:t.y);r.setProperty('--kr',t.r[0]);r.setProperty('--kro',t.r[1]);r.setProperty('--kf',t.g=='imut'?(t.f||F1):FP);r.setProperty('--ks',g);var kiE=$('ki');if(kiE)kiE.placeholder=t.g=='imut'?'Ketik pesan lucu ✿':'Ketik pesan';try{kFx()}catch(e){}av();try{kkTema(t)}catch(e){}}
 function menu(){var h='';['imut','terang','gelap'].forEach(function(g){h+='<small>Tema '+g+'</small><div class="gr">';Object.keys(T).filter(function(k){return T[k].g==g}).forEach(function(k){var t=T[k];
 h+='<button data-t="'+k+'" class="'+(k==tema?'sel':'')+'" style="background:'+t.bg+';color:'+t.t+'"><span class="pv" style="background:linear-gradient(135deg,'+t.h[0]+','+t.h[1]+')">'+mo(t.m[0],'#fff')+(t.g=='imut'?mo(t.m[1],'#fff'):'')+'</span><span class="bs"><i style="background:'+t.i+'"></i><i style="background:'+t.o+'"></i></span><b>'+t.n+'</b></button>'});h+='</div>'});$('ktm').innerHTML=h}
 function tm(d){return new Date(d).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
@@ -16730,7 +16797,7 @@ function mmss(s){s=Math.max(0,s|0);var h=Math.floor(s/3600),m=Math.floor(s%3600/
 function kkDur(){return kk.t0?Math.round((Date.now()-kk.t0)/1000):0}
 function kkNm(){return AL||(other&&P[other]&&P[other].nama)||'Lawan chat'}
 function kkIdent(){var u=other&&U[other]&&U[other].u;$('kka').innerHTML=u?'<img alt="" src="'+E(u)+'">':mo(T[tema].m[0],'#fff');$('kkn').textContent=kkNm()}
-function kkTema(t){var c=$('kcc');if(!c)return;c.style.setProperty('--kh','linear-gradient(160deg,'+t.h[0]+','+t.h[1]+')');c.style.setProperty('--ka',t.a);c.style.setProperty('--kf',t.g=='imut'?F1:FP);if(kk.st!='idle')kkIdent()}
+function kkTema(t){var c=$('kcc');if(!c)return;c.style.setProperty('--kh','linear-gradient(160deg,'+t.h[0]+','+t.h[1]+')');c.style.setProperty('--ka',t.a);c.style.setProperty('--kf',t.g=='imut'?(t.f||F1):FP);if(kk.st!='idle')kkIdent()}
 function kkS(x){kk.txt=x;$('kcs').textContent=x;kkBn()}
 function kkBn(){var b=$('kkb');if(!b)return;var on=!!kk.mini&&(kk.st=='out'||kk.st=='live');b.classList.toggle('on',on);if(on)$('kkbt').textContent='Panggilan '+(kk.v?'video':'suara')+' · '+kk.txt}
 function kkNf(){var a=kk.rm,c=kk.v&&!kk.rc,e=$('kknf'),t='';if(kk.conn){if(a&&c)t='Mikrofon & kamera lawan bicara mati';else if(a)t='Mikrofon lawan bicara mati';else if(c)t='Kamera lawan bicara mati'}e.textContent=t;e.classList.toggle('on',!!t)}
@@ -17037,6 +17104,8 @@ $('kpwd').addEventListener('keydown',function(e){if(e.key=='Enter'&&e.target.tag
 $('kpwd').addEventListener('input',function(e){if(e.target.id=='kpw2'||e.target.id=='kpw1'){var a=$('kpw1').value,b=$('kpw2').value;if(b&&a!==b)pwMsg('Ulangi sandi belum sama.');else if(b&&a===b&&a.length>=6)pwMsg('Sandi cocok.',true);else pwMsg('')}});
 /* ===== STIKER TEMA, PRATINJAU TAUTAN, PESAN TERJADWAL ===== */
 var STK={kheart:'#ff6b9a',kstar:'#ffc83d',kcloud:'#8fcdfc',kcat:'#f2b35e',kbunny:'#ffb8d8',kboba:'#c99a6b',kbear:'#c98a3a',kduck:'#ffd23f',kfrog:'#5cc16a',kghost:'#d6b4f0',kice:'#ffb48a',kpeng:'#3b7396',kstraw:'#ff6b84',kmush:'#e0654a'},kLkC={},kLkQ={};
+Object.assign(STK,{asakura:'#ff9fbf',acrystal:'#b88cff',adango:'#ff9fc4',aonigiri:'#f4f1ea',aramen:'#e0504a',anaruto:'#ffffff',afox:'#ff8a3d',atorii:'#e0402f',arobot:'#7bc4e6',agear:'#9aa8b8',ashuri:'#8a96a6',ascroll:'#c9915a'});
+Object.assign(STK,{afirework:'#ff7fb0',afan:'#e8457f',amoon:'#ffe08a',abow:'#5b8def',awingh:'#ff9fd0',aribbon:'#f58cc8',asword:'#b8c4d6',aflame:'#ff7a2e',ashield:'#c8381c',acrow:'#3a4690',amask:'#2e3a78'});
 /* ===== 29 STIKER ANIMASI BARU ===== */
 (function(){
 var n=0;

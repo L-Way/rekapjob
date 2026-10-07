@@ -16709,13 +16709,37 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 #kc #kpwe{min-height:18px;font-size:13px;font-weight:600;line-height:1.35;color:#d32f2f}
 #kc #kpwe.ok{color:#2e7d32}
 #kc #kpws[disabled],#kc #kpwx[disabled]{opacity:.6;pointer-events:none}
+/* ===== KAMERA DI KOLOM PESAN ===== */
+#kc #kcm{position:absolute;inset:0;z-index:7;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#fff}
+#kc #kcm.on{display:flex;animation:kFade .2s ease both}
+#kc #kcm video,#kc #kcm #kcmp{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+#kc #kcm video.mir{transform:scaleX(-1)}
+#kc #kcm #kcmp{display:none}
+#kc #kcm.pv #kcmp{display:block}#kc #kcm.pv video{display:none}
+#kc #kcm .kcmt{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;padding:max(12px,env(safe-area-inset-top)) 12px 12px;background:linear-gradient(#0008,#0000);z-index:2}
+#kc #kcm .kcmt button,#kc #kcm .kcm1 button{border:0;cursor:pointer;color:#fff;-webkit-tap-highlight-color:transparent}
+#kc #kcm .kcmt button{width:44px;height:44px;border-radius:50%;background:#0005;display:grid;place-items:center;font-size:23px;padding:0}
+#kc #kcm .kcmt button:active{background:#fff3}
+#kc #kcm.pv #kcmw{visibility:hidden}#kc #kcm.nsw #kcmw{display:none}
+#kc #kcm .kcmb{position:absolute;left:0;right:0;bottom:0;padding:18px 16px max(22px,env(safe-area-inset-bottom));display:flex;justify-content:center;background:linear-gradient(#0000,#0009);z-index:2}
+#kc #kcm .kcm1{display:flex}#kc #kcm .kcm2{display:none;width:100%;max-width:460px;gap:12px}
+#kc #kcm.pv .kcm1{display:none}#kc #kcm.pv .kcm2{display:flex}
+#kc #kcm #kcmc{width:76px;height:76px;border-radius:50%;background:none;border:4px solid #fff;display:grid;place-items:center;padding:0;transition:transform .15s}
+#kc #kcm #kcmc i{width:58px;height:58px;border-radius:50%;background:#fff;display:block;transition:transform .15s}
+#kc #kcm #kcmc:active i{transform:scale(.86)}
+#kc #kcm .kcm2 button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border:0;border-radius:25px;font:inherit;font-weight:700;font-size:16px;cursor:pointer;background:#fff3;color:#fff;-webkit-tap-highlight-color:transparent}
+#kc #kcm .kcm2 #kcms{background:var(--ka);color:var(--kac,#fff)}
+#kc #kcm .kcm2 button[disabled]{opacity:.6;pointer-events:none}
+#kc #kcm .kcm2 svg{width:20px;height:20px}
+#kc #kcm .kcmn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:10px 16px;border-radius:14px;background:#0008;font-size:14px;text-align:center;max-width:80%;display:none;z-index:1}
+#kc #kcm.er .kcmn{display:block}
 </style>
 <div id="kc"><div class="h"><button id="kx" data-i="back"></button><div class="av" id="kav"></div><div id="kpw" style="cursor:pointer;min-width:0"><b id="kn">Chat</b><small id="ks"></small></div>
 <div class="hb"><button id="kcv1" title="Suara" data-i="phone"></button><button id="kcv2" title="Video" data-i="video"></button><button id="kmn" title="Pengaturan chat" data-i="dots"></button></div></div>
 <button type="button" id="kkb" aria-label="Kembali ke panggilan"><span class="dd"></span><span id="kkbt"></span><span class="go">Ketuk untuk kembali</span></button>
 <div class="tm" id="ktm"></div><div class="m" id="km"></div>
 <div class="rp" id="krp"><span id="krt"></span><button id="krx" data-i="close"></button></div>
-<div class="c"><div class="klk" aria-hidden="true" data-i="lock"></div><div class="kbx"><textarea id="ki" rows="1" placeholder="Ketik pesan" aria-label="Tulis pesan" autocomplete="off"></textarea><button type="button" class="g" id="kat" data-i="clip" aria-label="Lampirkan foto atau video" title="Lampirkan foto atau video"></button></div><div class="krb" id="krbar"><button type="button" class="g" id="krdel" data-i="trash" aria-label="Batalkan rekaman" title="Batalkan rekaman"></button><span class="kdot"></span><b id="krtime">0:00</b><span id="krhint">&#8249; Geser untuk batal</span></div><button type="button" id="kmic" data-i="mic" aria-label="Rekam pesan suara"></button></div>
+<div class="c"><div class="klk" aria-hidden="true" data-i="lock"></div><div class="kbx"><textarea id="ki" rows="1" placeholder="Ketik pesan" aria-label="Tulis pesan" autocomplete="off"></textarea><button type="button" class="g" id="kat" data-i="clip" aria-label="Lampirkan foto atau video" title="Lampirkan foto atau video"></button><button type="button" class="g" id="kcam" data-i="camera" aria-label="Ambil foto dengan kamera" title="Ambil foto dengan kamera"></button></div><div class="krb" id="krbar"><button type="button" class="g" id="krdel" data-i="trash" aria-label="Batalkan rekaman" title="Batalkan rekaman"></button><span class="kdot"></span><b id="krtime">0:00</b><span id="krhint">&#8249; Geser untuk batal</span></div><button type="button" id="kmic" data-i="mic" aria-label="Rekam pesan suara"></button></div>
 <div class="sh" id="kpf"><div class="sc"><b>Profil</b><div class="pf"><div class="pa" id="kpa"></div><button id="kpc" data-i="camera"></button></div><small id="kpz" style="text-align:center"></small>
 <label>Nama kamu</label><input id="kpn" maxlength="40" placeholder="Nama"><label>Nama lawan chat <small>(hanya terlihat olehmu)</small></label><input id="kpl" maxlength="40" placeholder="Nama panggilan">
 <div class="rw"><button id="kpx">Batal</button><button id="kps" class="pri">Simpan</button></div></div></div>
@@ -16738,7 +16762,7 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 <div class="rw"><button type="button" id="kpwx">Batal</button><button type="button" id="kpws" class="pri">Simpan sandi</button></div></div></div>
 <div id="kpk"><div id="kpkb"><div id="kpke" class="pkb"></div><button id="kpksal" class="pkb"><span data-i="copy"></span> Salin teks</button></div></div>
 <input type="file" id="kpfile" accept="image/*" hidden>
-<input type="file" id="kf" accept="image/*,video/*" hidden></div>
+<input type="file" id="kf" accept="image/*,video/*" hidden><input type="file" id="kfcam" accept="image/*" capture="environment" hidden><div id="kcm" role="dialog" aria-modal="true" aria-label="Kamera"><video id="kcmv" autoplay playsinline muted></video><img id="kcmp" alt="Hasil foto"><div class="kcmn" id="kcmn"></div><div class="kcmt"><button type="button" id="kcmx" data-i="close" aria-label="Tutup kamera"></button><button type="button" id="kcmw" data-i="flip" aria-label="Balik kamera"></button></div><div class="kcmb"><div class="kcm1"><button type="button" id="kcmc" aria-label="Ambil foto"><i></i></button></div><div class="kcm2"><button type="button" id="kcmr"><span data-i="back"></span>Ulangi</button><button type="button" id="kcms"><span data-i="send"></span>Kirim</button></div></div></div></div>
 <div id="kcv"><div id="kvb"></div><button id="kvx">Tutup</button><small id="kvs"></small></div>
 <div id="kcc" role="dialog" aria-modal="true" aria-label="Panggilan"><div class="bg"></div><video id="kr" autoplay playsinline></video><div class="sc1"></div><div class="sc2"></div><video id="kl" autoplay playsinline muted></video>
 <div class="top"><button type="button" id="kkz" data-i="chevd" aria-label="Kecilkan panggilan"></button><div class="who"><b id="kkn">Chat</b><span id="kcs">Memanggil…</span><i class="lk"><em data-i="lock"></em>Panggilan rahasia</i></div><span class="sp"></span></div>
@@ -17324,6 +17348,49 @@ else if(t.closest('#kcv1'))call(0);else if(t.closest('#kcv2'))call(1);else if(t.
 $('ki').addEventListener('keydown',function(e){if(e.key=='Enter'&&!e.shiftKey&&!e.isComposing&&window.innerWidth>700){e.preventDefault();kirim()}});
 var tk0=0;$('ki').addEventListener('input',function(){if($('ki').value&&Date.now()-tk0>1200){tk0=Date.now();rm&&rm.send({type:'broadcast',event:'ketik',payload:{}})}});
 $('kf').addEventListener('change',function(){var f=this.files[0];this.value='';if(f)up(f,f.type.indexOf('video')==0?'video':'foto',f.type)});
+/* ---- KAMERA DI KOLOM PESAN: ambil foto langsung dari kamera, lihat dulu, lalu kirim ---- */
+var cmS=null,cmFm='environment',cmBlob=null,cmUrl='',cmTok=0;
+function cmStop(){if(cmS){try{cmS.getTracks().forEach(function(t){t.stop()})}catch(e){}cmS=null}var v=$('kcmv');if(v)v.srcObject=null}
+function cmReset(){cmBlob=null;if(cmUrl){try{URL.revokeObjectURL(cmUrl)}catch(e){}cmUrl=''}$('kcmp').removeAttribute('src');$('kcm').classList.remove('pv');$('kcms').disabled=false}
+function cmClose(){cmTok++;cmStop();cmReset();$('kcm').classList.remove('on','er')}
+function cmFallback(){cmClose();$('kfcam').click()}
+async function cmStart(){
+ var tok=++cmTok,box=$('kcm');cmStop();box.classList.remove('er');
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){cmFallback();return}
+ var st;
+ try{st=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:cmFm},width:{ideal:1920},height:{ideal:1080}}})}
+ catch(e){
+  if(tok!=cmTok)return;
+  if(e&&(e.name=='NotAllowedError'||e.name=='SecurityError')){$('kcmn').textContent='Izin kamera ditolak. Aktifkan izin kamera di pengaturan browser, lalu coba lagi.';box.classList.add('er');return}
+  cmFallback();return}
+ if(tok!=cmTok){st.getTracks().forEach(function(t){t.stop()});return}
+ cmS=st;var v=$('kcmv');v.srcObject=st;v.classList.toggle('mir',cmFm=='user');
+ try{await v.play()}catch(e){}
+ try{var ds=await navigator.mediaDevices.enumerateDevices();box.classList.toggle('nsw',ds.filter(function(d){return d.kind=='videoinput'}).length<2)}catch(e){}
+}
+function cmOpen(){
+ if(kk.st!='idle'){toast('Kamera tidak bisa dibuka saat panggilan');return}
+ cmReset();cmFm='environment';$('kcm').classList.add('on');cmStart()}
+function cmShot(){
+ var v=$('kcmv');if(!cmS||!v.videoWidth)return;
+ var W=v.videoWidth,H=v.videoHeight,k=Math.min(1,1920/Math.max(W,H)),w=Math.round(W*k),h=Math.round(H*k),c=document.createElement('canvas');
+ c.width=w;c.height=h;var x=c.getContext('2d');
+ if(cmFm=='user'){x.translate(w,0);x.scale(-1,1)}
+ x.drawImage(v,0,0,w,h);vib(15);
+ c.toBlob(function(b){if(!b){toast('Gagal mengambil foto');return}
+  cmBlob=b;cmUrl=URL.createObjectURL(b);$('kcmp').src=cmUrl;$('kcm').classList.add('pv');cmStop()},'image/jpeg',.88)}
+async function cmSend(){
+ if(!cmBlob)return;var b=cmBlob;$('kcms').disabled=true;
+ cmClose();toast('Mengirim foto…');await up(b,'foto','image/jpeg')}
+$('kcam').addEventListener('click',cmOpen);
+$('kcmx').addEventListener('click',cmClose);
+$('kcmc').addEventListener('click',cmShot);
+$('kcmr').addEventListener('click',function(){cmReset();cmStart()});
+$('kcms').addEventListener('click',cmSend);
+$('kcmw').addEventListener('click',function(){cmFm=cmFm=='user'?'environment':'user';cmStart()});
+$('kfcam').addEventListener('change',function(){var f=this.files[0];this.value='';if(f)up(f,'foto',f.type||'image/jpeg')});
+document.addEventListener('keydown',function(e){if(e.key=='Escape'&&$('kcm').classList.contains('on'))cmClose()});
+document.addEventListener('visibilitychange',function(){if(document.hidden&&$('kcm').classList.contains('on')&&!$('kcm').classList.contains('pv'))cmClose()});
 /* ---- NOTIFIKASI CHAT (realtime + push) ---- isi notifikasi hanya "Kaone Motret" */
 function cpush(id){try{if(!kaoneChatBoleh())return;var c=window.supabaseClient||supabaseClient;if(!c||typeof PUSH_FUNCTION_URL=='undefined')return;
 c.auth.getSession().then(function(x){var t=x.data&&x.data.session&&x.data.session.access_token;if(!t)return;

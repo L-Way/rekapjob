@@ -16148,12 +16148,79 @@ if(window.__kaonePaketView){
 #kc .tm{position:absolute;right:10px;top:58px;background:var(--ki);border-radius:12px;padding:6px;display:none;box-shadow:0 4px 14px #0004;z-index:3;max-height:70vh;overflow:auto}
 #kc .tm.on{display:block}#kc .tm button{display:block;width:100%;text-align:left;padding:8px 12px;border-radius:8px}
 #kc .tm small{display:block;opacity:.6;padding:4px 12px}
+/* ===== LAYAR PANGGILAN (gaya aplikasi chat umum) ===== */
+#kcc{position:fixed;inset:0;z-index:100000;display:none;flex-direction:column;color:#fff;overflow:hidden;background:#0d1117;font-family:var(--kf,system-ui,-apple-system,"Segoe UI",sans-serif);-webkit-user-select:none;user-select:none;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s}
+#kcc.on{display:flex}
+#kcc.mi{transform:translateY(6%);opacity:0;pointer-events:none}
+#kcc .bg{position:absolute;inset:0;background:var(--kh,linear-gradient(160deg,#2b3a55,#0f1623))}
+#kcc .bg::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 75% at 50% 32%,#0000 0,#0005 65%,#000a 100%)}
+#kcc #kr{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;opacity:0;pointer-events:none;border-radius:0}
+#kcc.rv #kr{opacity:1}
+#kcc .sc1,#kcc .sc2{position:absolute;left:0;right:0;pointer-events:none;opacity:0;transition:opacity .25s}
+#kcc .sc1{top:0;height:190px;background:linear-gradient(#000b,#0000)}
+#kcc .sc2{bottom:0;height:260px;background:linear-gradient(#0000,#000c)}
+#kcc.rv .sc1,#kcc.rv .sc2,#kcc.pre .sc1,#kcc.pre .sc2{opacity:1}
+#kcc #kl{position:absolute;z-index:3;right:14px;top:calc(env(safe-area-inset-top,0px) + 92px);width:100px;height:142px;object-fit:cover;border-radius:16px;border:2px solid #fff5;box-shadow:0 6px 20px #0006;background:#000;display:none}
+#kcc #kl.mir{transform:scaleX(-1)}
+#kcc.vc.lv #kl{display:block}
+#kcc.pre #kl{top:0;right:0;width:100%;height:100%;border:0;border-radius:0;box-shadow:none;z-index:0}
+#kcc .top{position:relative;z-index:4;display:flex;align-items:flex-start;gap:8px;padding:max(14px,env(safe-area-inset-top)) 12px 8px}
+#kcc .top button{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;padding:0;border:0;color:#fff;background:#ffffff26;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);cursor:pointer}
+#kcc .top button svg{width:24px;height:24px}
+#kcc .top .sp{flex:none;width:42px}
+#kcc.inc #kkz{visibility:hidden}
+#kcc .who{flex:1;min-width:0;text-align:center;padding-top:2px}
+#kcc .who b{display:block;font-size:21px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 6px #0006}
+#kcc .who #kcs{display:block;font-size:14.5px;opacity:.92;margin-top:4px;font-variant-numeric:tabular-nums;text-shadow:0 1px 6px #0006}
+#kcc .who .lk{display:flex;justify-content:center;align-items:center;gap:4px;font-style:normal;font-size:11.5px;opacity:.78;margin-top:5px}
+#kcc .who .lk svg{width:12px;height:12px}
+#kcc .mid{position:relative;z-index:2;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:0 24px}
+#kcc .rg{position:relative;width:132px;height:132px;display:grid;place-items:center}
+#kcc .rg i{position:absolute;inset:0;border-radius:50%;border:2px solid #fff;opacity:0}
+#kcc.ri .rg i{animation:kkRing 2.4s ease-out infinite}
+#kcc.ri .rg i:nth-child(2){animation-delay:.8s}#kcc.ri .rg i:nth-child(3){animation-delay:1.6s}
+@keyframes kkRing{0%{transform:scale(1);opacity:.55}100%{transform:scale(1.85);opacity:0}}
+#kcc .ava{position:relative;width:132px;height:132px;border-radius:50%;overflow:hidden;background:#ffffff26;display:grid;place-items:center;box-shadow:0 8px 30px #0005,0 0 0 4px #ffffff30}
+#kcc .ava svg{width:64px;height:64px}#kcc .ava img{width:100%;height:100%;object-fit:cover}
+#kcc.rv .rg,#kcc.pre .rg{display:none}
+#kcc .nf{display:none;font-size:13px;background:#00000050;padding:6px 14px;border-radius:16px;text-align:center}
+#kcc .nf.on{display:block}
+#kcc.rv .nf.on{position:absolute;bottom:14px}
+#kcc .cb{position:relative;z-index:4;display:flex;justify-content:center;align-items:flex-start;gap:22px;width:100%;max-width:520px;margin:0 auto;box-sizing:border-box;padding:12px 16px max(28px,env(safe-area-inset-bottom))}
+#kcc .k{display:none;flex-direction:column;align-items:center;gap:8px;min-width:64px;font-size:12.5px}
+#kcc:not(.inc) .k.a{display:flex}
+#kcc.vc:not(.inc) .k.v{display:flex}
+#kcc.inc .k.i{display:flex}
+#kcc.inc .cb{gap:84px}
+#kcc .k button{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;padding:0;border:0;color:#fff;background:#ffffff2e;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);cursor:pointer;transition:transform .12s,background .15s,color .15s}
+#kcc .k button:active{transform:scale(.92)}
+#kcc .k svg{width:27px;height:27px}
+#kcc .k span{text-shadow:0 1px 4px #0007;opacity:.92;white-space:nowrap}
+#kcc .k .x{background:#e5484d}#kcc .k .x svg{transform:rotate(135deg)}
+#kcc .k .y{background:#2fb461;animation:kkPulse 1.6s ease-in-out infinite}
+@keyframes kkPulse{0%,100%{box-shadow:0 0 0 0 #2fb46188}50%{box-shadow:0 0 0 14px #2fb46100}}
+#kcc.mt #kkm,#kcc.co #kkd{background:#fff;color:#16202c}
+#kcc.vc.pre .nf{display:none}
+/* banner "panggilan berlangsung" di dalam ruang chat saat layar panggilan dikecilkan */
+#kc #kkb{display:none;align-items:center;gap:10px;width:100%;padding:9px 14px;background:#2fb461;color:#fff;font-weight:700;font-size:13.5px;text-align:left;cursor:pointer;flex:none}
+#kc #kkb.on{display:flex}
+#kc #kkb .dd{width:9px;height:9px;border-radius:50%;background:#fff;animation:kkBlink 1.2s ease-in-out infinite;flex:none}
+#kc #kkb .go{margin-left:auto;font-weight:600;font-size:12px;opacity:.92}
+@keyframes kkBlink{0%,100%{opacity:1}50%{opacity:.25}}
+/* kartu riwayat panggilan di gelembung chat */
+#kc .kcl{display:flex;align-items:center;gap:10px;min-width:200px;padding:2px 2px 3px;text-align:left;cursor:pointer;color:inherit;background:none;border:0}
+#kc .kcl .ci{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--ka);color:#fff}
+#kc .kcl .ci svg{width:20px;height:20px}
+#kc .kcl .ct{display:flex;flex-direction:column;gap:2px;min-width:0}
+#kc .kcl .ct b{font-size:14px;font-weight:700;line-height:1.25}
+#kc .kcl .ct small{display:flex;align-items:center;gap:3px;font-size:12px;opacity:.78}
+#kc .kcl .ct small svg{width:14px;height:14px;flex:none;color:#2fb461}
+#kc .kcl.bad .ci{background:#e5484d}#kc .kcl.bad .ct b{color:#e5484d}#kc .kcl.bad .ct small svg{color:#e5484d}
+#kc .kcl:active{opacity:.7}
+@media(prefers-reduced-motion:reduce){#kcc .rg i,#kcc .k .y,#kc #kkb .dd{animation:none}}
 #kcv{position:fixed;inset:0;z-index:100001;background:#000e;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:#fff}
 #kcv.on{display:flex}#kcv img,#kcv video{max-width:96vw;max-height:80vh;border-radius:10px}
 #kcv button{background:#fff2;color:#fff;border:0;padding:8px 16px;border-radius:20px;font:inherit}
-#kcc{position:fixed;inset:0;z-index:100000;background:#111;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:12px}
-#kcc.on{display:flex}#kcc video{width:100%;max-height:70vh;background:#000;object-fit:cover}#kcc #kl{position:absolute;right:12px;top:12px;width:100px;border-radius:10px;border:2px solid #fff6}
-#kcc .cb{display:flex;gap:14px}#kcc .cb button{width:54px;height:54px;border-radius:50%;border:0;font-size:22px;background:#fff2;color:#fff}#kcc .cb .x{background:#e53935}#kcc .cb .y{background:#2e9e5b}
 #kc{font-family:var(--kf)}
 #kc svg{width:1em;height:1em;vertical-align:-.14em;flex:none}
 #kc .h button{font-size:22px;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;padding:0}
@@ -16178,7 +16245,6 @@ if(window.__kaonePaketView){
 #kc .tm .pv{width:100%;height:34px;border-radius:8px;display:grid;place-items:center}#kc .tm .pv svg{width:20px;height:20px}
 #kc .tm .bs{display:flex;gap:4px;width:100%}#kc .tm .bs i{flex:1;height:9px;border-radius:5px}
 #kc .tm b{font-size:11px;line-height:1.1}
-#kcc{background:var(--kh,#111)}#kcc video{border-radius:0}#kcc .cb button{display:grid;place-items:center;padding:0}#kcc .cb svg{width:26px;height:26px}#kcc .x svg{transform:rotate(135deg)}
 #kc .av{cursor:pointer}#kc .av img,#kc .pa img{width:100%;height:100%;object-fit:cover}#kc .h>div:nth-child(3){cursor:pointer}
 #kc .sh{position:absolute;inset:0;z-index:5;background:#0008;display:none;align-items:flex-end;justify-content:center}#kc .sh.on{display:flex}
 #kc .sc{background:var(--kb);color:var(--kt);width:100%;max-width:460px;border-radius:20px 20px 0 0;padding:18px;padding-bottom:max(18px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;max-height:92dvh;overflow:auto}
@@ -16298,6 +16364,7 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 </style>
 <div id="kc"><div class="h"><button id="kx" data-i="back"></button><div class="av" id="kav"></div><div id="kpw" style="cursor:pointer;min-width:0"><b id="kn">Chat</b><small id="ks"></small></div>
 <div class="hb"><button id="kcv1" title="Suara" data-i="phone"></button><button id="kcv2" title="Video" data-i="video"></button><button id="kmn" title="Pengaturan chat" data-i="dots"></button></div></div>
+<button type="button" id="kkb" aria-label="Kembali ke panggilan"><span class="dd"></span><span id="kkbt"></span><span class="go">Ketuk untuk kembali</span></button>
 <div class="tm" id="ktm"></div><div class="m" id="km"></div>
 <div class="rp" id="krp"><span id="krt"></span><button id="krx" data-i="close"></button></div>
 <div class="c"><div class="klk" aria-hidden="true" data-i="lock"></div><div class="kbx"><textarea id="ki" rows="1" placeholder="Ketik pesan" aria-label="Tulis pesan" autocomplete="off"></textarea><button type="button" class="g" id="kat" data-i="clip" aria-label="Lampirkan foto atau video" title="Lampirkan foto atau video"></button></div><div class="krb" id="krbar"><button type="button" class="g" id="krdel" data-i="trash" aria-label="Batalkan rekaman" title="Batalkan rekaman"></button><span class="kdot"></span><b id="krtime">0:00</b><span id="krhint">&#8249; Geser untuk batal</span></div><button type="button" id="kmic" data-i="mic" aria-label="Rekam pesan suara"></button></div>
@@ -16324,8 +16391,17 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 <input type="file" id="kpfile" accept="image/*" hidden>
 <input type="file" id="kf" accept="image/*,video/*" hidden></div>
 <div id="kcv"><div id="kvb"></div><button id="kvx">Tutup</button><small id="kvs"></small></div>
-<div id="kcc"><video id="kr" autoplay playsinline></video><video id="kl" autoplay playsinline muted></video><div id="kcs">Memanggil…</div>
-<div class="cb"><button class="y" id="kcy" data-i="accept"></button><button id="kcf" data-i="flip"></button><button class="x" id="kcx" data-i="phoneoff"></button></div></div>
+<div id="kcc" role="dialog" aria-modal="true" aria-label="Panggilan"><div class="bg"></div><video id="kr" autoplay playsinline></video><div class="sc1"></div><div class="sc2"></div><video id="kl" autoplay playsinline muted></video>
+<div class="top"><button type="button" id="kkz" data-i="chevd" aria-label="Kecilkan panggilan"></button><div class="who"><b id="kkn">Chat</b><span id="kcs">Memanggil…</span><i class="lk"><em data-i="lock"></em>Panggilan rahasia</i></div><span class="sp"></span></div>
+<div class="mid"><div class="rg"><i></i><i></i><i></i><div class="ava" id="kka"></div></div><div class="nf" id="kknf"></div></div>
+<div class="cb">
+<div class="k v"><button type="button" id="kkd" data-i="video" aria-label="Kamera"></button><span id="kkdt">Kamera</span></div>
+<div class="k a"><button type="button" id="kkm" data-i="mic" aria-label="Bisukan mikrofon"></button><span id="kkmt">Bisukan</span></div>
+<div class="k v"><button type="button" id="kcf" data-i="flip" aria-label="Balik kamera"></button><span>Balik</span></div>
+<div class="k a"><button type="button" class="x" id="kcx" data-i="phoneoff" aria-label="Akhiri panggilan"></button><span>Akhiri</span></div>
+<div class="k i"><button type="button" class="x" id="kkt" data-i="phoneoff" aria-label="Tolak panggilan"></button><span>Tolak</span></div>
+<div class="k i"><button type="button" class="y" id="kcy" data-i="accept" aria-label="Jawab panggilan"></button><span>Jawab</span></div>
+</div></div>
 <script id="kcJs">
 (function(){
 var F1='ui-rounded,"Nunito","Quicksand","Segoe UI",system-ui,sans-serif',F2='"Zen Maru Gothic","Noto Sans JP","Segoe UI",system-ui,sans-serif';
@@ -16345,6 +16421,10 @@ film:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M16 4v16M
 wave:'<path d="M4 11v2M8 8v8M12 5v14M16 8v8M20 11v2"/>',lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'};
 I.camera='<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>';I.ban='<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>';
 I.accept=I.phone;I.phoneoff=I.phone;
+I.micoff='<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 11.5 5.3M19 11a7 7 0 0 1-.5 2.6M12 18v3M3 3l18 18"/>';
+I.vidoff='<path d="M10 6.5H13a2 2 0 0 1 2 2v3M15 15.5V16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5a2 2 0 0 1 1.5-1.9"/><path d="M15 10.5l6-3.5v10l-6-3.5M3 3l18 18"/>';
+I.chevd='<path d="M6 9l6 6 6-6"/>';
+I.arout='<path d="M7 17L17 7M9 7h8v8"/>';I.arin='<path d="M17 7L7 17M15 17H7V9"/>';
 I.dots='<circle cx="12" cy="5" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="19" r="1.8" fill="currentColor"/>';
 I.replyme='<path d="M5 19v-3a7 7 0 0 1 7-7h7"/><path d="M15 5l4 4-4 4"/>';
 /* Balas untuk bubble lawan (tombol di KANAN bubble): panah menghadap ke kiri, ke arah bubble — cermin dari replyme */
@@ -16569,7 +16649,7 @@ return Promise.resolve(sb.rpc('kaone_chat_set_tema',{p_tema:id})).then(function(
 function kTG(k){try{return localStorage.getItem(k+me)}catch(e){return null}}
 function th(id){id=AL2[id]||id;var t=T[id]||T.salju;tema=T[id]?id:'salju';var r=$('kc').style,g=t.d?'0 1px 0 #0006':t.g=='imut'?'0 2px 0 rgba(0,0,0,.09)':'0 1px 1px #1e28391f';$('kc').classList.toggle('imut',t.g=='imut');
 r.setProperty('--kb',t.bg);r.setProperty('--kh','linear-gradient(135deg,'+t.h[0]+','+t.h[1]+')');r.setProperty('--ko',t.o);r.setProperty('--ki',t.i);r.setProperty('--ka',t.a);r.setProperty('--kt',t.t);
-r.setProperty('--kw',t.g=='imut'?btile(t.m,t.p,.34,t.l%3):dots(t.p));r.setProperty('--kac',t.c);r.setProperty('--kz',(t.z||360)+'px');r.setProperty('--kdx',t.x==null?1:t.x);r.setProperty('--kdy',t.y==null?1:t.y);r.setProperty('--kr',t.r[0]);r.setProperty('--kro',t.r[1]);r.setProperty('--kf',t.g=='imut'?F1:FP);r.setProperty('--ks',g);var kiE=$('ki');if(kiE)kiE.placeholder=t.g=='imut'?'Ketik pesan lucu ✿':'Ketik pesan';try{kFx()}catch(e){}av()}
+r.setProperty('--kw',t.g=='imut'?btile(t.m,t.p,.34,t.l%3):dots(t.p));r.setProperty('--kac',t.c);r.setProperty('--kz',(t.z||360)+'px');r.setProperty('--kdx',t.x==null?1:t.x);r.setProperty('--kdy',t.y==null?1:t.y);r.setProperty('--kr',t.r[0]);r.setProperty('--kro',t.r[1]);r.setProperty('--kf',t.g=='imut'?F1:FP);r.setProperty('--ks',g);var kiE=$('ki');if(kiE)kiE.placeholder=t.g=='imut'?'Ketik pesan lucu ✿':'Ketik pesan';try{kFx()}catch(e){}av();try{kkTema(t)}catch(e){}}
 function menu(){var h='';['imut','terang','gelap'].forEach(function(g){h+='<small>Tema '+g+'</small><div class="gr">';Object.keys(T).filter(function(k){return T[k].g==g}).forEach(function(k){var t=T[k];
 h+='<button data-t="'+k+'" class="'+(k==tema?'sel':'')+'" style="background:'+t.bg+';color:'+t.t+'"><span class="pv" style="background:linear-gradient(135deg,'+t.h[0]+','+t.h[1]+')">'+mo(t.m[0],'#fff')+(t.g=='imut'?mo(t.m[1],'#fff'):'')+'</span><span class="bs"><i style="background:'+t.i+'"></i><i style="background:'+t.o+'"></i></span><b>'+t.n+'</b></button>'});h+='</div>'});$('ktm').innerHTML=h}
 function tm(d){return new Date(d).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
@@ -16590,7 +16670,7 @@ var r=(await sb.from('kaone_chat_status').select('*'));(r.data||[]).forEach(func
 await pfLoad();st();
 await load();bellRead();conn();sb.rpc('kaone_chat_ping');sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}});var bn=0;bt=setInterval(function(){st();sb.rpc('kaone_chat_ping');if(++bn%5==0)sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}})},60000)}
 function bellRead(){try{var b=kcBellGet();if(b&&b.id)markNotifRead('chat_'+b.id)}catch(e){}}
-function close(){if(rcS)recStop(false);try{sb.rpc('kaone_chat_ping')}catch(e){}pkClose();selClear();dn={};dr0=false;if(lo)lo.k=0;$('kc').classList.remove('on');clearInterval(bt);if(db)sb.removeChannel(db);if(rm)sb.removeChannel(rm);db=rm=null}
+function close(){try{kkAbort()}catch(e){}if(rcS)recStop(false);try{sb.rpc('kaone_chat_ping')}catch(e){}pkClose();selClear();dn={};dr0=false;if(lo)lo.k=0;$('kc').classList.remove('on');clearInterval(bt);if(db)sb.removeChannel(db);if(rm)sb.removeChannel(rm);db=rm=null}
 async function load(){var r=await sb.from('kaone_chat_pesan').select('*').order('dikirim_at');msgs={};(r.data||[]).forEach(function(m){msgs[m.id]=m});draw();ack()}
 function ack(){sb.rpc('kaone_chat_diterima').then(function(){if(document.visibilityState=='visible')sb.rpc('kaone_chat_dibaca')})}
 function conn(){db=sb.channel('kaone-chat-db').on('postgres_changes',{event:'*',schema:'public',table:'kaone_chat_pesan'},function(p){
@@ -16604,7 +16684,7 @@ sb.realtime.setAuth().then(function(){rm=sb.channel('kaone-chat-room',{config:{p
 function nt(){return ''}
 function bub(m){var pvx,own=m.pengirim==me,c='',x=m.balas_ke&&msgs[m.balas_ke];if(m.dihapus_at)return '<div class="b'+(own?' me':'')+' del">'+ic('ban')+' Pesan ini sudah dihapus<div class="t">'+tm(m.dikirim_at)+'</div></div>';
 if(m.tipe=='teks')c=kTxt(m);
-else if(m.tipe=='panggilan')c=ic('phone')+' '+E(m.isi);
+else if(m.tipe=='panggilan')c=kcCard(m,own);
 else{var lim=!own&&peran=='lawan'&&m.jumlah_lihat>=5,ik={foto:ic('image')+' Foto',video:ic('film')+' Video',suara:ic('wave')+' Pesan suara '+(m.media_durasi||0)+'d'}[m.tipe];
 var sisa=(!own&&peran=='lawan'?' · sisa '+(5-m.jumlah_lihat)+'x':'');
 if(lim)c='<div class="md">Media sudah habis dilihat</div>';
@@ -16641,18 +16721,79 @@ if(!d||!d.ok)return toast(d&&d.reason=='batas'?'Batas lihat habis':'Media tidak 
 var m=d.mime||'',h=m.indexOf('image')==0?'<img src="'+d.url+'">':m.indexOf('video')==0?'<video src="'+d.url+'" controls autoplay playsinline controlslist="nodownload"></video>':'<audio src="'+d.url+'" controls autoplay></audio>';
 $('kvb').innerHTML=h;$('kvs').textContent=d.sisa!=null?'Sisa lihat: '+d.sisa+'x':'';$('kcv').classList.add('on')}
 function send(o){rm&&rm.send({type:'broadcast',event:'sinyal',payload:o})}
-function mk(){pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});q=[];pc.onicecandidate=function(e){if(e.candidate)send({t:'ice',c:e.candidate})};
-pc.ontrack=function(e){$('kr').srcObject=e.streams[0]};pc.onconnectionstatechange=function(){if(pc&&pc.connectionState=='connected')$('kcs').textContent='Terhubung';if(pc&&/failed|closed/.test(pc.connectionState))end(1)}}
-async function med(v){ls=await navigator.mediaDevices.getUserMedia({audio:true,video:v?{facingMode:fm}:false});$('kl').srcObject=ls;$('kl').style.display=v?'block':'none';ls.getTracks().forEach(function(t){pc.addTrack(t,ls)})}
-async function call(v){if(pc)return;try{mk();await med(v);$('kcc').classList.add('on');$('kcy').style.display='none';$('kcs').textContent='Memanggil…';var o=await pc.createOffer();await pc.setLocalDescription(o);send({t:'offer',v:v,s:o});bt2=v}catch(e){end(1);toast('Kamera/mikrofon ditolak')}}
-var bt2=0,out=0;
-async function sig(p){if(p.t=='offer'){if(pc){send({t:'end'});return}inc=p;$('kcc').classList.add('on');$('kcy').style.display='';$('kcs').textContent='Panggilan '+(p.v?'video':'suara')+' masuk…'}
-else if(p.t=='answer'&&pc){await pc.setRemoteDescription(p.s);q.forEach(function(c){pc.addIceCandidate(c)});q=[];out=1}
+/* ===== PANGGILAN SUARA/VIDEO =====
+   Alur sinyal (lewat kanal realtime yang sama): offer -> ring -> answer | tolak | sibuk | end, media (mic/kamera lawan).
+   Catatan riwayat HANYA ditulis oleh penelepon (pengirim = penelepon), isinya "v1|suara/video|hasil|detik",
+   hasil: selesai, tak (tidak dijawab), batal, tolak, sibuk. Format lama "Suara call"/"Video call" tetap terbaca. */
+var kk={st:'idle',v:0,role:'',conn:0,ans:0,t0:0,tm:0,tout:0,et:0,rt:0,mute:0,cam:1,mini:0,rm:0,rc:1,txt:'',ctx:null,nt:null};
+function mmss(s){s=Math.max(0,s|0);var h=Math.floor(s/3600),m=Math.floor(s%3600/60),c=s%60,p=function(n){return(n<10?'0':'')+n};return(h?h+':'+p(m):p(m))+':'+p(c)}
+function kkDur(){return kk.t0?Math.round((Date.now()-kk.t0)/1000):0}
+function kkNm(){return AL||(other&&P[other]&&P[other].nama)||'Lawan chat'}
+function kkIdent(){var u=other&&U[other]&&U[other].u;$('kka').innerHTML=u?'<img alt="" src="'+E(u)+'">':mo(T[tema].m[0],'#fff');$('kkn').textContent=kkNm()}
+function kkTema(t){var c=$('kcc');if(!c)return;c.style.setProperty('--kh','linear-gradient(160deg,'+t.h[0]+','+t.h[1]+')');c.style.setProperty('--ka',t.a);c.style.setProperty('--kf',t.g=='imut'?F1:FP);if(kk.st!='idle')kkIdent()}
+function kkS(x){kk.txt=x;$('kcs').textContent=x;kkBn()}
+function kkBn(){var b=$('kkb');if(!b)return;var on=!!kk.mini&&(kk.st=='out'||kk.st=='live');b.classList.toggle('on',on);if(on)$('kkbt').textContent='Panggilan '+(kk.v?'video':'suara')+' · '+kk.txt}
+function kkNf(){var a=kk.rm,c=kk.v&&!kk.rc,e=$('kknf'),t='';if(kk.conn){if(a&&c)t='Mikrofon & kamera lawan bicara mati';else if(a)t='Mikrofon lawan bicara mati';else if(c)t='Kamera lawan bicara mati'}e.textContent=t;e.classList.toggle('on',!!t)}
+function kkCls(){var c=$('kcc');if(!c)return;var x=c.classList,act=kk.st!='idle',ring=kk.st=='ring-in'||(kk.st=='out'&&!kk.conn&&!kk.ans);
+x.toggle('on',act);x.toggle('vc',!!kk.v);x.toggle('inc',kk.st=='ring-in');x.toggle('ri',ring);x.toggle('pre',!!kk.v&&kk.role=='out'&&!kk.conn&&kk.st!='end');x.toggle('rv',!!kk.v&&!!kk.conn&&!!kk.rc);x.toggle('lv',!!kk.v&&!!kk.cam&&!!ls);x.toggle('mi',!!kk.mini&&act);x.toggle('mt',!!kk.mute);x.toggle('co',!kk.cam);
+$('kkm').innerHTML=ic(kk.mute?'micoff':'mic');$('kkmt').textContent=kk.mute?'Suara mati':'Bisukan';$('kkd').innerHTML=ic(kk.cam?'video':'vidoff');$('kkdt').textContent=kk.cam?'Kamera':'Kamera mati';kkNf();kkBn()}
+function kkTick(){if(kk.conn)kkS(mmss(kkDur()))}
+/* nada: dering (masuk) & nada sambung (keluar), dibuat lewat WebAudio; ikut saklar "Suara pesan masuk" */
+function kkAC(){try{if(!kk.ctx){var A=window.AudioContext||window.webkitAudioContext;if(A)kk.ctx=new A()}if(kk.ctx&&kk.ctx.state=='suspended')kk.ctx.resume();return kk.ctx}catch(e){return null}}
+function kkBeep(f,d,g){var c=kkAC();if(!c)return;try{var o=c.createOscillator(),n=c.createGain(),t=c.currentTime;o.type='sine';o.frequency.value=f;n.gain.setValueAtTime(0,t);n.gain.linearRampToValueAtTime(g,t+.03);n.gain.setValueAtTime(g,t+d-.05);n.gain.linearRampToValueAtTime(0,t+d);o.connect(n);n.connect(c.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
+function kkRing(mode){clearInterval(kk.rt);kk.rt=0;try{navigator.vibrate&&navigator.vibrate(0)}catch(e){}if(!mode)return;
+if(mode==1){var f=function(){if(snd())kkBeep(425,1,.08)};f();kk.rt=setInterval(f,4000)}
+else{var g=function(){if(snd()){kkBeep(880,.18,.12);setTimeout(function(){kkBeep(660,.18,.12)},230);setTimeout(function(){kkBeep(880,.18,.12)},650);setTimeout(function(){kkBeep(660,.18,.12)},880)}try{navigator.vibrate&&navigator.vibrate([400,200,400])}catch(e){}};g();kk.rt=setInterval(g,2800)}}
+function kkNotif(t){try{if(document.visibilityState=='visible')return;if(!('Notification' in window)||Notification.permission!=='granted')return;var o={body:peran=='lawan'?t:'',icon:'icons/icon-192.png',tag:'kaone-call',renotify:true,requireInteraction:true,lang:'id',data:{id:null,view:null}};
+if(navigator.serviceWorker&&navigator.serviceWorker.ready){navigator.serviceWorker.ready.then(function(r){r.showNotification('Kaone Motret',o)}).catch(function(){})}else kk.nt=new Notification('Kaone Motret',o)}catch(e){}}
+function kkNotifOff(){try{if(kk.nt){kk.nt.close();kk.nt=null}if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(function(r){return r.getNotifications({tag:'kaone-call'})}).then(function(a){(a||[]).forEach(function(n){n.close()})}).catch(function(){})}catch(e){}}
+function kkInit(role,v){clearTimeout(kk.tout);clearTimeout(kk.et);clearInterval(kk.tm);kk.role=role;kk.v=v?1:0;kk.conn=0;kk.ans=0;kk.t0=0;kk.mute=0;kk.cam=1;kk.rm=0;kk.rc=1;kk.mini=0;kk.txt='';fm='user';q=[];kk.st=role=='out'?'out':'ring-in';
+$('kcy').innerHTML=ic(v?'video':'phone');kkIdent();kkCls()}
+function mk(){var px=pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});q=[];px.onicecandidate=function(e){if(e.candidate)send({t:'ice',c:e.candidate})};
+px.ontrack=function(e){$('kr').srcObject=e.streams[0]};
+px.onconnectionstatechange=function(){if(pc!==px)return;var s=px.connectionState;
+if(s=='connected'){if(!kk.conn){kk.conn=1;kk.t0=Date.now();clearInterval(kk.tm);kk.tm=setInterval(kkTick,1000);try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}send({t:'media',m:kk.mute?1:0,c:kk.cam?1:0})}kkTick();kkCls()}
+else if(s=='disconnected'){if(kk.conn)kkS('Menyambung kembali…')}
+else if(s=='failed'||s=='closed')kkFinish('selesai')}}
+async function med(v){ls=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:v?{facingMode:fm}:false});$('kl').srcObject=ls;$('kl').classList.toggle('mir',fm=='user');ls.getTracks().forEach(function(t){pc.addTrack(t,ls)});kkCls()}
+function kkStop(){clearTimeout(kk.tout);clearInterval(kk.tm);kkRing(0);kkNotifOff();var p=pc;pc=null;if(p){try{p.close()}catch(e){}}if(ls){ls.getTracks().forEach(function(t){t.stop()});ls=null}$('kl').srcObject=null;$('kr').srcObject=null;inc=null;q=[]}
+function kkTeardown(){clearTimeout(kk.et);kkStop();kk.st='idle';kk.conn=0;kk.mini=0;kkCls()}
+/* akhiri panggilan + tulis riwayat (hanya penelepon) + tampilkan keterangan singkat */
+function kkFinish(res){if(kk.st!='out'&&kk.st!='live')return;var role=kk.role,v=kk.v,dur=kk.conn?kkDur():0;if(role=='out'&&res=='selesai'&&!kk.conn)res='tak';
+if(role=='out')put({tipe:'panggilan',isi:'v1|'+(v?'video':'suara')+'|'+res+'|'+dur});
+kkStop();var tx={selesai:'Panggilan berakhir'+(dur?' · '+mmss(dur):''),tak:'Tidak dijawab',tolak:'Panggilan ditolak',batal:'Panggilan dibatalkan',sibuk:'Sedang dalam panggilan lain'}[res]||'Panggilan berakhir';
+kk.st='end';kk.mini=0;kkS(tx);kkCls();clearTimeout(kk.et);kk.et=setTimeout(function(){if(kk.st=='end')kkTeardown()},res=='batal'?500:res=='selesai'?1300:1900)}
+function kkEnd(){if(kk.st=='out'){send({t:'end'});kkFinish('batal')}else if(kk.st=='live'){send({t:'end'});kkFinish('selesai')}else if(kk.st=='end')kkTeardown()}
+function kkTolak(){if(kk.st=='ring-in'){send({t:'tolak'});kkTeardown()}}
+function kkAbort(){if(kk.st=='out'||kk.st=='live'){try{send({t:'end'})}catch(e){}kkFinish(kk.st=='out'?'batal':'selesai');kkTeardown()}else if(kk.st=='ring-in'){try{send({t:'tolak'})}catch(e){}kkTeardown()}else if(kk.st=='end')kkTeardown()}
+function kkMini(f){kk.mini=f&&(kk.st=='out'||kk.st=='live')?1:0;kkCls()}
+function kkMute(){if(kk.st!='live'&&kk.st!='out')return;kk.mute=kk.mute?0:1;if(ls)ls.getAudioTracks().forEach(function(t){t.enabled=!kk.mute});send({t:'media',m:kk.mute?1:0,c:kk.cam?1:0});kkCls()}
+function kkCam(){if(!kk.v||!ls||(kk.st!='live'&&kk.st!='out'))return;kk.cam=kk.cam?0:1;ls.getVideoTracks().forEach(function(t){t.enabled=!!kk.cam});send({t:'media',m:kk.mute?1:0,c:kk.cam?1:0});kkCls()}
+async function call(v){if((kk.st!='idle'&&kk.st!='end')||pc)return;if(!rm){toast('Belum terhubung, coba lagi');return}
+kkInit('out',v);kkS('Memanggil…');kkAC();
+try{mk();await med(v);var o=await pc.createOffer();await pc.setLocalDescription(o);send({t:'offer',v:v,s:o});if(!(lo&&lo.on))cpush('panggilan');kkRing(1);
+kk.tout=setTimeout(function(){if(kk.st=='out'){send({t:'end'});kkFinish('tak')}},45000)}
+catch(e){kkTeardown();toast('Kamera/mikrofon ditolak')}}
+async function sig(p){if(!p)return;
+if(p.t=='offer'){if((kk.st!='idle'&&kk.st!='end')||pc){send({t:'sibuk'});return}kkInit('in',p.v?1:0);inc=p;send({t:'ring'});var tx='Panggilan '+(p.v?'video':'suara')+' masuk';kkS(tx);kkRing(2);kkNotif(tx);
+kk.tout=setTimeout(function(){if(kk.st=='ring-in'){kkTeardown()}},60000)}
+else if(p.t=='ring'){if(kk.st=='out'&&!kk.ans)kkS('Berdering…')}
+else if(p.t=='answer'&&pc&&kk.role=='out'&&kk.st=='out'){kk.ans=1;kk.st='live';clearTimeout(kk.tout);kkRing(0);kkS('Menghubungkan…');kkCls();await pc.setRemoteDescription(p.s);q.forEach(function(c){pc.addIceCandidate(c)});q=[]}
 else if(p.t=='ice'){if(pc&&pc.remoteDescription)pc.addIceCandidate(p.c);else q.push(p.c)}
-else if(p.t=='end')end(1)}
-async function jawab(){if(!inc)return;try{mk();await med(inc.v);await pc.setRemoteDescription(inc.s);q.forEach(function(c){pc.addIceCandidate(c)});q=[];var a=await pc.createAnswer();await pc.setLocalDescription(a);send({t:'answer',s:a});inc=null;$('kcy').style.display='none';$('kcs').textContent='Menghubungkan…'}catch(e){end()}}
-function end(ln){if(!ln)send({t:'end'});if(out&&pc){put({tipe:'panggilan',isi:(bt2?'Video':'Suara')+' call'});}out=0;inc=null;if(pc){pc.close();pc=null}if(ls){ls.getTracks().forEach(function(t){t.stop()});ls=null}$('kcc').classList.remove('on')}
-async function flip(){if(!ls||!pc)return;fm=fm=='user'?'environment':'user';var s=await navigator.mediaDevices.getUserMedia({video:{facingMode:fm}}),n=s.getVideoTracks()[0],snd=pc.getSenders().find(function(x){return x.track&&x.track.kind=='video'});if(snd){snd.replaceTrack(n);ls.getVideoTracks().forEach(function(t){t.stop()});ls=new MediaStream([n].concat(ls.getAudioTracks()));$('kl').srcObject=ls}}
+else if(p.t=='tolak'){if(kk.st=='out')kkFinish('tolak')}
+else if(p.t=='sibuk'){if(kk.st=='out')kkFinish('sibuk')}
+else if(p.t=='media'){kk.rm=p.m?1:0;kk.rc=p.c===0?0:1;kkCls()}
+else if(p.t=='end'){if(kk.st=='ring-in'){kkTeardown();toast('Panggilan tak terjawab')}else if(kk.st=='out')kkFinish('tak');else if(kk.st=='live')kkFinish('selesai')}}
+async function jawab(){if(!inc||kk.st!='ring-in')return;var o=inc;clearTimeout(kk.tout);kkRing(0);kkNotifOff();kkAC();kk.st='live';kkS('Menghubungkan…');kkCls();
+try{mk();await med(o.v);await pc.setRemoteDescription(o.s);q.forEach(function(c){pc.addIceCandidate(c)});q=[];var a=await pc.createAnswer();await pc.setLocalDescription(a);send({t:'answer',s:a});inc=null}
+catch(e){send({t:'end'});kkTeardown();toast('Kamera/mikrofon ditolak')}}
+async function flip(){if(!ls||!pc||!kk.v)return;fm=fm=='user'?'environment':'user';try{var s=await navigator.mediaDevices.getUserMedia({video:{facingMode:fm}}),n=s.getVideoTracks()[0],snd0=pc.getSenders().find(function(x){return x.track&&x.track.kind=='video'});n.enabled=!!kk.cam;if(snd0){snd0.replaceTrack(n);ls.getVideoTracks().forEach(function(t){t.stop()});ls=new MediaStream([n].concat(ls.getAudioTracks()));$('kl').srcObject=ls;$('kl').classList.toggle('mir',fm=='user')}}catch(e){fm=fm=='user'?'environment':'user';toast('Kamera tidak bisa dibalik')}}
+/* kartu riwayat panggilan di chat */
+function kcInfo(m){var s=String(m.isi||''),p=s.split('|');if(p[0]=='v1')return{v:p[1]=='video'?1:0,r:p[2]||'selesai',d:+p[3]||0};return{v:/^video/i.test(s)?1:0,r:'selesai',d:0}}
+function kcTitle(m,own){var i=kcInfo(m),k=i.v?'video':'suara',r=i.r,o=own?{selesai:'Panggilan '+k+' keluar',tak:'Panggilan '+k+' tidak dijawab',batal:'Panggilan '+k+' dibatalkan',tolak:'Panggilan '+k+' ditolak',sibuk:'Panggilan '+k+': sedang sibuk'}
+:{selesai:'Panggilan '+k+' masuk',tak:'Panggilan '+k+' tak terjawab',batal:'Panggilan '+k+' tak terjawab',tolak:'Panggilan '+k+' ditolak',sibuk:'Panggilan '+k+' tak terjawab'};return o[r]||o.selesai}
+function kcCard(m,own){var i=kcInfo(m),bad=i.r!='selesai'&&(own||i.r!='tolak'),sub=i.r=='selesai'?(i.d?mmss(i.d):'Tersambung'):'Ketuk untuk menelepon balik';
+return '<button type="button" class="kcl'+(bad?' bad':'')+'" data-cb="'+i.v+'"><span class="ci">'+ic(i.v?'video':'phone')+'</span><span class="ct"><b>'+E(kcTitle(m,own))+'</b><small>'+ic(own?'arout':'arin')+E(sub)+'</small></span></button>'}
 var P={},AL=null,U={},other=null,pend=null,cim=null,cz=1,ox=0,oy=0,dr=null;
 function shut(i){$(i).classList.remove('on')}
 function av(){var u=other&&U[other]&&U[other].u;$('kav').innerHTML=u?'<img src="'+u+'">':mo(T[tema].m[0],'#fff')}
@@ -16688,7 +16829,7 @@ else if(t.dataset.t){th(t.dataset.t);menu();kTS(tema);$('ktm').classList.remove(
 else if(t.dataset.r)rp(t.dataset.r);else if(t.dataset.d){if(confirm('Hapus pesan ini untuk semua?'))sb.rpc('kaone_chat_hapus',{p_id:t.dataset.d}).then(function(){var m=msgs[t.dataset.d];if(m){m.dihapus_at=new Date().toISOString();m.isi=m.media_path=null;draw()}sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}})})}
 else if(t.closest('[data-o]'))buka(t.closest('[data-o]').dataset.o);else if(t.closest('#kvx')){$('kvb').innerHTML='';$('kcv').classList.remove('on')}
 else if(t.closest('#krx'))rp(null);else if(t.closest('#kat'))$('kf').click();
-else if(t.closest('#kcv1'))call(0);else if(t.closest('#kcv2'))call(1);else if(t.closest('#kcy'))jawab();else if(t.closest('#kcx'))end();else if(t.closest('#kcf'))flip();else if(t.closest('#kav')||t.closest('#kpw'))opOpen();else if(t.closest('#kpc'))$('kpfile').click();else if(t.closest('#kpx'))shut('kpf');else if(t.closest('#kps'))pfSave();else if(t.closest('#kcb'))shut('kcr');else if(t.closest('#kcp'))crPut()});
+else if(t.closest('#kcv1'))call(0);else if(t.closest('#kcv2'))call(1);else if(t.closest('#kcy'))jawab();else if(t.closest('#kkt'))kkTolak();else if(t.closest('#kcx'))kkEnd();else if(t.closest('#kcf'))flip();else if(t.closest('#kkm'))kkMute();else if(t.closest('#kkd'))kkCam();else if(t.closest('#kkz'))kkMini(1);else if(t.closest('#kkb'))kkMini(0);else if(t.dataset.cb!==undefined)call(+t.dataset.cb);else if(t.closest('#kav')||t.closest('#kpw'))opOpen();else if(t.closest('#kpc'))$('kpfile').click();else if(t.closest('#kpx'))shut('kpf');else if(t.closest('#kps'))pfSave();else if(t.closest('#kcb'))shut('kcr');else if(t.closest('#kcp'))crPut()});
 $('ki').addEventListener('keydown',function(e){if(e.key=='Enter'&&!e.shiftKey&&!e.isComposing&&window.innerWidth>700){e.preventDefault();kirim()}});
 var tk0=0;$('ki').addEventListener('input',function(){if($('ki').value&&Date.now()-tk0>1200){tk0=Date.now();rm&&rm.send({type:'broadcast',event:'ketik',payload:{}})}});
 $('kf').addEventListener('change',function(){var f=this.files[0];this.value='';if(f)up(f,f.type.indexOf('video')==0?'video':'foto',f.type)});
@@ -16697,12 +16838,12 @@ function cpush(id){try{if(!kaoneChatBoleh())return;var c=window.supabaseClient||
 c.auth.getSession().then(function(x){var t=x.data&&x.data.session&&x.data.session.access_token;if(!t)return;
 fetch(PUSH_FUNCTION_URL,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+t},body:JSON.stringify({target:{chat:true},notif:{tag:String(id)}})}).catch(function(){})}).catch(function(){})}catch(e){}}
 var wn=null,wme=null,wperan=null,wbusy=false,wlp=0;
-function kBody(m){if(!m||m.dihapus_at)return '';if(m.tipe=='teks'){var t=String(m.isi||'');return t.indexOf('::stk:')==0?'Stiker':t.replace(/\s+/g,' ').trim().slice(0,160)}return {foto:'Foto',video:'Video',suara:'Pesan suara'}[m.tipe]||''}
+function kBody(m){if(!m||m.dihapus_at)return '';if(m.tipe=='teks'){var t=String(m.isi||'');return t.indexOf('::stk:')==0?'Stiker':t.replace(/\s+/g,' ').trim().slice(0,160)}if(m.tipe=='panggilan')return kcTitle(m,false);return {foto:'Foto',video:'Video',suara:'Pesan suara'}[m.tipe]||''}
 function wping(c){if(document.visibilityState=='visible'&&Date.now()-wlp>55000){wlp=Date.now();try{c.rpc('kaone_chat_ping')}catch(e){}}}
 function cnotif(m){var tag='kaone-chat-'+m.id;
 if($('kc').classList.contains('on'))return;
 if(document.visibilityState=='visible'){
-if(typeof rtToast=='function')rtToast({icon:ic('send'),title:'Kaone Motret'});
+if(typeof rtToast=='function')rtToast({icon:ic(m.tipe=='panggilan'?'phone':'send'),title:'Kaone Motret'});
 try{if(snd()&&typeof rtChime=='function')rtChime()}catch(e){}return}
 try{if(!('Notification' in window)||Notification.permission!=='granted')return;
 var o={body:wperan=='lawan'?kBody(m):'',icon:'icons/icon-192.png',tag:tag,lang:'id',data:{id:null,view:null}};
@@ -16896,6 +17037,50 @@ $('kpwd').addEventListener('keydown',function(e){if(e.key=='Enter'&&e.target.tag
 $('kpwd').addEventListener('input',function(e){if(e.target.id=='kpw2'||e.target.id=='kpw1'){var a=$('kpw1').value,b=$('kpw2').value;if(b&&a!==b)pwMsg('Ulangi sandi belum sama.');else if(b&&a===b&&a.length>=6)pwMsg('Sandi cocok.',true);else pwMsg('')}});
 /* ===== STIKER TEMA, PRATINJAU TAUTAN, PESAN TERJADWAL ===== */
 var STK={kheart:'#ff6b9a',kstar:'#ffc83d',kcloud:'#8fcdfc',kcat:'#f2b35e',kbunny:'#ffb8d8',kboba:'#c99a6b',kbear:'#c98a3a',kduck:'#ffd23f',kfrog:'#5cc16a',kghost:'#d6b4f0',kice:'#ffb48a',kpeng:'#3b7396',kstraw:'#ff6b84',kmush:'#e0654a'},kLkC={},kLkQ={};
+/* ===== 29 STIKER ANIMASI BARU ===== */
+(function(){
+var n=0;
+function g(a,b){return '<g class="ka k'+a+'" style="animation-delay:-'+((n++*.53)%2.6).toFixed(2)+'s">'+b+'</g>'}
+function f2(y,d){var h='<circle cx="10.3" cy="'+y+'" r=".95" fill="#3b2230"/><circle cx="13.7" cy="'+y+'" r=".95" fill="#3b2230"/><path d="M11.2 '+(y+1.8)+'q.8.9 1.6 0" fill="none" stroke="#3b2230" stroke-width=".8" stroke-linecap="round"/>';if(d)h+='<ellipse cx="'+(12-d)+'" cy="'+(y+1.3)+'" rx="1.3" ry=".85" fill="#ff7fa8" opacity=".75"/><ellipse cx="'+(12+d)+'" cy="'+(y+1.3)+'" rx="1.3" ry=".85" fill="#ff7fa8" opacity=".75"/>';return h}
+function ey(x1,x2,y){return '<circle cx="'+x1+'" cy="'+y+'" r="1.05" fill="#3b2230"/><circle cx="'+x2+'" cy="'+y+'" r="1.05" fill="#3b2230"/>'}
+var D='fill="#3b2230"',P='fill="#ff7fa8" opacity=".75"';
+var S={
+kdog:['#c9915a',g(2,'<ellipse cx="4.6" cy="10" rx="2.6" ry="5" transform="rotate(14 4.6 10)" fill="#8d5a2b"/><ellipse cx="19.4" cy="10" rx="2.6" ry="5" transform="rotate(-14 19.4 10)" fill="#8d5a2b"/><circle cx="12" cy="13" r="8.2"/><ellipse cx="12" cy="16" rx="3.6" ry="2.6" fill="#fff" opacity=".7"/><ellipse cx="12" cy="14.8" rx="1.4" ry="1" '+D+'/>'+ey(8.6,15.4,11.4)+'<path d="M11 17.4q1 2.4 2 0z" fill="#ff6b84"/><ellipse cx="6.4" cy="14" rx="1.4" ry=".9" '+P+'/><ellipse cx="17.6" cy="14" rx="1.4" ry=".9" '+P+'/>')],
+kpanda:['#f1eff6',g(1,'<circle cx="5.6" cy="5.8" r="3" fill="#2b2b33"/><circle cx="18.4" cy="5.8" r="3" fill="#2b2b33"/><circle cx="12" cy="13.4" r="8.6" stroke="#cfcbe0" stroke-width=".6"/><ellipse cx="8.4" cy="12.4" rx="2.1" ry="2.8" transform="rotate(20 8.4 12.4)" fill="#2b2b33"/><ellipse cx="15.6" cy="12.4" rx="2.1" ry="2.8" transform="rotate(-20 15.6 12.4)" fill="#2b2b33"/><circle cx="8.6" cy="12.2" r=".9" fill="#fff"/><circle cx="15.4" cy="12.2" r=".9" fill="#fff"/><ellipse cx="12" cy="15.6" rx="1.3" ry=".9" fill="#2b2b33"/><path d="M10.8 17q1.2 1.3 2.4 0" fill="none" stroke="#2b2b33" stroke-width=".9" stroke-linecap="round"/><ellipse cx="6" cy="16" rx="1.4" ry=".9" '+P+'/><ellipse cx="18" cy="16" rx="1.4" ry=".9" '+P+'/>')],
+kpig:['#ffaac4',g(8,'<path d="M4.5 4.5l4.4 2.2-3.2 3.6zM19.5 4.5l-4.4 2.2 3.2 3.6z" fill="#ff8fb2"/><circle cx="12" cy="13" r="8.6"/><ellipse cx="12" cy="15.4" rx="4" ry="3" fill="#ff8fb2"/><ellipse cx="10.6" cy="15.4" rx=".7" ry="1" '+D+'/><ellipse cx="13.4" cy="15.4" rx=".7" ry="1" '+D+'/>'+ey(8.4,15.6,11)+'<ellipse cx="5.8" cy="13" rx="1.4" ry=".9" fill="#ff5f8a" opacity=".6"/><ellipse cx="18.2" cy="13" rx="1.4" ry=".9" fill="#ff5f8a" opacity=".6"/>')],
+kchick:['#ffe27a',g(1,'<path d="M12 2.6q-2 1.6-.6 3.2M12 2.6q2 1.2 1 3.2" fill="none" stroke="#ffb02e" stroke-width="1.2" stroke-linecap="round"/><circle cx="12" cy="13" r="8.6"/><path d="M3 12.6q-2.2 3 .4 5zM21 12.6q2.2 3-.4 5z" fill="#ffc21f"/><path d="M10.2 14.2h3.6L12 16.6z" fill="#ff8a1f"/>'+ey(8.6,15.4,11.6)+'<ellipse cx="6.4" cy="14.2" rx="1.5" ry=".95" '+P+'/><ellipse cx="17.6" cy="14.2" rx="1.5" ry=".95" '+P+'/>')],
+kowl:['#b78452',g(2,'<path d="M4 3.8l4.6 3h6.8l4.6-3v10a8 8.6 0 0 1-16 0z"/><circle cx="8.8" cy="11" r="3.2" fill="#fff"/><circle cx="15.2" cy="11" r="3.2" fill="#fff"/><circle cx="9" cy="11.2" r="1.5" '+D+'/><circle cx="15" cy="11.2" r="1.5" '+D+'/><path d="M10.6 13.4h2.8L12 15.6z" fill="#ffb02e"/><path d="M8.4 18q1 1 2 0t2 0 2 0 1.6 0" fill="none" stroke="#8a5a2c" stroke-width=".8" stroke-linecap="round"/>')],
+kfox:['#ff8a3d',g(5,'<path d="M2.6 3l6 4h6.8l6-4-.8 11a9.2 7.6 0 0 1-17.2 0z"/><path d="M5 14.4q7 .4 14 0-1.6 6-7 6.4-5.4-.4-7-6.4z" fill="#fff4e6"/><ellipse cx="12" cy="17.6" rx="1.2" ry=".9" '+D+'/>'+ey(8.6,15.4,12.4)+'<ellipse cx="6.2" cy="14" rx="1.4" ry=".9" '+P+'/><ellipse cx="17.8" cy="14" rx="1.4" ry=".9" '+P+'/>')],
+kkoala:['#b9bfc9',g(3,'<circle cx="4.6" cy="8" r="3.8"/><circle cx="19.4" cy="8" r="3.8"/><circle cx="4.6" cy="8" r="2" fill="#f4d6df"/><circle cx="19.4" cy="8" r="2" fill="#f4d6df"/><circle cx="12" cy="13.4" r="8.2"/><ellipse cx="12" cy="14.8" rx="2" ry="3" fill="#4a4a58"/>'+ey(8,16,11.6)+'<ellipse cx="6.4" cy="14.6" rx="1.4" ry=".9" '+P+'/><ellipse cx="17.6" cy="14.6" rx="1.4" ry=".9" '+P+'/>')],
+kwhale:['#5db2ee',g(5,'<path d="M2.4 13.4a9.6 7.6 0 0 1 19.2 0c0 4.2-4.2 7.4-9.6 7.4S2.4 17.6 2.4 13.4z"/><path d="M4 15.6q8 4.6 16 0-1.4 3.8-8 4.4-6.6-.6-8-4.4z" fill="#d8f0ff"/><path class="kb" d="M12 7V3.6M12 3.6q-2-1.6-3-.6M12 3.6q2-1.6 3-.6" fill="none" stroke="#8fd3ff" stroke-width="1.2" stroke-linecap="round"/>'+f2(12.2,4.6))],
+kdonut:['#e8a85c',g(8,'<path fill-rule="evenodd" d="M12 2.6a9.4 9.4 0 1 0 .01 0zM12 9.4a2.6 2.6 0 1 1-.01 0z"/><path fill-rule="evenodd" fill="#ff7fb2" d="M12 4.4a7.6 7.6 0 1 0 .01 0zM12 9.4a2.6 2.6 0 1 1-.01 0z"/><path d="M6 8l1.2-.8M16.6 6.4l1.4.6M18.4 12l1 1M5.2 13.4l1.2.6M15 19l1.2-.8" stroke="#fff" stroke-width="1" stroke-linecap="round"/><path d="M8.6 5.6l1 .6M14 17.8l1-.5" stroke="#ffd23f" stroke-width="1" stroke-linecap="round"/>'+ey(8.6,15.4,15.2)+'<path d="M10.8 17q1.2 1.3 2.4 0" fill="none" stroke="#3b2230" stroke-width=".8" stroke-linecap="round"/>')],
+kpizza:['#ffc94a',g(2,'<path d="M12 22.2L2.6 5.4q9.4-3.6 18.8 0z"/><path d="M2.4 5.2q9.6-3.8 19.2 0l-.6 1.6q-9-3.2-18 0z" fill="#d98a3a"/><circle cx="6.6" cy="9" r="1.5" fill="#e0504a"/><circle cx="17.4" cy="9" r="1.5" fill="#e0504a"/><circle cx="12" cy="18" r="1.3" fill="#e0504a"/>'+f2(11,4.6))],
+kcupcake:['#ff9fc4',g(1,'<path d="M5 12.6h14l-1.6 9H6.6z" fill="#e8b46f"/><path d="M8.6 13v8M12 13v8.4M15.4 13v8" stroke="#c98d45" stroke-width=".6" opacity=".6"/><path d="M4.4 12.8a3.6 3.6 0 0 1 1.8-6.4 4.2 4.2 0 0 1 7.2-2.8 4 4 0 0 1 5 3.2 3.6 3.6 0 0 1 1.2 6z"/><circle cx="12" cy="3.2" r="1.6" fill="#e0304f"/>'+ey(8.6,15.4,9.4)+'<path d="M10.8 11.2q1.2 1.3 2.4 0" fill="none" stroke="#3b2230" stroke-width=".9" stroke-linecap="round"/><ellipse cx="6.4" cy="11" rx="1.4" ry=".9" '+P+'/><ellipse cx="17.6" cy="11" rx="1.4" ry=".9" '+P+'/>')],
+kegg:['#ffc21f',g(8,'<path d="M12 3q4-1.4 7.4 1.6 3.6 3.4 1.6 8.4-1.6 5.6-8 7-6.4-.4-8.8-5.4Q2.4 9 5.6 5.6 8.6 2.6 12 3z" fill="#fff" stroke="#e6e0ee" stroke-width=".6"/><circle cx="12" cy="12" r="4.8"/>'+f2(11,0)+'<ellipse cx="9.8" cy="9.8" rx=".8" ry="1.3" fill="#fff" opacity=".6" transform="rotate(35 9.8 9.8)"/>')],
+kcookie:['#d9a066',g(4,'<circle cx="12" cy="12.5" r="9"/><circle cx="7.4" cy="7.6" r="1.4" fill="#6b3f1f"/><circle cx="15.8" cy="6.8" r="1.3" fill="#6b3f1f"/><circle cx="18.4" cy="17.4" r="1.3" fill="#6b3f1f"/><circle cx="6.8" cy="18" r="1.2" fill="#6b3f1f"/><circle cx="12.6" cy="20" r="1" fill="#6b3f1f"/>'+fc(12,14.4,[6.6,17.4]))],
+kapple:['#ff5a5a',g(1,'<path d="M12 6.6C9 4.4 3.4 6 3.4 12.2c0 5 3.4 9.4 6.4 9.4 1.2 0 1.6-.6 2.2-.6s1 .6 2.2.6c3 0 6.4-4.4 6.4-9.4 0-6.2-5.6-7.8-8.6-5.6z"/><path d="M12 6.4Q12 3.8 13.6 2.4" stroke="#7a4a2a" stroke-width="1.3" fill="none" stroke-linecap="round"/><path d="M13.6 4.4q3-1.8 5 .2-2.4 2-5-.2z" fill="#5fbf6a"/><ellipse cx="6.6" cy="10.6" rx=".8" ry="1.6" transform="rotate(20 6.6 10.6)" fill="#fff" opacity=".5"/>'+fc(13.4,16))],
+kmelon:['#ff6b7a',g(2,'<path d="M2.4 6.4h19.2a9.6 9.6 0 0 1-19.2 0z"/><path d="M2.4 6.4a9.6 9.6 0 0 0 19.2 0h-1.6a8 8 0 0 1-16 0z" fill="#4fb85c"/><ellipse cx="6.2" cy="9" rx=".6" ry="1" '+D+'/><ellipse cx="17.8" cy="9" rx=".6" ry="1" '+D+'/><ellipse cx="12" cy="15.6" rx=".6" ry="1" '+D+'/>'+fc(10,12.2,[6.8,17.2]))],
+kcarrot:['#ff8f2e',g(6,'<path d="M12 22.6C9.4 18 6.8 11 8.6 7.6a4.6 4.6 0 0 1 6.8 0C17.2 11 14.6 18 12 22.6z"/><path d="M12 7.4q-3.6-1-3.4-4.6Q12 3.4 12 7.4zM12 7.4q3.6-1 3.4-4.6Q12 3.4 12 7.4z" fill="#5fbf6a"/><path d="M9.4 15.2h1.6M13.4 17.4h1.4M10.4 19h1.2" stroke="#d96a12" stroke-width=".7" stroke-linecap="round"/>'+f2(11.4,2.8))],
+kavo:['#5f9f3a',g(3,'<path d="M12 2.4c-3.4 0-3.8 4-5 7.4C5.4 14 4.6 17 7.6 19.8c2.6 2.4 6.2 2.4 8.8 0 3-2.8 2.2-5.8.6-10C15.8 6.4 15.4 2.4 12 2.4z"/><path d="M12 4.6c-2.4 0-2.6 2.8-3.6 5.4-1.2 3-1.8 5.2.4 7.2 1.8 1.6 4.6 1.6 6.4 0 2.2-2 1.6-4.2.4-7.2C14.6 7.4 14.4 4.6 12 4.6z" fill="#e6f08a"/><circle cx="12" cy="16" r="2.4" fill="#a0653a"/>'+f2(9.8,3))],
+ksun:['#ffc83d',g(3,'<g class="ka k7"><path d="M12 1.4v3M12 19.6v3M1.4 12h3M19.6 12h3M4.5 4.5l2.1 2.1M17.4 17.4l2.1 2.1M4.5 19.5l2.1-2.1M17.4 6.6l2.1-2.1" stroke="#ffb02e" stroke-width="1.7" stroke-linecap="round"/></g><circle cx="12" cy="12" r="6.6"/>'+fc(11.4,14))],
+kmoon:['#ffe08a',g(5,'<circle cx="12" cy="12.5" r="8.6"/><circle cx="16.6" cy="8.6" r="1.4" fill="#f0c860" opacity=".7"/><circle cx="7.4" cy="16.8" r="1.1" fill="#f0c860" opacity=".7"/><path d="M7.4 11.8q1.3-1.6 2.6 0M14 11.8q1.3-1.6 2.6 0M10.8 14.6q1.2 1.3 2.4 0" fill="none" stroke="#3b2230" stroke-width=".9" stroke-linecap="round"/><ellipse cx="6.8" cy="14" rx="1.5" ry=".9" '+P+'/><ellipse cx="17.2" cy="14" rx="1.5" ry=".9" '+P+'/><path class="kb" d="M20.4 1.6l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z" fill="#ffc83d"/><path class="kb" style="animation-delay:-.8s" d="M3.4 2.6l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5z" fill="#ffc83d"/>')],
+krain:['#9ab8d6',g(5,'<path d="M7 14a4.4 4.4 0 0 1-.6-8.8A6.2 6.2 0 0 1 18 5.8 4.2 4.2 0 0 1 17.4 14z"/>'+fc(9.2,11.4,[6.6,17.4])+'<path class="kd" d="M7.8 16q-1.1 1.7 0 2.5 1.1-.8 0-2.5z" fill="#4aa8ff"/><path class="kd" style="animation-delay:-.5s" d="M12 17q-1.1 1.7 0 2.5 1.1-.8 0-2.5z" fill="#4aa8ff"/><path class="kd" style="animation-delay:-1s" d="M16.2 16q-1.1 1.7 0 2.5 1.1-.8 0-2.5z" fill="#4aa8ff"/>')],
+kbolt:['#ffd23f',g(6,'<path d="M13.6 1.8L5 13.2h5.2L8.6 22.2 19 9.8h-5.6z" stroke="#ffb02e" stroke-width=".6" stroke-linejoin="round"/>'+f2(11.6,3.6))],
+kflower:['#ff8fc0',g(1,'<g class="ka k7"><circle cx="12" cy="5.6" r="3.6"/><circle cx="18" cy="10" r="3.6"/><circle cx="15.7" cy="17" r="3.6"/><circle cx="8.3" cy="17" r="3.6"/><circle cx="6" cy="10" r="3.6"/></g><circle cx="12" cy="12" r="4.8" fill="#ffd84a"/>'+f2(11.2,3.2))],
+kcactus:['#58b368',g(2,'<rect x="7.6" y="4" width="8.8" height="16" rx="4.4"/><path d="M7.8 14H5.4a1.6 1.6 0 0 1-1.6-1.6V9M16.2 11.6h2.4a1.6 1.6 0 0 0 1.6-1.6V7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="3.6" r="1.7" fill="#ff7fb2"/><path d="M6.4 19.6h11.2l-1.2 3.2H7.6z" fill="#d9825a"/>'+f2(10.8,3.2))],
+kfire:['#ff7a2e',g(3,'<path d="M12 1.6c1 3.6 6 6.4 6 12.4a6 6 0 0 1-12 0c0-2.8 1.4-4 2.4-5.6.6 1.8 1.4 2.4 2.2 2.6C10.2 8 10.2 4 12 1.6z"/><path d="M12 11c.6 2.2 3.2 3.4 3.2 6.2a3.2 3.2 0 0 1-6.4 0c0-1.6.8-2.2 1.4-3.2.4.8.8 1.2 1.2 1.2.2-1.6.2-3 .6-4.2z" fill="#ffd23f"/>'+f2(15.6,0))],
+kdrop:['#5bb8ff',g(8,'<path d="M12 1.8C9 6.6 4.8 10.4 4.8 14.8a7.2 7.2 0 0 0 14.4 0C19.2 10.4 15 6.6 12 1.8z"/><path d="M8.2 14a4 4 0 0 0 2.2 3.4" stroke="#fff" opacity=".6" fill="none" stroke-width="1.2" stroke-linecap="round"/>'+fc(14.6,17,[7,17]))],
+kballoon:['#ff6b8a',g(5,'<ellipse cx="12" cy="9.6" rx="7" ry="8"/><path d="M10.6 18.2h2.8L12 17z"/><path d="M12 18.2q-2 1.6 0 2.8t0 2.4" fill="none" stroke="#8a7a96" stroke-width=".9" stroke-linecap="round"/><ellipse cx="8" cy="6.4" rx="1" ry="1.8" transform="rotate(25 8 6.4)" fill="#fff" opacity=".5"/>'+fc(9.8,12.2,[6.8,17.2]))],
+kgift:['#ff7a9a',g(1,'<rect x="3.4" y="9" width="17.2" height="12.4" rx="2"/><rect x="2.6" y="6.4" width="18.8" height="4.4" rx="1.6" fill="#ff5a82"/><rect x="10.6" y="6.4" width="2.8" height="15" fill="#ffd23f"/><path d="M12 6.4C9.6 6.4 7.4 5 7.8 3.4 8.4 1.8 11 3 12 6.4zM12 6.4C14.4 6.4 16.6 5 16.2 3.4 15.6 1.8 13 3 12 6.4z" fill="#ffd23f"/>'+fc(15,17.4,[6.6,17.4]))],
+kcrown:['#ffc83d',g(3,'<path d="M3 8l4.6 4.4L12 4.4l4.4 8L21 8l-1.6 12.6H4.6z"/><circle cx="3" cy="7.2" r="1.5" fill="#ff6b8a"/><circle class="kb" cx="12" cy="3.6" r="1.5" fill="#6bc7ff"/><circle cx="21" cy="7.2" r="1.5" fill="#ff6b8a"/>'+fc(14.6,17.2,[6.4,17.6]))],
+krainbow:['#ff6b7a',g(5,'<g fill="none" stroke-width="2.4"><path d="M2.6 18a9.4 9.4 0 0 1 18.8 0" stroke="#ff6b7a"/><path d="M5 18a7 7 0 0 1 14 0" stroke="#ffc83d"/><path d="M7.4 18a4.6 4.6 0 0 1 9.2 0" stroke="#5cc16a"/></g><g fill="#fff" stroke="#d6e6f5" stroke-width=".5"><circle cx="4.2" cy="19" r="2.6"/><circle cx="7.4" cy="19.8" r="2"/><circle cx="19.8" cy="19" r="2.6"/><circle cx="16.6" cy="19.8" r="2"/></g><circle cx="3.4" cy="18.6" r=".7" '+D+'/><circle cx="5.2" cy="18.6" r=".7" '+D+'/><circle cx="18.8" cy="18.6" r=".7" '+D+'/><circle cx="20.6" cy="18.6" r=".7" '+D+'/><path d="M3.8 20q.6.7 1.2 0M19.2 20q.6.7 1.2 0" fill="none" stroke="#3b2230" stroke-width=".5" stroke-linecap="round"/>')]
+};
+var c={},m={};Object.keys(S).forEach(function(k){c[k]=S[k][0];m[k]=S[k][1]});
+Object.assign(M,m);Object.assign(STK,c);
+var st=document.createElement('style');
+st.textContent='.ka{transform-box:fill-box;transform-origin:50% 90%;animation-duration:2.4s;animation-iteration-count:infinite;animation-timing-function:ease-in-out}.k1{animation-name:kA1}.k2{animation-name:kA2;animation-duration:2.1s}.k3{animation-name:kA3;animation-duration:1.8s}.k4{animation-name:kA4;animation-duration:2.6s;transform-origin:50% 100%}.k5{animation-name:kA5;animation-duration:3.2s}.k6{animation-name:kA6;animation-duration:2.2s}.k7{animation-name:kA7;animation-duration:7s;animation-timing-function:linear;transform-origin:50% 50%}.k8{animation-name:kA8;animation-duration:2s}.kb{transform-box:fill-box;transform-origin:50% 50%;animation:kB 1.6s ease-in-out infinite}.kd{animation:kD 1.5s ease-in infinite}'+'@keyframes kA1{0%,100%{transform:none}30%{transform:translateY(-3px) scale(.96,1.06)}55%{transform:scale(1.06,.94)}75%{transform:translateY(-1px)}}@keyframes kA2{0%,100%{transform:rotate(0)}25%{transform:rotate(-9deg)}75%{transform:rotate(9deg)}}@keyframes kA3{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}@keyframes kA4{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}@keyframes kA5{0%,100%{transform:translateY(-2px) rotate(-3deg)}50%{transform:translateY(1.5px) rotate(3deg)}}@keyframes kA6{0%,45%,100%{transform:none}8%{transform:translateX(-1.2px) rotate(-5deg)}16%{transform:translateX(1.2px) rotate(5deg)}24%{transform:translateX(-1.2px) rotate(-5deg)}32%{transform:translateX(1.2px) rotate(5deg)}}@keyframes kA7{to{transform:rotate(360deg)}}@keyframes kA8{0%,100%{transform:scale(1)}25%{transform:scale(1.1,.9)}50%{transform:scale(.92,1.08)}75%{transform:scale(1.04,.97)}}@keyframes kB{0%,100%{opacity:.3;transform:scale(.6)}50%{opacity:1;transform:scale(1.15)}}@keyframes kD{0%{transform:translateY(-1px);opacity:0}20%{opacity:1}100%{transform:translateY(5px);opacity:0}}@media (prefers-reduced-motion:reduce){.ka,.kb,.kd{animation:none}}';
+document.head.appendChild(st);
+})();
 I.smile='<circle cx="12" cy="12" r="9"/><path d="M8.5 14.2q3.5 3.4 7 0"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/>';
 I.clock='<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>';
 try{kLkC=JSON.parse(localStorage.getItem('kcLk')||'{}')||{}}catch(e){}

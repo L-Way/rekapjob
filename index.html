@@ -3058,10 +3058,72 @@
   #taskForm .form-actions .btn-outline{flex:0 0 30%;}
   #taskForm .form-actions .btn-primary{flex:1 1 auto;}
   #taskForm #taskCoverageBox:not(:has(*)){display:none;}
+  /* Putaran 3: kolom jam diberi ruang lebih (teks jam tidak lagi tertutup ikon/terpotong di HP sempit),
+     huruf jam & tombol "Tambah Jam" diperkecil, padding kotak bersarang dirapatkan. */
+  #taskForm input[type=time]{font-size:12px; height:32px; min-height:32px; padding:2px 6px; letter-spacing:0; font-variant-numeric:tabular-nums; max-width:140px; text-align:left; text-overflow:clip; overflow:hidden;}
+  #taskForm input[type=time]::-webkit-datetime-edit{padding:0; margin:0; overflow:visible;}
+  #taskForm input[type=time]::-webkit-datetime-edit-fields-wrapper{padding:0;}
+  #taskForm input[type=time]::-webkit-datetime-edit-hour-field,#taskForm input[type=time]::-webkit-datetime-edit-minute-field,#taskForm input[type=time]::-webkit-datetime-edit-ampm-field{padding:0 1px;}
+  #taskForm .task-slot-row{gap:4px; margin-bottom:5px;}
+  #taskForm .task-slot-sep{flex:none; width:8px; text-align:center; font-size:11px;}
+  #taskForm .icon-btn{width:30px; height:30px; border-radius:8px;}
+  #taskForm .icon-btn .ic{width:13px; height:13px;}
+  #taskForm .task-akun-block{padding:7px 8px;}
+  #taskForm .task-day-block{padding:6px 7px; margin-bottom:5px;}
+  #taskForm .task-day-block > .btn{font-size:10px; padding:2px 7px; top:3px; right:6px; gap:3px; border-radius:7px;}
+  #taskForm .task-day-block > .btn .ic{width:10px; height:10px;}
+  #taskForm .task-day-block .task-day-title{min-height:20px; padding-right:84px; font-size:10.5px;}
+  #taskForm .task-akun-detail .btn,#taskForm #btnAddTaskSlot{font-size:10.5px; padding:4px 9px; gap:3px;}
+  #taskForm .task-akun-detail .btn .ic,#taskForm #btnAddTaskSlot .ic{width:11px; height:11px;}
+  @media (max-width:480px){
+    /* ikon jam di dalam kolom disembunyikan di HP; ketuk kolomnya tetap membuka pemilih jam */
+    #taskForm input[type=time]::-webkit-calendar-picker-indicator{display:none;}
+    #taskForm input[type=time]{padding:2px 8px;}
+  }
+  @media (max-width:340px){
+    #taskForm .task-akun-block{padding:6px 6px;}
+    #taskForm .task-day-block{padding:5px 5px;}
+    #taskForm .task-slot-row{gap:3px;}
+    #taskForm input[type=time]{padding:2px 5px;}
+    #taskForm .icon-btn{width:28px; height:28px;}
+  }
   /* iPhone/Safari memperbesar halaman sendiri kalau huruf kolom isian < 16px, jadi di iOS saja
      ukuran 16px dipertahankan; di Android dan desktop huruf kolom tetap kecil (13px). */
   @supports (-webkit-touch-callout:none){
     #taskForm input[type=text],#taskForm input[type=time],#taskForm select,#taskForm textarea{font-size:16px;}
+    #taskForm input[type=time]{height:34px; min-height:34px;}
+  }
+  /* ===== Form Input/Edit Job: versi ringkas (huruf kecil, jarak rapat) ===== */
+  .jf label,.jf .lbl{font-size:11px; margin-bottom:3px; line-height:1.25;}
+  .jf .field-hint,.jf .hint,.jf small{font-size:10.5px; line-height:1.3;}
+  .jf .jf-sec-h{padding:9px 12px; min-height:44px;}
+  .jf .jf-sec-h h3,.jf .jf-sec-h .jf-sec-title{font-size:13px; line-height:1.25;}
+  .jf .jf-sec-h p,.jf .jf-sec-h .jf-sec-desc,.jf .jf-sec-h small{font-size:10.5px; line-height:1.3;}
+  .jf .jf-panel{padding:8px 12px 12px;}
+  .jf .jf-badge{font-size:9.5px; padding:1px 6px;}
+  .jf .form-grid{gap:9px 10px;}
+  .jf input[type=text],.jf input[type=number],.jf input[type=tel],.jf input[type=date],.jf input[type=time],
+  .jf input[type=email],.jf input[type=url],.jf input:not([type]),.jf select,.jf textarea{
+    font-size:13px; min-height:36px; padding:6px 9px; border-radius:8px;}
+  .jf textarea{min-height:60px; line-height:1.35;}
+  .jf .rp-input-wrap{min-height:36px;}
+  .jf .rp-input-wrap .rp-prefix,.jf .rp-input-wrap > span{font-size:11.5px; padding:0 8px;}
+  .jf .rp-input-wrap input{min-height:34px;}
+  .jf .fin-group{padding:8px 10px; gap:8px;}
+  .jf .fin-title,.jf .da-title{font-size:11.5px; margin-bottom:5px;}
+  .jf .cx-row{gap:6px; padding:5px 0; font-size:12px;}
+  .jf .antar-wrap,.jf .pl-box{padding:8px 10px; font-size:12px;}
+  .jf .jf-check{font-size:12px; gap:6px;}
+  .jf .btn,.jf button{font-size:12px;}
+  .jf .jf-bar{padding:7px 12px; gap:8px;}
+  .jf .jf-totals{gap:8px;}
+  .jf .jf-totals .lbl,.jf .jf-totals small,.jf .jf-totals label{font-size:10px;}
+  .jf .jf-totals b,.jf .jf-totals strong,.jf .jf-totals .val{font-size:14px;}
+  .jf .jf-bd{font-size:11px;}
+  .jf .jf-bar .btn,.jf .jf-bar button{min-height:40px; font-size:13px; padding:0 14px;}
+  @supports (-webkit-touch-callout:none){
+    .jf input[type=text],.jf input[type=number],.jf input[type=tel],.jf input[type=date],.jf input[type=time],
+    .jf input[type=email],.jf input[type=url],.jf input:not([type]),.jf select,.jf textarea{font-size:16px;}
   }
 </style>
 <style>
@@ -3071,6 +3133,102 @@ body.chat-only .topbar,body.chat-only #app,body.chat-only .footer-note,body.chat
 body.chat-only .to-top-btn,body.chat-only .bottomnav,body.chat-only .more-layer,body.chat-only #authGate{display:none!important}
 body.chat-only #kx{display:none!important}
 body.chat-only::before{content:"Memuat chat\2026";position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 15px system-ui,sans-serif;color:#7a7468;background:#fffdf6}
+</style>
+
+<style id="kmPolish">
+/* ===== Polesan tampilan v1.16.7 ===== */
+  .ongkir-card .rp-input-wrap,.ongkir-card .rp-input-wrap{display:flex; align-items:stretch; min-width:0; border:1.5px solid #e8e0c6; border-radius:11px; background:#fffdf7; overflow:hidden; transition:border-color .15s, box-shadow .15s;}
+  .ongkir-card .rp-input-wrap:focus-within,.ongkir-card .rp-input-wrap:focus-within{border-color:var(--gold); box-shadow:0 0 0 3.5px rgba(212,175,0,.16); background:#fff;}
+  .ongkir-card .rp-input-wrap:has(input:read-only),.ongkir-card .rp-input-wrap:has(input:read-only){background:#faf6e6;}
+  .ongkir-card .rp-input-wrap .rp-prefix,.ongkir-card .rp-input-wrap .rp-prefix{position:static; transform:none; display:flex; align-items:center; padding:0 13px; background:var(--gold-pale); color:#7a6400; font-size:13px; font-weight:700; border-right:1.5px solid #efe2a0; flex-shrink:0;}
+  .ongkir-card .rp-input-wrap input.money-input,.ongkir-card .rp-input-wrap input[type=tel],.ongkir-card .rp-input-wrap input[type=text],.ongkir-card .rp-input-wrap input.money-input{flex:1; min-width:0; width:auto; min-height:41px; border:0; border-radius:0; background:transparent; box-shadow:none; padding-left:12px; font-variant-numeric:tabular-nums;}
+
+/* Poster kalender: bingkai gelap dibuat dari border (bukan padding) supaya
+   slide bulan lain tidak bocor mengintip di tepi poster. */
+.poster-wrap{padding:0 !important; border:26px solid transparent; background-origin:border-box; background-clip:border-box;}
+@media(max-width:640px){ .poster-wrap{border-width:10px;} }
+@media(min-width:900px){ .poster-wrap{max-width:520px; margin-left:auto; margin-right:auto;} }
+
+/* Tombol naik ke atas: sedikit lebih kecil & menyingkir di dasar halaman */
+.to-top-btn{width:42px; height:42px;}
+.to-top-btn.show.at-end{opacity:0; visibility:hidden; pointer-events:none;}
+
+/* Bar simpan form: tombol tidak boleh pecah dua baris */
+.jf-bar-row .form-actions{flex-shrink:0;}
+.jf-bar-row .form-actions .btn{white-space:nowrap;}
+
+/* Petunjuk geser pada baris tab yang bisa digulir */
+.rekap-tabs.km-fade-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent); mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent);}
+.rekap-tabs.km-fade-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 34px); mask-image:linear-gradient(90deg,transparent,#000 34px);}
+.rekap-tabs.km-fade-l.km-fade-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 34px,#000 calc(100% - 34px),transparent); mask-image:linear-gradient(90deg,transparent,#000 34px,#000 calc(100% - 34px),transparent);}
+
+/* ----- Daftar Job di layar lebar ----- */
+@media(min-width:821px){
+  main:has(.card-wide){max-width:1400px;}
+  .card-wide .toolbar{flex-direction:column; align-items:stretch; gap:12px;}
+  .card-wide .search-box{display:flex; flex-direction:row; flex-wrap:wrap; align-items:center; gap:10px;}
+  .card-wide .search-box input{flex:1 1 300px; width:auto;}
+  .card-wide .search-box select{flex:0 1 210px; width:auto;}
+  .card-wide .search-box .btn{flex:none; white-space:nowrap;}
+  .card-wide table.jobtable{font-size:12.5px;}
+  .card-wide table.jobtable th, .card-wide table.jobtable td{padding:10px 6px;}
+  .card-wide table.jobtable th:first-child, .card-wide table.jobtable td:first-child{padding-left:10px;}
+  .card-wide table.jobtable th:last-child, .card-wide table.jobtable td:last-child{padding-right:6px;}
+  .card-wide table.jobtable .badge-select-wrap select{min-width:92px;}
+  .card-wide table.jobtable td[data-label="No"],
+  .card-wide table.jobtable td[data-label="Tanggal"],
+  .card-wide table.jobtable td[data-label="Bersih"],
+  .card-wide table.jobtable td[data-label="Sisa"]{white-space:nowrap;}
+  .card-wide table.jobtable td[data-label="Klien"]{min-width:130px;}
+  .card-wide table.jobtable td[data-label="Lokasi"]{min-width:140px;}
+  .card-wide table.jobtable td.row-actions{display:table-cell; width:150px; min-width:150px;}
+  .card-wide table.jobtable td.row-actions .icon-btn{margin:0 3px 5px 0; white-space:nowrap; padding:6px 7px; font-size:11.5px;}
+}
+
+/* ----- HP ----- */
+@media(max-width:640px){
+  /* Tombol aksi kartu tugas: teks satu baris */
+  .task-table .row-actions .icon-btn{flex-basis:42px; width:42px;}
+  .task-table .row-actions .icon-btn.t-toggle{white-space:nowrap; padding:0 10px; font-size:13px; gap:6px; width:auto; flex:1 1 auto;}
+  .task-table .row-actions .icon-btn.t-toggle .t-lbl{white-space:nowrap;}
+
+  /* Kartu terakhir yang sendirian di grid dua kolom jadi selebar penuh */
+  .stat-grid > .stat:last-child:nth-child(odd){grid-column:1 / -1;}
+
+  /* Kartu Daftar Job: ringkas, dua kolom */
+  table.jobtable:not(.task-table) tr{
+    display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    column-gap:14px; row-gap:11px; padding:14px;
+  }
+  table.jobtable:not(.task-table) td{border:none; padding:0; min-width:0; overflow:visible;}
+  table.jobtable:not(.task-table) td::before{margin-bottom:1px;}
+  table.jobtable:not(.task-table) td[data-label="No"]{
+    grid-column:1; align-self:center; display:block; justify-self:start;
+    font-size:12px; color:#7a6400; background:var(--gold-pale); border-radius:999px; padding:3px 10px;
+  }
+  table.jobtable:not(.task-table) td[data-label="No"]::before,
+  table.jobtable:not(.task-table) td[data-label="Tanggal"]::before,
+  table.jobtable:not(.task-table) td[data-label="Klien"]::before{display:none;}
+  table.jobtable:not(.task-table) td[data-label="Tanggal"]{
+    grid-column:2; justify-self:end; text-align:right; align-self:center;
+    font-size:12px; font-weight:600; color:var(--ink-soft);
+  }
+  table.jobtable:not(.task-table) td[data-label="Klien"]{
+    grid-column:1 / -1; display:block; font-size:16px; line-height:1.3;
+    padding-bottom:10px; border-bottom:1px dashed rgba(214,196,130,.6);
+  }
+  table.jobtable:not(.task-table) td[data-label="Bersih"]{
+    grid-column:1 / -1; flex-direction:row; align-items:baseline; justify-content:space-between;
+    padding-top:10px; border-top:1px dashed rgba(214,196,130,.6); font-weight:700;
+  }
+  table.jobtable:not(.task-table) td.row-actions{
+    grid-column:1 / -1; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; padding-top:12px; margin-top:0;
+  }
+  table.jobtable:not(.task-table) td.row-actions .icon-btn{padding:9px 2px; font-size:12px; white-space:nowrap; min-width:0;}
+}
+@media(max-width:380px){
+  table.jobtable:not(.task-table) td.row-actions{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
 </style>
 </head>
 <body>
@@ -3249,7 +3407,7 @@ body.chat-only::before{content:"Memuat chat\2026";position:fixed;inset:0;display
 </div>
 
 <footer class="copyright-bar">
-  <div><span id="kcSym">©</span> <span id="copyrightYear"></span> Kaone Motret. All Right Reserved. <span class="version-tag" id="appVersionTag"></span></div>
+  <div><span id="kcSym">©</span> <span id="copyrightYear"></span> Kaone Motret. All Rights Reserved. <span class="version-tag" id="appVersionTag"></span></div>
 </footer>
 
 <button type="button" class="to-top-btn" id="toTopBtn" aria-label="Kembali ke atas" title="Kembali ke atas"><svg class="ic" aria-hidden="true"><use href="#ic-arrow-up"></use></svg></button>
@@ -4498,7 +4656,7 @@ function fmtOngkirAntar(km){
   return biaya<=0 ? 'GRATIS' : fmtRp(biaya);
 }
 function ongkirAntarCardHtml(){
-  return `<div class="card"><h2 style="margin-top:0;">${ic('car')} Ongkos Antar Foto</h2>
+  return `<div class="card ongkir-card"><h2 style="margin-top:0;">${ic('car')} Ongkos Antar Foto</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Dipakai otomatis saat saklar Pengiriman di Input/Edit Job diatur ke "Diantar" (foto diantar tim ke lokasi klien). Dihitung dari jarak real titik di kolom Link Maps Antar (Input/Edit Job) ke Kaone Motret, lalu dibulatkan ke atas per Rp1.000 (mis. Rp47.670 jadi Rp48.000).</p>
     <div class="form-grid">
       <div><label>Tarif per KM</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-ongkirantar="perKm" value="${fmtRibuan(ONGKIR_ANTAR.perKm)}" oninput="handleMoneyInput(this)"></div></div>
@@ -7174,6 +7332,7 @@ function navigateSmooth(view){
   let ticking = false;
   const sync = ()=>{
     btn.classList.toggle('show', window.scrollY > 420);
+    btn.classList.toggle('at-end', (window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 150);
     ticking = false;
   };
   window.addEventListener('scroll', ()=>{
@@ -7449,7 +7608,7 @@ function viewBeranda(){
   // Tanggal & jam lengkap sudah tampil live di header, jadi judul Beranda TIDAK mengulang
   // tanggalnya. Sebagai gantinya: sapaan sesuai waktu (WIB) + ringkasan job hari ini.
   const jamWib = parseInt(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta', hour:'2-digit', hour12:false}).format(today), 10) % 24;
-  const sapaan = jamWib<11 ? 'Selamat pagi' : (jamWib<15 ? 'Selamat siang' : (jamWib<18 ? 'Selamat sore' : 'Selamat malam'));
+  const sapaan = jamWib<4 ? 'Selamat malam' : (jamWib<11 ? 'Selamat pagi' : (jamWib<15 ? 'Selamat siang' : (jamWib<18 ? 'Selamat sore' : 'Selamat malam')));
   const namaDepan = String(currentNamaLengkap || currentUsername || '').trim().split(/\s+/)[0];
   const todayIso = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   const jobHariIni = jobs.filter(j=>isJobOnDate(j, todayIso)).length;
@@ -7604,7 +7763,7 @@ function viewBeranda(){
 
   // ----- kartu angka (dengan keterangan) -----
   const stats = isAdmin() ? [
-    {v: moneyHtml(totalPenghasilanBulanIni), l:'Pemasukan bulan ini', sub: thisMonthJobs.length ? `≈ ${fmtRp(rataPerJob)} per job` : 'Belum ada job bulan ini', attr:'data-open-stat="pemasukan"'},
+    {v: moneyHtml(totalPenghasilanBulanIni), l:'Pemasukan bulan ini', sub: thisMonthJobs.length ? `≈ ${fmtRp(Math.round(rataPerJob))} per job` : 'Belum ada job bulan ini', attr:'data-open-stat="pemasukan"'},
     {v: `${thisMonthJobs.length} job`,        l:'Terjadwal bulan ini', sub: `${bulanLewat} sudah lewat · ${bulanAkan} akan datang`, attr:'data-open-stat="terjadwal"'},
     {v: moneyHtml(totalBelumLunas),           l:'Belum lunas', sub: jobBelumLunas ? `${jobBelumLunas} job belum lunas` : 'Semua sudah lunas', attr:'data-open-status-list="statusPembayaran"'},
     {v: moneyHtml(totalBersihBulanIni),       l:'Bersih bulan ini', sub: `${pctBersih}% dari pemasukan${bonusBulanIni>0 ? ' · sudah dikurangi bonus Tim' : ''}`, attr:'data-open-stat="bersih"'}
@@ -8935,11 +9094,11 @@ function toggleJfBreakdown(){
 function viewDaftar(){
   const withNo = sortedJobsWithNo();
   return `
-  <div class="card">
+  <div class="card card-wide">
     <div class="toolbar">
       <h2 style="margin:0;">${ic('clipboard')} Daftar Semua Job</h2>
       <div class="search-box">
-        <input type="text" id="searchBox" placeholder="${isAdmin() ? 'Cari nama klien, No WA, desa, jenis acara...' : 'Cari nama klien, desa, jenis acara...'}">
+        <input type="text" id="searchBox" placeholder="${isAdmin() ? 'Cari klien, No WA, desa, acara...' : 'Cari klien, desa, acara...'}">
         <select id="filterJenis">
           <option value="">Semua Jenis Acara</option>
           ${JENIS_ACARA_LIST.map(j=>`<option value="${j}">${j}</option>`).join('')}
@@ -14712,12 +14871,30 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.16.5'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.16.7'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.16.7',
+    tanggal: '8 Oktober 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Daftar Job di layar lebar tidak lagi terpotong: kolom Bersih dan tombol Edit/Lihat/Hapus kini terlihat, angka rupiah tidak pecah baris, dan kolom pencarian serta filter tersusun dalam satu baris.' },
+      { kategori: 'Perbaikan', teks: 'Poster Kalender di komputer tidak lagi melebar terlalu besar, dan sisa poster bulan lain yang sempat mengintip di tepi poster sudah dihilangkan.' },
+      { kategori: 'Perbaikan', teks: 'Rata-rata pemasukan per job di Beranda kini dibulatkan ke rupiah penuh. Tulisan \"All Rights Reserved\" di bagian bawah juga dibetulkan, dan sapaan dini hari kini \"Selamat malam\".' },
+      { kategori: 'Perbaikan', teks: 'Tombol Tandai Selesai (Tugas) dan Simpan Job tidak lagi terpecah jadi dua baris, serta kolom isian Ongkos Antar Foto kini senada dengan kolom Rp lainnya.' },
+      { kategori: 'Peningkatan', teks: 'Kartu Daftar Job di HP dibuat lebih ringkas dengan susunan dua kolom, sehingga tidak perlu scroll sepanjang itu untuk satu job. Tombol naik ke atas juga menyingkir saat sudah di dasar halaman.' },
+    ]
+  },
+  {
+    version: '1.16.6',
+    tanggal: '8 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Form Input/Edit Job dirapikan: semua tulisan, kolom isian, dan tombol diperkecil dan jarak antar bagian dirapatkan supaya lebih ringkas dan muat lebih banyak isi dalam satu layar.' },
+    ]
+  },
   {
     version: '1.16.5',
     tanggal: '7 Oktober 2026',
@@ -17798,5 +17975,23 @@ if(window.__kaoneChatOnly)window.kaoneChatMulai()})();
 })();
 </script>
 
+
+<script>
+/* Petunjuk geser: beri bayangan di tepi baris tab yang masih bisa digulir. */
+(function(){
+  function sync(){
+    document.querySelectorAll('.rekap-tabs').forEach(function(el){
+      var max = el.scrollWidth - el.clientWidth;
+      el.classList.toggle('km-fade-r', max > 4 && el.scrollLeft < max - 4);
+      el.classList.toggle('km-fade-l', max > 4 && el.scrollLeft > 4);
+    });
+  }
+  document.addEventListener('scroll', function(e){ if(e.target && e.target.classList && e.target.classList.contains('rekap-tabs')) sync(); }, true);
+  window.addEventListener('resize', sync);
+  var app = document.getElementById('app');
+  if(app && window.MutationObserver){ new MutationObserver(function(){ requestAnimationFrame(sync); }).observe(app, {childList:true, subtree:true}); }
+  sync();
+})();
+</script>
 </body>
 </html>

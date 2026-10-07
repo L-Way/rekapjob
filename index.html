@@ -935,6 +935,9 @@
     color:var(--jp-hdr2,#332750); margin-bottom:6px;
   }
   .kwitansi-poster .kw-package-text{font-size:17px; line-height:1.55; color:#3a3423; word-break:break-word;}
+  .kwitansi-poster .kw-items{list-style:none; margin:0; padding:0; font-size:18px; line-height:1.4; color:#2f2a18; font-weight:600;}
+  .kwitansi-poster .kw-items li{position:relative; padding:3px 0 3px 22px; word-break:break-word;}
+  .kwitansi-poster .kw-items li::before{content:''; position:absolute; left:2px; top:13px; width:8px; height:8px; border-radius:50%; background:var(--jp-accent,#d4af00);}
   .kwitansi-poster .kw-row{display:flex; justify-content:space-between; align-items:baseline; gap:20px; padding:16px 0; border-bottom:1px solid var(--line);}
   .kwitansi-poster .kw-row .kw-label{font-size:19px; color:var(--ink-soft); font-weight:600;}
   .kwitansi-poster .kw-row .kw-value{font-size:23px; font-weight:600; color:#241f0f; text-align:right;}
@@ -1004,11 +1007,16 @@
   .pv-primary{color:#231f0f; background:linear-gradient(135deg,#F4D93E,var(--pv-accent,#D4AF00)); box-shadow:0 8px 20px rgba(212,175,0,.28);}
   .pv-ghost{color:var(--pv-h2,#332750); background:transparent; border:1.5px solid rgba(0,0,0,.14);}
   .pv-foot{margin-top:16px; font-size:11.5px; text-align:center; color:#8a8061; line-height:1.5;}
-  .pv-after{text-align:center; max-width:360px;}
-  .pv-after .pv-brand{justify-content:center; margin-bottom:18px;}
+  .pv-after{width:100%; max-width:380px; box-sizing:border-box; text-align:center; background:#fffdf6; border:1px solid #e8dfc2; border-radius:22px; padding:34px 26px 26px; box-shadow:0 18px 44px -22px rgba(60,48,10,.35); animation:pvIn .35s ease both;}
+  .pv-after .pv-brand{justify-content:center; margin:0 0 22px;}
   .pv-after .pv-bn{color:#201c0d;}
   .pv-after .pv-bt{color:#8a8061; opacity:1;}
-  .pv-after h2{font-family:'Fraunces',serif; font-weight:600; font-size:21px; line-height:1.4; margin:0 0 20px; color:#2b2616;}
+  .pv-after .pv-emblem{width:60px; height:60px; margin:0 auto 18px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#f6edc8; color:#8a6d00; font-size:28px; box-shadow:0 0 0 7px rgba(212,175,0,.12);}
+  .pv-after .pv-kicker{font-size:11.5px; font-weight:700; letter-spacing:2.4px; text-transform:uppercase; color:#8a8061; margin:0 0 8px;}
+  .pv-after h2{font-family:'Fraunces',serif; font-weight:600; font-size:24px; line-height:1.3; margin:0 0 10px; color:#2b2616;}
+  .pv-after .pv-msg{font-size:14.5px; line-height:1.65; color:#6b6347; margin:0 0 24px;}
+  .pv-after .pv-btn{width:100%; justify-content:center; box-sizing:border-box;}
+  .pv-after .pv-ig{display:block; margin-top:16px; padding-top:16px; border-top:1px solid #eee5c8;}
   .pv-after[hidden],.pv-card[hidden]{display:none;}
   .pv-ig{display:inline-block; margin-top:16px; font-size:13px; font-weight:600; color:var(--pv-h2,#332750); text-decoration:none;}
   .pv-seal{display:flex; align-items:center; gap:14px; padding:16px 22px;}
@@ -4248,7 +4256,13 @@ const DETAIL_ACARA_SKEMA = {
 };
 const DETAIL_GRUP_LABEL = {pernikahan:'Pernikahan', margondang:'Margondang', mangayun:'Mangayun/Aqiqah', wisuda:'Wisuda', undangan:'Undangan'};
 const DETAIL_ACARA_LABEL = (()=>{ const m={}; Object.keys(DETAIL_ACARA_SKEMA).forEach(g=>DETAIL_ACARA_SKEMA[g].forEach(f=>{ m[f.key]=f.label; })); return m; })();
-function detailAcaraLabel(key){ return DETAIL_ACARA_LABEL[key] || key; }
+// Kolom tambahan dinamis: pertanyaan di formulir pricelist yang belum punya kolom tetap di aplikasi.
+// Setiap pertanyaan jadi kolom sendiri di Detail Acara, berlabel persis judul kolom spreadsheet,
+// kuncinya "x_" + judul. Karena tiap jenis acara punya daftar pertanyaan sendiri, hanya pertanyaan
+// milik jenis itu yang muncul. Label disimpan di job.detailAcaraEkstra = { kunci: label }.
+let detailAcaraEkstraLabel = {};
+function detailEkstraKunci(judul){ return 'x_' + String(judul||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40); }
+function detailAcaraLabel(key){ return DETAIL_ACARA_LABEL[key] || detailAcaraEkstraLabel[key] || key; }
 function detailGrupAcara(jenisAcara, jenisAcaraLain){
   const j = String(jenisAcara||'');
   if(j==='Marbagas' || j==='Patuaekkon') return 'pernikahan';
@@ -4277,11 +4291,13 @@ function detailAcaraFieldsHtml(jenisAcara, jenisAcaraLain, vals){
   vals = vals || {};
   const grup = detailGrupAcara(jenisAcara, jenisAcaraLain);
   const judul = jenisAcara==='Lainnya' ? (DETAIL_GRUP_LABEL[grup] || 'Lainnya') : jenisAcara;
-  return `<div class="full da-title">Detail Acara · ${escapeHtml(judul)}</div>` + skema.map(f=>{
+  const ekstra = Object.keys(detailAcaraEkstraLabel).filter(k=>k.indexOf('x_')===0 && (k in vals));
+  const skemaPlus = [...skema, ...ekstra.map(k=>({key:k, label:detailAcaraEkstraLabel[k], type:'textarea', full:true, ekstra:true}))];
+  return `<div class="full da-title">Detail Acara · ${escapeHtml(judul)}</div>` + skemaPlus.map(f=>{
     const v = escapeHtml(vals[f.key] == null ? '' : vals[f.key]);
     const ph = f.placeholder ? ` placeholder="${escapeHtml(f.placeholder)}"` : '';
     const input = f.type==='textarea'
-      ? `<textarea class="da-input" data-da-key="${f.key}" rows="2"${ph}>${v}</textarea>`
+      ? `<textarea class="da-input" data-da-key="${f.key}"${f.ekstra?` data-da-extra="1" data-da-label="${escapeHtml(f.label)}"`:''} rows="2"${ph}>${v}</textarea>`
       : `<input type="${f.type||'text'}" class="da-input" data-da-key="${f.key}" value="${v}"${ph} autocomplete="off">`;
     return `<div${f.full ? ' class="full"' : ''}><label>${escapeHtml(f.label)}</label>${input}</div>`;
   }).join('');
@@ -4302,6 +4318,13 @@ function refreshDetailAcara(){
   wrap.dataset.kunci = kunci;
 }
 // Hanya kolom yang berlaku untuk jenis acara SAAT INI yang disimpan ke job.
+function kumpulkanDetailEkstra(form){
+  const out = {};
+  form.querySelectorAll('.da-input[data-da-extra]').forEach(i=>{
+    if(String(i.value||'').trim()) out[i.dataset.daKey] = i.dataset.daLabel || i.dataset.daKey;
+  });
+  return out;
+}
 function kumpulkanDetailAcara(form){
   const out = {};
   form.querySelectorAll('.da-input').forEach(i=>{
@@ -4320,6 +4343,8 @@ function detailAcaraRows(j, opts){
     .filter(f=> !(opts.tanpaUmum && f.umum))
     .map(f=>[f.label, String(v[f.key] == null ? '' : v[f.key]).trim()])
     .filter(([,val])=>val)
+    .concat(opts.tanpaUmum ? [] : Object.keys(v).filter(k=>k.indexOf('x_')===0 && String(v[k]||'').trim())
+      .map(k=>[(j.detailAcaraEkstra && j.detailAcaraEkstra[k]) || k, String(v[k]).trim()]))
     .map(([l,val])=>[l, opts.maks ? truncateText(val, opts.maks) : val]);
 }
 // Akordeon Input/Edit Job: buka satu bagian -> bagian lain otomatis tertutup.
@@ -4338,7 +4363,7 @@ const HARGA_CETAK_KEY='kaoneMotret_hargaCetak_v1';
 const HARGA_CETAK_DEFAULT={f16:110000,f12:9500,f12b:25000,f10:0,f6:1500,album1:0,album2:0,album3:0,album4:0,fd16:0,fd32:0,fd64:0,shia350:350000,shia400:400000};
 const ROLL_FOTO={1:40,2:80,3:120,4:180};
 let HARGA_CETAK=(()=>{try{return {...HARGA_CETAK_DEFAULT,...JSON.parse(localStorage.getItem(HARGA_CETAK_KEY)||'{}')};}catch(e){return {...HARGA_CETAK_DEFAULT};}})();
-const HARGA_CETAK_FIELDS=[['f16','Foto 16" + Bingkai (per foto)'],['f12','Foto 12" (per foto)'],['f12b','Bingkai 12" (per foto)'],['f10','Foto 10" (per foto)'],['f6','Foto 6" (per lembar)'],['album1','Album 1 roll'],['album2','Album 2 roll'],['album3','Album 3 roll'],['album4','Album 4 roll'],['fd16','Flashdisk 16 GB'],['fd32','Flashdisk 32 GB'],['fd64','Flashdisk 64 GB'],['shia350','Modal Shia Makeup (paket standar)'],['shia400','Modal Shia Makeup (12" pakai bingkai)']];
+const HARGA_CETAK_FIELDS=[['f16','Foto 16 Inch + Bingkai (per foto)'],['f12','Foto 12 Inch (per foto)'],['f12b','Bingkai 12 Inch (per foto)'],['f10','Foto 10 Inch (per foto)'],['f6','Foto 6 Inch (per lembar)'],['album1','Album 1 roll'],['album2','Album 2 roll'],['album3','Album 3 roll'],['album4','Album 4 roll'],['fd16','Flashdisk 16 GB'],['fd32','Flashdisk 32 GB'],['fd64','Flashdisk 64 GB'],['shia350','Modal Shia Makeup (paket standar)'],['shia400','Modal Shia Makeup (12" pakai bingkai)']];
 function hargaCetakCardHtml(){
   return `<div class="card"><h2 style="margin-top:0;">${ic('money')} Harga Cetak</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai di form Input Job untuk menghitung Biaya Cetak dan Harga Paket Shia Makeup secara otomatis.</p>
@@ -4404,15 +4429,32 @@ function resetOngkirAntarForm(){
 function bacaCetak(){
   const $=(a,k)=>document.querySelector('[data-cx'+a+'="'+k+'"]');
   const on=k=>!!$('',k)?.checked, qty=k=>$('-qty',k)?.value||1, sel=k=>$('-sel',k)?.value;
-  return {f16:{on:on('f16'),qty:qty('f16')}, f12:{on:on('f12'),qty:qty('f12'),bingkai:!!$('-b','f12')?.checked}, f10:{on:on('f10'),qty:qty('f10')}, f6:{on:on('f6'),roll:sel('f6')}, album:{on:on('album'),roll:sel('album')}, fd:{on:on('fd'),gb:sel('fd')}};
+  return {f16:{on:on('f16'),qty:qty('f16')}, f12:{on:on('f12'),qty:qty('f12'),bingkai:!!$('-b','f12')?.checked,bingkaiQty:$('-bq','f12')?.value||qty('f12')}, f10:{on:on('f10'),qty:qty('f10')}, f6:{on:on('f6'),roll:sel('f6')}, album:{on:on('album'),roll:sel('album')}, fd:{on:on('fd'),gb:sel('fd')}};
+}
+// Baris isi paket otomatis dari ceklis Hasil Cetak (tanpa awalan "Hasil cetak:"). Dikenali dengan pola ketat
+// supaya bisa dibuang & ditulis ulang tanpa menyentuh teks yang diketik sendiri. Format lama "Hasil cetak: …" juga dikenali.
+const CETAK_BARIS_RE=/^(Foto \d+ Inch( \+ Bingkai)?( x\d+)?|Bingkai \d+ Inch x\d+|Foto 6 Inch \d roll \(\d+ foto\)|Album \d roll|Flashdisk \d+ GB)$/;
+const CETAK_LAMA_RE=/\n?Hasil cetak: [^\n]*/g;
+function cetakBuangBaris(txt){
+  return String(txt||'').replace(CETAK_LAMA_RE,'').split(/\r?\n/).filter(l=>!CETAK_BARIS_RE.test(l.trim())).join('\n').replace(/\s+$/,'');
+}
+function cetakAmbilBaris(txt){
+  const t=String(txt||''), lama=t.match(CETAK_LAMA_RE)||[];
+  return t.replace(CETAK_LAMA_RE,'').split(/\r?\n/).map(l=>l.trim()).filter(l=>CETAK_BARIS_RE.test(l)).concat(lama.map(x=>x.trim()));
 }
 function hitungCetak(s){
   const H=HARGA_CETAK, L=[]; let total=0;
   const q=x=>Math.min(99,Math.max(1,parseInt(x)||1));
-  if(s.f16.on){ const n=q(s.f16.qty); total+=n*H.f16; L.push(`Foto 16" + Bingkai ×${n}`); }
-  if(s.f12.on){ const n=q(s.f12.qty); total+=n*(H.f12+(s.f12.bingkai?H.f12b:0)); L.push(`Foto 12"${s.f12.bingkai?' + Bingkai':''} ×${n}`); }
-  if(s.f10.on){ const n=q(s.f10.qty); total+=n*H.f10; L.push(`Foto 10" ×${n}`); }
-  if(s.f6.on){ const r=Number(s.f6.roll)||1, n=ROLL_FOTO[r]; total+=n*H.f6; L.push(`Foto 6" ${r} roll (${n} foto)`); }
+  if(s.f16.on){ const n=q(s.f16.qty); total+=n*H.f16; L.push(`Foto 16 Inch + Bingkai x${n}`); }
+  if(s.f12.on){
+    // Jumlah foto & bingkai disimpan terpisah. Data lama (tanpa bingkaiQty) dianggap sama dengan jumlah foto.
+    const n=q(s.f12.qty), bq=s.f12.bingkai ? q(s.f12.bingkaiQty!=null ? s.f12.bingkaiQty : s.f12.qty) : 0;
+    total+=n*H.f12+bq*H.f12b;
+    if(bq===n) L.push(`Foto 12 Inch + Bingkai x${n}`);
+    else { L.push(`Foto 12 Inch x${n}`); if(bq>0) L.push(`Bingkai 12 Inch x${bq}`); }
+  }
+  if(s.f10.on){ const n=q(s.f10.qty); total+=n*H.f10; L.push(`Foto 10 Inch x${n}`); }
+  if(s.f6.on){ const r=Number(s.f6.roll)||1, n=ROLL_FOTO[r]; total+=n*H.f6; L.push(`Foto 6 Inch ${r} roll (${n} foto)`); }
   if(s.album.on){ const r=Number(s.album.roll)||1; total+=H['album'+r]||0; L.push(`Album ${r} roll`); }
   if(s.fd.on){ const g=Number(s.fd.gb)||16; total+=H['fd'+g]||0; L.push(`Flashdisk ${g} GB`); }
   return {total,lines:L};
@@ -4431,6 +4473,8 @@ function modalShiaCetak(s,total){
 }
 function cetakRecalc(fromVendor){
   const f=document.getElementById('jobForm'); if(!f) return;
+  const bqEl=document.querySelector('[data-cx-bq="f12"]'), fqEl=document.querySelector('[data-cx-qty="f12"]');
+  if(bqEl && fqEl && bqEl.dataset.manual!=='1') bqEl.value=fqEl.value||1;   // ikut jumlah foto sampai diubah sendiri
   const sel=bacaCetak(), {total,lines}=hitungCetak(sel);
   if(fromVendor && !lines.length) return;
   const shia=(f.elements['vendor']?.value==='Shia Makeup') ? modalShiaCetak(sel,total) : null;
@@ -4439,11 +4483,16 @@ function cetakRecalc(fromVendor){
   f.elements['biayaCetak'].value=fmtRibuan(biaya);
   if(modal && f.elements['setoranShia']) f.elements['setoranShia'].value=fmtRibuan(modal);
   const ta=f.elements['deskripsiPaket'];
-  const base=ta.value.replace(/\n?Hasil cetak: [^\n]*/,'').replace(/\s+$/,'');
-  ta.value=lines.length ? (base?base+'\n':'')+'Hasil cetak: '+lines.join(', ') : base;
+  const base=cetakBuangBaris(ta.value);
+  ta.value=lines.length ? (base?base+'\n':'')+lines.join('\n') : base;
+  ta.rows=Math.max(3,Math.min(10,ta.value.split('\n').length+1));
   const h=document.getElementById('cetakHint');
   if(h) h.textContent = !lines.length ? '' : modal ? `Paket Shia Makeup terdeteksi: Harga Paket Vendor terisi ${fmtRp(modal)} (hitungan ${fmtRp(total)}), Biaya Cetak ${fmtRp(0)}.` : `Biaya Cetak terisi ${fmtRp(biaya)} (hitungan ${fmtRp(total)}, dibulatkan ke atas per ${fmtRp(KELIPATAN_MODAL)}).`;
   updateCalc();
+}
+function cetakInput(e){
+  if(e && e.target && e.target.matches && e.target.matches('[data-cx-bq]')) e.target.dataset.manual='1';
+  cetakRecalc();
 }
 function cetakSectionHtml(d){
   const c=d.cetak||{}, H=HARGA_CETAK, cur=(k,a,def)=>(c[k]&&c[k][a]!=null)?c[k][a]:def;
@@ -4452,11 +4501,11 @@ function cetakSectionHtml(d){
   const so=(k,arr,v,fmt)=>`<select class="cx-s" data-cx-sel="${k}">${arr.map(x=>`<option value="${x}" ${String(x)===String(v)?'selected':''}>${fmt(x)}</option>`).join('')}</select>`;
   const row=(k,name,price,ctrl)=>`<div class="cx-row"><label class="cx-n">${chk(k)}<b>${name}</b></label><span class="cx-p">${price}</span><span class="cx-c">${ctrl}</span></div>`;
   return `<section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('camera')}</span><div class="jf-sec-htx"><h3>Hasil Cetak</h3><p>Centang yang dipesan. Otomatis masuk ke Deskripsi Paket dan Biaya Cetak.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div>
-    <div class="jf-body jf-panel cx" id="cetakSection" oninput="cetakRecalc()" onchange="cetakRecalc()">
-      ${row('f16','Foto 16" + Bingkai',fmtRp(H.f16)+' / foto',qty('f16'))}
-      ${row('f12','Foto 12"',fmtRp(H.f12)+' / foto',qty('f12')+`<label class="cx-b"><input type="checkbox" data-cx-b="f12" ${c.f12&&c.f12.bingkai?'checked':''}> Bingkai +${fmtRp(H.f12b)}</label>`)}
-      ${row('f10','Foto 10"',fmtRp(H.f10)+' / foto',qty('f10'))}
-      ${row('f6','Foto 6"',fmtRp(H.f6)+' / foto',so('f6',[1,2,3,4],cur('f6','roll',1),r=>`${r} roll (${ROLL_FOTO[r]} foto)`))}
+    <div class="jf-body jf-panel cx" id="cetakSection" oninput="cetakInput(event)" onchange="cetakRecalc()">
+      ${row('f16','Foto 16 Inch + Bingkai',fmtRp(H.f16)+' / foto',qty('f16'))}
+      ${row('f12','Foto 12 Inch',fmtRp(H.f12)+' / foto',qty('f12')+`<label class="cx-b"><input type="checkbox" data-cx-b="f12" ${c.f12&&c.f12.bingkai?'checked':''}> Bingkai +${fmtRp(H.f12b)} ×</label><input type="number" min="1" max="99" class="cx-q" data-cx-bq="f12" ${(c.f12&&c.f12.bingkaiQty!=null&&String(c.f12.bingkaiQty)!==String(cur('f12','qty',1)))?'data-manual="1"':''} value="${(c.f12&&c.f12.bingkaiQty!=null)?c.f12.bingkaiQty:cur('f12','qty',1)}" aria-label="Jumlah bingkai">`)}
+      ${row('f10','Foto 10 Inch',fmtRp(H.f10)+' / foto',qty('f10'))}
+      ${row('f6','Foto 6 Inch',fmtRp(H.f6)+' / foto',so('f6',[1,2,3,4],cur('f6','roll',1),r=>`${r} roll (${ROLL_FOTO[r]} foto)`))}
       ${row('album','Album','',so('album',[1,2,3,4],cur('album','roll',1),r=>`${r} roll — ${fmtRp(H['album'+r])}`))}
       ${row('fd','Flashdisk','',so('fd',[16,32,64],cur('fd','gb',16),g=>`${g} GB — ${fmtRp(H['fd'+g])}`))}
       <div class="field-hint" id="cetakHint"></div>
@@ -7733,7 +7782,7 @@ function plNormalizeCore(sourceKey, f){
       out.jam = plParseWaktu(f['Waktu Acara']);
       out.jenis = 'Marbagas'; out.jenisKeep = ['Marbagas','Patuaekkon'];
       out.catatanJenis = 'Biodata Wedding mencakup Marbagas dan Patuaekkon — periksa Jenis Acara.';
-      if(g('Adat/Konsep Pakaian')) lines.push('Adat/Konsep Pakaian: ' + g('Adat/Konsep Pakaian'));
+      det('konsepPakaian', g('Adat/Konsep Pakaian'));
     }
   }
   return out;
@@ -7759,7 +7808,8 @@ function plNormalize(sourceKey, raw){
     lain.push({ k: String(k).trim(), v });
   });
   out.kolomLain = lain;
-  lain.forEach(x=> out.catatanBaris.push(x.k + ': ' + x.v));
+  out.detailEkstra = {};
+  lain.forEach(x=>{ const key = detailEkstraKunci(x.k); if(key==='x_') return; out.detail[key] = x.v; out.detailEkstra[key] = x.k; });
   return out;
 }
 
@@ -7865,6 +7915,13 @@ function plApplyToForm(form, data){
   }
   //    Detail Acara: kolom nyata sesuai Jenis Acara (kolomnya baru ada setelah Jenis Acara diterapkan di atas)
   if(data.detail){
+    // Pertanyaan tambahan dari pricelist: daftarkan dulu labelnya, lalu bangun ulang kolom Detail Acara supaya kolomnya ada.
+    const ekKeys = Object.keys(data.detailEkstra || {}).filter(k=>String(data.detail[k]||'').trim());
+    if(ekKeys.length){
+      const wrapDa = document.getElementById('detailAcaraWrap');
+      ekKeys.forEach(k=>{ detailAcaraEkstraLabel[k] = data.detailEkstra[k]; if(!(k in detailAcaraStash)) detailAcaraStash[k] = ''; });
+      if(wrapDa){ wrapDa.dataset.kunci = ''; refreshDetailAcara(); }
+    }
     const daInputs = [...form.querySelectorAll('.da-input')];
     Object.keys(data.detail).forEach(k=>{
       const v = String(data.detail[k] == null ? '' : data.detail[k]).trim();
@@ -7923,24 +7980,22 @@ function plApplyToForm(form, data){
     put('Titik Koordinat', '#koordinatInput', coord, { read: ()=>{ const c = parseCoordString(val('#koordinatInput')); return c ? c.lat.toFixed(6)+', '+c.lng.toFixed(6) : ''; } });
   } else if(data.maps){
     // Titik tidak bisa dibaca (biasanya link pendek maps.app.goo.gl). Link aslinya JANGAN hilang:
-    // disimpan di kolom Link Maps job (cadangan untuk tombol peta) dan ikut ke Catatan.
+    // disimpan di kolom Link Maps job (cadangan untuk tombol peta).
     const lm = form.querySelector('input[name="linkMaps"]');
     if(lm){
       lm.value = data.maps;
       filled.push('Link Maps (cadangan)');
       verify('Link Maps (cadangan)', data.maps, ()=>val('input[name="linkMaps"]'));
     }
-    data.catatanBaris = (data.catatanBaris || []).filter(x=>x.indexOf('Link Maps klien: ')!==0);
-    data.catatanBaris.push('Link Maps klien: ' + data.maps);
-    review.push('Link Maps dari pricelist tidak memuat titik koordinat yang bisa dibaca (biasanya link pendek). Link aslinya disimpan di job dan di Catatan, jadi tombol peta tetap bisa membukanya. Isi Titik Koordinat manual kalau mau menghitung jarak.');
+    review.push('Link Maps dari pricelist tidak memuat titik koordinat yang bisa dibaca (biasanya link pendek). Link aslinya disimpan di kolom Link Maps job, jadi tombol peta tetap bisa membukanya. Isi Titik Koordinat manual kalau mau menghitung jarak.');
   }
   // 5) Paket
   put('Paket', '[name="paket"]', data.paket);
   {
     const taDesk = form.querySelector('[name="deskripsiPaket"]');
-    const mCetak = taDesk ? String(taDesk.value||'').match(/Hasil cetak: [^\n]*/) : null;
-    // Baris "Hasil cetak: …" dibuat otomatis dari ceklis Hasil Cetak — dipertahankan saat Add-On dari pricelist masuk.
-    if(data.deskripsi) put('Deskripsi Paket', '[name="deskripsiPaket"]', data.deskripsi + (mCetak ? '\n' + mCetak[0] : ''));
+    const mCetak = taDesk ? cetakAmbilBaris(taDesk.value).join('\n') : '';
+    // Baris isi cetak dibuat otomatis dari ceklis Hasil Cetak — dipertahankan saat Add-On dari pricelist masuk.
+    if(data.deskripsi) put('Deskripsi Paket', '[name="deskripsiPaket"]', data.deskripsi + (mCetak ? '\n' + mCetak : ''));
   }
   // 6) Instagram per peran (kolomnya baru ada setelah Jenis Acara diterapkan di atas)
   let igCount = 0, igMiss = 0; const igGagal = [];
@@ -8017,7 +8072,7 @@ function plApplyToForm(form, data){
     }
   }
   if(data.kolomLain && data.kolomLain.length){
-    info.push('Kolom pricelist yang belum punya kolom di form, dipindahkan ke Catatan: ' + data.kolomLain.map(x=>x.k).join(', ') + '.');
+    info.push('Pertanyaan pricelist yang belum punya kolom, dibuatkan kolom sendiri di Detail Acara (bukan Catatan): ' + data.kolomLain.map(x=>x.k).join(', ') + '.');
   }
 
   // 10) VERIFIKASI: baca ulang tiap kolom yang diklaim terisi.
@@ -8120,6 +8175,7 @@ function buildJobFormHtml(j){
   const igRolesAwal = getInstagramRoles(d.jenisAcara);
   const igListAwal = matchInstagramRoles(igRolesAwal, d.instagramList);
   detailAcaraStash = {...(d.detailAcara || {})};
+  detailAcaraEkstraLabel = {...(d.detailAcaraEkstra || {})};
 
   return `
     <form id="jobForm" class="jf">
@@ -8483,6 +8539,7 @@ function bindJobFormEvents(scopeEl, onDone){
     }));
     // Detail Acara (kolom khusus per jenis acara) — hanya kolom yang berlaku untuk jenis acara saat ini.
     data.detailAcara = kumpulkanDetailAcara(form);
+    data.detailAcaraEkstra = kumpulkanDetailEkstra(form);
     // Hilangkan spasi berlebih di awal/akhir tiap isian teks (mis. "Portibi " dan "Portibi"
     // supaya dianggap sama di pencarian, filter, maupun rekap).
     Object.keys(data).forEach(k=>{
@@ -10766,11 +10823,31 @@ function kwSha256(str){
   return h.map(x=>x.toString(16).padStart(8,'0')).join('');
 }
 
+// Sumber tunggal isi paket untuk QR & kwitansi: kalau job punya ceklis Hasil Cetak (j.cetak),
+// daftar cetak dibuat ulang dari data terstruktur itu, bukan dari teks yang sudah diketik.
+// Job lama / tanpa ceklis → memakai Deskripsi Paket apa adanya.
+function kwDeskripsiBagian(j){
+  const txt = String(j.deskripsiPaket||'').trim(), c = j.cetak;
+  if(!c || typeof c!=='object' || !['f16','f12','f10','f6','album','fd'].some(k=>c[k] && c[k].on)) return {base:txt, blok:''};
+  const sel = {f16:{},f12:{},f10:{},f6:{},album:{},fd:{},...c};
+  return {base:cetakBuangBaris(txt), blok:hitungCetak(sel).lines.join('\n')};
+}
+function kwDeskripsiQr(j){
+  const {base,blok} = kwDeskripsiBagian(j);
+  return base && blok ? base+'\n'+blok : (base||blok);
+}
+// Batas karakter di QR: kalau kepanjangan, yang dipotong teks bebasnya — daftar cetak dijaga utuh.
+function kwDeskripsiQrPas(j, maks){
+  const {base,blok} = kwDeskripsiBagian(j), d = base && blok ? base+'\n'+blok : (base||blok);
+  if(d.length<=maks) return d;
+  if(!blok) return d.slice(0,maks).trim();
+  return (base.slice(0, Math.max(0, maks-blok.length-1)).trim() + '\n' + blok).trim();
+}
 function kwQrData(j){
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'') : (j.jenisAcara||'');
   const akhir = getJobFinishDate(j) || '';
   const t = (v,n)=>String(v==null?'':v).trim().slice(0,n);
-  const a = [1, Number(getJobNo(j.id))||0, t(j.paket,80), t(j.deskripsiPaket,300), t(j.namaKlien,60), t(jenis,40),
+  const a = [1, Number(getJobNo(j.id))||0, t(j.paket,80), kwDeskripsiQrPas(j,300), t(j.namaKlien,60), t(jenis,40),
              j.tanggalAcara||'', (akhir && akhir!==j.tanggalAcara) ? akhir : '', t(mempelaiTeks(j),60)];
   while(a.length>3 && a[a.length-1]==='') a.pop();
   return a;
@@ -10906,13 +10983,58 @@ function kwWaktu(iso){
   try{ return new Date(iso).toLocaleString('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'}) + ' WIB'; }
   catch(e){ return ''; }
 }
-// Memecah deskripsi paket jadi daftar butir (per baris, atau per koma/titik koma kalau cuma satu baris).
+// Memecah deskripsi paket jadi daftar butir yang rapi (per baris, atau per koma/titik koma kalau cuma satu baris).
+// Daftar cetak ditulis rapi, mis.: "Foto 16 Inch + Bingkai x1", "Foto 12 Inch x1", "Bingkai 12 Inch x2", "Album Isi 80 Foto (2 Roll)".
 function kwItemsPaket(txt){
-  let parts = String(txt||'').split(/\r?\n+/).map(x=>x.trim()).filter(Boolean);
-  if(parts.length===1) parts = parts[0].split(/\s*[;,]\s*|\s+\+\s+/).map(x=>x.trim()).filter(Boolean);
-  return parts.map(x=>x.replace(/^[-•*·]\s*/,'').replace(/^\d+[.)]\s+/,'').replace(/[.;,]+$/,'').trim())
-    .map(x=>/^(dll|dsb|dst|dan lain[- ]?lain(nya)?)$/i.test(x) ? 'Dan lainnya' : x)
-    .filter(Boolean).slice(0,40);
+  const raw = String(txt||'').trim();
+  if(!raw) return [];
+  const bersih = x=>x.replace(/^[-•*·]\s*/,'').replace(/^\d+[.)]\s+/,'').replace(/[.;,]+$/,'').trim();
+  const out = [];             // string, atau {foto6:{roll,n}} sementara sebelum digabung dengan Album
+  let lastInch = '';          // ukuran foto terakhir, untuk "Bingkai ×n" yang tidak menyebut ukuran
+  const qtyTxt = n=>'x'+(parseInt(n)||1);
+  const tokenCetak = tk=>{
+    let m;
+    if((m = tk.match(/^Foto\s*(?:Ukuran\s*)?(\d+)\s*(?:"|”|″|''|inch|in)?\s*(\+\s*Bingkai)?\s*(?:[×x]\s*(\d+))?$/i))){
+      const ukr = m[1], bing = !!m[2], n = m[3]||1;
+      if(ukr==='6' && !bing && !/[×x]\s*\d+\s*$/i.test(tk)) return false;   // Foto 6" versi roll ditangani di bawah
+      lastInch = ukr; out.push(bing ? `Foto ${ukr} Inch + Bingkai ${qtyTxt(n)}` : `Foto ${ukr} Inch ${qtyTxt(n)}`);
+      return true;
+    }
+    if((m = tk.match(/^Foto\s*6\s*(?:"|”|″|''|inch|in)?\s*(\d+)\s*roll\s*(?:\(\s*(\d+)\s*foto\s*\))?$/i))){
+      const r = parseInt(m[1])||1, n = parseInt(m[2])||ROLL_FOTO[r]||0;
+      out.push({foto6:{roll:r, n}}); return true;
+    }
+    if((m = tk.match(/^Bingkai\s*(?:(\d+)\s*(?:"|”|″|''|inch|in)?)?\s*(?:[×x]\s*(\d+))?$/i))){
+      const ukr = m[1] || lastInch; out.push(`Bingkai${ukr?` ${ukr} Inch`:''} ${qtyTxt(m[2]||1)}`); return true;
+    }
+    if((m = tk.match(/^Album\s*(?:isi\s*)?(\d+)\s*roll$/i))){
+      const r = parseInt(m[1])||1, i = out.findIndex(o=>o && o.foto6 && o.foto6.roll===r);
+      const n = i>=0 ? out[i].foto6.n : (ROLL_FOTO[r]||0);
+      const teks = n ? `Album Isi ${n} Foto (${r} Roll)` : `Album ${r} Roll`;
+      if(i>=0) out[i] = teks; else out.push(teks);
+      return true;
+    }
+    if((m = tk.match(/^Flash\s?disk\s*(\d+)\s*GB$/i))){ out.push(`Flashdisk ${m[1]} GB`); return true; }
+    return false;
+  };
+  const tambah = tk=>{
+    tk = bersih(tk); if(!tk) return;
+    if(tokenCetak(tk)) return;
+    out.push(/^(dll|dsb|dst|dan lain[- ]?lain(nya)?)$/i.test(tk) ? 'Dan lainnya' : tk);
+  };
+  const lines = raw.split(/\r?\n+/).map(x=>x.trim()).filter(Boolean);
+  const adaCetak = /Hasil\s*cetak\s*:/i.test(raw);
+  if(lines.length===1 && !adaCetak){
+    lines[0].split(/\s*[;,]\s*|\s+\+\s+(?!Bingkai)/i).forEach(tambah);
+  } else {
+    lines.forEach(ln=>{
+      const m = ln.match(/^(.*?)Hasil\s*cetak\s*:\s*(.*)$/i);
+      if(m){ if(m[1].trim()) tambah(m[1]); m[2].split(/\s*[;,]\s*/).forEach(tambah); }
+      else tambah(ln);
+    });
+  }
+  // Foto 6" tanpa Album yang cocok: tampilkan apa adanya
+  return out.map(o=> typeof o==='string' ? o : `Foto 6 Inch · ${o.foto6.n} Foto (${o.foto6.roll} Roll)`).filter(Boolean).slice(0,40);
 }
 function kwSalin(t){
   if(navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t);
@@ -11000,9 +11122,12 @@ async function kaonePaketView(){
     </div>
     <div class="pv-after" hidden>
       ${brand}
-      <h2>Terima kasih sudah mempercayakan momen Anda kepada Kaone Motret 🙏</h2>
+      <div class="pv-emblem" aria-hidden="true">🙏</div>
+      <div class="pv-kicker">Terima kasih</div>
+      <h2>Sudah mempercayakan momen Anda kepada Kaone Motret</h2>
+      <p class="pv-msg">Kami senang bisa mengabadikan hari istimewa Anda. Bila ada yang ingin ditanyakan, kami siap membantu kapan saja.</p>
       <button type="button" class="pv-btn pv-primary" id="pvReopen">Lihat isi paket lagi</button>
-      <a class="pv-ig" href="https://instagram.com/${KWQR_IG}" target="_blank" rel="noopener">@${KWQR_IG}</a>
+      <a class="pv-ig" href="https://instagram.com/${KWQR_IG}" target="_blank" rel="noopener">Ikuti kami @${KWQR_IG}</a>
     </div>
   </div>`;
   const card = host.querySelector('.pv-card'), after = host.querySelector('.pv-after');
@@ -11070,7 +11195,7 @@ async function downloadKwitansiPdf(jobId){
     ['Jenis Acara', jenis],
     ...(mempelaiTeks(j) ? [['Kedua Mempelai', mempelaiTeks(j)]] : []),
     ['Paket', j.paket||'-'],
-    ...((j.deskripsiPaket||'').trim() ? [['Deskripsi Paket', j.deskripsiPaket.trim()]] : []),
+    ...(kwItemsPaket(kwDeskripsiQr(j)).length ? [['Isi Paket', kwItemsPaket(kwDeskripsiQr(j)).map(x=>'- '+x).join('\n')]] : []),
   ];
   doc.setFontSize(10);
   infoRows.forEach(([label,val])=>{
@@ -11209,7 +11334,7 @@ function buildKwitansiPosterHtml(j, qr){
         <div class="kw-package${qr?' has-qr':''}">
           <div class="kw-package-main">
             <div class="kw-package-label">Isi Paket</div>
-            <div class="kw-package-text">${escapeHtml(truncateText((j.deskripsiPaket||'').trim() || j.paket || 'Rincian paket ada di kode QR', 200))}</div>
+            ${(()=>{ const it = kwItemsPaket(kwDeskripsiQr(j)).slice(0,12); return it.length ? `<ul class="kw-items">${it.map(x=>`<li>${escapeHtml(truncateText(x,60))}</li>`).join('')}</ul>` : `<div class="kw-package-text">${escapeHtml(truncateText(j.paket || 'Rincian paket ada di kode QR', 200))}</div>`; })()}
             ${qr ? `<div class="kw-package-hint">Scan QR di samping untuk memastikan kwitansi ini asli dan melihat isi paket lengkap.</div>` : ''}
           </div>
           ${qr ? `<div class="kw-qr"><div class="kw-qr-box"><img src="${qr.src}" width="${qr.px}" height="${qr.px}" alt="QR isi paket"></div></div>` : ''}
@@ -14160,17 +14285,48 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.16.0'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.16.4'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
   {
+    version: '1.16.4',
+    tanggal: '7 Oktober 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Pertanyaan di formulir pricelist yang belum punya kolom kini otomatis dibuatkan kolom sendiri di Detail Acara, berlabel sama dengan judul kolom spreadsheet. Tiap jenis acara hanya menampilkan pertanyaannya sendiri, dan Catatan tidak lagi terisi otomatis.' },
+    ]
+  },
+  {
+    version: '1.16.3',
+    tanggal: '7 Oktober 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Catatan tidak lagi terisi otomatis dari data pricelist. Kolom lain dari formulir pricelist kini masuk ke kolom baru "Data Tambahan dari Pricelist" di Detail Acara, Adat/Konsep Pakaian dari Biodata Wedding masuk ke kolom Adat / Konsep Pakaian, dan link Maps tidak lagi disalin ke Catatan. Catatan hanya berisi catatan yang diisi klien atau diketik sendiri.' },
+    ]
+  },
+  {
+    version: '1.16.2',
+    tanggal: '7 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Deskripsi Paket tidak lagi memakai awalan "Hasil cetak:". Isi cetak kini satu butir per baris, ditulis "Foto 12 Inch + Bingkai x1" (Inch, bukan tanda kutip). Kalau jumlah bingkai berbeda dari foto, tampil terpisah: "Foto 12 Inch x1" dan "Bingkai 12 Inch x2". Data lama tetap terbaca.' },
+    ]
+  },
+  {
+    version: '1.16.1',
+    tanggal: '7 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Jumlah Bingkai 12" kini bisa diatur sendiri, terpisah dari jumlah Foto 12" (mis. Foto 12 Inch x1 dan Bingkai 12 Inch x2). Biaya Cetak ikut menyesuaikan.' },
+      { kategori: 'Peningkatan', teks: 'Isi paket di QR dan kwitansi kini disusun dari data ceklis Hasil Cetak yang tersimpan di job, bukan menebak dari teks, sehingga tampilannya selalu rapi dan konsisten.' },
+    ]
+  },
+  {
     version: '1.16.0',
     tanggal: '7 Oktober 2026',
     items: [
       { kategori: 'Fitur', teks: 'Halaman hasil pindai QR kini menampilkan status keaslian kwitansi: segel hijau "Kwitansi Valid" bila terdaftar resmi di Kaone Motret, atau peringatan merah bila datanya tidak cocok, tidak terdaftar, sudah diganti, atau dibatalkan.' },
+      { kategori: 'Peningkatan', teks: 'Isi paket di kwitansi kini tertulis rapi, mis. "Foto Ukuran 16 Inch x1", "Bingkai 16 Inch x1", "Album Isi 80 Foto (2 Roll)", tanpa tulisan "Hasil cetak:". Berlaku di halaman QR, kwitansi PDF, dan kwitansi gambar, termasuk untuk kwitansi lama.' },
+      { kategori: 'Peningkatan', teks: 'Tampilan "Terima kasih" setelah kartu isi paket ditutup didesain ulang: kartu rapi di tengah, tombol penuh, dan tautan Instagram.' },
       { kategori: 'Fitur', teks: 'Kwitansi (PDF maupun gambar) kini punya kode QR. Saat klien memindainya dengan kamera HP, langsung terbuka halaman rincian isi paket: nama paket, daftar isinya, dan info acara. Tanpa login, dan tidak menampilkan harga atau pembayaran.' },
     ]
   },

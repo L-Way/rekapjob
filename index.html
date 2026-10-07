@@ -4228,12 +4228,16 @@ const DETAIL_ACARA_SKEMA = {
     {key:'konsepPakaian', label:'Adat / Konsep Pakaian', placeholder:'Contoh: Adat Batak, gaun putih'},
   ],
   margondang: [
+    {key:'konsepPakaian', label:'Adat / Konsep Pakaian', placeholder:'Contoh: Adat Batak, gaun putih'},
     {key:'waktuSelesai', label:'Waktu Selesai Acara', type:'time'},
   ],
   mangayun: [
     {key:'namaAnak', label:'Nama Anak', placeholder:'Nama anak'},
     {key:'namaIbu', label:'Nama Ibu', placeholder:'Nama ibu'},
     {key:'namaAyah', label:'Nama Ayah', placeholder:'Nama ayah'},
+    {key:'namaOrangTua', label:'Nama Orang Tua', placeholder:'Nama orang tua'},
+    {key:'namaBayi', label:'Nama Bayi', placeholder:'Nama bayi'},
+    {key:'tanggalLahirBayi', label:'Tanggal Lahir Bayi', placeholder:'Contoh: 12 Mei 2026'},
   ],
   wisuda: [
     {key:'institusi', label:'Universitas / Institusi', placeholder:'Nama kampus atau sekolah'},
@@ -7718,6 +7722,8 @@ function plNormalizeCore(sourceKey, f){
     }
     det('pemilihanFoto', g('Pemilihan Foto'));
     det('igVendor', g('IG Vendor'));
+    { const ht = g('Harga Tidak Cocok');   // diisi form pricelist kalau harga yang dikirim klien tidak sama dengan daftar harga
+      if(ht && !/^(tidak|no|false|0|-)$/i.test(ht)) out.peringatan.push('Pricelist menandai "Harga Tidak Cocok" (' + ht + ') — periksa harga paket dan biaya sebelum disimpan.'); }
     if(g('Catatan')) lines.push('Catatan klien: ' + g('Catatan'));
     return out;
   }
@@ -7768,6 +7774,10 @@ function plNormalizeCore(sourceKey, f){
     out.jam = plParseWaktu(f['Jam Acara']);
     out.ig = { 'Anak':plIg(f['IG Anak']), 'Ibu':plIg(f['IG Ibu']), 'Ayah':plIg(f['IG Ayah']) };
     det('namaAnak', g('Nama Anak')); det('namaIbu', g('Nama Ibu')); det('namaAyah', g('Nama Ayah'));
+    det('namaOrangTua', g('Nama Orang Tua')); det('namaBayi', g('Nama Bayi'));
+    { const tl = plParseTanggal(f['Tanggal Lahir Bayi']);   // tampil "12 Mei 2026", bukan format mentah dari Sheets
+      if(tl && tl.start){ const [y,m,d] = tl.start.split('-'); det('tanggalLahirBayi', (+d)+' '+['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][+m-1]+' '+y); }
+      else det('tanggalLahirBayi', g('Tanggal Lahir Bayi')); }
   } else {
     out.namaKlien = g('Nama Lengkap');
     out.ig = { 'Pengantin Perempuan':plIg(f['Instagram Pengantin Wanita']), 'Pengantin Laki-laki':plIg(f['Instagram Pengantin Pria']) };
@@ -7776,6 +7786,7 @@ function plNormalizeCore(sourceKey, f){
       out.jam = plParseWaktu(f['Waktu Mulai Acara']);
       out.jenis = 'Margondang 1 Hari'; out.jenisKeep = ['Margondang 1 Hari','Margondang 2 Hari'];
       out.catatanJenis = 'Biodata Margondang tidak memuat jumlah hari — periksa Jenis Acara (1 atau 2 Hari).';
+      det('konsepPakaian', g('Adat/Konsep Pakaian'));
       { const ws = plParseWaktu(f['Waktu Selesai Acara']);
         if(ws) det('waktuSelesai', ws); else if(g('Waktu Selesai Acara')) lines.push('Waktu Selesai: ' + g('Waktu Selesai Acara')); }
     } else {
@@ -14285,12 +14296,20 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.16.4'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.16.5'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.16.5',
+    tanggal: '7 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Jenis acara Mangayun/Aqiqah kini punya kolom Nama Orang Tua, Nama Bayi, dan Tanggal Lahir Bayi. Margondang kini punya kolom Adat / Konsep Pakaian. Keduanya terisi otomatis dari Isi Biodata.' },
+      { kategori: 'Peningkatan', teks: 'Kolom "Harga Tidak Cocok" dari pricelist kini muncul sebagai peringatan saat data ditarik, tidak lagi masuk Catatan.' },
+    ]
+  },
   {
     version: '1.16.4',
     tanggal: '7 Oktober 2026',

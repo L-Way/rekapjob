@@ -2988,6 +2988,81 @@
     .modal.modal-form .jf-sum .jf-totals > div{padding-right:14px;}
     .modal.modal-form .jf-sum .jf-totals > div + div{padding-left:14px; padding-right:0;}
   }
+
+  /* ===== FORM BAGI TUGAS — dirapikan & teks dikecilkan (hanya berlaku di dalam #taskForm) =====
+     Perbaikan utama: kolom jam sebelumnya tanpa gaya dasar (garis tepi gelap tebal, huruf
+     monospace, ikon jam besar) sehingga beda sendiri dari kolom lain; ukuran huruf di
+     label, kolom, tombol, dan kartu disamakan & dikecilkan; jarak antar kotak dirapatkan. */
+  .modal:has(#taskForm) h2{font-size:17px; margin-bottom:4px;}
+  .modal:has(#taskForm) h2 .ic{width:16px; height:16px;}
+  .modal:has(#taskForm) > div[style*="ink-soft"]{font-size:11.5px !important; margin-top:0 !important; margin-bottom:8px !important;}
+  #taskForm.form-grid{gap:10px 12px;}
+  #taskForm label{font-size:11.5px; margin-bottom:3px; letter-spacing:.1px;}
+  #taskForm .field-hint{font-size:10.5px; line-height:1.4; margin-top:3px;}
+  #taskForm input[type=text],#taskForm input[type=time],#taskForm select,#taskForm textarea,
+  #taskForm .task-job-picker-btn{
+    font-family:inherit; font-size:13px; line-height:1.35; padding:7px 10px; min-height:36px;
+    border:1.5px solid #e5ddc0; border-radius:9px; background:#fffefb; color:var(--ink);
+    box-sizing:border-box; width:100%;
+  }
+  #taskForm select{padding-right:26px;}
+  #taskForm textarea{min-height:64px; resize:vertical;}
+  #taskForm input[type=time]{width:auto; flex:1; min-width:0; padding:5px 8px; -webkit-appearance:none; appearance:none; text-align:left;}
+  #taskForm input[type=time]::-webkit-calendar-picker-indicator{width:14px; height:14px; padding:0; margin-left:4px; opacity:.55; cursor:pointer;}
+  #taskForm input[type=time]::-webkit-datetime-edit{padding:0;}
+  #taskForm input:focus,#taskForm select:focus,#taskForm textarea:focus,#taskForm .task-job-picker-btn:focus{border-color:var(--gold); box-shadow:0 0 0 3px rgba(212,175,0,.14); outline:none;}
+  #taskForm .task-job-picker-btn{text-align:left;}
+  #taskForm .task-job-picker-btn > span:first-child{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  #taskForm .task-job-option{font-size:12px; padding:7px 9px;}
+  #taskForm .task-job-option-sub{font-size:10.5px;}
+  #taskForm .task-job-option-toggle,#taskForm .task-job-option-empty{font-size:11.5px;}
+  #taskForm .honor-tim-list{gap:6px; margin-bottom:0;}
+  #taskForm .task-akun-block{padding:8px 10px; border-radius:10px;}
+  #taskForm .task-akun-block:has(input[data-task-akun]:checked){border-color:var(--gold); background:#fffdf0;}
+  #taskForm .honor-tim-check{font-size:12.5px; gap:8px;}
+  #taskForm .honor-tim-check .ic{width:14px; height:14px;}
+  #taskForm .honor-tim-check input[type=checkbox]{width:16px; height:16px;}
+  #taskForm .task-akun-detail{margin-top:8px; padding-top:8px; gap:8px;}
+  #taskForm .task-akun-detail label{font-size:11px;}
+  #taskForm .task-day-chips{gap:5px; margin-bottom:6px; align-items:center;}
+  #taskForm .task-day-chip{font-size:11px; padding:4px 9px; border-width:1px;}
+  #taskForm .task-day-chip.all{margin-left:auto; border:0; background:none; padding:4px 2px; font-weight:600; color:#8a6d00; text-decoration:underline; text-underline-offset:2px;}
+  #taskForm .task-day-block{padding:7px 9px; margin-bottom:6px; border-radius:9px;}
+  #taskForm .task-day-title{font-size:10.5px; margin-bottom:5px; text-transform:none; letter-spacing:.2px;}
+  #taskForm .task-slot-row{gap:6px; margin-bottom:6px;}
+  #taskForm .task-slot-sep{font-size:12px;}
+  #taskForm .icon-btn{min-height:0; width:34px; height:34px; padding:0; display:grid; place-items:center; flex:none; border-radius:9px;}
+  #taskForm .icon-btn .ic{width:14px; height:14px;}
+  #taskForm .btn{min-height:0; font-size:12px; padding:7px 12px; border-radius:9px; box-shadow:none; gap:5px;}
+  #taskForm .btn .ic{width:13px; height:13px;}
+  #taskForm .btn-outline:hover,#taskForm .btn:hover{transform:none; box-shadow:none;}
+  #taskForm .form-actions{gap:8px; margin-top:2px;}
+  #taskForm .form-actions .btn{min-height:40px; font-size:13px; padding:9px 16px;}
+  #taskForm .form-actions .btn-primary{box-shadow:0 5px 14px -8px rgba(190,155,0,.85);}
+  #taskForm .task-form-note{font-size:11px; padding:7px 10px; margin-top:0;}
+  #taskForm .task-coverage{padding:8px 10px; border-radius:9px;}
+  #taskForm .task-coverage-title{font-size:11.5px; margin-bottom:2px;}
+  #taskForm .task-cov-row{font-size:11px; padding:5px 0; gap:6px;}
+  #taskForm .task-cov-day{flex:0 0 92px; font-size:11px;}
+  #taskForm .task-cov-chip{font-size:10.5px; padding:2px 7px;}
+  #taskForm .task-hari-badge{font-size:9.5px;}
+  /* Putaran 2: tombol "Tambah Jam" per hari naik ke baris judul hari (hemat tinggi),
+     label hari di ringkasan tidak terpotong, dan tombol Simpan tidak terlipat. */
+  #taskForm .task-day-block{position:relative;}
+  #taskForm .task-day-block > .btn{position:absolute; top:4px; right:8px; margin:0 !important; padding:3px 9px; font-size:11px; min-height:0; border-radius:8px;}
+  #taskForm .task-day-block .task-day-title{min-height:22px; display:flex; align-items:center; padding-right:96px; margin-bottom:4px;}
+  #taskForm input[type=time]{max-width:150px;}
+  #taskForm .task-cov-day{flex:0 0 112px; white-space:nowrap;}
+  #taskForm .form-actions{display:flex; flex-wrap:nowrap;}
+  #taskForm .form-actions .btn{white-space:nowrap; flex:1 1 0; justify-content:center;}
+  #taskForm .form-actions .btn-outline{flex:0 0 30%;}
+  #taskForm .form-actions .btn-primary{flex:1 1 auto;}
+  #taskForm #taskCoverageBox:not(:has(*)){display:none;}
+  /* iPhone/Safari memperbesar halaman sendiri kalau huruf kolom isian < 16px, jadi di iOS saja
+     ukuran 16px dipertahankan; di Android dan desktop huruf kolom tetap kecil (13px). */
+  @supports (-webkit-touch-callout:none){
+    #taskForm input[type=text],#taskForm input[type=time],#taskForm select,#taskForm textarea{font-size:16px;}
+  }
 </style>
 <style>
 /* Mode akun hanya-chat: seluruh aplikasi utama disembunyikan, hanya ruang chat yang tampil. */

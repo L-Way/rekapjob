@@ -16274,8 +16274,8 @@ if(window.__kaonePaketView){
 #kc .md.pv .cap{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:0 4px 2px;opacity:.85}#kc .md.pv .cap svg{width:14px;height:14px}
 #kc .rw2.sw{transition:none}#kc .rw2.sb{transition:transform .2s ease}
 #kc .rw2::before{content:'';position:absolute;top:50%;width:30px;height:30px;margin-top:-15px;border-radius:50%;background:var(--ka);opacity:var(--sr,0);transform:scale(calc(.5 + var(--sr,0)*.5));pointer-events:none;
-background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 9l5-5 5 5'/%3E%3Cpath d='M4 20h7a4 4 0 0 0 4-4V4'/%3E%3C/svg%3E");background-size:60%;background-repeat:no-repeat;background-position:center}
-#kc .rw2:not(.me)::before{left:-40px}#kc .rw2.me::before{right:-40px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 9l-5-5-5 5'/%3E%3Cpath d='M20 20h-7a4 4 0 0 1-4-4V4'/%3E%3C/svg%3E")}
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 19v-3a7 7 0 0 1 7-7h7'/%3E%3Cpath d='M15 5l4 4-4 4'/%3E%3C/svg%3E");background-size:60%;background-repeat:no-repeat;background-position:center}
+#kc .rw2:not(.me)::before{left:-40px}#kc .rw2.me::before{right:-40px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 19v-3a7 7 0 0 0-7-7H5'/%3E%3Cpath d='M9 5L5 9l4 4'/%3E%3C/svg%3E")}
 @keyframes kFade{from{opacity:0}to{opacity:1}}
 @keyframes kUp{0%{transform:translateY(40px) scale(.97);opacity:0}100%{transform:none;opacity:1}}
 @keyframes kPop{0%{opacity:0;transform:translateY(8px) scale(.88)}60%{opacity:1;transform:translateY(-2px) scale(1.04)}100%{opacity:1;transform:none}}
@@ -16316,7 +16316,7 @@ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
 #kc .kbx:focus-within{box-shadow:0 0 0 2px var(--ka)}
 #kc .c .kbx textarea{flex:1 1 auto;width:auto;min-width:0;box-sizing:border-box;background:none;color:var(--kt);border:0;border-radius:0;box-shadow:none!important;outline:0;margin:0;padding:12px 2px;font:inherit;font-size:16px;line-height:22px;height:46px;max-height:160px;resize:none;overflow-y:hidden;-webkit-appearance:none;appearance:none}
 #kc.imut .c .kbx textarea{border-radius:0}
-#kc .kbx textarea::placeholder{color:var(--kt);opacity:.5}
+#kc .kbx textarea::placeholder{color:var(--kt);opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:22px}#kc .c .kbx textarea:placeholder-shown{height:46px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-top:12px;padding-bottom:12px}
 #kc .c .kbx button.g{width:40px;height:40px;flex:none;border-radius:50%;background:none;box-shadow:none;color:var(--kt);opacity:.7;margin:0 0 3px;font-size:22px;-webkit-tap-highlight-color:transparent;transition:background .15s,opacity .15s,transform .15s}
 #kc .c .kbx button.g:active{background:rgba(127,127,127,.22);opacity:1;transform:scale(.9)}
 @media(hover:hover){#kc .c .kbx button.g:hover{background:rgba(127,127,127,.16);opacity:1}}
@@ -16834,7 +16834,7 @@ if(lim)c='<div class="md">Media sudah habis dilihat</div>';
 else if(m.tipe=='foto'&&(pvx=pvOf(m)))c='<div class="md pv" data-o="'+m.id+'"><div class="pw"><img alt="" src="'+pvx+'"></div><div class="cap">'+ic('image')+' Foto'+sisa+'</div></div>';
 else c='<div class="md'+(m.tipe=='foto'?' ph':'')+'" data-o="'+m.id+'">'+ik+sisa+'</div>'}
 var tk=own?'<i class="'+(m.dilihat_at?'r':'')+'">'+ic(m.diterima_at||m.dilihat_at?'check2':'check')+'</i>':'';
-var rx=chips(m);return '<div class="rw2'+(own?' me':'')+(rx?' hr':'')+(kS[m.id]?' sel':'')+(dr0&&!dn[m.id]?' pop':'')+'" data-mid="'+m.id+'"><div class="b'+(own?' me':'')+(kIsStk(m)?' stk':'')+'">'+(x?'<div class="q">'+E(x.dihapus_at?'Pesan ini sudah dihapus':x.tipe=='teks'?kPlain(x):'['+x.tipe+']')+'</div>':'')+c+'<div class="t">'+tm(m.dikirim_at)+tk+'</div>'+rx+'</div><div class="ac"><button data-r="'+m.id+'">'+ic(own?'replyme':'replyin')+'</button>'+'</div></div>'}
+var rx=chips(m);return '<div class="rw2'+(own?' me':'')+(rx?' hr':'')+(kS[m.id]?' sel':'')+(dr0&&!dn[m.id]?' pop':'')+'" data-mid="'+m.id+'"><div class="b'+(own?' me':'')+(kIsStk(m)?' stk':'')+'">'+(x?'<div class="q">'+E(x.dihapus_at?'Pesan ini sudah dihapus':x.tipe=='teks'?kPlain(x):'['+x.tipe+']')+'</div>':'')+c+'<div class="t">'+tm(m.dikirim_at)+tk+'</div>'+rx+'</div></div>'}
 function draw(){var el=$('km'),b=el.scrollHeight-el.scrollTop-el.clientHeight<120,a=Object.keys(msgs).map(function(k){return msgs[k]}).sort(function(x,y){return x.dikirim_at<y.dikirim_at?-1:1});
 rgn={};el.innerHTML=nt()+a.map(bub).join('')+(lo&&lo.k?TY:'');a.forEach(function(m){dn[m.id]=1});rg=rgn;dr0=true;if(b)el.scrollTop=el.scrollHeight}
 var TY='<div class="rw2 ty"><div class="b"><span class="td"></span><span class="td"></span><span class="td"></span></div></div>';
@@ -17050,7 +17050,7 @@ km.addEventListener('contextmenu',function(e){var r=e.target.closest('.rw2');if(
 km.addEventListener('click',function(e){if(Date.now()<sup){e.stopPropagation();e.preventDefault();return}if(selN()){var r=e.target.closest('.rw2');if(r&&r.dataset.mid&&!r.classList.contains('ty')){e.stopPropagation();e.preventDefault();selTog(r.dataset.mid)}}},true)})();
 /* ---- GESER UNTUK MEMBALAS (geser pesan ke arah dalam) ---- */
 (function(){var km=$('km'),row=null,x0=0,y0=0,dx=0,mode=0,TH=60,MAX=90;
-function rid(r){var b=r.querySelector('[data-r]');return b&&b.dataset.r}
+function rid(r){return r.dataset.mid}
 function reset(r){if(!r)return;r.classList.remove('sw');r.classList.add('sb');r.style.transform='';r.style.setProperty('--sr',0);setTimeout(function(){r.classList.remove('sb')},220)}
 km.addEventListener('touchstart',function(e){if(e.touches.length!=1){row=null;return}var r=e.target.closest('.rw2');if(!r||r.classList.contains('ty')||e.target.closest('.ac')){row=null;return}
 row=r;x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;mode=0},{passive:true});

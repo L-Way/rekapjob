@@ -5612,7 +5612,8 @@ function getTaskDeadline(task){
   const d = new Date(tglAkhir+'T23:59:00');
   if(Number.isNaN(d.getTime())) return null;
   // Sesi yang melewati tengah malam (mis. 22:00–01:00) baru benar-benar selesai keesokan harinya.
-  if(getTaskHari(task) && getTaskSlots(task).some(s=>s.mulai && s.selesai && s.selesai<=s.mulai)) d.setDate(d.getDate()+1);
+  // Sesi yang berakhir tepat 00:00 (mis. 19:00–00:00) berakhir di akhir hari itu, jadi tidak diperpanjang.
+  if(getTaskHari(task) && getTaskSlots(task).some(s=>s.mulai && s.selesai && s.selesai<=s.mulai && s.selesai!=='00:00')) d.setDate(d.getDate()+1);
   return d;
 }
 // Menandai tugas menjadi "Selesai" secara otomatis begitu waktu sekarang sudah melewati

@@ -17280,20 +17280,27 @@ else if(t.id=='kstb')stkOpen();else if(t.id=='kmj'){shut('kst');jdOpen('')}else 
 var kLP=0;
 document.addEventListener('visibilitychange',function(){if(document.visibilityState=='hidden'&&$('kc').classList.contains('on')&&!pc){close()}});
 /* ---- MODE HANYA-CHAT: ruang chat selalu terbuka, tidak bisa ditutup, hanya bisa Keluar akun ---- */
-(function(){var busy=0,gagal=0,mulai=0;
-function layar(msg){var kc=$('kc');if(!kc||$('kcg'))return;var d=document.createElement('div');d.id='kcg';
-d.style.cssText='position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;background:var(--kb);color:var(--kt)';
+(function(){var busy=0,gagal=0,mulai=0,coba=0,errOpen='';
+function layar(msg,detail){var kc=$('kc');if(!kc||$('kcg'))return;var d=document.createElement('div');d.id='kcg';
+d.style.cssText='position:fixed;inset:0;z-index:100002;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;background:#fffdf6;color:#3b372f;font-family:system-ui,sans-serif';
 var t=document.createElement('b');t.style.fontSize='16px';t.textContent=msg;d.appendChild(t);
+if(detail){var dt=document.createElement('small');dt.style.cssText='font-size:12px;opacity:.75;max-width:320px;word-break:break-word';dt.textContent='Detail: '+detail;d.appendChild(dt)}
 var r=document.createElement('div');r.style.cssText='display:flex;gap:10px';
-var a=document.createElement('button');a.type='button';a.className='it';a.style.cssText='padding:11px 18px;border-radius:16px;font-weight:700;background:var(--ki);color:inherit;box-shadow:var(--ks)';a.textContent='Coba lagi';
-var k=document.createElement('button');k.type='button';k.className='it';k.style.cssText='padding:11px 18px;border-radius:16px;font-weight:700;background:var(--ki);color:inherit;box-shadow:var(--ks)';k.textContent='Keluar akun';
-a.addEventListener('click',function(){d.remove();gagal=0;pastikan()});k.addEventListener('click',function(){logout()});
-r.appendChild(a);r.appendChild(k);d.appendChild(r);kc.appendChild(d)}
+var a=document.createElement('button');a.type='button';a.className='it';a.style.cssText='padding:11px 18px;border-radius:16px;font-weight:700;background:#f0e9d6;color:inherit;border:0';a.textContent='Coba lagi';
+var k=document.createElement('button');k.type='button';k.className='it';k.style.cssText='padding:11px 18px;border-radius:16px;font-weight:700;background:#f0e9d6;color:inherit;border:0';k.textContent='Keluar akun';
+a.addEventListener('click',function(){d.remove();gagal=0;coba=0;pastikan()});k.addEventListener('click',function(){logout()});
+r.appendChild(a);r.appendChild(k);d.appendChild(r);document.body.appendChild(d)}
 async function pastikan(){if(!window.__kaoneChatOnly||busy||gagal)return;var kc=$('kc');if(!kc||kc.classList.contains('on')||document.visibilityState!='visible')return;
-busy=1;try{await open()}catch(e){}busy=0;if(kc.classList.contains('on'))return;
+busy=1;errOpen='';try{await open()}catch(e){errOpen=(e&&e.message)||String(e)}busy=0;if(kc.classList.contains('on')){coba=0;return;}
 var s=null;try{s=(await (window.supabaseClient||supabaseClient).auth.getSession()).data.session}catch(e){}
 if(!s){kaoneKeluarPaksa();return}
-gagal=1;layar('Ruang chat belum bisa dibuka. Periksa koneksi internet, lalu coba lagi.')}
+if(++coba<3)return;
+var why=errOpen;
+if(!why){
+if(!kaoneChatBoleh())why='akun ini belum dikenali sebagai hanya-chat/admin di aplikasi (username: '+(typeof currentUsername!=='undefined'?currentUsername:'?')+')';
+else{try{var q=await (window.supabaseClient||supabaseClient).rpc('kaone_chat_peran');if(q.error)why='kaone_chat_peran error: '+(q.error.message||q.error.code);else if(!q.data)why='server mengembalikan peran kosong (kaone_chat_peran) untuk akun ini';else why='gagal memuat data chat'}catch(e){why=(e&&e.message)||'tidak bisa menghubungi server'}}
+}
+gagal=1;layar('Ruang chat belum bisa dibuka. Periksa koneksi internet, lalu coba lagi.',why)}
 window.kaoneChatMulai=function(){if(mulai)return;mulai=1;
 if(!$('kmo')){var b=document.createElement('button');b.className='it';b.id='kmo';b.type='button';b.innerHTML='<span></span>Keluar akun';
 b.addEventListener('click',function(){shut('kst');logout()});$('kstx').parentNode.before(b)}

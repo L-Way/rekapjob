@@ -16784,7 +16784,7 @@ function kTokSet(){try{(window.supabaseClient||supabaseClient).auth.getSession()
 function kBeacon(){try{if(!kTok||typeof SUPABASE_URL=='undefined'||typeof SUPABASE_ANON_KEY=='undefined')return;fetch(SUPABASE_URL+'/rest/v1/rpc/kaone_chat_ping',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:SUPABASE_ANON_KEY,Authorization:'Bearer '+kTok},body:'{}'}).catch(function(){})}catch(e){}}
 function kPoll(){try{if(!sb||!me)return;sb.from('kaone_chat_status').select('user_id,terakhir_online').then(function(r){(r.data||[]).forEach(function(x){if(x.user_id!=me){lo=lo||{};lo.t=x.terakhir_online}});st()},function(){})}catch(e){}}
 function kTrack(){try{if(rm&&rm.track)rm.track({at:Date.now(),v:document.visibilityState=='visible'})}catch(e){}}
-function kVis(){try{if(!kaoneChatBoleh())return;if(document.visibilityState=='hidden'){kBeacon();kTrack()}else{kTokSet();kTrack();if($('kc').classList.contains('on')){kPingRpc(sb)kPoll()}}}catch(e){}}
+function kVis(){try{if(!kaoneChatBoleh())return;if(document.visibilityState=='hidden'){kBeacon();kTrack()}else{kTokSet();kTrack();if($('kc').classList.contains('on')){kPingRpc(sb);kPoll()}}}catch(e){}}
 if(!kVisInit){kVisInit=1;document.addEventListener('visibilitychange',kVis);window.addEventListener('pagehide',function(){try{if(kaoneChatBoleh())kBeacon()}catch(e){}});setTimeout(kTokSet,2500);setInterval(kTokSet,240000)}
 function kNotifState(){if(!('Notification' in window)||!('serviceWorker' in navigator))return 'tak';var p=Notification.permission;if(p=='denied')return 'blok';return p=='granted'&&rtPrefs.system?'on':'off'}
 var kNfH={on:'Aktif: pesan dan panggilan baru tetap muncul walau aplikasi ditutup.',off:'Mati. Ketuk untuk mengaktifkan.',blok:'Diblokir di pengaturan browser. Buka pengaturan situs lalu izinkan Notifikasi.',tak:'Browser ini belum mendukung. Di iPhone, pasang dulu lewat Bagikan > Tambah ke Layar Utama.'};
@@ -16813,7 +16813,7 @@ var r=(await sb.from('kaone_chat_status').select('*'));(r.data||[]).forEach(func
 await pfLoad();st();
 await load();bellRead();conn();setTimeout(kNotifAsk,1500);kPingRpc(sb);sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}});var bn=0;bt=setInterval(function(){st();kPingRpc(sb);kPoll();if(++bn%5==0)sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}})},60000)}
 function bellRead(){try{var b=kcBellGet();if(b&&b.id)markNotifRead('chat_'+b.id)}catch(e){}}
-function close(){try{kkAbort()}catch(e){}if(rcS)recStop(false);kPingRpc(sb)pkClose();selClear();dn={};dr0=false;if(lo)lo.k=0;$('kc').classList.remove('on');clearInterval(bt);if(db)sb.removeChannel(db);if(rm)sb.removeChannel(rm);db=rm=null}
+function close(){try{kkAbort()}catch(e){}if(rcS)recStop(false);kPingRpc(sb);pkClose();selClear();dn={};dr0=false;if(lo)lo.k=0;$('kc').classList.remove('on');clearInterval(bt);if(db)sb.removeChannel(db);if(rm)sb.removeChannel(rm);db=rm=null}
 async function load(){var r=await sb.from('kaone_chat_pesan').select('*').order('dikirim_at');msgs={};(r.data||[]).forEach(function(m){msgs[m.id]=m});draw();ack()}
 function ack(){sb.rpc('kaone_chat_diterima').then(function(){if(document.visibilityState=='visible')sb.rpc('kaone_chat_dibaca').then(function(){},function(){})})}
 function conn(){db=sb.channel('kaone-chat-db').on('postgres_changes',{event:'*',schema:'public',table:'kaone_chat_pesan'},function(p){

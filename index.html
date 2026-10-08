@@ -3413,6 +3413,43 @@ html.km-has-session #authGate{display:none !important;}
 .cx-bq{display:inline-flex; align-items:center; gap:6px; flex-wrap:nowrap;}
 .jf .cx-bq .cx-q{width:64px;}
 </style>
+<style id="kmTugasSimple">
+/* ===== Pembagian Tugas lebih sederhana (v1.16.10) ===== */
+.task-summary-grid.tg-sum{grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:8px; margin:12px 0 14px;}
+.tg-sum .task-stat{padding:10px 11px;}
+.tg-sum .task-stat .ts-value{font-size:22px;}
+.tg-sum .task-stat .ts-label{font-size:9.5px; letter-spacing:.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.tg-sum .task-stat .ts-sub{font-size:10.5px; margin-top:4px;}
+.tg-of{font-size:13px; font-weight:500; opacity:.55; margin-left:1px;}
+.task-stat.gold .ts-bar{background:rgba(255,255,255,.5); margin-top:6px;}
+.task-stat.gold .ts-bar i{background:#231f0f;}
+.tg-fold{margin-top:10px;}
+.tg-fold>summary{
+  list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px;
+  min-height:40px; padding:8px 12px; border:1px solid var(--line); border-radius:10px;
+  background:rgba(255,255,255,.75); font-size:12.5px; font-weight:600; color:var(--ink);
+}
+.tg-fold>summary::-webkit-details-marker{display:none;}
+.tg-fold>summary::after{
+  content:''; flex:none; width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor;
+  transform:rotate(45deg) translateY(-2px); transition:transform .2s; opacity:.7;
+}
+.tg-fold[open]>summary::after{transform:rotate(225deg) translateY(-1px);}
+.tg-sl{display:inline-flex; align-items:center; gap:6px; min-width:0; text-align:left;}
+.tg-fold-body{padding-top:10px;}
+.tg-fold-body > :first-child{margin-top:0;}
+.tg-card{margin:0 0 14px; background:#fffdf6; border:1px solid var(--line); border-radius:14px; padding:6px;}
+.tg-card>summary{border:none; background:transparent; font-size:14px; font-weight:700;}
+.tg-card>.tg-fold-body{padding:0 8px 8px;}
+.tg-card .task-person-card:first-child{margin-top:0;}
+.tg-count{display:inline-block; margin-left:6px; padding:2px 9px; border-radius:999px; background:var(--gold-pale); color:#5c4a12; font-size:11px; font-weight:700;}
+.tg-badge{display:inline-block; margin-left:6px; padding:2px 8px; border-radius:999px; background:#c0392b; color:#fff; font-size:10.5px; font-weight:700;}
+.tg-detail-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
+.tg-detail-head .tg-count{margin-left:0; flex:none;}
+.tg-empty{padding:14px 8px; text-align:center; font-size:13px; color:var(--ink-soft);}
+.tg-filter>summary .ic{width:15px; height:15px;}
+.tbc .tg-fold>summary, .task-bonus-box .tg-fold>summary{font-size:12px; min-height:38px;}
+</style>
 </head>
 <body>
 
@@ -6319,13 +6356,13 @@ function renderTeamBonusCard(people, pendingList){
         </div>
         <button type="button" class="bonus-adjust-btn" id="btnEditBonusRate">${ic('edit')} Atur Tarif</button>
       </div>
-      ${renderBonusBreakdownData(b, 'admin')}
+      ${tgFold('bonus-tim', 'Lihat rincian', renderBonusBreakdownData(b, 'admin') + `
       <div class="tbc-grid">
         <div class="tbc-item"><div class="tbc-k">Tarif bonus</div><div class="tbc-v">${fmtRp(BONUS_PER_JAM)} / jam</div><div class="tbc-n">Dihitung otomatis dari jam kerja</div></div>
         <div class="tbc-item"><div class="tbc-k">Dibayar bulan ini</div><div class="tbc-v">${fmtRp(totalBonusDiklaimBulanIni())}</div><div class="tbc-n">Mengurangi penghasilan bersih Admin</div></div>
         <div class="tbc-item"><div class="tbc-k">Klaim menunggu</div><div class="tbc-v">${pendingList.length ? pendingList.length+' klaim' : 'Tidak ada'}</div><div class="tbc-n">${pendingList.length ? fmtRp(pendRp)+' belum diproses' : 'Semua klaim sudah diproses'}</div></div>
         <div class="tbc-item"><div class="tbc-k">Min. klaim Tunai</div><div class="tbc-v">${fmtRp(MIN_KLAIM_TUNAI)}</div><div class="tbc-n">Nominal bebas · 1 WDP = ${fmtRp(MIN_KLAIM_WDP)}</div></div>
-      </div>
+      </div>`)}
     </div>`;
 }
 // Keterangan di bawah angka utama kartu bonus.
@@ -12152,6 +12189,11 @@ function taskJobOptions(){
     return da-db || (a.createdAt||0)-(b.createdAt||0);
   });
 }
+/* Bagian lipat di menu Pembagian Tugas: keadaan buka/tutup diingat walau halaman digambar ulang (auto-refresh) */
+let tgOpenSecs = new Set();
+function tgFold(key, label, inner, cls){
+  return `<details class="tg-fold${cls?' '+cls:''}" data-tg-sec="${key}"${tgOpenSecs.has(key)?' open':''}><summary><span class="tg-sl">${label}</span></summary><div class="tg-fold-body">${inner}</div></details>`;
+}
 function viewTugas(){
   const mine = !isAdmin();
   const visibleTasks = mine
@@ -12208,6 +12250,7 @@ function viewTugas(){
   const filterStatus = taskRekapFilter.status || '';
   const filterFrom = taskRekapFilter.from || '';
   const filterTo = taskRekapFilter.to || '';
+  const filterActive = [filterUser,filterRole,filterStatus,filterFrom,filterTo].filter(Boolean).length;
 
   let filtered = visibleTasks.filter(t=>{
     const d=getTaskDate(t), dEnd=getTaskFinishDate(t);
@@ -12227,19 +12270,12 @@ function viewTugas(){
     const claimableRp = userClaimableBonusRupiah(a.id);
     const claimedRp = userClaimedTotalRupiah(a.id);
     const nextClaimInfo = userNextClaimInfo(a.id);
+    const nSelesai = list.filter(t=>t.status==='Selesai').length;
     return `<div class="task-person-card">
       <div class="task-person-head">
         <div><div class="task-person-name">${ic('user')} ${escapeHtml(a.username)}</div>
-        <div class="task-person-meta">Akun Tim · ${list.length} tugas</div></div>
-        <span class="pill">${fmtTaskHours(hrs)} total</span>
-      </div>
-      <div class="task-person-stats">
-        <span class="task-mini-stat">${ic('clipboard')} ${list.length} tugas</span>
-        <span class="task-mini-stat">${ic('check-circle')} ${list.filter(t=>t.status==='Selesai').length} selesai</span>
-        <span class="task-mini-stat">${ic('hourglass')} ${list.filter(t=>(t.status||'Belum')!=='Selesai').length} belum selesai</span>
-        <span class="task-mini-stat">${ic('camera')} ${list.filter(t=>t.role==='Fotografer').length} fotografer</span>
-        <span class="task-mini-stat">${ic('video')} ${list.filter(t=>t.role==='Videografer').length} videografer</span>
-        <span class="task-mini-stat">${ic('money')} ${fmtRp(totalHonorTimAkun(a.id, jobs))} honor job</span>
+        <div class="task-person-meta">${list.length} tugas · ${nSelesai} selesai · ${list.length-nSelesai} belum</div></div>
+        <span class="pill">${fmtTaskHours(hrs)}</span>
       </div>
       <div class="task-bonus-box">
         <div class="task-bonus-row">
@@ -12250,7 +12286,11 @@ function viewTugas(){
           </div>
           <button type="button" class="bonus-adjust-btn" data-bonus-adjust="${escapeHtml(a.id)}">${ic('settings')} Atur Bonus</button>
         </div>
-        ${renderBonusBreakdown(a.id, 'admin')}
+        ${tgFold('akun-'+a.id, 'Lihat rincian', `<div class="task-person-stats" style="margin:0 0 4px;">
+          <span class="task-mini-stat">${ic('camera')} ${list.filter(t=>t.role==='Fotografer').length} fotografer</span>
+          <span class="task-mini-stat">${ic('video')} ${list.filter(t=>t.role==='Videografer').length} videografer</span>
+          <span class="task-mini-stat">${ic('money')} ${fmtRp(totalHonorTimAkun(a.id, jobs))} honor job</span>
+        </div>` + renderBonusBreakdown(a.id, 'admin'))}
       </div>
     </div>`;
   }).join('') : '';
@@ -12261,7 +12301,7 @@ function viewTugas(){
       <div>
         <h2 style="margin:0;">${ic('folder')} ${mine ? 'Tugas Saya' : 'Pembagian Tugas Tim'}</h2>
         <div class="tg-sub">
-          ${mine ? 'Tugas untukmu dari Admin.' : `Bagi tugas per akun & jam kerja · ${visibleTasks.length} tugas dari ${accCount} akun Tim`}
+          ${mine ? 'Tugas untukmu dari Admin.' : `${visibleTasks.length} tugas · ${fmtTaskHours(totalHours)} kerja · ${accCount} akun Tim`}
         </div>
       </div>
       <div class="tg-actions">
@@ -12270,13 +12310,10 @@ function viewTugas(){
       </div>
     </div>
 
-    <div class="task-summary-grid">
-      <div class="task-stat gold"><div class="ts-label">Total Tugas</div><div class="ts-value">${visibleTasks.length}</div><div class="ts-sub">${jobCount} job${mine?'':` · ${accCount} akun`}</div></div>
-      <div class="task-stat"><div class="ts-label">Selesai</div><div class="ts-value">${done}</div><div class="ts-sub">${pctDone}% dari total</div><div class="ts-bar"><i style="width:${pctDone}%"></i></div></div>
-      <div class="task-stat"><div class="ts-label">Belum Selesai</div><div class="ts-value">${visibleTasks.length-done}</div><div class="ts-sub ${overdueCount?'warn':''}">${overdueCount ? overdueCount+' lewat jadwal' : (visibleTasks.length-done ? 'Semua sesuai jadwal' : 'Semua sudah selesai')}</div></div>
-      <div class="task-stat"><div class="ts-label">Total Jam</div><div class="ts-value">${fmtTaskHours(totalHours)}</div><div class="ts-sub">Rata-rata ${fmtTaskHours(avgHours)} / tugas</div></div>
-      <div class="task-stat"><div class="ts-label">Tugas Mendatang</div><div class="ts-value">${upcoming}</div><div class="ts-sub">${nextTaskDate ? 'Terdekat '+escapeHtml(formatTaskDate(nextTaskDate)) : 'Belum ada jadwal'}</div></div>
-      <div class="task-stat green"><div class="ts-label">Bonus Siap Diklaim</div><div class="ts-value">${fmtRp(mine ? myClaimableRp : tileReadyRp)}</div><div class="ts-sub">${tileWaitRp>0 ? '+ '+fmtRp(tileWaitRp)+' masa tunggu' : 'Tidak ada masa tunggu'}</div></div>
+    <div class="task-summary-grid tg-sum">
+      <div class="task-stat gold"><div class="ts-label">Selesai</div><div class="ts-value">${done}<span class="tg-of">/${visibleTasks.length}</span></div><div class="ts-bar"><i style="width:${pctDone}%"></i></div><div class="ts-sub">${pctDone}% selesai</div></div>
+      <div class="task-stat"><div class="ts-label">Belum Selesai</div><div class="ts-value">${visibleTasks.length-done}</div><div class="ts-sub ${overdueCount?'warn':''}">${overdueCount ? overdueCount+' lewat jadwal' : (visibleTasks.length-done ? 'Sesuai jadwal' : 'Semua selesai')}</div></div>
+      <div class="task-stat"><div class="ts-label">Mendatang</div><div class="ts-value">${upcoming}</div><div class="ts-sub">${nextTaskDate ? 'Terdekat '+escapeHtml(formatTaskDate(nextTaskDate)) : 'Belum ada jadwal'}</div></div>
     </div>
 
     ${mine ? `
@@ -12289,7 +12326,7 @@ function viewTugas(){
         </div>
         <button type="button" class="bonus-claim-btn" id="btnClaimBonus" ${myClaimableRp>=Math.min(MIN_KLAIM_TUNAI,MIN_KLAIM_WDP)?'':'disabled'} title="${escapeHtml(claimButtonTitle(myClaimableRp, myNextClaim))}">${ic('phone')} Klaim Bonus</button>
       </div>
-      ${renderBonusBreakdown(currentUserId, 'tim')}
+      ${tgFold('bonus-saya', 'Lihat rincian bonus', renderBonusBreakdown(currentUserId, 'tim'))}
       ${myPendingClaims.map(c=>`
       <div class="bonus-claim-alert">
         <span><span class="claim-type-badge ${c.jenis==='WDP'?'wdp':'tunai'}">${c.jenis==='WDP'?ic('sparkle'):ic('money')} ${claimJenisLabel(c)}</span> klaim sebesar <b>${fmtRp(c.jumlah)}</b> diajukan ${escapeHtml(formatCommentTime(c.createdAt))} — sudah dikirim ke WhatsApp Admin, menunggu ${claimVerbMenunggu(c)}.${c.jenis==='WDP'?` (ID Game: ${escapeHtml(c.mlId||'-')}, Server: ${escapeHtml(c.mlZone||'-')})`:''}</span>
@@ -12319,7 +12356,7 @@ function viewTugas(){
         Total honor dari semua job.
       </div>
       ${honorJobList.length ? `
-      <div class="bonus-adjust-list">
+      <details class="tg-fold" data-tg-sec="honor-saya"${tgOpenSecs.has('honor-saya')?' open':''}><summary>Lihat per job (${honorJobList.length})</summary><div class="tg-fold-body"><div class="bonus-adjust-list">
         ${honorJobList.map(x=>`
           <div class="bonus-adjust-item">
             <div>
@@ -12329,7 +12366,7 @@ function viewTugas(){
             <div class="bonus-adjust-jam plus">${fmtRp(x.nominal)}</div>
           </div>
         `).join('')}
-      </div>` : `<div class="field-hint" style="margin-top:6px;">Belum ada honor dibagikan.</div>`}
+      </div></div></details>` : `<div class="field-hint" style="margin-top:6px;">Belum ada honor dibagikan.</div>`}
     </div>` : ''}
 
     ${isAdmin()?`
@@ -12343,19 +12380,14 @@ function viewTugas(){
       </div>
     </div>` : ''}
 
-    <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;">
-      <div class="section-title" style="margin-top:0;">${ic('chart')} Rekap Per Akun Tim</div>
-      ${personRows || `<div class="empty-state" style="padding:25px;">Belum ada akun Tim.</div>`}
-    </div>`:''}
+    ${tgFold('rekap-akun', `${ic('chart')} Rekap Per Akun Tim <span class="tg-count">${people.length}</span>`, personRows || `<div class="tg-empty">Belum ada akun Tim.</div>`, 'tg-card')}`:''}
 
     <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;">
-      <div class="toolbar" style="margin-bottom:12px;">
-        <div>
-          <div class="section-title" style="margin:0;">${ic('search')} Rekap Tugas Detail</div>
-          <div style="font-size:11.5px;color:var(--ink-soft);margin-top:3px;">${isAdmin()?'Filter semua tugas tim.':'Filter tugas akun ini.'}</div>
-        </div>
-        <button type="button" class="btn btn-outline" id="btnResetTaskFilter">Reset Filter</button>
+      <div class="tg-detail-head">
+        <div class="section-title" style="margin:0;">${ic('search')} Rekap Tugas Detail</div>
+        <span class="tg-count">${filtered.length} tugas</span>
       </div>
+      <details class="tg-fold tg-filter" data-tg-sec="filter"${(tgOpenSecs.has('filter') || filterActive) ? ' open' : ''}><summary><span class="tg-sl">${ic('search')} Filter${filterActive ? ` <span class="tg-badge">${filterActive} aktif</span>` : ''}</span></summary><div class="tg-fold-body">
       <div class="form-grid" style="gap:10px 14px;">
         ${isAdmin()?`<div><label>Akun Tim</label><select id="taskFilterUser"><option value="">Semua Akun Tim</option>${people.map(a=>`<option value="${escapeHtml(a.id)}" ${String(filterUser)===String(a.id)?'selected':''}>${escapeHtml(a.username)}</option>`).join('')}</select></div>`:''}
         <div><label>Role</label><select id="taskFilterRole"><option value="">Semua Role</option><option value="Fotografer" ${filterRole==='Fotografer'?'selected':''}>${ic('camera')} Fotografer</option><option value="Videografer" ${filterRole==='Videografer'?'selected':''}>${ic('video')} Videografer</option></select></div>
@@ -12363,6 +12395,8 @@ function viewTugas(){
         <div><label>Dari Tanggal</label><input type="date" id="taskFilterFrom" value="${escapeHtml(filterFrom)}"></div>
         <div><label>Sampai Tanggal</label><input type="date" id="taskFilterTo" value="${escapeHtml(filterTo)}"></div>
       </div>
+      <button type="button" class="btn btn-outline" id="btnResetTaskFilter" style="width:100%;margin-top:10px;">Reset Filter</button>
+      </div></details>
     </div>
 
     <div class="table-wrap">
@@ -14957,6 +14991,11 @@ function attachHandlers(){
   // SARAN & PENILAIAN
   document.getElementById('btnRefreshUlasan')?.addEventListener('click', pullUlasanFromCloud);
 
+  // Bagian lipat (rincian bonus, rekap per akun, filter): ingat buka/tutup walau halaman digambar ulang
+  document.querySelectorAll('details[data-tg-sec]').forEach(d=>{
+    d.addEventListener('toggle', ()=>{ if(d.open) tgOpenSecs.add(d.dataset.tgSec); else tgOpenSecs.delete(d.dataset.tgSec); });
+  });
+
   // PEMBAGIAN TUGAS — tombol refresh manual (dipasang di luar bindTaskHandlers supaya
   // tetap aktif walau daftar tugas sedang kosong)
   document.getElementById('btnRefreshTugas')?.addEventListener('click', async (e)=>{
@@ -15158,6 +15197,7 @@ const CHANGELOG = [
     version: '1.16.10',
     tanggal: '8 Oktober 2026',
     items: [
+      { kategori: 'Peningkatan', teks: 'Menu Pembagian Tugas Tim lebih sederhana dan rapi: kartu ringkasan jadi 3 (Selesai, Belum Selesai, Mendatang), rincian bonus dan Rekap Per Akun Tim dilipat di balik tombol "Lihat rincian", dan filter Rekap Tugas Detail dilipat di balik tombol Filter (muncul penanda kalau ada filter aktif).' },
       { kategori: 'Peningkatan', teks: 'Aplikasi lebih cepat tampil saat dibuka: pustaka ekspor (Excel, PDF, gambar) kini dimuat di belakang layar dan tidak lagi menahan halaman utama.' },
       { kategori: 'Peningkatan', teks: 'Daftar Semua Job di HP tampil lebih ringkas: tiap kartu kini hanya memuat nomor, tanggal, nama klien, jenis acara & lokasi, satu label status, dan nilai Bersih/Sisa. Ketuk label status untuk membuka dan mengubah Edit, Cetak, Pengiriman, dan Bayar; ketuk kartu untuk melihat detail; Edit, Maps, dan Hapus ada di menu titik tiga. Filter dilipat di balik tombol filter, dan tombol "+ Job Baru" menjadi tombol melayang.' },
       { kategori: 'Fitur', teks: 'Panel Notifikasi sekarang punya tombol tempat sampah untuk menghapus semua notifikasi sekaligus (ketuk dua kali supaya tidak terhapus tak sengaja). Notifikasi baru yang masuk sesudahnya tetap muncul seperti biasa.' },

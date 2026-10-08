@@ -17429,6 +17429,10 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 @media(prefers-reduced-motion:reduce){#kc .rw2.pop .b,#kc .rw2.me.pop .b,#kc .rw2.ty .b{animation:kFade .2s both}#kc .b.gone.ga{animation:kFade .2s both}}
 #kcv.nosave img,#kcv.nosave video{pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}#kcv #kvd{background:#0f766e}@media print{#kcv{display:none!important}}
 #kc .kcw{display:inline-block;white-space:nowrap;max-width:100%}#kc .kcd{display:inline-block;white-space:nowrap;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";font-weight:700;letter-spacing:.2px;min-width:7.4ch;text-align:left}
+#kc .kct{flex:1 1 auto;min-width:0;line-height:1.45;word-break:normal;overflow-wrap:normal;hyphens:none;text-align:left}
+#kc .kct svg{width:1.15em;height:1.15em;vertical-align:-.2em;margin-right:5px}
+#kc .md.pv .cap{align-items:flex-start}#kc .md.pv .cap>svg{margin-top:.15em;flex:none}
+#kc .kcw{word-break:normal;overflow-wrap:normal}
 </style>
 <div id="kc"><div class="h"><button id="kx" data-i="back"></button><div class="av" id="kav"></div><div id="kpw" style="cursor:pointer;min-width:0"><b id="kn">Chat</b><small id="ks"></small></div>
 <div class="hb"><button id="kcv1" title="Suara" data-i="phone"></button><button id="kcv2" title="Video" data-i="video"></button><button id="kmn" title="Pengaturan chat" data-i="dots"></button></div></div>
@@ -17907,7 +17911,7 @@ if(best)return ok(best);k*=.8}no(new Error('besar'))}catch(e){no(e)}};im.src=u})
 function kcGone(m){if(!m||m.tipe!='foto'||m.dihapus_at)return false;if(m.hilang_at)return true;var x=!!(m.kedaluwarsa_at&&Date.now()>=new Date(m.kedaluwarsa_at).getTime());if(m.pengirim==me)return x;if(peran=='lawan')return x||m.jumlah_lihat>=5;return x&&!!m.diunduh_at}
 function kcHMS(ms){var s=Math.max(0,Math.floor(ms/1000)),p=function(n){return(n<10?'0':'')+n};return p(Math.floor(s/3600))+':'+p(Math.floor(s%3600/60))+':'+p(s%60)}
 function kcCd(m,lbl){var ms=new Date(m.kedaluwarsa_at).getTime()-Date.now();return ms>0?' <span class="kcw">· '+lbl+' <span class="kcd" data-exp="'+m.kedaluwarsa_at+'">'+kcHMS(ms)+'</span></span>':''}
-function kcCap(m,own){if(m.tipe!='foto')return '';if(own||peran=='lawan')return m.kedaluwarsa_at?kcCd(m,peran=='lawan'?'hilang dalam':'hilang di lawan'):(own?' · belum dilihat':'');var c=m.kedaluwarsa_at?(new Date(m.kedaluwarsa_at).getTime()>Date.now()?kcCd(m,'hilang di lawan'):' · sudah hilang di lawan'):'';return c+(m.diunduh_at?'':' · belum diunduh')}
+function kcCap(m,own){if(m.tipe!='foto')return '';if(own||peran=='lawan')return m.kedaluwarsa_at?kcCd(m,peran=='lawan'?'hilang dalam':'hilang di lawan'):(own?' <span class="kcw">· belum dilihat</span>':'');var c=m.kedaluwarsa_at?(new Date(m.kedaluwarsa_at).getTime()>Date.now()?kcCd(m,'hilang di lawan'):' <span class="kcw">· sudah hilang di lawan</span>'):'';return c+(m.diunduh_at?'':' <span class="kcw">· belum diunduh</span>')}
 var kcTk=0;
 function kcTick(){var t=Date.now(),f=0;document.querySelectorAll('#km .kcd').forEach(function(e){var ms=new Date(e.dataset.exp).getTime()-t;e.textContent=kcHMS(ms);if(ms<=0)f=1});if(f&&!kcTick.w){kcTick.w=1;setTimeout(function(){kcTick.w=0;kcSweep();kcBersih()},800)}}
 var kcDl=null,kcNS=false;
@@ -17930,10 +17934,10 @@ if(kcGone(m)){var ga=dr0&&dn[m.id]&&!kGS[m.id];kGS[m.id]=1;return '<div class="b
 if(m.tipe=='teks')c=kTxt(m);
 else if(m.tipe=='panggilan')c=kcCard(m,own);
 else{var lim=!own&&peran=='lawan'&&m.jumlah_lihat>=5,ik={foto:ic('image')+' Foto',video:ic('film')+' Video',suara:ic('wave')+' Pesan suara '+(m.media_durasi||0)+'d'}[m.tipe];
-var sisa=(!own&&peran=='lawan'?' · sisa '+(5-m.jumlah_lihat)+'x':'')+kcCap(m,own);
+var sisa=(!own&&peran=='lawan'?' <span class="kcw">· sisa '+(5-m.jumlah_lihat)+'x</span>':'')+kcCap(m,own);
 if(lim)c='<div class="md">Media sudah habis dilihat</div>';
-else if(m.tipe=='foto'&&(pvx=pvOf(m)))c='<div class="md pv" data-o="'+m.id+'"><div class="pw"><img alt="" src="'+pvx+'"></div><div class="cap">'+ic('image')+' Foto'+sisa+'</div></div>';
-else c='<div class="md'+(m.tipe=='foto'?' ph':'')+'" data-o="'+m.id+'">'+ik+sisa+'</div>'}
+else if(m.tipe=='foto'&&(pvx=pvOf(m)))c='<div class="md pv" data-o="'+m.id+'"><div class="pw"><img alt="" src="'+pvx+'"></div><div class="cap">'+ic('image')+'<span class="kct">Foto'+sisa+'</span></div></div>';
+else c='<div class="md'+(m.tipe=='foto'?' ph':'')+'" data-o="'+m.id+'"><span class="kct">'+ik+sisa+'</span></div>'}
 var tk=own?'<i class="'+(m.dilihat_at?'r':'')+'">'+ic(m.diterima_at||m.dilihat_at?'check2':'check')+'</i>':'';
 var rx=chips(m);return '<div class="rw2'+(own?' me':'')+(rx?' hr':'')+(kS[m.id]?' sel':'')+(dr0&&!dn[m.id]?' pop':'')+'" data-mid="'+m.id+'"><div class="b'+(own?' me':'')+(kIsStk(m)?' stk':'')+'">'+(x?'<div class="q">'+E(x.dihapus_at?'Pesan ini sudah dihapus':x.tipe=='teks'?kPlain(x):'['+x.tipe+']')+'</div>':'')+c+'<div class="t">'+tm(m.dikirim_at)+tk+'</div>'+rx+'</div></div>'}
 var kUnId=null,kUnN=0,kUnSet=false;

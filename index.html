@@ -18112,14 +18112,17 @@ if(navigator.serviceWorker&&navigator.serviceWorker.ready){navigator.serviceWork
 function kkNotifOff(){try{if(kk.nt){kk.nt.close();kk.nt=null}if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(function(r){return r.getNotifications({tag:'kaone-call'})}).then(function(a){(a||[]).forEach(function(n){n.close()})}).catch(function(){})}catch(e){}}
 function kkInit(role,v){clearTimeout(kk.tout);clearTimeout(kk.et);clearInterval(kk.tm);kk.role=role;kk.v=v?1:0;kk.conn=0;kk.ans=0;kk.t0=0;kk.mute=0;kk.cam=1;kk.rm=0;kk.rc=1;kk.mini=0;kk.txt='';fm='user';q=[];kk.st=role=='out'?'out':'ring-in';
 $('kcy').innerHTML=ic(v?'video':'phone');kkIdent();kkCls()}
-function mk(){var px=pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});q=[];px.onicecandidate=function(e){if(e.candidate)send({t:'ice',c:e.candidate})};
+function kkIceFlush(){clearTimeout(kk.it);kk.itp=0;var b=kk.ib||[];kk.ib=[];if(b.length)send({t:'ice',c:b})}
+function kkIceServers(){var a=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun.cloudflare.com:3478']}];if(window.KAONE_TURN&&window.KAONE_TURN.length)a=a.concat(window.KAONE_TURN);return a}
+function kkCT(){clearTimeout(kk.ct);kk.ct=setTimeout(function(){if(kk.st=='live'&&!kk.conn){try{send({t:'end'})}catch(e){}kkFinish('selesai');kkS('Koneksi gagal');toast('Koneksi gagal: jaringan tidak mengizinkan panggilan langsung')}},25000)}
+function mk(){var px=pc=new RTCPeerConnection({iceServers:kkIceServers()});kk.ib=[];kk.itp=0;clearTimeout(kk.it);px.onicecandidate=function(e){if(pc!==px)return;if(e.candidate){kk.ib.push(e.candidate);if(!kk.itp){kk.itp=1;kk.it=setTimeout(kkIceFlush,150)}}else kkIceFlush()};
 px.ontrack=function(e){$('kr').srcObject=e.streams[0]};
 px.onconnectionstatechange=function(){if(pc!==px)return;var s=px.connectionState;
 if(s=='connected'){if(!kk.conn){kk.conn=1;kk.t0=Date.now();clearInterval(kk.tm);kk.tm=setInterval(kkTick,1000);try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}send({t:'media',m:kk.mute?1:0,c:kk.cam?1:0})}kkTick();kkCls()}
 else if(s=='disconnected'){if(kk.conn)kkS('Menyambung kembali…')}
 else if(s=='failed'||s=='closed')kkFinish('selesai')}}
 async function med(v){ls=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:v?{facingMode:fm}:false});$('kl').srcObject=ls;$('kl').classList.toggle('mir',fm=='user');ls.getTracks().forEach(function(t){pc.addTrack(t,ls)});kkCls()}
-function kkStop(){clearTimeout(kk.tout);clearInterval(kk.tm);kkRing(0);kkNotifOff();var p=pc;pc=null;if(p){try{p.close()}catch(e){}}if(ls){ls.getTracks().forEach(function(t){t.stop()});ls=null}$('kl').srcObject=null;$('kr').srcObject=null;inc=null;q=[]}
+function kkStop(){clearTimeout(kk.tout);clearTimeout(kk.ct);clearTimeout(kk.it);kk.itp=0;kk.ib=[];clearInterval(kk.tm);kkRing(0);kkNotifOff();var p=pc;pc=null;if(p){try{p.close()}catch(e){}}if(ls){ls.getTracks().forEach(function(t){t.stop()});ls=null}$('kl').srcObject=null;$('kr').srcObject=null;inc=null;q=[]}
 function kkTeardown(){clearTimeout(kk.et);kkStop();kk.st='idle';kk.conn=0;kk.mini=0;kkCls()}
 /* akhiri panggilan + tulis riwayat (hanya penelepon) + tampilkan keterangan singkat */
 function kkFinish(res){if(kk.st!='out'&&kk.st!='live')return;var role=kk.role,v=kk.v,dur=kk.conn?kkDur():0;if(role=='out'&&res=='selesai'&&!kk.conn)res='tak';
@@ -18141,13 +18144,13 @@ async function sig(p){if(!p)return;
 if(p.t=='offer'){if((kk.st!='idle'&&kk.st!='end')||pc){send({t:'sibuk'});return}kkInit('in',p.v?1:0);inc=p;send({t:'ring'});var tx='Panggilan '+(p.v?'video':'suara')+' masuk';kkS(tx);kkRing(2);kkNotif(tx);
 kk.tout=setTimeout(function(){if(kk.st=='ring-in'){kkTeardown()}},60000)}
 else if(p.t=='ring'){if(kk.st=='out'&&!kk.ans)kkS('Berdering…')}
-else if(p.t=='answer'&&pc&&kk.role=='out'&&kk.st=='out'){kk.ans=1;kk.st='live';clearTimeout(kk.tout);kkRing(0);kkS('Menghubungkan…');kkCls();await pc.setRemoteDescription(p.s);q.forEach(function(c){pc.addIceCandidate(c)});q=[]}
-else if(p.t=='ice'){if(pc&&pc.remoteDescription)pc.addIceCandidate(p.c);else q.push(p.c)}
+else if(p.t=='answer'&&pc&&kk.role=='out'&&kk.st=='out'){kk.ans=1;kk.st='live';clearTimeout(kk.tout);kkRing(0);kkS('Menghubungkan…');kkCT();kkCls();await pc.setRemoteDescription(p.s);q.forEach(function(c){pc.addIceCandidate(c)});q=[]}
+else if(p.t=='ice'){(Array.isArray(p.c)?p.c:[p.c]).forEach(function(c){if(pc&&pc.remoteDescription)pc.addIceCandidate(c).catch(function(){});else q.push(c)})}
 else if(p.t=='tolak'){if(kk.st=='out')kkFinish('tolak')}
 else if(p.t=='sibuk'){if(kk.st=='out')kkFinish('sibuk')}
 else if(p.t=='media'){kk.rm=p.m?1:0;kk.rc=p.c===0?0:1;kkCls()}
 else if(p.t=='end'){if(kk.st=='ring-in'){kkTeardown();toast('Panggilan tak terjawab')}else if(kk.st=='out')kkFinish('tak');else if(kk.st=='live')kkFinish('selesai')}}
-async function jawab(){if(!inc||kk.st!='ring-in')return;var o=inc;clearTimeout(kk.tout);kkRing(0);kkNotifOff();kkAC();kk.st='live';kkS('Menghubungkan…');kkCls();
+async function jawab(){if(!inc||kk.st!='ring-in')return;var o=inc;clearTimeout(kk.tout);kkRing(0);kkNotifOff();kkAC();kk.st='live';kkS('Menghubungkan…');kkCT();kkCls();
 try{mk();await med(o.v);await pc.setRemoteDescription(o.s);q.forEach(function(c){pc.addIceCandidate(c)});q=[];var a=await pc.createAnswer();await pc.setLocalDescription(a);send({t:'answer',s:a});inc=null}
 catch(e){send({t:'end'});kkTeardown();toast('Kamera/mikrofon ditolak')}}
 async function flip(){if(!ls||!pc||!kk.v)return;fm=fm=='user'?'environment':'user';try{var s=await navigator.mediaDevices.getUserMedia({video:{facingMode:fm}}),n=s.getVideoTracks()[0],snd0=pc.getSenders().find(function(x){return x.track&&x.track.kind=='video'});n.enabled=!!kk.cam;if(snd0){snd0.replaceTrack(n);ls.getVideoTracks().forEach(function(t){t.stop()});ls=new MediaStream([n].concat(ls.getAudioTracks()));$('kl').srcObject=ls;$('kl').classList.toggle('mir',fm=='user')}}catch(e){fm=fm=='user'?'environment':'user';toast('Kamera tidak bisa dibalik')}}

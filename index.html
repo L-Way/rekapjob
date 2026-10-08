@@ -17428,7 +17428,7 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 #kc .b.gone.ga{animation:kGone .7s ease both}
 @media(prefers-reduced-motion:reduce){#kc .rw2.pop .b,#kc .rw2.me.pop .b,#kc .rw2.ty .b{animation:kFade .2s both}#kc .b.gone.ga{animation:kFade .2s both}}
 #kcv.nosave img,#kcv.nosave video{pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}#kcv #kvd{background:#0f766e}@media print{#kcv{display:none!important}}
-#kc .kcd{font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:.2px}
+#kc .kcw{display:inline-block;white-space:nowrap;max-width:100%}#kc .kcd{display:inline-block;white-space:nowrap;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";font-weight:700;letter-spacing:.2px;min-width:7.4ch;text-align:left}
 </style>
 <div id="kc"><div class="h"><button id="kx" data-i="back"></button><div class="av" id="kav"></div><div id="kpw" style="cursor:pointer;min-width:0"><b id="kn">Chat</b><small id="ks"></small></div>
 <div class="hb"><button id="kcv1" title="Suara" data-i="phone"></button><button id="kcv2" title="Video" data-i="video"></button><button id="kmn" title="Pengaturan chat" data-i="dots"></button></div></div>
@@ -17906,7 +17906,7 @@ var lo=.4,hi=.9,best=null;for(var i=0;i<6;i++){var q=(lo+hi)/2,o=await kcBlob(c,
 if(best)return ok(best);k*=.8}no(new Error('besar'))}catch(e){no(e)}};im.src=u})}
 function kcGone(m){if(!m||m.tipe!='foto'||m.dihapus_at)return false;if(m.hilang_at)return true;var x=!!(m.kedaluwarsa_at&&Date.now()>=new Date(m.kedaluwarsa_at).getTime());if(m.pengirim==me)return x;if(peran=='lawan')return x||m.jumlah_lihat>=5;return x&&!!m.diunduh_at}
 function kcHMS(ms){var s=Math.max(0,Math.floor(ms/1000)),p=function(n){return(n<10?'0':'')+n};return p(Math.floor(s/3600))+':'+p(Math.floor(s%3600/60))+':'+p(s%60)}
-function kcCd(m,lbl){var ms=new Date(m.kedaluwarsa_at).getTime()-Date.now();return ms>0?' · '+lbl+' <span class="kcd" data-exp="'+m.kedaluwarsa_at+'">'+kcHMS(ms)+'</span>':''}
+function kcCd(m,lbl){var ms=new Date(m.kedaluwarsa_at).getTime()-Date.now();return ms>0?' <span class="kcw">· '+lbl+' <span class="kcd" data-exp="'+m.kedaluwarsa_at+'">'+kcHMS(ms)+'</span></span>':''}
 function kcCap(m,own){if(m.tipe!='foto')return '';if(own||peran=='lawan')return m.kedaluwarsa_at?kcCd(m,peran=='lawan'?'hilang dalam':'hilang di lawan'):(own?' · belum dilihat':'');var c=m.kedaluwarsa_at?(new Date(m.kedaluwarsa_at).getTime()>Date.now()?kcCd(m,'hilang di lawan'):' · sudah hilang di lawan'):'';return c+(m.diunduh_at?'':' · belum diunduh')}
 var kcTk=0;
 function kcTick(){var t=Date.now(),f=0;document.querySelectorAll('#km .kcd').forEach(function(e){var ms=new Date(e.dataset.exp).getTime()-t;e.textContent=kcHMS(ms);if(ms<=0)f=1});if(f&&!kcTick.w){kcTick.w=1;setTimeout(function(){kcTick.w=0;kcSweep();kcBersih()},800)}}

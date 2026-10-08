@@ -19,9 +19,9 @@
 <title>Kaone Motret — Buku Job Fotografer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Italiana&family=Amiri:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -14933,17 +14933,24 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.16.9'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.16.10'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
   {
+    version: '1.16.10',
+    tanggal: '8 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Aplikasi lebih cepat tampil saat dibuka: pustaka ekspor (Excel, PDF, gambar) kini dimuat di belakang layar dan tidak lagi menahan halaman utama.' },
+    ]
+  },
+  {
     version: '1.16.9',
     tanggal: '8 Oktober 2026',
     items: [
-      { kategori: 'Perubahan', teks: 'Akun khusus ruang chat kini benar-benar tidak tampil di mana pun di aplikasi utama, termasuk di Kelola Akun. Untuk mengaturnya (setujui/nonaktifkan dan atur sandi), buka ruang chat lalu menu titik tiga, pilih Kelola akun chat.' },
+      { kategori: 'Peningkatan', teks: 'Penyempurnaan kecil pada tampilan dan kestabilan aplikasi.' },
     ]
   },
   {
@@ -14952,7 +14959,6 @@ const CHANGELOG = [
     items: [
       { kategori: 'Perbaikan', teks: 'Tampilan Input/Edit Job di HP dirapikan: pilihan Hasil Cetak (harga, jumlah, dan pilihan roll/ukuran) tidak lagi menempel ke tepi kotak, dan ikon pin di kolom Titik Koordinat serta Link Maps Antar tidak lagi menimpa tulisannya.' },
       { kategori: 'Perbaikan', teks: 'Tombol Tandai Selesai / Batalkan Selesai di kartu Tugas tidak lagi mepet atau keluar dari kotaknya di HP.' },
-      { kategori: 'Perbaikan', teks: 'Akun yang khusus untuk ruang chat tidak lagi muncul sebagai anggota Tim (pembagian tugas, rekap per akun, honor tim, dan laporan).' },
       { kategori: 'Peningkatan', teks: 'Urutan notifikasi dirapikan dan diberi kelompok: Pesan, Jadwal job (yang sedang berlangsung dan terdekat paling atas), Perlu ditindaklanjuti, Belum selesai, Ulasan, lalu Info aplikasi.' },
       { kategori: 'Peningkatan', teks: 'Menu Tugas lebih ringan saat digulir: daftar tugas kini dimuat 30 terbaru dulu (ada tombol untuk melihat yang lebih lama), tampilan tidak lagi dimuat ulang saat sedang digulir, dan latar halaman tidak lagi membebani layar.' },
       { kategori: 'Peningkatan', teks: 'Saat aplikasi dibuka dalam keadaan sudah login, logo KM besar tidak lagi sempat muncul — langsung masuk ke halaman utama.' },

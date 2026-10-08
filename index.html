@@ -14325,7 +14325,7 @@ function viewPengaturan(){
       <table class="rekaptable akun-table">
         <thead><tr><th>Nama Lengkap</th><th>Username</th><th>Status</th><th>Peran</th><th>Terdaftar</th><th>Aksi</th></tr></thead>
         <tbody>
-          ${akunList.length ? akunList.map(a=>`
+          ${akunList.filter(a=>!isHanyaChatUsername(a.username)).length ? akunList.filter(a=>!isHanyaChatUsername(a.username)).map(a=>`
             <tr class="${a.id===currentUserId ? 'akun-me' : ''}">
               <td>${escapeHtml(a.nama_lengkap || '-')}</td>
               <td>${escapeHtml(a.username)}${a.id===currentUserId?' <span class="pill">Kamu</span>':''}</td>
@@ -14933,12 +14933,19 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.16.8'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
+const APP_VERSION = '1.16.9'; // ⚠️ naikkan tiap ada perubahan — lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu — tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.16.9',
+    tanggal: '8 Oktober 2026',
+    items: [
+      { kategori: 'Perubahan', teks: 'Akun khusus ruang chat kini benar-benar tidak tampil di mana pun di aplikasi utama, termasuk di Kelola Akun. Untuk mengaturnya (setujui/nonaktifkan dan atur sandi), buka ruang chat lalu menu titik tiga, pilih Kelola akun chat.' },
+    ]
+  },
   {
     version: '1.16.8',
     tanggal: '8 Oktober 2026',
@@ -18106,6 +18113,53 @@ if(window.__kaoneChatOnly)window.kaoneChatMulai()})();
 </script>
 <script>
 window.addEventListener('scroll', function(){ window.__kmLastScroll = Date.now(); }, {passive:true});
+</script>
+<script>
+/* Pengaturan akun hanya-chat (mis. liaww) dipindah ke ruang chat Admin. */
+(function(){
+  function boleh(){ return typeof currentUserRole!=='undefined' && currentUserRole==='admin'; }
+  function sheet(){ return document.getElementById('kakun'); }
+  async function muat(){
+    var body = document.getElementById('kakunb'); if(!body) return;
+    body.textContent = 'Memuat…';
+    try{
+      var r = await supabaseClient.from('kaone_profiles').select('id,username,nama_lengkap,disetujui');
+      if(r.error) throw r.error;
+      var list = (r.data||[]).filter(function(a){ return isHanyaChatUsername(a.username); });
+      body.innerHTML = '';
+      if(!list.length){ body.textContent = 'Belum ada akun khusus chat yang terdaftar.'; return; }
+      list.forEach(function(a){
+        var box = document.createElement('div'); box.style.cssText = 'padding:6px 0 10px';
+        var t = document.createElement('div'); t.style.cssText = 'font-weight:700;font-size:15px';
+        t.textContent = (a.nama_lengkap || a.username) + ' (' + a.username + ')'; box.appendChild(t);
+        var st = document.createElement('div'); st.style.cssText = 'opacity:.75;font-size:12.5px;margin-bottom:6px';
+        st.textContent = a.disetujui ? 'Status: Aktif' : 'Status: Menunggu persetujuan / nonaktif'; box.appendChild(st);
+        var b1 = document.createElement('button'); b1.type='button'; b1.className='it';
+        b1.textContent = a.disetujui ? 'Nonaktifkan akun' : 'Setujui akun';
+        b1.addEventListener('click', async function(){ await kaoneSetujuiAkun(a.id, !a.disetujui); muat(); });
+        var b2 = document.createElement('button'); b2.type='button'; b2.className='it';
+        b2.textContent = 'Atur sandi';
+        b2.addEventListener('click', function(){ kaoneAturPassword(a.id); });
+        box.appendChild(b1); box.appendChild(b2); body.appendChild(box);
+      });
+    }catch(e){ body.textContent = 'Gagal memuat akun. Pastikan koneksi internet aktif.'; }
+  }
+  function pasang(){
+    if(!boleh()) return;
+    var st = document.getElementById('kst'); if(!st || document.getElementById('kmakun')) return;
+    var tutup = document.getElementById('kstx'); if(!tutup) return;
+    var ikon = document.querySelector('#kmp span');
+    var b = document.createElement('button'); b.type='button'; b.className='it'; b.id='kmakun';
+    b.innerHTML = '<span>' + (ikon ? ikon.innerHTML : '') + '</span>Kelola akun chat';
+    tutup.parentNode.before(b);
+    var sh = document.createElement('div'); sh.className='sh'; sh.id='kakun';
+    sh.innerHTML = '<div class="sc"><b>Kelola akun chat</b><div id="kakunb" style="padding:4px 14px 8px;font-size:13px;line-height:1.5"></div><div class="rw"><button type="button" id="kakunx" class="pri">Tutup</button></div></div>';
+    st.parentNode.insertBefore(sh, st.nextSibling);
+    b.addEventListener('click', function(){ st.classList.remove('on'); sh.classList.add('on'); muat(); });
+    sh.addEventListener('click', function(e){ if(e.target===sh || e.target.id==='kakunx') sh.classList.remove('on'); });
+  }
+  pasang(); setTimeout(pasang, 1500); setTimeout(pasang, 5000);
+})();
 </script>
 </body>
 </html>

@@ -18575,5 +18575,26 @@ html.kc-open,html.kc-open body{overflow:hidden!important;overscroll-behavior:non
   sync();
 })();
 </script>
+<style id="kmTimeFix">
+/* Kolom jam (form Bagi Tugas / Edit & jam per-akun): ikon jam selalu tampil & bisa diketuk di semua ukuran layar */
+#taskForm input[type=time]::-webkit-calendar-picker-indicator,
+.task-slot-row input[type=time]::-webkit-calendar-picker-indicator{display:block!important;width:18px;height:18px;padding:5px;margin:0 0 0 2px;opacity:.85;cursor:pointer;border-radius:8px;flex:none}
+#taskForm input[type=time]:hover::-webkit-calendar-picker-indicator,
+.task-slot-row input[type=time]:hover::-webkit-calendar-picker-indicator{opacity:1;background-color:var(--gold-pale,#fbf3c9)}
+#taskForm input[type=time],.task-slot-row input[type=time]{cursor:pointer;touch-action:manipulation;pointer-events:auto;min-width:96px}
+#taskForm input[type=time]::-webkit-datetime-edit,.task-slot-row input[type=time]::-webkit-datetime-edit{cursor:pointer}
+</style>
+<script id="kmTimeFixJs">
+/* Mengetuk jam, menit, atau area mana pun di kolom jam membuka pemilih jam. Ikon bawaan (kanan) tetap
+   ditangani browser sendiri supaya tidak terbuka dua kali. */
+document.addEventListener('click',function(e){
+  var t=e.target;
+  if(!t||t.tagName!=='INPUT'||t.type!=='time'||t.disabled||t.readOnly)return;
+  if(!t.closest('#taskForm,.task-slot-row'))return;
+  var r=t.getBoundingClientRect();
+  if(r.right-e.clientX<30)return;
+  try{if(typeof t.showPicker==='function')t.showPicker()}catch(x){}
+},true);
+</script>
 </body>
 </html>

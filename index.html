@@ -3444,6 +3444,60 @@ html.km-has-session #authGate{display:none !important;}
 .tg-card .task-person-card:first-child{margin-top:0;}
 .tg-count{display:inline-block; margin-left:6px; padding:2px 9px; border-radius:999px; background:var(--gold-pale); color:#5c4a12; font-size:11px; font-weight:700;}
 .tg-badge{display:inline-block; margin-left:6px; padding:2px 8px; border-radius:999px; background:#c0392b; color:#fff; font-size:10.5px; font-weight:700;}
+/* ---- Rekap Tugas Detail: daftar ringkas per bulan ---- */
+.tk-card{background:#fffdf6;padding:16px;margin:0 0 18px;}
+.tk-tabs{display:flex;gap:4px;background:#f6f0d4;padding:4px;border-radius:12px;margin:2px 0 10px;}
+.tk-tabs button{flex:1 1 0;min-width:0;border:0;background:transparent;border-radius:9px;padding:9px 4px;font:inherit;font-size:13px;font-weight:700;color:var(--ink-soft);display:inline-flex;justify-content:center;align-items:center;gap:6px;cursor:pointer;}
+.tk-tabs button i{font-style:normal;font-size:11px;font-weight:700;background:rgba(0,0,0,.07);border-radius:999px;padding:1px 7px;}
+.tk-tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(120,100,0,.18);}
+.tk-tabs button.on i{background:var(--gold-pale);color:#6d5700;}
+.tk-search{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:0 12px;margin:0 0 8px;}
+.tk-search .ic{width:17px;height:17px;color:var(--ink-soft);flex:none;}
+.tk-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:14px;padding:11px 0;box-shadow:none;}
+.tk-list{margin-top:12px;display:flex;flex-direction:column;gap:12px;}
+.tk-grp{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;}
+.tk-grp>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;background:#fffaea;}
+.tk-grp>summary::-webkit-details-marker,.tk-sum::-webkit-details-marker{display:none;}
+.tk-gl{font-weight:800;font-size:14.5px;flex:1;min-width:0;}
+.tk-gm{font-size:12px;color:var(--ink-soft);white-space:nowrap;}
+.tk-gm b{color:#8a6a00;}
+.tk-chev{flex:none;color:#b5ab8a;display:inline-flex;transition:transform .2s ease;}
+.tk-chev .ic{width:16px;height:16px;}
+.tk-grp[open]>summary .tk-chev,.tk-row[open]>.tk-sum .tk-chev{transform:rotate(90deg);}
+.tk-row{border-top:1px solid var(--line);}
+.tk-sum{list-style:none;display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;}
+.tk-check{flex:none;width:36px;height:36px;border-radius:50%;border:2px solid #d9cc8a;background:#fff;color:transparent;display:grid;place-items:center;padding:0;cursor:pointer;}
+.tk-check .ic{width:18px;height:18px;}
+.tk-check.late{border-color:#d9776b;}
+.tk-check.on{background:var(--ok);border-color:var(--ok);color:#fff;}
+.tk-check.ro{cursor:default;opacity:.75;}
+.tk-txt{flex:1;min-width:0;}
+.tk-title{font-weight:700;font-size:14.5px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tk-meta{font-size:12.5px;color:var(--ink-soft);margin-top:2px;display:flex;flex-wrap:wrap;align-items:center;gap:0 5px;line-height:1.5;}
+.tk-meta b{color:var(--ink);font-weight:700;}
+.tk-meta .ic{width:13px;height:13px;vertical-align:-2px;}
+.tk-role{white-space:nowrap;}
+.tk-dot{opacity:.5;}
+.tk-late{color:var(--danger);font-weight:700;}
+.tk-soft{color:var(--ink-soft);font-weight:400;font-size:12px;}
+.tk-hari{margin:0 0 0 2px;}
+.tk-cm{position:relative;flex:none;display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;color:var(--ink-soft);}
+.tk-cm .ic{width:15px;height:15px;}
+.tk-cm .task-comment-dot{right:auto;left:-3px;top:-4px;}
+.tk-more{padding:2px 14px 14px;}
+.tk-info{margin:0 0 12px;background:#faf6e5;border-radius:10px;padding:4px 12px;}
+.tk-info>div{display:flex;gap:10px;padding:8px 0;border-bottom:1px dashed #e8dfb4;font-size:13px;line-height:1.45;}
+.tk-info>div:last-child{border-bottom:0;}
+.tk-info dt{flex:0 0 82px;color:var(--ink-soft);}
+.tk-info dd{margin:0;min-width:0;overflow-wrap:anywhere;font-weight:600;}
+.tk-acts{display:flex;gap:8px;}
+.tk-act-main{flex:1 1 auto;min-width:0;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:700;white-space:nowrap;}
+.tk-act{flex:0 0 46px;width:46px;min-height:42px;padding:0;display:inline-flex;align-items:center;justify-content:center;}
+@media(min-width:760px){
+  .tk-title{font-size:15px;}
+  .tk-more{padding-left:62px;}
+}
+
 .tg-detail-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;}
 .tg-detail-head .tg-count{margin-left:0; flex:none;}
 .tg-empty{padding:14px 8px; text-align:center; font-size:13px; color:var(--ink-soft);}
@@ -5782,7 +5836,9 @@ let ulasanList = loadUlasanLocal();
 let ulasanLoading = false;
 let tasks = loadTasksLocal();
 let editingTaskId = null; // id tugas yang sedang diedit Admin lewat form Pembagian Tugas (null = mode tambah baru)
-let taskRekapFilter = {userId:'', role:'', status:'', from:'', to:''};
+let taskRekapFilter = {userId:'', role:'', status:'', from:'', to:'', q:''};
+let tkOpenRows = new Set();   // baris tugas yang sedang dibuka (diingat walau halaman digambar ulang)
+let tkGrpState = {};          // status buka/tutup grup bulan: {'2026-10': true/false}
 const TASK_PAGE = 30;            // jumlah tugas yang dimuat per tahap di Rekap Tugas Detail
 let taskVisibleCount = TASK_PAGE;
 let bonusAdjustments = loadBonusAdjustmentsLocal();
@@ -12181,6 +12237,111 @@ function taskJobOptions(){
   });
 }
 /* Bagian lipat di menu Pembagian Tugas: keadaan buka/tutup diingat walau halaman digambar ulang (auto-refresh) */
+
+/* ---------- Rekap Tugas Detail: daftar ringkas, dikelompokkan per bulan ----------
+   Satu baris = satu tugas (ceklis, judul job, siapa/role, tanggal · jam). Ketuk baris untuk
+   membuka rincian + tombol aksi. Tab Semua/Belum/Selesai + kolom cari + filter membuat daftar
+   tetap rapi walau tugasnya sudah ratusan; bulan yang sudah selesai semua otomatis terlipat. */
+function tkMonthLabel(key){
+  const [y,m]=key.split('-').map(Number);
+  return new Date(y,m-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'});
+}
+function tkRowHtml(t, o){
+  const status = t.status||'Belum', done = status==='Selesai';
+  const job = getTaskJob(t);
+  const canAct = (isAdmin() || String(t.userId)===String(currentUserId));
+  const slots = getTaskSlots(t);
+  const nKom = taskComments(t).length, unread = taskHasUnreadComment(t);
+  const fin = getTaskFinishDate(t);
+  const late = !done && fin && fin < o.todayYmd;
+  const hari = taskHariLabel(t);
+  const roleIc = t.role==='Fotografer' ? ic('camera') : ic('video');
+  const jamTxt = slots.length>1 ? `${slots.length} sesi` : (slots[0] ? `${escapeHtml(slots[0].mulai||'-')} – ${escapeHtml(slots[0].selesai||'-')}` : '-');
+  const toggleLbl = done ? 'Batalkan Selesai' : 'Tandai Selesai';
+  const tglTxt = escapeHtml(formatTaskDate(getTaskDate(t)));
+  const rentang = (!hari && job && getJobDurasiHari(job)>1) ? ` <span class="tk-soft">s/d ${escapeHtml(formatTaskDate(getJobFinishDate(job)))} (${getJobDurasiHari(job)} hari, semua hari)</span>` : '';
+  const open = tkOpenRows.has(String(t.id)) ? ' open' : '';
+  return `<details class="tk-row${done?' done':''}${late?' late':''}" data-tk-row="${escapeHtml(t.id)}"${open}>
+    <summary class="tk-sum">
+      ${canAct
+        ? `<button type="button" class="tk-check${done?' on':''}${late?' late':''}" data-task-toggle="${escapeHtml(t.id)}" title="${toggleLbl}" aria-label="${toggleLbl}">${ic('check')}</button>`
+        : `<span class="tk-check ro${done?' on':''}">${ic('check')}</span>`}
+      <div class="tk-txt">
+        <div class="tk-title">${escapeHtml(getTaskJobLabel(t))}</div>
+        <div class="tk-meta">${o.mine ? '' : `<b>${escapeHtml(getTaskPerson(t))}</b><span class="tk-dot">·</span>`}<span class="tk-role">${roleIc} ${escapeHtml(t.role||'-')}</span></div>
+        <div class="tk-meta">${tglTxt}<span class="tk-dot">·</span>${jamTxt}<span class="tk-dot">·</span>${fmtTaskHours(taskHours(t))}${late?' <span class="tk-late">Lewat jadwal</span>':''}</div>
+      </div>
+      ${nKom ? `<span class="tk-cm" title="${nKom} komentar">${ic('chat')}${nKom}${unread?'<span class="task-comment-dot"></span>':''}</span>` : ''}
+      <span class="tk-chev">${ic('chevron-right')}</span>
+    </summary>
+    <div class="tk-more">
+      <dl class="tk-info">
+        <div><dt>Tanggal</dt><dd>${tglTxt}${hari?` <span class="task-hari-badge tk-hari">${escapeHtml(hari)}</span>`:''}${rentang}</dd></div>
+        <div><dt>Jam kerja</dt><dd>${slots.map(x=>`${escapeHtml(x.mulai||'-')} – ${escapeHtml(x.selesai||'-')}`).join('<br>')||'-'} <span class="tk-soft">(${fmtTaskHours(taskHours(t))})</span></dd></div>
+        ${job?.jenisAcara ? `<div><dt>Acara</dt><dd>${escapeHtml(job.jenisAcara)}</dd></div>` : ''}
+        ${t.keterangan ? `<div><dt>Keterangan</dt><dd>${escapeHtml(t.keterangan)}</dd></div>` : ''}
+        <div><dt>Status</dt><dd>${done ? (t.autoCompleted ? 'Selesai (otomatis)' : 'Selesai') : (late ? '<span class="tk-late">Belum selesai · lewat jadwal</span>' : 'Belum selesai')}</dd></div>
+      </dl>
+      ${canAct ? `<div class="tk-acts">
+        <button type="button" class="btn ${done?'btn-outline':'btn-primary'} tk-act-main" data-task-toggle="${escapeHtml(t.id)}">${done?ic('undo'):ic('check')} ${toggleLbl}</button>
+        <button type="button" class="icon-btn task-comment-btn tk-act" data-task-comment="${escapeHtml(t.id)}" title="Komentar tugas" aria-label="Komentar tugas">${ic('chat')}${nKom?`<span class="task-comment-count">${nKom}</span>`:''}${unread?'<span class="task-comment-dot"></span>':''}</button>
+        ${isAdmin()?`<button type="button" class="icon-btn tk-act" data-task-edit="${escapeHtml(t.id)}" title="Edit tugas" aria-label="Edit tugas">${ic('edit')}</button>
+        <button type="button" class="icon-btn icon-btn-danger tk-act" data-task-delete="${escapeHtml(t.id)}" title="Hapus tugas" aria-label="Hapus tugas">${ic('trash')}</button>`:''}
+      </div>` : ''}
+    </div>
+  </details>`;
+}
+function tkRekapHtml(o){
+  const f = o.filtered;
+  // Urutan: tab "Belum" = yang paling dekat jadwalnya dulu; selain itu = terbaru di atas.
+  const asc = o.filterStatus==='Belum';
+  const list = f.slice().sort((a,b)=>{
+    const da=getTaskDate(a)||'', db=getTaskDate(b)||'';
+    const c = asc ? da.localeCompare(db) : db.localeCompare(da);
+    return c || (getTaskSlots(a)[0]?.mulai||'').localeCompare(getTaskSlots(b)[0]?.mulai||'');
+  });
+  const shown = list.slice(0, taskVisibleCount);
+  const hidden = list.length - shown.length;
+  // kelompokkan per bulan (urutan kemunculan mengikuti urutan list)
+  const groups = []; const gmap = {};
+  shown.forEach(t=>{
+    const key = (getTaskDate(t)||'').slice(0,7) || 'lain';
+    if(!gmap[key]){ gmap[key] = {key, items:[]}; groups.push(gmap[key]); }
+    gmap[key].items.push(t);
+  });
+  const curKey = o.todayYmd.slice(0,7);
+  const tab = (val,label,n)=>`<button type="button" role="tab" aria-selected="${o.filterStatus===val}" class="${o.filterStatus===val?'on':''}" data-tk-tab="${val}">${label} <i>${n}</i></button>`;
+  const body = groups.map(g=>{
+    const nBelum = g.items.filter(t=>(t.status||'Belum')!=='Selesai').length;
+    const defOpen = g.key>=curKey || nBelum>0 || groups.length===1;
+    const isOpen = (g.key in tkGrpState) ? tkGrpState[g.key] : defOpen;
+    return `<details class="tk-grp" data-tk-grp="${g.key}"${isOpen?' open':''}>
+      <summary><span class="tk-gl">${g.key==='lain'?'Tanpa tanggal':escapeHtml(tkMonthLabel(g.key))}</span><span class="tk-gm">${g.items.length} tugas${nBelum?` · <b>${nBelum} belum</b>`:' · selesai semua'}</span><span class="tk-chev">${ic('chevron-right')}</span></summary>
+      <div class="tk-rows">${g.items.map(t=>tkRowHtml(t,o)).join('')}</div>
+    </details>`;
+  }).join('');
+  return `
+    <div class="card tk-card">
+      <div class="tg-detail-head">
+        <div class="section-title" style="margin:0;">${ic('search')} Rekap Tugas Detail</div>
+        <span class="tg-count">${f.length} tugas</span>
+      </div>
+      <div class="tk-tabs" role="tablist">${tab('', 'Semua', o.tabCount.all)}${tab('Belum','Belum',o.tabCount.Belum)}${tab('Selesai','Selesai',o.tabCount.Selesai)}</div>
+      <label class="tk-search">${ic('search')}<input type="search" id="taskSearch" placeholder="Cari job, nama, atau keterangan…" value="${escapeHtml(taskRekapFilter.q||'')}" autocomplete="off"></label>
+      <details class="tg-fold tg-filter" data-tg-sec="filter"${(tgOpenSecs.has('filter') || o.filterActive) ? ' open' : ''}><summary><span class="tg-sl">${ic('search')} Filter lainnya${o.filterActive ? ` <span class="tg-badge">${o.filterActive} aktif</span>` : ''}</span></summary><div class="tg-fold-body">
+        <div class="form-grid" style="gap:10px 14px;">
+          ${isAdmin()?`<div><label>Akun Tim</label><select id="taskFilterUser"><option value="">Semua Akun Tim</option>${o.people.map(a=>`<option value="${escapeHtml(a.id)}" ${String(o.filterUser)===String(a.id)?'selected':''}>${escapeHtml(a.username)}</option>`).join('')}</select></div>`:''}
+          <div><label>Role</label><select id="taskFilterRole"><option value="">Semua Role</option><option value="Fotografer" ${o.filterRole==='Fotografer'?'selected':''}>Fotografer</option><option value="Videografer" ${o.filterRole==='Videografer'?'selected':''}>Videografer</option></select></div>
+          <div><label>Dari Tanggal</label><input type="date" id="taskFilterFrom" value="${escapeHtml(o.filterFrom)}"></div>
+          <div><label>Sampai Tanggal</label><input type="date" id="taskFilterTo" value="${escapeHtml(o.filterTo)}"></div>
+        </div>
+        <button type="button" class="btn btn-outline" id="btnResetTaskFilter" style="width:100%;margin-top:10px;">Reset Filter</button>
+      </div></details>
+      ${list.length ? `<div class="tk-list">${body}</div>
+      ${hidden>0 ? `<button type="button" class="btn btn-outline task-more-btn" id="btnTaskMore" style="margin:12px 0 0;">Tampilkan ${Math.min(TASK_PAGE, hidden)} tugas lainnya <span class="task-more-sub">(${hidden} tersembunyi)</span></button>` : ''}`
+      : `<div class="empty-state" style="margin-top:12px;"><div class="em">${ic('folder')}</div>${(o.filterQ||o.filterActive||o.filterStatus)?'Tidak ada tugas yang cocok.':'Belum ada tugas.'}</div>`}
+    </div>`;
+}
 let tgOpenSecs = new Set();
 function tgFold(key, label, inner, cls){
   return `<details class="tg-fold${cls?' '+cls:''}" data-tg-sec="${key}"${tgOpenSecs.has(key)?' open':''}><summary><span class="tg-sl">${label}</span></summary><div class="tg-fold-body">${inner}</div></details>`;
@@ -12241,16 +12402,24 @@ function viewTugas(){
   const filterStatus = taskRekapFilter.status || '';
   const filterFrom = taskRekapFilter.from || '';
   const filterTo = taskRekapFilter.to || '';
-  const filterActive = [filterUser,filterRole,filterStatus,filterFrom,filterTo].filter(Boolean).length;
+  const filterQ = (taskRekapFilter.q || '').trim().toLowerCase();
+  const filterActive = [filterUser,filterRole,filterFrom,filterTo].filter(Boolean).length;
 
-  let filtered = visibleTasks.filter(t=>{
+  // Daftar dasar (semua filter KECUALI status) dipakai untuk hitungan di tab Semua/Belum/Selesai.
+  const baseList = visibleTasks.filter(t=>{
     const d=getTaskDate(t), dEnd=getTaskFinishDate(t);
+    if(filterQ){
+      const j=getTaskJob(t);
+      const hay=[getTaskJobLabel(t), getTaskPerson(t), t.role, t.keterangan, j&&j.jenisAcara].filter(Boolean).join(' ').toLowerCase();
+      if(hay.indexOf(filterQ)<0) return false;
+    }
     return (!filterUser || String(t.userId)===String(filterUser))
       && (!filterRole || t.role===filterRole)
-      && (!filterStatus || (t.status||'Belum')===filterStatus)
       && (!filterFrom || dEnd>=filterFrom)
       && (!filterTo || d<=filterTo);
-  }).sort((a,b)=>(getTaskDate(a)||'').localeCompare(getTaskDate(b)||'') || (getTaskSlots(a)[0]?.mulai||'').localeCompare(getTaskSlots(b)[0]?.mulai||''));
+  });
+  const tabCount = {all: baseList.length, Belum: baseList.filter(t=>(t.status||'Belum')==='Belum').length, Selesai: baseList.filter(t=>(t.status||'Belum')==='Selesai').length};
+  let filtered = baseList.filter(t=>!filterStatus || (t.status||'Belum')===filterStatus);
 
   const personRows = isAdmin() ? people.map(a=>{
     const list=tasks.filter(t=>String(t.userId)===String(a.id));
@@ -12373,51 +12542,7 @@ function viewTugas(){
 
     ${tgFold('rekap-akun', `${ic('chart')} Rekap Per Akun Tim <span class="tg-count">${people.length}</span>`, personRows || `<div class="tg-empty">Belum ada akun Tim.</div>`, 'tg-card')}`:''}
 
-    <div class="card" style="background:#fffdf6;padding:16px;margin:0 0 18px;">
-      <div class="tg-detail-head">
-        <div class="section-title" style="margin:0;">${ic('search')} Rekap Tugas Detail</div>
-        <span class="tg-count">${filtered.length} tugas</span>
-      </div>
-      <details class="tg-fold tg-filter" data-tg-sec="filter"${(tgOpenSecs.has('filter') || filterActive) ? ' open' : ''}><summary><span class="tg-sl">${ic('search')} Filter${filterActive ? ` <span class="tg-badge">${filterActive} aktif</span>` : ''}</span></summary><div class="tg-fold-body">
-      <div class="form-grid" style="gap:10px 14px;">
-        ${isAdmin()?`<div><label>Akun Tim</label><select id="taskFilterUser"><option value="">Semua Akun Tim</option>${people.map(a=>`<option value="${escapeHtml(a.id)}" ${String(filterUser)===String(a.id)?'selected':''}>${escapeHtml(a.username)}</option>`).join('')}</select></div>`:''}
-        <div><label>Role</label><select id="taskFilterRole"><option value="">Semua Role</option><option value="Fotografer" ${filterRole==='Fotografer'?'selected':''}>${ic('camera')} Fotografer</option><option value="Videografer" ${filterRole==='Videografer'?'selected':''}>${ic('video')} Videografer</option></select></div>
-        <div><label>Status</label><select id="taskFilterStatus"><option value="">Semua Status</option><option value="Belum" ${filterStatus==='Belum'?'selected':''}>Belum</option><option value="Selesai" ${filterStatus==='Selesai'?'selected':''}>Selesai</option></select></div>
-        <div><label>Dari Tanggal</label><input type="date" id="taskFilterFrom" value="${escapeHtml(filterFrom)}"></div>
-        <div><label>Sampai Tanggal</label><input type="date" id="taskFilterTo" value="${escapeHtml(filterTo)}"></div>
-      </div>
-      <button type="button" class="btn btn-outline" id="btnResetTaskFilter" style="width:100%;margin-top:10px;">Reset Filter</button>
-      </div></details>
-    </div>
-
-    <div class="table-wrap">
-      ${filtered.length > taskVisibleCount ? `<button type="button" class="btn btn-outline task-more-btn" id="btnTaskMore">Tampilkan ${Math.min(TASK_PAGE, filtered.length - taskVisibleCount)} tugas sebelumnya <span class="task-more-sub">(${filtered.length - taskVisibleCount} tersembunyi)</span></button>` : ''}
-      ${filtered.length ? `<table class="jobtable task-table">
-        <thead><tr><th>Tanggal</th><th>Akun Tim</th><th>Role</th><th>Job</th><th>Jam Kerja</th><th>Keterangan</th><th>Status</th><th>Aksi</th></tr></thead>
-        <tbody>${filtered.slice(Math.max(0, filtered.length - taskVisibleCount)).map(t=>{
-          const status=t.status||'Belum';
-          const job=getTaskJob(t);
-          const canAct = (isAdmin() || String(t.userId)===String(currentUserId));
-          const nKom = taskComments(t).length;
-          const roleBadge = (cls)=>`<span class="task-role-badge ${cls}">${t.role==='Fotografer'?ic('camera'):ic('video')} ${escapeHtml(t.role||'-')}</span>`;
-          return `<tr>
-            <td class="task-date t-date">${escapeHtml(formatTaskDate(getTaskDate(t)))}${taskHariLabel(t)?`<div><span class="task-hari-badge">${escapeHtml(taskHariLabel(t))}</span></div>`:((job && getJobDurasiHari(job)>1)?`<div style="font-size:10px;color:var(--ink-soft);font-weight:400;">s/d ${escapeHtml(formatTaskDate(getJobFinishDate(job)))} (${getJobDurasiHari(job)} hari, semua hari)</div>`:'')}</td>
-            <td class="t-person"><b>${escapeHtml(getTaskPerson(t))}</b>${roleBadge('t-role-inline')}</td>
-            <td class="t-role">${roleBadge('')}</td>
-            <td class="t-job"><b>${escapeHtml(getTaskJobLabel(t))}</b>${job?.jenisAcara?`<div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">${escapeHtml(job.jenisAcara)}</div>`:''}</td>
-            <td class="task-time t-time">${getTaskSlots(t).map(s=>`${escapeHtml(s.mulai||'-')} – ${escapeHtml(s.selesai||'-')}`).join('<br>')||'-'}<div class="t-hrs" style="font-size:10.5px;color:var(--ink-soft);font-weight:400;">${fmtTaskHours(taskHours(t))}</div></td>
-            <td class="t-ket${t.keterangan?'':' is-empty'}"><div class="task-ket">${escapeHtml(t.keterangan||'-')}</div></td>
-            <td class="t-status"><span class="task-status-badge ${status==='Selesai'?'task-status-selesai':'task-status-belum'}" ${t.autoCompleted?'title="Selesai otomatis"':''}>${status==='Selesai'?(t.autoCompleted?ic('check')+' Selesai (Otomatis)':ic('check')+' Selesai'):ic('hourglass')+' Belum'}</span></td>
-            <td class="t-act"><div class="row-actions">
-              ${canAct?`<button type="button" class="icon-btn t-toggle" data-task-toggle="${escapeHtml(t.id)}" title="Ubah status" aria-label="Ubah status">${status==='Selesai'?ic('undo'):ic('check')}<span class="t-lbl">${status==='Selesai'?'Batalkan Selesai':'Tandai Selesai'}</span></button>`:''}
-              ${canAct?`<button type="button" class="icon-btn task-comment-btn" data-task-comment="${escapeHtml(t.id)}" title="Komentar tugas" aria-label="Komentar tugas">${ic('chat')}${nKom?`<span class="task-comment-count">${nKom}</span>`:''}${taskHasUnreadComment(t)?'<span class="task-comment-dot"></span>':''}</button>`:''}
-              ${isAdmin()?`<button type="button" class="icon-btn" data-task-edit="${escapeHtml(t.id)}" title="Edit tugas" aria-label="Edit tugas">${ic('edit')}</button>`:''}
-              ${isAdmin()?`<button type="button" class="icon-btn icon-btn-danger" data-task-delete="${escapeHtml(t.id)}" title="Hapus tugas" aria-label="Hapus tugas">${ic('trash')}</button>`:''}
-            </div></td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>` : `<div class="empty-state"><div class="em">${ic('folder')}</div>Belum ada tugas yang sesuai filter.</div>`}
-    </div>
+    ${tkRekapHtml({filtered, tabCount, filterUser, filterRole, filterStatus, filterFrom, filterTo, filterQ, filterActive, people, todayYmd, mine})}
   </div>
   `;
 }
@@ -13048,9 +13173,10 @@ function applyTaskFilters(){
   taskRekapFilter = {
     userId: document.getElementById('taskFilterUser')?.value || '',
     role: document.getElementById('taskFilterRole')?.value || '',
-    status: document.getElementById('taskFilterStatus')?.value || '',
+    status: taskRekapFilter.status || '',
     from: document.getElementById('taskFilterFrom')?.value || '',
-    to: document.getElementById('taskFilterTo')?.value || ''
+    to: document.getElementById('taskFilterTo')?.value || '',
+    q: document.getElementById('taskSearch')?.value || ''
   };
   refreshView();
 }
@@ -13081,12 +13207,34 @@ function bindTaskHandlers(){
   document.getElementById('btnOpenTaskForm')?.addEventListener('click',()=>{
     openTaskFormModal(null);
   });
-  ['taskFilterUser','taskFilterRole','taskFilterStatus','taskFilterFrom','taskFilterTo'].forEach(id=>{
+  ['taskFilterUser','taskFilterRole','taskFilterFrom','taskFilterTo'].forEach(id=>{
     document.getElementById(id)?.addEventListener('change',applyTaskFilters);
   });
   document.getElementById('btnResetTaskFilter')?.addEventListener('click',()=>{
-    taskVisibleCount = TASK_PAGE; taskRekapFilter={userId:'',role:'',status:'',from:'',to:''}; refreshView();
+    taskVisibleCount = TASK_PAGE; taskRekapFilter={userId:'',role:'',status:taskRekapFilter.status||'',from:'',to:'',q:''}; refreshView();
   });
+  // Tab Semua / Belum / Selesai
+  document.querySelectorAll('[data-tk-tab]').forEach(btn=>btn.addEventListener('click',()=>{
+    taskVisibleCount = TASK_PAGE; taskRekapFilter.status = btn.dataset.tkTab || ''; refreshView();
+  }));
+  // Kolom cari (ditunda sebentar supaya tidak menggambar ulang di tiap ketukan; fokus & kursor dipertahankan)
+  const _ts = document.getElementById('taskSearch');
+  if(_ts){
+    let _tt = null;
+    _ts.addEventListener('input',()=>{
+      clearTimeout(_tt);
+      _tt = setTimeout(()=>{
+        const v=_ts.value; taskVisibleCount = TASK_PAGE; taskRekapFilter.q = v; refreshView();
+        const el=document.getElementById('taskSearch');
+        if(el){ el.focus(); try{ el.setSelectionRange(v.length, v.length); }catch(e){} }
+      }, 350);
+    });
+  }
+  // Ingat baris & bulan yang dibuka walau halaman digambar ulang
+  document.querySelectorAll('details[data-tk-row]').forEach(d=>d.addEventListener('toggle',()=>{
+    if(d.open) tkOpenRows.add(d.dataset.tkRow); else tkOpenRows.delete(d.dataset.tkRow);
+  }));
+  document.querySelectorAll('details[data-tk-grp]').forEach(d=>d.addEventListener('toggle',()=>{ tkGrpState[d.dataset.tkGrp] = d.open; }));
   document.getElementById('btnTaskMore')?.addEventListener('click',()=>{ taskVisibleCount += TASK_PAGE; refreshView(); });
   document.querySelectorAll('[data-task-toggle]').forEach(btn=>btn.addEventListener('click',()=>toggleTaskStatus(btn.dataset.taskToggle)));
   document.querySelectorAll('[data-task-edit]').forEach(btn=>btn.addEventListener('click',()=>openTaskFormModal(btn.dataset.taskEdit)));
@@ -15188,6 +15336,9 @@ const CHANGELOG = [
     version: '1.16.10',
     tanggal: '8 Oktober 2026',
     items: [
+      { kategori: 'Peningkatan', teks: 'Rekap Tugas Detail dirombak jadi daftar ringkas: satu baris per tugas, dikelompokkan per bulan (bulan yang sudah selesai semua otomatis terlipat), dengan tab Semua / Belum / Selesai dan kolom cari. Ketuk lingkaran untuk menandai selesai, ketuk barisnya untuk melihat rincian dan tombol Komentar, Edit, Hapus.' },
+      { kategori: 'Fitur', teks: 'Ruang Chat: foto profil kini bisa dihapus lewat tombol Hapus foto di sheet Profil saya; avatar lawan chat ikut kembali ke bawaan.' },
+      { kategori: 'Perbaikan', teks: 'Panggilan Ruang Chat tidak lagi macet di Menghubungkan: antrean jalur koneksi tidak lagi terbuang saat telepon diangkat, dan panggilan yang gagal tersambung berakhir otomatis dengan pesan jelas.' },
       { kategori: 'Peningkatan', teks: 'Ruang Chat kini menampilkan pemisah tanggal (Hari ini, Kemarin, nama hari, atau tanggal) di antara pesan, garis "pesan belum dibaca" yang langsung membawamu ke pesan yang belum sempat kamu lihat saat chat dibuka, dan gulir yang meluncur halus saat ada pesan baru.' },
       { kategori: 'Peningkatan', teks: 'Ruang Chat kini bergaya WhatsApp: saat obrolan masih sedikit, pesan mulai dari bagian bawah (dekat kolom ketik), lalu pesan lama naik ke atas seiring pesan baru masuk. Saat keyboard muncul, bagian atas chat (nama & tombol panggilan) tetap terlihat dan tidak ikut tergulung.' },
       { kategori: 'Peningkatan', teks: 'Menu Pembagian Tugas Tim lebih sederhana dan rapi: kartu ringkasan jadi 3 (Selesai, Belum Selesai, Mendatang), rincian bonus dan Rekap Per Akun Tim dilipat di balik tombol "Lihat rincian", dan filter Rekap Tugas Detail dilipat di balik tombol Filter (muncul penanda kalau ada filter aktif).' },

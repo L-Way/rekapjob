@@ -3476,7 +3476,10 @@ html.km-has-session #authGate{display:none !important;}
 .tk-meta{font-size:12.5px;color:var(--ink-soft);margin-top:2px;display:flex;flex-wrap:wrap;align-items:center;gap:0 5px;line-height:1.5;}
 .tk-meta b{color:var(--ink);font-weight:700;}
 .tk-meta .ic{width:13px;height:13px;vertical-align:-2px;}
-.tk-role{white-space:nowrap;}
+.tk-role,.tk-seg{white-space:nowrap;}
+.tk-m1{flex-wrap:nowrap;}
+.tk-m1 b{min-width:0;max-width:48%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tk-m1 .tk-dot,.tk-m1 .tk-role{flex:none;}
 .tk-dot{opacity:.5;}
 .tk-late{color:var(--danger);font-weight:700;}
 .tk-soft{color:var(--ink-soft);font-weight:400;font-size:12px;}
@@ -3490,9 +3493,12 @@ html.km-has-session #authGate{display:none !important;}
 .tk-info>div:last-child{border-bottom:0;}
 .tk-info dt{flex:0 0 82px;color:var(--ink-soft);}
 .tk-info dd{margin:0;min-width:0;overflow-wrap:anywhere;font-weight:600;}
-.tk-acts{display:flex;gap:8px;}
-.tk-act-main{flex:1 1 auto;min-width:0;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:700;white-space:nowrap;}
-.tk-act{flex:0 0 46px;width:46px;min-height:42px;padding:0;display:inline-flex;align-items:center;justify-content:center;}
+.tk-acts{display:flex;flex-direction:column;gap:8px;}
+.tk-act-main{width:100%;box-sizing:border-box;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:700;white-space:nowrap;}
+.tk-acts2{display:grid;grid-template-columns:1.8fr 1fr 1fr;gap:8px;}
+.tk-acts2:has(.tk-act:only-child){grid-template-columns:1fr;}
+.tk-act{min-width:0;width:auto;box-sizing:border-box;min-height:42px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;gap:5px;font-size:12.5px;font-weight:600;white-space:nowrap;}
+.tk-act .ic{width:16px;height:16px;flex:none;}
 @media(min-width:760px){
   .tk-title{font-size:15px;}
   .tk-more{padding-left:62px;}
@@ -12259,6 +12265,7 @@ function tkRowHtml(t, o){
   const jamTxt = slots.length>1 ? `${slots.length} sesi` : (slots[0] ? `${escapeHtml(slots[0].mulai||'-')} – ${escapeHtml(slots[0].selesai||'-')}` : '-');
   const toggleLbl = done ? 'Batalkan Selesai' : 'Tandai Selesai';
   const tglTxt = escapeHtml(formatTaskDate(getTaskDate(t)));
+  const tglShort = tglTxt.replace(/\s\d{4}$/,'');
   const rentang = (!hari && job && getJobDurasiHari(job)>1) ? ` <span class="tk-soft">s/d ${escapeHtml(formatTaskDate(getJobFinishDate(job)))} (${getJobDurasiHari(job)} hari, semua hari)</span>` : '';
   const open = tkOpenRows.has(String(t.id)) ? ' open' : '';
   return `<details class="tk-row${done?' done':''}${late?' late':''}" data-tk-row="${escapeHtml(t.id)}"${open}>
@@ -12268,8 +12275,8 @@ function tkRowHtml(t, o){
         : `<span class="tk-check ro${done?' on':''}">${ic('check')}</span>`}
       <div class="tk-txt">
         <div class="tk-title">${escapeHtml(getTaskJobLabel(t))}</div>
-        <div class="tk-meta">${o.mine ? '' : `<b>${escapeHtml(getTaskPerson(t))}</b><span class="tk-dot">·</span>`}<span class="tk-role">${roleIc} ${escapeHtml(t.role||'-')}</span></div>
-        <div class="tk-meta">${tglTxt}<span class="tk-dot">·</span>${jamTxt}<span class="tk-dot">·</span>${fmtTaskHours(taskHours(t))}${late?' <span class="tk-late">Lewat jadwal</span>':''}</div>
+        <div class="tk-meta tk-m1">${o.mine ? '' : `<b>${escapeHtml(getTaskPerson(t))}</b><span class="tk-dot">·</span>`}<span class="tk-role">${roleIc} ${escapeHtml(t.role||'-')}</span></div>
+        <div class="tk-meta"><span class="tk-seg">${tglShort} ·</span><span class="tk-seg">${jamTxt} ·</span><span class="tk-seg">${fmtTaskHours(taskHours(t))}${late?' ·':''}</span>${late?'<span class="tk-seg tk-late">Lewat jadwal</span>':''}</div>
       </div>
       ${nKom ? `<span class="tk-cm" title="${nKom} komentar">${ic('chat')}${nKom}${unread?'<span class="task-comment-dot"></span>':''}</span>` : ''}
       <span class="tk-chev">${ic('chevron-right')}</span>
@@ -12284,9 +12291,11 @@ function tkRowHtml(t, o){
       </dl>
       ${canAct ? `<div class="tk-acts">
         <button type="button" class="btn ${done?'btn-outline':'btn-primary'} tk-act-main" data-task-toggle="${escapeHtml(t.id)}">${done?ic('undo'):ic('check')} ${toggleLbl}</button>
-        <button type="button" class="icon-btn task-comment-btn tk-act" data-task-comment="${escapeHtml(t.id)}" title="Komentar tugas" aria-label="Komentar tugas">${ic('chat')}${nKom?`<span class="task-comment-count">${nKom}</span>`:''}${unread?'<span class="task-comment-dot"></span>':''}</button>
-        ${isAdmin()?`<button type="button" class="icon-btn tk-act" data-task-edit="${escapeHtml(t.id)}" title="Edit tugas" aria-label="Edit tugas">${ic('edit')}</button>
-        <button type="button" class="icon-btn icon-btn-danger tk-act" data-task-delete="${escapeHtml(t.id)}" title="Hapus tugas" aria-label="Hapus tugas">${ic('trash')}</button>`:''}
+        <div class="tk-acts2">
+          <button type="button" class="icon-btn task-comment-btn tk-act" data-task-comment="${escapeHtml(t.id)}" aria-label="Komentar tugas">${ic('chat')} Komentar${nKom?`<span class="task-comment-count">${nKom}</span>`:''}${unread?'<span class="task-comment-dot"></span>':''}</button>
+          ${isAdmin()?`<button type="button" class="icon-btn tk-act" data-task-edit="${escapeHtml(t.id)}" aria-label="Edit tugas">${ic('edit')} Edit</button>
+          <button type="button" class="icon-btn icon-btn-danger tk-act" data-task-delete="${escapeHtml(t.id)}" aria-label="Hapus tugas">${ic('trash')} Hapus</button>`:''}
+        </div>
       </div>` : ''}
     </div>
   </details>`;

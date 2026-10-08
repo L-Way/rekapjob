@@ -1,10 +1,12 @@
 /* sw.js — service worker Kaone Motret
    - Notifikasi push (aplikasi ditutup): ditangani push-handler.js
-   - Offline: index.html network-first (selalu ambil versi terbaru, cache sebagai cadangan)
+   - Halaman utama (index.html): langsung dari cache supaya aplikasi cepat tampil, lalu
+     diperbarui diam-diam di belakang layar (versi baru dipakai pada pembukaan berikutnya,
+     atau lewat tombol "Muat Ulang" pada info versi baru di dalam aplikasi)
    - Aset statis (ikon, manifest): cache-first */
 importScripts('push-handler.js');
 
-const CACHE = 'kaone-motret-v3';
+const CACHE = 'kaone-motret-v4';
 const CORE = [
   './',
   'index.html',
@@ -41,17 +43,29 @@ self.addEventListener('fetch', (event) => {
 
   const isPage = req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('index.html');
   if (isPage) {
-    event.respondWith(
-      fetch(req)
+    // Permintaan dengan parameter (mis. cek versi baru ?v=...) selalu ke jaringan, cache sebagai cadangan.
+    if (url.search !== '' && req.mode !== 'navigate') {
+      event.respondWith(fetch(req).catch(() => caches.match('index.html')));
+      return;
+    }
+    // Pembukaan aplikasi: tampilkan cache seketika, perbarui cache di belakang layar.
+    event.respondWith((async () => {
+      const cached = (await caches.match('index.html')) || (await caches.match('./'));
+      const refresh = fetch(req)
         .then((res) => {
           if (res && res.ok && url.search === '') {
             const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put('index.html', copy));
+            return caches.open(CACHE).then((c) => c.put('index.html', copy)).then(() => res);
           }
           return res;
         })
-        .catch(() => caches.match('index.html').then((r) => r || caches.match('./')))
-    );
+        .catch(() => null);
+      if (cached) {
+        event.waitUntil(refresh);
+        return cached;
+      }
+      return (await refresh) || Response.error();
+    })());
     return;
   }
 

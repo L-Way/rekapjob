@@ -2809,6 +2809,16 @@
   .notif-panel-head .cnt{color:var(--shell-muted);}
   .notif-markall-btn{background:#fff; border:1px solid var(--shell-edge); color:var(--shell-accent);}
   .notif-markall-btn:hover{background:#fff8e1;}
+  .notif-panel-head .head-right{flex-wrap:wrap; justify-content:flex-end; gap:6px 8px;}
+  .notif-clear-btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:4px; line-height:1;
+    min-width:30px; height:28px; padding:0 8px; border-radius:999px; white-space:nowrap;
+    background:#fff; border:1px solid var(--shell-edge); color:#b3261e;
+    font-family:'Poppins',sans-serif; font-size:10.5px; font-weight:600; transition:.15s;
+  }
+  .notif-clear-btn .ic, .notif-clear-btn svg{width:14px; height:14px;}
+  .notif-clear-btn:hover{background:#fdecea;}
+  .notif-clear-btn.armed{background:#b3261e; border-color:#b3261e; color:#fff;}
   /* Judul kolom tabel: dari hampir hitam jadi emas lembut, senada dengan header */
   table.jobtable th, table.rekaptable th{
     background:linear-gradient(180deg,var(--shell-mid),var(--shell-low));
@@ -3233,6 +3243,122 @@ body.chat-only::before{content:"Memuat chat\2026";position:fixed;inset:0;display
 }
 </style>
 
+<style id="kmCompactJobs">
+/* ===== Daftar Job ringkas di HP (v1.16.10) ===== */
+/* Layar lebar: elemen khusus HP disembunyikan dan pembungkus filter "transparan" -> tampilan lama utuh */
+.km-m{display:none;}
+.km-search-row, .km-filter-panel{display:contents;}
+.km-filter-btn{display:none;}
+.km-rowmenu{
+  position:fixed; z-index:400; min-width:178px; background:#fff; border:1px solid var(--line);
+  border-radius:12px; box-shadow:0 18px 40px -10px rgba(40,30,0,.35); padding:6px;
+  display:flex; flex-direction:column;
+}
+.km-rowmenu button{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:transparent; border:none;
+  padding:11px 12px; border-radius:8px; font:500 14px 'Poppins',sans-serif; color:var(--ink); min-height:44px;
+}
+.km-rowmenu button:hover{transform:none; background:var(--gold-pale);}
+.km-rowmenu button.danger{color:#b3261e;}
+.km-rowmenu .ic{width:16px; height:16px; flex:none;}
+
+@media(max-width:640px){
+  /* Pencarian + tombol filter dalam satu baris; Jenis/Bulan/Salin tersembunyi sampai tombol diketuk */
+  .card-wide .toolbar{gap:10px; margin-bottom:12px;}
+  .card-wide .search-box{flex-wrap:nowrap; width:100%; min-width:0;}
+  .km-search-row{display:flex; gap:8px; align-items:stretch; width:100%; min-width:0;}
+  .search-box .km-search-row input#searchBox{flex:1 1 0; width:auto; min-width:0;}
+  .km-filter-btn{
+    display:inline-flex; align-items:center; justify-content:center; position:relative; flex:none;
+    width:48px; border-radius:var(--radius); border:1px solid var(--line); background:#fff; color:var(--ink); padding:0;
+  }
+  .km-filter-btn .ic{width:20px; height:20px;}
+  .km-filter-btn[aria-expanded="true"]{background:var(--gold-pale); border-color:var(--gold);}
+  .km-filter-btn.active::after{
+    content:''; position:absolute; top:8px; right:8px; width:9px; height:9px; border-radius:50%;
+    background:#c0392b; border:2px solid #fff; box-sizing:content-box;
+  }
+  .km-filter-panel{display:none; flex-direction:column; gap:8px; width:100%;}
+  .km-filter-panel.open{display:flex;}
+
+  /* "+ Job Baru" jadi tombol melayang */
+  #btnInputJob2{
+    position:fixed; z-index:170; width:auto; min-height:48px; padding:0 20px; border-radius:999px;
+    right:calc(16px + env(safe-area-inset-right,0px)); bottom:calc(86px + env(safe-area-inset-bottom,0px));
+    box-shadow:0 12px 28px -8px rgba(120,95,0,.55);
+  }
+  body:has(#modalOverlay) #btnInputJob2{display:none !important;}
+  body.view-daftar .to-top-btn{bottom:calc(144px + env(safe-area-inset-bottom,0px));}
+  #daftarTableWrap{padding-bottom:64px;}
+
+  /* Kartu: nomor | tanggal / nama klien + ⋯ / jenis · lokasi / label status | Bersih */
+  #daftarTableWrap table.jobtable tr{position:relative; row-gap:8px; padding:12px 14px; cursor:pointer;}
+  #daftarTableWrap table.jobtable td.km-m{display:block;}
+  #daftarTableWrap table.jobtable td.km-m::before{display:none;}
+  #daftarTableWrap table.jobtable td[data-label="Jenis Acara"],
+  #daftarTableWrap table.jobtable td[data-label="Lokasi"],
+  #daftarTableWrap table.jobtable td[data-label="Edit"],
+  #daftarTableWrap table.jobtable td[data-label="Cetak"],
+  #daftarTableWrap table.jobtable td[data-label="Pengiriman"],
+  #daftarTableWrap table.jobtable td[data-label="Bayar"],
+  #daftarTableWrap table.jobtable td.row-actions{display:none;}
+
+  #daftarTableWrap table.jobtable td[data-label="No"]{grid-row:1; grid-column:1;}
+  #daftarTableWrap table.jobtable td[data-label="Tanggal"]{grid-row:1; grid-column:2;}
+  #daftarTableWrap table.jobtable td[data-label="Klien"]{
+    grid-row:2; grid-column:1 / -1; padding:0 40px 0 0; border-bottom:none; overflow-wrap:anywhere;
+  }
+  #daftarTableWrap table.jobtable td.km-menu{
+    grid-row:2; grid-column:2; justify-self:end; align-self:start; margin:-6px -8px 0 0; z-index:2;
+  }
+  .km-menubtn{
+    width:38px; height:38px; border-radius:10px; border:none; background:transparent; color:var(--ink-soft);
+    display:inline-flex; align-items:center; justify-content:center; padding:0;
+  }
+  .km-menubtn:hover{transform:none;}
+  .km-menubtn:active{background:var(--gold-pale);}
+  .km-menubtn .ic{width:20px; height:20px;}
+  #daftarTableWrap table.jobtable td.km-sum{
+    grid-row:3; grid-column:1 / -1; font-size:13px; color:var(--ink-soft);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  #daftarTableWrap table.jobtable td.km-stat{
+    grid-row:4; grid-column:1 / -1; justify-self:start; align-self:center; min-width:0; max-width:calc(100% - 116px);
+  }
+  #daftarTableWrap table.jobtable td[data-label="Bersih"],
+  #daftarTableWrap table.jobtable td[data-label="Sisa"]{
+    grid-row:4; grid-column:2; justify-self:end; flex-direction:column; align-items:flex-end; gap:0;
+    padding-top:0; border-top:none; align-self:center; font-weight:700; z-index:1;
+  }
+
+  .km-chip{
+    display:inline-flex; align-items:center; gap:6px; border:none; border-radius:999px; min-height:34px;
+    padding:6px 12px; max-width:100%; min-width:0; font:600 12px 'Poppins',sans-serif; white-space:nowrap;
+  }
+  .km-chip .km-lbl{min-width:0; overflow:hidden; text-overflow:ellipsis;}
+  .km-chip .km-more{flex:none;}
+  .km-chip:hover{transform:none;}
+  .km-chip.ok{background:#e8f5e9; color:#2e7d32;}
+  .km-chip.warn{background:#ffeacc; color:#9a5b00;}
+  .km-chip .km-more{opacity:.7; font-weight:700;}
+  .km-chip::after{
+    content:''; flex:none; width:6px; height:6px; border-right:2px solid currentColor; border-bottom:2px solid currentColor;
+    transform:rotate(45deg) translateY(-2px); transition:transform .2s;
+  }
+  tr.km-open .km-chip::after{transform:rotate(225deg) translateY(-1px);}
+
+  /* Bagian status (Edit, Cetak, Pengiriman, Bayar) terbuka kalau label status diketuk */
+  #daftarTableWrap table.jobtable tr.km-open td[data-label="Edit"],
+  #daftarTableWrap table.jobtable tr.km-open td[data-label="Cetak"],
+  #daftarTableWrap table.jobtable tr.km-open td[data-label="Pengiriman"],
+  #daftarTableWrap table.jobtable tr.km-open td[data-label="Bayar"]{display:flex;}
+  #daftarTableWrap table.jobtable tr.km-open td[data-label="Edit"]{grid-row:5; grid-column:1; padding-top:10px; border-top:1px dashed rgba(214,196,130,.6);}
+  #daftarTableWrap table.jobtable tr.km-open td[data-label="Cetak"]{grid-row:5; grid-column:2; padding-top:10px; border-top:1px dashed rgba(214,196,130,.6);}
+  #daftarTableWrap table.jobtable tr.km-open td[data-label="Pengiriman"]{grid-row:6; grid-column:1;}
+  #daftarTableWrap table.jobtable tr.km-open td[data-label="Bayar"]{grid-row:6; grid-column:2;}
+}
+</style>
+
 <style id="kmPolish2">
 /* ===== Polesan v1.16.8 ===== */
 /* Pemadatan v1.16.6 menghapus padding kiri-kanan baris Hasil Cetak */
@@ -3369,6 +3495,7 @@ html.km-has-session #authGate{display:none !important;}
 <symbol id="ic-nav-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3.2"/><line x1="3.5" y1="10.2" x2="20.5" y2="10.2"/><line x1="8" y1="3" x2="8" y2="6.8"/><line x1="16" y1="3" x2="16" y2="6.8"/></symbol>
 <symbol id="ic-nav-task" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m7.9 12.3 2.9 2.9 5.4-6" stroke-linejoin="round"/></symbol>
 <symbol id="ic-nav-more" viewBox="0 0 24 24"><line x1="5.5" y1="12" x2="5.51" y2="12" stroke-width="3.4"/><line x1="12" y1="12" x2="12.01" y2="12" stroke-width="3.4"/><line x1="18.5" y1="12" x2="18.51" y2="12" stroke-width="3.4"/></symbol>
+<symbol id="ic-filter" viewBox="0 0 24 24"><path d="M4 6.5h16M7 12h10M10 17.5h4" stroke-linecap="round"/></symbol>
 <symbol id="ic-chevron-right" viewBox="0 0 24 24"><path d="m9 5.5 6.5 6.5L9 18.5" stroke-linejoin="round"/></symbol>
 </defs>
 </svg>
@@ -7215,6 +7342,7 @@ function syncBottomNav(view){
   });
   document.getElementById('bnMore')?.classList.toggle('active', moreViews.includes(view));
   document.body.classList.toggle('view-form', view==='form');
+  document.body.classList.toggle('view-daftar', view==='daftar');
   closeMoreSheet();
   updateBottomNavIndicator(true);
 }
@@ -9157,16 +9285,21 @@ function viewDaftar(){
     <div class="toolbar">
       <h2 style="margin:0;">${ic('clipboard')} Daftar Semua Job</h2>
       <div class="search-box">
-        <input type="text" id="searchBox" placeholder="${isAdmin() ? 'Cari klien, No WA, desa, acara...' : 'Cari klien, desa, acara...'}">
-        <select id="filterJenis">
-          <option value="">Semua Jenis Acara</option>
-          ${JENIS_ACARA_LIST.map(j=>`<option value="${j}">${j}</option>`).join('')}
-        </select>
-        <select id="filterBulan">
-          <option value="">Semua Bulan</option>
-          ${getAvailableMonthKeys().slice().reverse().map(k=>`<option value="${k}">${monthKeyLabel(k)}</option>`).join('')}
-        </select>
-        <button class="btn btn-outline" id="btnCopyPerBulan">${ic('clipboard')} Salin per Bulan</button>
+        <div class="km-search-row">
+          <input type="text" id="searchBox" placeholder="${isAdmin() ? 'Cari klien, No WA, desa, acara...' : 'Cari klien, desa, acara...'}">
+          <button type="button" class="km-filter-btn" id="btnKmFilter" aria-expanded="false" aria-controls="kmFilterPanel" aria-label="Filter dan menu lain" title="Filter">${ic('filter')}</button>
+        </div>
+        <div class="km-filter-panel" id="kmFilterPanel">
+          <select id="filterJenis">
+            <option value="">Semua Jenis Acara</option>
+            ${JENIS_ACARA_LIST.map(j=>`<option value="${j}">${j}</option>`).join('')}
+          </select>
+          <select id="filterBulan">
+            <option value="">Semua Bulan</option>
+            ${getAvailableMonthKeys().slice().reverse().map(k=>`<option value="${k}">${monthKeyLabel(k)}</option>`).join('')}
+          </select>
+          <button class="btn btn-outline" id="btnCopyPerBulan">${ic('clipboard')} Salin per Bulan</button>
+        </div>
         <button class="btn btn-primary admin-only" id="btnInputJob2">+ Job Baru</button>
       </div>
     </div>
@@ -9174,9 +9307,72 @@ function viewDaftar(){
   </div>
   `;
 }
+/* ---------- Kartu ringkas Daftar Job (khusus HP; di layar lebar tabel tetap seperti biasa) ---------- */
+let kmOpenRows = new Set();   // kartu yang sedang dibuka bagian statusnya (tetap terbuka walau daftar digambar ulang)
+// Satu label status: yang masih tertunda (urutan alur kerja), atau "Selesai" kalau semuanya beres
+function kmStatusRingkas(j){
+  const p = [];
+  if(j.prosesEdit!=='Selesai') p.push('Edit belum selesai');
+  if(j.prosesCetak!=='Selesai') p.push('Cetak belum selesai');
+  if(j.pengiriman && j.pengiriman!=='Sudah Dijemput' && j.pengiriman!=='Sudah Diantar') p.push(j.pengiriman);
+  if(isAdmin() && j.statusPembayaran!=='Lunas') p.push(j.statusPembayaran==='DP' ? 'Baru DP' : 'Belum Bayar');
+  if(!p.length) return {cls:'ok', label:'Selesai', extra:0};
+  return {cls:'warn', label:p[0], extra:p.length-1};
+}
+function kmCloseRowMenu(){
+  document.getElementById('kmRowMenu')?.remove();
+  document.removeEventListener('click', kmRowMenuOutside, true);
+  window.removeEventListener('scroll', kmCloseRowMenu, true);
+}
+function kmRowMenuOutside(e){
+  const m = document.getElementById('kmRowMenu');
+  if(m && !m.contains(e.target)) kmCloseRowMenu();
+}
+// Menu titik tiga di kartu: memakai atribut data-* yang sama dengan tombol lama,
+// jadi aksinya ditangani penangan klik global yang sudah ada (Lihat, Edit, Maps, Hapus).
+function kmOpenRowMenu(btn){
+  kmCloseRowMenu();
+  const id = btn.dataset.kmMenu;
+  const m = document.createElement('div');
+  m.id = 'kmRowMenu'; m.className = 'km-rowmenu'; m.setAttribute('role','menu');
+  m.innerHTML = `
+    <button type="button" role="menuitem" data-view-job="${escapeHtml(id)}">${ic('eye')} Lihat detail</button>
+    <button type="button" role="menuitem" class="admin-only" data-edit="${escapeHtml(id)}">${ic('edit')} Edit</button>
+    <button type="button" role="menuitem" data-open-maps="${escapeHtml(id)}">${ic('map')} Buka di Maps</button>
+    <button type="button" role="menuitem" class="danger admin-only" data-delete="${escapeHtml(id)}">${ic('trash')} Hapus</button>`;
+  document.body.appendChild(m);
+  const r = btn.getBoundingClientRect(), mw = m.offsetWidth, mh = m.offsetHeight;
+  const left = Math.min(Math.max(8, r.right - mw), window.innerWidth - mw - 8);
+  let top = r.bottom + 4;
+  if(top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
+  m.style.left = left + 'px'; m.style.top = top + 'px';
+  m.addEventListener('click', ()=> setTimeout(kmCloseRowMenu, 0));
+  setTimeout(()=> document.addEventListener('click', kmRowMenuOutside, true), 0);
+  window.addEventListener('scroll', kmCloseRowMenu, true);
+}
+function kmDaftarClick(e){
+  const tgl = e.target.closest('[data-km-toggle]');
+  if(tgl){
+    e.stopPropagation();
+    const tr = tgl.closest('tr'); if(!tr) return;
+    const open = !tr.classList.contains('km-open');
+    tr.classList.toggle('km-open', open);
+    tgl.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if(open) kmOpenRows.add(tgl.dataset.kmToggle); else kmOpenRows.delete(tgl.dataset.kmToggle);
+    return;
+  }
+  const mn = e.target.closest('[data-km-menu]');
+  if(mn){ e.stopPropagation(); kmOpenRowMenu(mn); return; }
+  // Di HP, mengetuk bagian kartu mana pun (selain tombol/pilihan) membuka detail job
+  if(!window.matchMedia('(max-width:640px)').matches) return;
+  if(e.target.closest('button,select,a,input,.badge-select-wrap')) return;
+  const tr = e.target.closest('tr[data-job-row]');
+  if(tr) openJobDetailModal(tr.dataset.jobRow);
+}
 function renderDaftarTable(){
   const wrap = document.getElementById('daftarTableWrap');
   if(!wrap) return;
+  kmCloseRowMenu();
   const q = (document.getElementById('searchBox')?.value||'').toLowerCase();
   const fj = document.getElementById('filterJenis')?.value||'';
   const fb = document.getElementById('filterBulan')?.value||'';
@@ -9193,6 +9389,7 @@ function renderDaftarTable(){
   }
   if(fj) list = list.filter(j=>j.jenisAcara===fj);
   if(fb) list = list.filter(j=>jobOverlapsMonth(j, fb));
+  document.getElementById('btnKmFilter')?.classList.toggle('active', !!(fj||fb));   // titik merah di tombol filter
 
   if(list.length===0){
     wrap.innerHTML = `<div class="empty-state"><div class="em">${ic('mailbox-empty')}</div>Belum ada job.</div>`;
@@ -9206,11 +9403,19 @@ function renderDaftarTable(){
       <th>Edit</th><th>Cetak</th><th>Pengiriman</th><th class="admin-only">Bayar</th><th class="admin-only">Bersih</th><th class="tim-only">Sisa</th><th>Aksi</th>
     </tr></thead>
     <tbody>
-    ${list.map(j=>`
-      <tr>
+    ${list.map(j=>{
+      const st = kmStatusRingkas(j);
+      const jenisTxt = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : (j.jenisAcara||'-');
+      const lokasiTxt = [desaDisplay(j), j.kecamatan].filter(Boolean).join(', ') || '-';
+      const terbuka = kmOpenRows.has(j.id);
+      return `
+      <tr data-job-row="${escapeHtml(j.id)}"${terbuka ? ' class="km-open"' : ''}>
         <td data-label="No">#${j.noUrut}</td>
         <td data-label="Tanggal">${fmtTglJob(j)}</td>
         <td data-label="Klien">${escapeHtml(j.namaKlien||'-')}</td>
+        <td class="km-m km-menu"><button type="button" class="km-menubtn" data-km-menu="${escapeHtml(j.id)}" aria-label="Menu job" aria-haspopup="menu">${ic('nav-more')}</button></td>
+        <td class="km-m km-sum">${escapeHtml(jenisTxt)} · ${escapeHtml(lokasiTxt)}</td>
+        <td class="km-m km-stat"><button type="button" class="km-chip ${st.cls}" data-km-toggle="${escapeHtml(j.id)}" aria-expanded="${terbuka?'true':'false'}" title="Ketuk untuk melihat / mengubah status"><span class="km-lbl">${escapeHtml(st.label)}</span>${st.extra ? `<span class="km-more">+${st.extra}</span>` : ''}</button></td>
         <td data-label="Jenis Acara">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara)}</td>
         <td data-label="Lokasi">${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</td>
         <td data-label="Edit">${badgeSelect(j.id, 'prosesEdit', ['Belum Selesai','Selesai'], j.prosesEdit)}</td>
@@ -9226,7 +9431,7 @@ function renderDaftarTable(){
           <button class="icon-btn icon-btn-danger admin-only" data-delete="${j.id}" title="Hapus job">${ic('trash')} Hapus</button>
         </td>
       </tr>
-    `).join('')}
+    `;}).join('')}
     </tbody>
   </table>
   `;
@@ -14642,6 +14847,16 @@ function attachHandlers(){
     document.getElementById('searchBox')?.addEventListener('input', renderDaftarTable);
     document.getElementById('filterJenis')?.addEventListener('change', renderDaftarTable);
     document.getElementById('filterBulan')?.addEventListener('change', renderDaftarTable);
+    // HP: filter dilipat di balik tombol; kartu: ketuk label status / menu titik tiga / kartu
+    document.getElementById('btnKmFilter')?.addEventListener('click', ()=>{
+      const panel = document.getElementById('kmFilterPanel');
+      const btn = document.getElementById('btnKmFilter');
+      if(!panel || !btn) return;
+      const open = panel.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    const kmWrap = document.getElementById('daftarTableWrap');
+    if(kmWrap && !kmWrap.dataset.kmBound){ kmWrap.dataset.kmBound = '1'; kmWrap.addEventListener('click', kmDaftarClick); }
   }
 
   // KALENDER
@@ -14944,6 +15159,8 @@ const CHANGELOG = [
     tanggal: '8 Oktober 2026',
     items: [
       { kategori: 'Peningkatan', teks: 'Aplikasi lebih cepat tampil saat dibuka: pustaka ekspor (Excel, PDF, gambar) kini dimuat di belakang layar dan tidak lagi menahan halaman utama.' },
+      { kategori: 'Peningkatan', teks: 'Daftar Semua Job di HP tampil lebih ringkas: tiap kartu kini hanya memuat nomor, tanggal, nama klien, jenis acara & lokasi, satu label status, dan nilai Bersih/Sisa. Ketuk label status untuk membuka dan mengubah Edit, Cetak, Pengiriman, dan Bayar; ketuk kartu untuk melihat detail; Edit, Maps, dan Hapus ada di menu titik tiga. Filter dilipat di balik tombol filter, dan tombol "+ Job Baru" menjadi tombol melayang.' },
+      { kategori: 'Fitur', teks: 'Panel Notifikasi sekarang punya tombol tempat sampah untuk menghapus semua notifikasi sekaligus (ketuk dua kali supaya tidak terhapus tak sengaja). Notifikasi baru yang masuk sesudahnya tetap muncul seperti biasa.' },
     ]
   },
   {
@@ -15791,8 +16008,29 @@ function kmNotifMeta(n){
   if(id.indexOf('ulasan_')===0) return {r:4, g:'Ulasan klien', k:0};
   return {r:5, g:'Info aplikasi', k:0};
 }
+/* Notifikasi dibuat otomatis dari data (job, tugas, ulasan, dsb.), jadi "hapus" berarti
+   menyembunyikan ID-nya di perangkat ini. Notifikasi BARU (ID baru) tetap muncul seperti biasa.
+   Disimpan per akun supaya akun lain di perangkat yang sama tidak ikut tersembunyi. */
+const NOTIF_DISMISS_KEY = 'kaoneMotret_notifDismissed_v1';
+function notifDismissKey(){ return NOTIF_DISMISS_KEY + '_' + String(currentUserId || ''); }
+function loadNotifDismissed(){
+  try{ return new Set(JSON.parse(localStorage.getItem(notifDismissKey()) || '[]')); }
+  catch(e){ return new Set(); }
+}
+function dismissAllNotifications(){
+  const total = buildNotifications().length;
+  // Simpan hanya ID yang sedang ada: daftar tidak menumpuk selamanya, dan notifikasi yang
+  // sudah hilang sendiri lalu muncul kembali nanti dihitung sebagai notifikasi baru.
+  const ids = buildNotificationsRaw().map(n=>n.id);
+  try{ localStorage.setItem(notifDismissKey(), JSON.stringify(ids)); }catch(e){}
+  try{ renderNotifBadge(); }catch(e){}
+  if(document.getElementById('notifPanel')) refreshNotifPanel();
+  if(total) toast(total + ' notifikasi dihapus');
+}
 function buildNotifications(){
+  const dismissed = loadNotifDismissed();
   return buildNotificationsRaw()
+    .filter(n=>!dismissed.has(n.id))
     .map((n,i)=>{ const m = kmNotifMeta(n); n.group = m.g; return {n, r:m.r, k:m.k, i}; })
     .sort((a,b)=> a.r-b.r || a.k-b.k || a.i-b.i)
     .map(x=>x.n);
@@ -15862,6 +16100,7 @@ function openNotifPanel(){
       <div class="head-right">
         ${unreadCount>0 ? `<button type="button" id="btnMarkAllRead" class="notif-markall-btn">${ic('check')} Tandai semua dibaca</button>` : ''}
         <span class="cnt">${list.length} info</span>
+        ${list.length>0 ? `<button type="button" id="btnClearAllNotif" class="notif-clear-btn" title="Hapus semua notifikasi" aria-label="Hapus semua notifikasi">${ic('trash')}</button>` : ''}
       </div>
     </div>
     <div class="notif-list">
@@ -15914,6 +16153,32 @@ function openNotifPanel(){
     markAllNotifRead(list);
     refreshNotifPanel();
   });
+
+  // Tombol "Hapus semua": ketukan pertama meminta konfirmasi, ketukan kedua menghapus
+  const clearBtn = panel.querySelector('#btnClearAllNotif');
+  if(clearBtn){
+    const resetClear = ()=>{
+      if(!clearBtn.isConnected) return;
+      clearBtn.dataset.armed = '';
+      clearBtn.classList.remove('armed');
+      clearBtn.innerHTML = ic('trash');
+      clearBtn.setAttribute('aria-label','Hapus semua notifikasi');
+    };
+    clearBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if(clearBtn.dataset.armed !== '1'){
+        clearBtn.dataset.armed = '1';
+        clearBtn.classList.add('armed');
+        clearBtn.textContent = 'Hapus semua?';
+        clearBtn.setAttribute('aria-label','Ketuk lagi untuk menghapus semua notifikasi');
+        clearTimeout(clearBtn._t);
+        clearBtn._t = setTimeout(resetClear, 3500);
+        return;
+      }
+      clearTimeout(clearBtn._t);
+      dismissAllNotifications();
+    });
+  }
 
   // Tombol pengaturan notifikasi (suara, getar, notifikasi perangkat)
   panel.querySelector('#btnNotifSettings')?.addEventListener('click', (e)=>{

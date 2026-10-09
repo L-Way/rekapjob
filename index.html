@@ -3551,7 +3551,7 @@ html.km-has-session #authGate{display:none !important;}
 .dash-next > *{position:relative; z-index:1;}
 .dash-next > svg.dash-ap{position:absolute; z-index:0; right:-13%; top:-25%; height:150%; width:auto; aspect-ratio:1/1; max-width:none; color:#5c4500; opacity:.2; pointer-events:none; animation:kjSpin 40s linear infinite;}
 @keyframes kjSpin{to{transform:rotate(360deg);}}
-@media (max-width:640px){ .dash-next > svg.dash-ap{right:-40%;} }
+@media (max-width:640px){ .dash-next > svg.dash-ap{height:78%; right:-16%; top:-14%; opacity:.13; stroke-width:4; animation-duration:60s;} }
 @media (prefers-reduced-motion:reduce){ .dash-next > svg.dash-ap{animation:none;} }
 .dash-next .dash-chip{background:rgba(255,255,255,.6); color:#5c4500;}
 .dash-next .dash-when{background:rgba(255,255,255,.75); border-color:transparent; color:#241c06;}
@@ -3772,7 +3772,7 @@ body{background:radial-gradient(800px 480px at 95% -8%,#ffe38a,transparent 60%),
 
 <div class="auth-gate" id="authGate">
   <div class="auth-card">
-    <div class="auth-badge">KM</div>
+    <div class="auth-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div>
     <h2>Kaone Motret</h2>
     <p class="auth-sub" id="authSub">Masuk untuk membuka Buku Job Fotografer</p>
 
@@ -3834,7 +3834,7 @@ body{background:radial-gradient(800px 480px at 95% -8%,#ffe38a,transparent 60%),
 <header class="topbar">
   <div class="topbar-row">
     <div class="brand">
-      <div class="brand-badge">KM</div>
+      <div class="brand-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div>
       <div class="brand-text">
         <div class="name">Kaone Motret</div>
         <div class="tag">Buku Job Fotografer</div>
@@ -9686,7 +9686,7 @@ function viewDaftar(){
           </select>
           <button class="btn btn-outline" id="btnCopyPerBulan">${ic('clipboard')} Salin per Bulan</button>
         </div>
-        <button class="btn btn-primary admin-only" id="btnInputJob2">+ Job Baru</button>
+        <button class="btn btn-primary admin-only" id="btnInputJob2" aria-label="Tambah job baru">+ Job Baru</button>
       </div>
     </div>
     <div id="daftarTableWrap" class="table-wrap"></div>
@@ -9736,11 +9736,121 @@ function kmOpenRowMenu(btn){
   setTimeout(()=> document.addEventListener('click', kmRowMenuOutside, true), 0);
   window.addEventListener('scroll', kmCloseRowMenu, true);
 }
+
+/* ---------- Daftar Job HP (v2): baris ringkas, dikelompokkan per bulan, filter cepat, dimuat bertahap ---------- */
+let kmQuick = null, kmLimit = 30, kmSig = '';
+const KM_PAGE = 30;
+const kmColl = new Set();   // bulan yang sedang dilipat
+function kmTodayISO(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function kmRowHtml(j, today){
+  const adm = isAdmin();
+  const st = kmStatusRingkas(j);
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : (j.jenisAcara||'');
+  const lok = [desaDisplay(j), j.kecamatan].filter(Boolean).join(', ');
+  const nama = (j.namaKlien || j.namaMempelai || '').trim();
+  const title = nama || jenis || 'Tanpa nama';
+  const sub = [nama ? jenis : '', lok].filter(Boolean).join(' · ') || '-';
+  const mulai = j.tanggalAcara || '', akhir = getJobFinishDate(j) || mulai;
+  const d = mulai ? new Date(mulai+'T00:00:00') : null;
+  let rel = '';
+  if(d && akhir >= today){
+    const diff = Math.round((d - new Date(today+'T00:00:00'))/864e5);
+    rel = diff<=0 ? (mulai<today ? 'Berlangsung' : 'Hari ini') : diff===1 ? 'Besok' : diff<=7 ? diff+' hari lagi' : '';
+  }
+  const soon = rel==='Hari ini' || rel==='Besok' || rel==='Berlangsung';
+  const sisa = hitungSisaPembayaran(j);
+  const amt = adm ? '<small>Bersih</small>'+fmtRp(hitungBersih(j))
+                  : ((j.statusPembayaran==='Lunas' || sisa<=0) ? 'Lunas' : '<small>Sisa</small>'+fmtRp(sisa));
+  const terbuka = kmOpenRows.has(j.id);
+  const id = escapeHtml(j.id);
+  const lbl = st.label.replace(' belum selesai',' belum');
+  return `<div class="kmr${terbuka?' km-open':''}${soon?' soon':''}" data-job-row="${id}">
+    <div class="kmr-d"><b>${d?d.getDate():'–'}</b><span>${d?MONTH_NAMES[d.getMonth()].slice(0,3).toUpperCase():''}</span></div>
+    <div class="kmr-main">
+      <div class="kmr-t">${escapeHtml(title)}</div>
+      <div class="kmr-s">${rel?'<b class="kmr-rel">'+rel+'</b> · ':''}${escapeHtml(sub)}</div>
+      <div class="kmr-b">
+        <button type="button" class="km-chip ${st.cls}" data-km-toggle="${id}" aria-expanded="${terbuka?'true':'false'}" title="Ketuk untuk melihat / mengubah status"><span class="km-lbl">${escapeHtml(lbl)}</span>${st.extra?`<span class="km-more">+${st.extra}</span>`:''}</button>
+        <span class="kmr-amt">${amt}</span>
+      </div>
+    </div>
+    <button type="button" class="km-menubtn kmr-mn" data-km-menu="${id}" aria-label="Menu job" aria-haspopup="menu">${ic('nav-more')}</button>
+    <div class="kmr-panel">
+      <label>Edit${badgeSelect(j.id,'prosesEdit',['Belum Selesai','Selesai'],j.prosesEdit)}</label>
+      <label>Cetak${badgeSelect(j.id,'prosesCetak',['Belum Selesai','Selesai'],j.prosesCetak)}</label>
+      <label>Pengiriman${badgeSelect(j.id,'pengiriman',PENGIRIMAN_LIST,j.pengiriman)}</label>
+      ${adm?`<label>Bayar${badgeSelect(j.id,'statusPembayaran',STATUS_BAYAR_LIST,j.statusPembayaran)}</label>`:''}
+    </div>
+  </div>`;
+}
+function kmRenderMobile(wrap, list, filterSig){
+  const today = kmTodayISO(), adm = isAdmin();
+  const up = j => (getJobFinishDate(j) || j.tanggalAcara || '') >= today;
+  const defs = [
+    ['mendatang','Mendatang', up],
+    ['semua','Semua', ()=>true],
+    ['proses','Belum beres', j=>kmStatusRingkas(j).cls==='warn']
+  ];
+  if(adm) defs.push(['belumlunas','Belum lunas', j=>j.statusPembayaran!=='Lunas']);
+  defs.push(['selesai','Selesai', j=>kmStatusRingkas(j).cls==='ok']);
+  if(kmQuick===null || !defs.some(d=>d[0]===kmQuick)) kmQuick = jobs.some(up) ? 'mendatang' : 'semua';
+  const sig = filterSig+'|'+kmQuick;
+  if(sig!==kmSig){ kmSig = sig; kmLimit = KM_PAGE; }
+
+  const chips = defs.map(d=>`<button type="button" data-km-chip="${d[0]}" class="${d[0]===kmQuick?'on':''}" aria-pressed="${d[0]===kmQuick}">${d[1]} <i>${list.filter(d[2]).length}</i></button>`).join('');
+  const aktif = defs.find(d=>d[0]===kmQuick);
+  let items = list.filter(aktif[2]);
+  if(kmQuick!=='mendatang') items = items.slice().reverse();   // terbaru di atas; "Mendatang" = yang terdekat di atas
+
+  const cnt = {};
+  items.forEach(j=>{ const k=(j.tanggalAcara||'').slice(0,7); cnt[k]=(cnt[k]||0)+1; });
+  const nowKey = today.slice(0,7);
+  let out = '', key = null, rendered = 0, more = 0;
+  for(let i=0;i<items.length;i++){
+    const j = items[i], k = (j.tanggalAcara||'').slice(0,7), coll = kmColl.has(k);
+    if(k!==key){
+      key = k;
+      out += `<button type="button" class="kmm${coll?' coll':''}" data-km-mon="${k}" aria-expanded="${!coll}">${k?monthKeyLabel(k):'Tanpa tanggal'}${k===nowKey?' · bulan ini':''}<em>${cnt[k]} job</em></button>`;
+    }
+    if(coll) continue;
+    if(rendered>=kmLimit){ more = items.length - i; break; }
+    out += kmRowHtml(j, today); rendered++;
+  }
+  if(!items.length) out = `<div class="empty-state"><div class="em">${ic('mailbox-empty')}</div>Tidak ada job di filter ini.</div>`;
+  if(more) out += `<button type="button" class="kmr-more" data-km-more>Tampilkan lebih banyak <span>(${more} lagi)</span></button>`;
+  wrap.innerHTML = `<div class="kmq" role="group" aria-label="Filter cepat">${chips}</div>${out}`;
+  wrap.querySelectorAll('select[data-field]').forEach(sel=>{
+    sel.addEventListener('click', e=> e.stopPropagation());
+    sel.addEventListener('change', e=>{
+      e.stopPropagation();
+      const idx = jobs.findIndex(x=>x.id===sel.dataset.jobId);
+      if(idx===-1) return;
+      jobs[idx][sel.dataset.field] = sel.value;
+      if(sel.dataset.field==='statusPembayaran') jobs[idx].manualStatusPembayaranSet = true;
+      saveJobs();
+      toast('Status diperbarui');
+      renderDaftarTable();
+    });
+  });
+}
+(function(){
+  const mq = window.matchMedia('(max-width:640px)');
+  const f = ()=>{ if(document.getElementById('daftarTableWrap')) renderDaftarTable(); };
+  if(mq.addEventListener) mq.addEventListener('change', f); else if(mq.addListener) mq.addListener(f);
+})();
 function kmDaftarClick(e){
+  const chp = e.target.closest('[data-km-chip]');
+  if(chp){ kmQuick = chp.dataset.kmChip; renderDaftarTable(); return; }
+  const mon = e.target.closest('[data-km-mon]');
+  if(mon){ const k = mon.dataset.kmMon; if(kmColl.has(k)) kmColl.delete(k); else kmColl.add(k); renderDaftarTable(); return; }
+  if(e.target.closest('[data-km-more]')){ kmLimit += KM_PAGE; renderDaftarTable(); return; }
   const tgl = e.target.closest('[data-km-toggle]');
   if(tgl){
     e.stopPropagation();
-    const tr = tgl.closest('tr'); if(!tr) return;
+    const tr = tgl.closest('tr,.kmr'); if(!tr) return;
     const open = !tr.classList.contains('km-open');
     tr.classList.toggle('km-open', open);
     tgl.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -9751,8 +9861,8 @@ function kmDaftarClick(e){
   if(mn){ e.stopPropagation(); kmOpenRowMenu(mn); return; }
   // Di HP, mengetuk bagian kartu mana pun (selain tombol/pilihan) membuka detail job
   if(!window.matchMedia('(max-width:640px)').matches) return;
-  if(e.target.closest('button,select,a,input,.badge-select-wrap')) return;
-  const tr = e.target.closest('tr[data-job-row]');
+  if(e.target.closest('button,select,a,input,.badge-select-wrap,.kmr-panel')) return;
+  const tr = e.target.closest('[data-job-row]');
   if(tr) openJobDetailModal(tr.dataset.jobRow);
 }
 function renderDaftarTable(){
@@ -9781,6 +9891,8 @@ function renderDaftarTable(){
     wrap.innerHTML = `<div class="empty-state"><div class="em">${ic('mailbox-empty')}</div>Belum ada job.</div>`;
     return;
   }
+
+  if(window.matchMedia('(max-width:640px)').matches){ kmRenderMobile(wrap, list, [q,fj,fb].join('|')); return; }
 
   wrap.innerHTML = `
   <table class="jobtable">
@@ -11222,7 +11334,7 @@ function openJobDetailModal(jobId){
     <div class="job-detail-card" id="jobDetailCard" style="${cardStyle}">
       <div class="jd-header">
         <div class="jd-header-top">
-          <div class="jd-header-badge">KM</div>
+          <div class="jd-header-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div>
           <div class="jd-header-namewrap">
             <div class="jd-header-name">Kaone Motret</div>
             <div class="jd-header-tag">Buku Job Fotografer</div>
@@ -11334,7 +11446,7 @@ function buildJobPosterHtml(j){
     <div id="jobPosterExport" class="job-poster" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
       <div class="jp-watermark"></div>
       <div class="jp-topbar">
-        <div class="jp-badge">KM</div>
+        <div class="jp-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div>
         <div>
           <div class="jp-brand-name">Kaone Motret</div>
           <div class="jp-brand-tag">Buku Job Fotografer</div>
@@ -11444,7 +11556,7 @@ function buildJobStoryHtml(j){
     <div id="jobStoryExport" class="job-story" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
       <div class="js-watermark"></div>
       <div class="js-frame"></div>
-      <div class="js-badge">KM</div>
+      <div class="js-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div>
       <div class="js-brand">Kaone Motret</div>
       <div class="js-brand-tag">Wedding Photography</div>
       <div class="js-kicker">Job #${getJobNo(j.id)} &middot; ${escapeHtml(jenis)}</div>
@@ -12072,7 +12184,7 @@ async function kaonePaketView(){
   document.body.appendChild(host);
   try{ document.title = 'Isi Paket · Kaone Motret'; }catch(e){}
   const waUrl = (pesan)=>`https://wa.me/${KWQR_WA_NUMBER}?text=${encodeURIComponent(pesan)}`;
-  const brand = `<div class="pv-brand"><div class="pv-badge">KM</div><div><div class="pv-bn">Kaone Motret</div><div class="pv-bt">Buku Job Fotografer</div></div></div>`;
+  const brand = `<div class="pv-brand"><div class="pv-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div><div><div class="pv-bn">Kaone Motret</div><div class="pv-bt">Buku Job Fotografer</div></div></div>`;
   let d;
   try{ d = await kwQrDecode(location.hash.replace(/^#paket=/,'')); }
   catch(e){
@@ -12303,7 +12415,7 @@ function buildKwitansiPosterHtml(j, qr){
     <div id="kwitansiPosterExport" class="kwitansi-poster" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
       <div class="kw-watermark"></div>
       <div class="kw-topbar">
-        <div class="kw-badge">KM</div>
+        <div class="kw-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div>
         <div>
           <div class="kw-brand-name">Kaone Motret</div>
           <div class="kw-brand-tag">Buku Job Fotografer</div>
@@ -14898,7 +15010,7 @@ function buildUlasanPosterHtml(u){
       <div class="up-corner tl"></div><div class="up-corner tr"></div>
       <div class="up-corner bl"></div><div class="up-corner br"></div>
       <div class="up-top">
-        <div class="up-badge">KM</div>
+        <div class="up-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div>
         <div class="up-brand">KAONE MOTRET</div>
         <div class="up-tag">Wedding &amp; Event Photography</div>
       </div>
@@ -19171,12 +19283,12 @@ html.kc-open{background:var(--kb)}
   function on(){return kc.classList.contains('on')}
   function fit(){
     var m=document.getElementById('km');
-    if(!on()){kc.style.height='';kc.style.top='';kc.style.transform='';kc.classList.remove('kbo');lastH=lastT=-1;return}
+    if(!on()){kc.style.height='';kc.style.top='';kc.style.transform='';if(kc.classList.contains('kbo'))kc.classList.remove('kbo');lastH=lastT=-1;return}
     var h=vv?vv.height:window.innerHeight,t=vv?vv.offsetTop:0;
     h=Math.round(h);t=Math.round(t);
     /* keyboard dianggap aktif jika area tampak jauh lebih pendek dari layar */
     var kb=(Math.max(window.innerHeight,screen.height&&screen.height<window.innerHeight*1.5?window.innerHeight:0)-h)>120;
-    kc.classList.toggle('kbo',kb);
+    if(kc.classList.contains('kbo')!==kb)kc.classList.toggle('kbo',kb);
     if(h===lastH&&t===lastT)return;
     var near=m?(m.scrollHeight-m.scrollTop-m.clientHeight<160):false;
     lastH=h;lastT=t;
@@ -19201,7 +19313,8 @@ html.kc-open{background:var(--kb)}
     fit();
     if(on())track(600);
   }
-  new MutationObserver(sync).observe(kc,{attributes:true,attributeFilter:['class']});
+  var lastOn=null;
+  new MutationObserver(function(){var o=on();if(o===lastOn)return;lastOn=o;sync()}).observe(kc,{attributes:true,attributeFilter:['class']});
   if(vv){vv.addEventListener('resize',function(){track(900)});vv.addEventListener('scroll',function(){track(300)})}
   window.addEventListener('resize',function(){track(900)});
   window.addEventListener('orientationchange',function(){setTimeout(function(){lastH=lastT=-1;track(900)},250)});
@@ -19210,6 +19323,48 @@ html.kc-open{background:var(--kb)}
   sync();
 })();
 </script>
+<style id="kmLogoCss">.kmlogo{display:block; width:64%; height:64%; margin:auto; flex:none; overflow:visible;}</style>
+<style id="kmListCss">
+@media(max-width:640px){
+  .kmq{display:flex; gap:8px; overflow-x:auto; margin:0 -4px 6px; padding:2px 4px 6px; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+  .kmq::-webkit-scrollbar{display:none;}
+  .kmq button{flex:none; display:inline-flex; align-items:center; gap:6px; min-height:38px; padding:0 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--ink); font:600 13px 'Bricolage Grotesque',system-ui,sans-serif; white-space:nowrap;}
+  .kmq button:hover{transform:none;}
+  .kmq button i{font-style:normal; font-size:11.5px; font-weight:700; opacity:.6;}
+  .kmq button.on{background:#241c06; color:#FFD42E; border-color:transparent;}
+  .kmq button.on i{opacity:.85;}
+  .kmm{display:flex; align-items:center; gap:8px; width:100%; margin:12px 0 4px; padding:8px 2px; background:none; border:0; text-align:left; font:700 12px 'Bricolage Grotesque',system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft);}
+  .kmm:hover{transform:none;}
+  .kmm em{margin-left:auto; font-style:normal; font-weight:600; letter-spacing:0; text-transform:none;}
+  .kmm::after{content:''; flex:none; width:6px; height:6px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg) translateY(-2px); transition:transform .2s;}
+  .kmm.coll::after{transform:rotate(-45deg);}
+  .kmr{display:grid; grid-template-columns:46px minmax(0,1fr) 34px; column-gap:12px; align-items:start; margin-bottom:8px; padding:11px 6px 11px 12px; background:#fff; border:1px solid var(--line); border-radius:16px; cursor:pointer; -webkit-tap-highlight-color:transparent;}
+  .kmr:active{background:var(--gold-pale);}
+  .kmr-d{display:flex; flex-direction:column; align-items:center; justify-content:center; height:50px; border-radius:12px; background:var(--gold-pale); color:#5c4500; line-height:1;}
+  .kmr-d b{font-size:19px; font-weight:800;}
+  .kmr-d span{margin-top:3px; font-size:10px; font-weight:700; letter-spacing:.06em;}
+  .kmr.soon .kmr-d{background:#FFD42E; color:#241c06;}
+  .kmr-main{min-width:0;}
+  .kmr-t{font-size:15px; font-weight:700; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .kmr-s{margin-top:2px; font-size:12.5px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .kmr-rel{color:#9a5b00; font-weight:700;}
+  .kmr-b{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px;}
+  .kmr .km-chip{min-height:28px; padding:3px 10px; font-size:11.5px; max-width:58%;}
+  .kmr.km-open .km-chip::after{transform:rotate(225deg) translateY(-1px);}
+  .kmr-amt{flex:none; font-size:13px; font-weight:700; white-space:nowrap;}
+  .kmr-amt small{margin-right:5px; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft);}
+  .kmr-mn{margin:-4px 0 0;}
+  .kmr-panel{display:none; grid-column:1 / -1; grid-template-columns:1fr 1fr; gap:10px; margin:10px 6px 0 0; padding-top:10px; border-top:1px dashed var(--line);}
+  .kmr.km-open .kmr-panel{display:grid;}
+  .kmr-panel label{display:flex; flex-direction:column; gap:4px; min-width:0; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft);}
+  .kmr-more{width:100%; min-height:50px; margin:6px 0 4px; border-radius:14px; border:1.5px dashed var(--gold,#e0b400); background:#fff; color:var(--ink); font:700 14px 'Bricolage Grotesque',system-ui,sans-serif;}
+  .kmr-more:hover{transform:none;}
+  .kmr-more span{font-weight:500; color:var(--ink-soft);}
+  /* "+ Job Baru": tombol bulat kecil supaya tidak menutupi daftar */
+  #btnInputJob2{font-size:0; width:56px; min-height:56px; padding:0; display:inline-flex; align-items:center; justify-content:center;}
+  #btnInputJob2::before{content:'+'; font-size:32px; font-weight:500; line-height:1;}
+}
+</style>
 <style id="kmTimeFix">
 /* Kolom jam (form Bagi Tugas / Edit & jam per-akun): ikon jam selalu tampil & bisa diketuk di semua ukuran layar */
 #taskForm input[type=time]::-webkit-calendar-picker-indicator,

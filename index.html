@@ -19152,33 +19152,61 @@ window.addEventListener('scroll', function(){ window.__kmLastScroll = Date.now()
 #kc .kds span{display:inline-block;padding:4px 12px;border-radius:8px;background:var(--ki);color:var(--kt);font-size:12px;font-weight:600;box-shadow:var(--ks);opacity:.95}
 #kc .kud{align-self:stretch;flex:none;margin:8px -10px;padding:5px 10px;text-align:center;background:rgba(127,127,127,.22);color:var(--kt);font-size:12px;font-weight:700}
 /* Header & kolom ketik tetap di tempatnya saat keyboard muncul */
-#kc{bottom:auto;overscroll-behavior:contain}
+#kc{bottom:auto;overscroll-behavior:contain;will-change:transform}
 #kc .m{overscroll-behavior:contain}
 html.kc-open,html.kc-open body{overflow:hidden!important;overscroll-behavior:none}
+/* iPhone: saat keyboard muncul, halaman beranda tidak boleh mengintip di antara kolom ketik & keyboard.
+   (1) Isi area di bawah chat dengan warna latar chat (tertutup keyboard, jadi tak terlihat), 
+   (2) sembunyikan halaman di belakang selama chat terbuka, (3) buang jarak safe-area bawah saat keyboard aktif. */
+#kc{box-shadow:0 600px 0 0 var(--kb)}
+html.kc-open #lh,html.kc-open #app,html.kc-open .topbar,html.kc-open .bottomnav,html.kc-open #moreLayer,html.kc-open .footer-note{visibility:hidden!important}
+html.kc-open{background:var(--kb)}
+#kc.kbo .c{padding-bottom:8px}
 </style>
 <script id="kcWaFixJs">
 (function(){
   var kc=document.getElementById('kc'),vv=window.visualViewport;
   if(!kc)return;
+  var raf=0,until=0,lastH=-1,lastT=-1;
   function on(){return kc.classList.contains('on')}
   function fit(){
     var m=document.getElementById('km');
-    if(!on()){kc.style.height='';kc.style.top='';return}
-    var near=m?(m.scrollHeight-m.scrollTop-m.clientHeight<160):false;
+    if(!on()){kc.style.height='';kc.style.top='';kc.style.transform='';kc.classList.remove('kbo');lastH=lastT=-1;return}
     var h=vv?vv.height:window.innerHeight,t=vv?vv.offsetTop:0;
-    kc.style.height=Math.round(h)+'px';kc.style.top=Math.round(t)+'px';
+    h=Math.round(h);t=Math.round(t);
+    /* keyboard dianggap aktif jika area tampak jauh lebih pendek dari layar */
+    var kb=(Math.max(window.innerHeight,screen.height&&screen.height<window.innerHeight*1.5?window.innerHeight:0)-h)>120;
+    kc.classList.toggle('kbo',kb);
+    if(h===lastH&&t===lastT)return;
+    var near=m?(m.scrollHeight-m.scrollTop-m.clientHeight<160):false;
+    lastH=h;lastT=t;
+    kc.style.height=h+'px';kc.style.top='0px';
+    /* iOS menggeser (pan) layar saat keyboard muncul; ikuti dengan transform supaya chat selalu pas di area tampak */
+    kc.style.transform=t?'translate3d(0,'+t+'px,0)':'';
     if(window.scrollY||document.documentElement.scrollTop){window.scrollTo(0,0)}
     if(near&&m)m.scrollTop=m.scrollHeight;
   }
+  /* Selama animasi keyboard iOS, ukur ulang tiap frame (event resize iOS sering terlambat/terputus) */
+  function track(ms){
+    until=Math.max(until,Date.now()+(ms||900));
+    if(raf)return;
+    (function loop(){
+      fit();
+      if(on()&&Date.now()<until){raf=requestAnimationFrame(loop)}else{raf=0}
+    })();
+  }
   function sync(){
     document.documentElement.classList.toggle('kc-open',on());
+    lastH=lastT=-1;
     fit();
+    if(on())track(600);
   }
   new MutationObserver(sync).observe(kc,{attributes:true,attributeFilter:['class']});
-  if(vv){vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit)}
-  window.addEventListener('resize',fit);
-  window.addEventListener('orientationchange',function(){setTimeout(fit,250)});
-  document.addEventListener('focusin',function(e){if(on()&&e.target&&e.target.id==='ki'){setTimeout(fit,50);setTimeout(fit,300)}});
+  if(vv){vv.addEventListener('resize',function(){track(900)});vv.addEventListener('scroll',function(){track(300)})}
+  window.addEventListener('resize',function(){track(900)});
+  window.addEventListener('orientationchange',function(){setTimeout(function(){lastH=lastT=-1;track(900)},250)});
+  document.addEventListener('focusin',function(e){if(on()&&e.target&&e.target.id==='ki'){lastH=lastT=-1;track(1200)}});
+  document.addEventListener('focusout',function(e){if(on()){setTimeout(function(){window.scrollTo(0,0);track(900)},50)}});
   sync();
 })();
 </script>

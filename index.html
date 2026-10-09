@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFC400">
 <meta name="application-name" content="Kaone Motret">
 <meta name="apple-mobile-web-app-title" content="Kaone Motret">
@@ -3850,12 +3850,16 @@ body{background:radial-gradient(800px 480px at 95% -8%,#ffe38a,transparent 60%),
   </div>
   <div class="topbar-meta">
     <div class="datetime-strip" id="headerClock">Memuat waktu...</div>
-    <div class="datetime-strip sync-dot" id="syncStatus" data-state="loading" role="status" aria-live="polite" aria-label="Memuat data dari cloud..." title="Memuat data dari cloud..." tabindex="0"></div>
+    <div class="datetime-strip" id="syncStatus">⏳ Memuat data...</div>
   </div>
 </header>
 
 <main id="app"></main>
 
+<div class="footer-note">
+  Data tersimpan otomatis ke cloud.<br>
+  Disarankan rutin cadangkan data.
+</div>
 
 <footer class="copyright-bar">
   <div><span id="kcSym">©</span> <span id="copyrightYear"></span> Kaone Motret. All Rights Reserved. <span class="version-tag" id="appVersionTag"></span></div>
@@ -4612,23 +4616,16 @@ if (SUPABASE_URL.indexOf('GANTI_DENGAN') === -1 && SUPABASE_ANON_KEY.indexOf('GA
 function setSyncStatus(status){
   const el = document.getElementById('syncStatus');
   if(!el) return;
-  // Status sinkron tampil sebagai titik kecil berwarna (hijau = tersinkron, kuning = proses, merah = offline).
-  // Teks lengkapnya tetap ada untuk pembaca layar dan muncul saat titik disentuh/ditahan.
   const map = {
-    synced:  'Data tersinkron ke semua device',
-    saving:  'Menyimpan ke cloud...',
-    loading: 'Memuat data dari cloud...',
-    offline: 'Mode offline — data hanya di device ini',
+    synced:  {text:'☁️ Data tersinkron ke semua device',        color:'#2e7d32'},
+    saving:  {text:'⏳ Menyimpan ke cloud...',                   color:'#8a6a00'},
+    loading: {text:'⏳ Memuat data dari cloud...',                color:'#8a6a00'},
+    offline: {text:'⚠️ Mode offline — data hanya di device ini', color:'#b3261e'},
   };
-  const key = map[status] ? status : 'offline';
-  el.dataset.state = key;
-  el.setAttribute('aria-label', map[key]);
-  el.title = map[key];
+  const s = map[status] || map.offline;
+  el.textContent = s.text;
+  el.style.color = s.color;
 }
-document.getElementById('syncStatus')?.addEventListener('click', ()=>{
-  const el = document.getElementById('syncStatus');
-  if(el && el.title && typeof toast==='function') toast(el.title);
-});
 
 
 /* =========================================================
@@ -7634,7 +7631,6 @@ function updateJarakCalc(){
 function moreMenuItems(){
   const adm = isAdmin();
   return [
-    {view:'statistik',  icon:'chart',    label:'Statistik'},
     {view:'laporan',    icon:'alert',    label: adm ? 'Laporan' : 'Buat Laporan'},
     ...(WS_ID==='default' ? [{view:'ulasan',     icon:'star',     label:'Saran & Penilaian'}] : []), // ulasan klien milik Kaone Motret
     {view:'pengaturan', icon:'settings', label:'Pengaturan'}
@@ -7703,7 +7699,7 @@ function closeMoreSheet(returnFocus){
 }
 // Menandai tab yang aktif. "Lainnya" menyala kalau halaman yang dibuka ada di dalam sheet-nya.
 function syncBottomNav(view){
-  const moreViews = ['statistik','laporan','ulasan','pengaturan'];
+  const moreViews = ['laporan','ulasan','pengaturan'];
   document.querySelectorAll('#bottomNav .bn-tab[data-nav-view]').forEach(b=>{
     const on = b.dataset.navView === view;
     b.classList.toggle('active', on);
@@ -7853,7 +7849,7 @@ function playAppTransition(dir){
         selesai selagi masih transparan.
      4. Halaman baru mengalir masuk dari arah tab yang diklik dengan pelambatan yang halus.
    Ketukan beruntun hanya mengganti tujuan akhir, tidak menumpuk animasi. */
-const NAV_ORDER = ['beranda','daftar','kalender','tugas','statistik','laporan','ulasan','pengaturan'];
+const NAV_ORDER = ['beranda','daftar','kalender','tugas','laporan','ulasan','pengaturan'];
 const NAV_SMOOTH = {token:0, leaving:false, target:null, dir:0, entered:true};
 function scrollToTopInstant(){
   const el = document.documentElement, prev = el.style.scrollBehavior;
@@ -8143,7 +8139,6 @@ function render(){
   else if(currentView==='daftar') app.innerHTML = viewDaftar();
   else if(currentView==='kalender') app.innerHTML = viewKalender();
   else if(currentView==='tugas') app.innerHTML = viewTugas();
-  else if(currentView==='statistik') app.innerHTML = viewStatistik();
   else if(currentView==='laporan') app.innerHTML = viewLaporan();
   else if(currentView==='ulasan') app.innerHTML = viewUlasan();
   else if(currentView==='pengaturan') app.innerHTML = viewPengaturan();
@@ -15757,13 +15752,6 @@ const CHANGELOG = [
     version: '1.17.2',
     tanggal: '9 Oktober 2026',
     items: [
-      { kategori: 'Fitur', teks: 'Menu baru "Statistik" (buka lewat tombol Lainnya). Isinya ringkasan lengkap: omzet dan laba, tren per bulan, progres edit/cetak/antar/lunas, jenis acara, wilayah, paket terlaris, hari tersibuk, keuangan rinci, tim dan tugas, serta penilaian klien. Bisa difilter per periode. Akun Tim hanya melihat statistik job dan tugasnya sendiri, tanpa data keuangan.' },
-      { kategori: 'Perbaikan', teks: 'Di ruang chat (Android), keyboard tidak lagi menutupi kolom ketik. Kolom pesan kini berada tepat di atas keyboard, dan daftar pesan tidak lagi melompat sendiri ke bawah saat Anda membaca pesan lama.' },
-      { kategori: 'Peningkatan', teks: 'Tulisan "Data tersimpan otomatis ke cloud. Disarankan rutin cadangkan data." di bagian bawah dihapus, dan jarak ke footer dibuat lebih rapat.' },
-      { kategori: 'Peningkatan', teks: 'Status sinkron di bagian atas kini berupa titik kecil berwarna: hijau = data tersinkron, kuning berkedip = sedang menyimpan/memuat, merah = mode offline. Sentuh titiknya untuk melihat keterangannya.' },
-      { kategori: 'Peningkatan', teks: 'Menu Tugas dan scroll di semua halaman dibuat lebih ringan: perhitungan bonus dan pencarian job tidak lagi diulang-ulang, daftar yang panjang digambar hanya saat terlihat di layar, dan efek blur di latar pop-up dimatikan di HP.' },
-      { kategori: 'Fitur', teks: 'Statistik kini bisa difilter per vendor dan jenis acara, menampilkan perbandingan dengan periode sebelumnya (naik/turun %), dan bisa diunduh sebagai gambar lewat tombol "Unduh Gambar".' },
-      { kategori: 'Peningkatan', teks: 'Penyempurnaan kecil di beberapa bagian agar aplikasi terasa lebih nyaman dipakai.' },
       { kategori: 'Perbaikan', teks: 'Menu Tugas tidak lagi "refresh sendiri". Halaman kini hanya diperbarui kalau memang ada tugas yang berubah, jadi tidak lagi berkedip atau melompat setiap beberapa detik. Data terbaru tetap diambil di belakang layar, dan tombol Refresh memberi tahu kalau datanya sudah yang terbaru.' },
       { kategori: 'Peningkatan', teks: 'Daftar Job di HP didesain ulang supaya tetap nyaman saat job sudah banyak: baris lebih ringkas, dikelompokkan per bulan (bisa dilipat), ada filter cepat (Mendatang, Semua, Belum beres, Belum lunas, Selesai), dan job dimuat bertahap. Tombol "+ Job Baru" kini berbentuk bulat kecil.' },
       { kategori: 'Peningkatan', teks: 'Logo baru Kaone Motret berbentuk diafragma kamera menggantikan huruf KM di seluruh aplikasi, poster, dan ikon. Ikon diafragma di kartu Job berikutnya (Beranda) juga disesuaikan agar rapi di layar HP.' },
@@ -15798,13 +15786,6 @@ const CHANGELOG = [
       { kategori: 'Peningkatan', teks: 'Aplikasi lebih cepat tampil saat dibuka: pustaka ekspor (Excel, PDF, gambar) kini dimuat di belakang layar dan tidak lagi menahan halaman utama.' },
       { kategori: 'Peningkatan', teks: 'Daftar Semua Job di HP tampil lebih ringkas: tiap kartu kini hanya memuat nomor, tanggal, nama klien, jenis acara & lokasi, satu label status, dan nilai Bersih/Sisa. Ketuk label status untuk membuka dan mengubah Edit, Cetak, Pengiriman, dan Bayar; ketuk kartu untuk melihat detail; Edit, Maps, dan Hapus ada di menu titik tiga. Filter dilipat di balik tombol filter, dan tombol "+ Job Baru" menjadi tombol melayang.' },
       { kategori: 'Fitur', teks: 'Panel Notifikasi sekarang punya tombol tempat sampah untuk menghapus semua notifikasi sekaligus (ketuk dua kali supaya tidak terhapus tak sengaja). Notifikasi baru yang masuk sesudahnya tetap muncul seperti biasa.' },
-    ]
-  },
-  {
-    version: '1.16.9',
-    tanggal: '8 Oktober 2026',
-    items: [
-      { kategori: 'Peningkatan', teks: 'Penyempurnaan kecil pada tampilan dan kestabilan aplikasi.' },
     ]
   },
   {
@@ -16965,7 +16946,7 @@ if(appVersionTagEl) appVersionTagEl.textContent = 'v' + APP_VERSION;
 const RT_PREFS_KEY  = 'kaoneMotret_rtPrefs_v1';
 const RT_PROMPT_KEY = 'kaoneMotret_rtPromptDismissed_v1';
 const RT_EVENT_PREFIXES = ['ulasan_','taskcomment_','laporan_','bonusclaim_','tasknew_','claimpaid_'];
-const RT_LAUNCH_VIEWS = ['beranda','daftar','kalender','tugas','statistik','laporan','ulasan','pengaturan','notif'];
+const RT_LAUNCH_VIEWS = ['beranda','daftar','kalender','tugas','laporan','ulasan','pengaturan','notif'];
 // Bagian data yang dipakai tiap halaman → halaman hanya digambar ulang kalau bagian ini berubah
 const RT_VIEW_DEPS = {
   beranda:  ['jobs','tasks','bonusAdjustments','bonusClaims','bonusRate','minKlaimTunai','minKlaimWdp'],
@@ -19760,259 +19741,5 @@ document.addEventListener('click',function(e){
 })();
 </script>
 
-<style id="statistikCss">
-.st-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
-.st-head h2{margin:0}.st-sub{font-size:12.5px;color:var(--ink-soft);margin-top:4px}
-.st-per{margin:14px 0 0}.st-per .rekap-sublevel{flex-wrap:wrap;overflow:visible;margin:0 0 8px}
-.st-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
-@media(min-width:760px){.st-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
-.st-k{background:#fffef9;border:1px solid var(--line);border-radius:14px;padding:13px 14px;box-shadow:var(--shadow);min-width:0}
-.st-k .l{font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-soft)}
-.st-k .v{font-size:21px;font-weight:700;margin-top:3px;overflow-wrap:anywhere;line-height:1.15}
-.st-k .s{font-size:11.5px;color:var(--ink-soft);margin-top:3px}
-.st-k.gold{background:linear-gradient(135deg,var(--gold-light),var(--gold));border:none}.st-k.gold .l,.st-k.gold .s{color:#3d3200}
-.st-k.dark{background:#241f0f;border:none;color:#f4ecd0}.st-k.dark .l,.st-k.dark .s{color:#cdbf86}
-.st-k.red .v{color:var(--danger)}.st-k.grn .v{color:var(--ok)}
-.st-sec h3{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:8px}.st-sec h3 svg{width:18px;height:18px}
-.st-bars{display:flex;flex-direction:column;gap:11px}
-.st-bt{display:flex;justify-content:space-between;gap:10px;font-size:13px}.st-bt span{min-width:0;overflow-wrap:anywhere;font-weight:600}.st-bt b{white-space:nowrap;font-variant-numeric:tabular-nums}
-.st-bar i{display:block;height:8px;border-radius:99px;background:var(--gold-pale);margin-top:5px;overflow:hidden}
-.st-bar u{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold-light),var(--gold))}
-.st-bar small{font-size:11px;color:var(--ink-soft)}
-.st-chart{width:100%;height:auto;display:block}.st-leg{display:flex;gap:14px;font-size:12px;color:var(--ink-soft);margin-top:6px;flex-wrap:wrap}
-.st-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
-.st-donut{display:flex;gap:20px;align-items:center;flex-wrap:wrap;justify-content:center}
-.st-ring{width:150px;height:150px;border-radius:50%;position:relative;flex:none}
-.st-ring::after{content:attr(data-c);position:absolute;inset:30px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;text-align:center;line-height:1.1}
-.st-lg{flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px;font-size:13px}
-.st-lg div{display:flex;align-items:center;gap:8px}.st-lg i{width:11px;height:11px;border-radius:3px;flex:none}.st-lg span{flex:1;min-width:0;overflow-wrap:anywhere}.st-lg b{white-space:nowrap}
-.st-pg{margin-bottom:12px}.st-pg .st-bt{margin-bottom:5px}.st-pg i{display:block;height:10px;border-radius:99px;background:#f3ead0;overflow:hidden}.st-pg u{display:block;height:100%;border-radius:99px}
-.st-wd{display:flex;gap:8px;align-items:flex-end;height:120px}.st-wd div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:11px;color:var(--ink-soft);gap:4px}
-.st-wd u{display:block;width:100%;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,var(--gold-light),var(--gold));min-height:3px}.st-wd b{color:var(--ink);font-size:12px}
-.st-hi{display:grid;gap:10px}@media(min-width:760px){.st-hi{grid-template-columns:repeat(2,1fr)}}
-.st-hi div{background:#FFFBEA;border:1px solid var(--line);border-radius:12px;padding:12px 14px}.st-hi small{display:block;font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-soft)}.st-hi b{display:block;margin-top:3px;font-size:15px;overflow-wrap:anywhere}.st-hi span{font-size:12px;color:var(--ink-soft)}
-.st-flt{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 8px}.st-flt select{flex:1 1 140px;font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
-.st-dl{display:inline-flex;align-items:center;gap:6px}
-</style>
-<script id="statistikJs">
-/* Statistik — tab baru (menu Lainnya). Memakai data job/tugas/ulasan yang sudah ada; tidak mengubah data apa pun. */
-let stPeriod='all', stFrom='', stTo='', stVendor='', stJenis='';
-function stRange(){
-  const n=new Date(), y=n.getFullYear(), m=n.getMonth(), f=d=>rkYmd(d);
-  if(stPeriod==='month') return [f(new Date(y,m,1)), f(new Date(y,m+1,0))];
-  if(stPeriod==='q') return [f(new Date(y,m-2,1)), f(new Date(y,m+1,0))];
-  if(stPeriod==='year') return [y+'-01-01', y+'-12-31'];
-  if(stPeriod==='custom'){ let a=stFrom,b=stTo; if(a&&b&&a>b){const t=a;a=b;b=t;} return [a,b]; }
-  return ['',''];
-}
-function stPrevRange(){
-  const n=new Date(), y=n.getFullYear(), m=n.getMonth(), f=d=>rkYmd(d);
-  if(stPeriod==='month') return [f(new Date(y,m-1,1)), f(new Date(y,m,0))];
-  if(stPeriod==='q') return [f(new Date(y,m-5,1)), f(new Date(y,m-2,0))];
-  if(stPeriod==='year') return [(y-1)+'-01-01',(y-1)+'-12-31'];
-  if(stPeriod==='custom'){ const [a,b]=stRange(); if(!a||!b) return null;
-    const A=new Date(a+'T00:00:00'), B=new Date(b+'T00:00:00'), len=Math.round((B-A)/864e5)+1;
-    const pe=new Date(A); pe.setDate(pe.getDate()-1); const ps=new Date(pe); ps.setDate(ps.getDate()-(len-1)); return [f(ps),f(pe)]; }
-  return null;
-}
-function stDownload(){
-  const el=document.getElementById('stPoster');
-  if(!el||!window.html2canvas){ toast('Fitur unduh belum siap, coba lagi sebentar.'); return; }
-  toast('Menyiapkan gambar…');
-  html2canvas(el,{scale:2,backgroundColor:'#FFFBEA',useCORS:true,ignoreElements:x=>x.classList&&x.classList.contains('st-nodl')}).then(c=>{
-    const a=document.createElement('a'); a.download='statistik-kaone-motret.png'; a.href=c.toDataURL('image/png'); a.click();
-  }).catch(()=>toast('Gagal membuat gambar.'));
-}
-function viewStatistik(){ return '<div id="stPoster">'+stBody()+'</div>'; }
-function stBody(){
-  const adm=isAdmin(), [ra,rb]=stRange(), esc=escapeHtml;
-  const inR=d=>stPeriod==='all'||(d&&(!ra||d>=ra)&&(!rb||d<=rb));
-  const okF=j=>(!stVendor||j.vendor===stVendor)&&(!stJenis||j.jenisAcara===stJenis);
-  const L=jobs.filter(j=>okF(j)&&inR(j.tanggalAcara)), n=L.length;
-  const pr=stPrevRange(), P=pr?jobs.filter(j=>okF(j)&&j.tanggalAcara&&j.tanggalAcara>=pr[0]&&j.tanggalAcara<=pr[1]):null;
-  const pOm=P?P.reduce((s,j)=>s+hitungOmzet(j),0):0, pBr=P?P.reduce((s,j)=>s+hitungBersih(j),0):0;
-  const dl=(c,p)=>P&&p?` · ${c>=p?'▲':'▼'} ${Math.abs(Math.round((c-p)/Math.abs(p)*100))}% vs periode lalu`:'';
-  const N=f=>L.reduce((s,j)=>s+(Number(f(j))||0),0), pc=(x,y)=>y?Math.round(x/y*100):0;
-  const dec=v=>(Math.round(v*10)/10).toString().replace('.',',');
-  const shortRp=v=>{v=Number(v)||0;const s=v<0?'-':'',x=Math.abs(v);return s+'Rp '+(x>=1e9?dec(x/1e9)+' M':x>=1e6?dec(x/1e6)+' jt':x>=1e3?Math.round(x/1e3)+' rb':x);};
-  const grp=(kf,vf)=>{const m=new Map();L.forEach(j=>{const k=kf(j);if(!k)return;const o=m.get(k)||{k,c:0,v:0};o.c++;o.v+=vf?(Number(vf(j))||0):0;m.set(k,o);});return [...m.values()].sort((x,y)=>y.c-x.c||y.v-x.v);};
-  const bars=rows=>{const mx=Math.max(1,...rows.map(r=>r.v));return rows.length?`<div class="st-bars">${rows.map(r=>`<div class="st-bar"><div class="st-bt"><span>${esc(r.l)}</span><b>${r.t}</b></div><i><u style="width:${Math.max(3,r.v/mx*100)}%"></u></i>${r.s?`<small>${esc(r.s)}</small>`:''}</div>`).join('')}</div>`:'<div class="empty-state">Belum ada data.</div>';};
-  const prog=(l,x,y,col)=>`<div class="st-pg"><div class="st-bt"><span>${l}</span><b>${x} / ${y} · ${pc(x,y)}%</b></div><i><u style="width:${pc(x,y)}%;background:${col}"></u></i></div>`;
-  const sec=(icon,t,d,body)=>`<div class="card st-sec"><h3>${ic(icon)} ${t}</h3><p class="rekap-desc">${d}</p>${body}</div>`;
-  const k=(l,v,s,c)=>`<div class="st-k ${c||''}"><div class="l">${l}</div><div class="v">${v}</div>${s?`<div class="s">${s}</div>`:''}</div>`;
-  const periodTxt=stPeriod==='all'?'Semua waktu':stPeriod==='month'?`${MONTH_NAMES[new Date().getMonth()]} ${new Date().getFullYear()}`:stPeriod==='year'?`Tahun ${new Date().getFullYear()}`:stPeriod==='q'?'3 bulan terakhir':((ra?fmtTgl(ra):'…')+' – '+(rb?fmtTgl(rb):'…'));
-  const chips=[['all','Semua'],['year','Tahun Ini'],['q','3 Bulan'],['month','Bulan Ini'],['custom','Pilih Sendiri']];
-  let h=`<div class="card"><div class="st-head"><div><h2>${ic('chart')} Statistik</h2><div class="st-sub">${adm?'Ringkasan lengkap job, keuangan, tim, dan pelanggan.':'Ringkasan job dan tugas Anda.'}</div></div><button type="button" class="btn btn-outline st-dl st-nodl" id="stDl">${ic('download')} Unduh Gambar</button></div>
-  <div class="st-per"><div class="rekap-sublevel">${chips.map(([c,l])=>`<button type="button" data-stp="${c}" class="${stPeriod===c?'active':''}">${l}</button>`).join('')}</div>
-  ${stPeriod==='custom'?`<div class="rekap-period-dates"><label>Dari<input type="date" id="stFrom" value="${esc(stFrom)}"></label><label>Sampai<input type="date" id="stTo" value="${esc(stTo)}"></label></div>`:''}
-  <div class="st-flt st-nodl">${adm?`<select id="stVendor"><option value="">Semua vendor</option>${VENDOR_LIST.map(v=>`<option value="${esc(v)}" ${stVendor===v?'selected':''}>${esc(v)}</option>`).join('')}</select>`:''}<select id="stJenis"><option value="">Semua jenis acara</option>${JENIS_ACARA_LIST.map(v=>`<option value="${esc(v)}" ${stJenis===v?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
-  <div class="rekap-period-info">${ic('calendar')} <b>${esc(periodTxt)}</b> · ${n} dari ${jobs.length} job</div></div></div>`;
-  if(!n) return h+`<div class="card"><div class="empty-state"><div class="em">${ic('chart')}</div>Belum ada job pada periode ini.</div></div>`;
-
-  const hari=N(getJobDurasiHari), omzet=N(hitungOmzet), bersih=N(hitungBersih), cetak=N(j=>j.biayaCetak), honor=N(j=>j.honorTim), diskon=N(j=>j.diskon);
-  const lunasN=L.filter(j=>j.statusPembayaran==='Lunas'||hitungSisaPembayaran(j)<=0).length;
-  const piutang=L.reduce((s,j)=>s+((j.statusPembayaran==='Lunas')?0:Math.max(0,hitungSisaPembayaran(j))),0);
-  const sedS=L.filter(j=>j.sedekahStatus==='Sudah'), sedB=L.filter(j=>j.sedekahStatus!=='Sudah');
-  const sedAmt=a=>a.reduce((s,j)=>s+(Number(j.sedekahNominal||hitungSedekah(j))||0),0);
-  const editN=L.filter(j=>j.prosesEdit==='Selesai').length, cetN=L.filter(j=>j.prosesCetak==='Selesai').length, kirN=L.filter(j=>(j.pengiriman||'').startsWith('Sudah')).length;
-  const mine=j=>(j.honorTimList||[]).reduce((s,x)=>String(x.userId)===String(currentUserId)?s+(Number(x.nominal)||0):s,0);
-
-  // ---- ringkasan angka
-  h+=`<div class="st-grid">`+(adm?
-    k('Omzet',shortRp(omzet),fmtRp(omzet)+dl(omzet,pOm),'gold')+k('Laba Bersih',shortRp(bersih),`Margin ${pc(bersih,omzet)}%`+dl(bersih,pBr),'dark')+k('Total Job',n,`${hari} hari kerja`+dl(n,P?P.length:0))+k('Rata-rata / Job',shortRp(omzet/n),`Laba ${shortRp(bersih/n)}`)
-    +k('Belum Dibayar',shortRp(piutang),`${n-lunasN} job belum lunas`,piutang?'red':'grn')+k('Biaya Cetak',shortRp(cetak),`${pc(cetak,omzet)}% dari omzet`)+k('Honor Tim',shortRp(honor),`${pc(honor,omzet)}% dari omzet`)+k('Diskon',shortRp(diskon),`${L.filter(j=>Number(j.diskon)>0).length} job berdiskon`)
-    :k('Total Job',n,`${hari} hari kerja`+dl(n,P?P.length:0),'gold')+k('Edit Selesai',pc(editN,n)+'%',`${editN} dari ${n}`)+k('Cetak Selesai',pc(cetN,n)+'%',`${cetN} dari ${n}`)+k('Honor Saya',shortRp(N(mine)),fmtRp(N(mine)),'dark'))+`</div>`;
-
-  // ---- tren bulanan
-  const mk=j=>(j.tanggalAcara||'').slice(0,7), bm=new Map();
-  L.forEach(j=>{const key=mk(j);if(!key)return;const o=bm.get(key)||{c:0,o:0,b:0};o.c++;o.o+=hitungOmzet(j);o.b+=hitungBersih(j);bm.set(key,o);});
-  const keys=[...bm.keys()].sort();
-  if(keys.length){
-    const all=[];let [y,m]=keys[0].split('-').map(Number);const [ey,em]=keys[keys.length-1].split('-').map(Number);
-    while(y<ey||(y===ey&&m<=em)){all.push(y+'-'+String(m).padStart(2,'0'));m++;if(m>12){m=1;y++;}}
-    const ms=all.slice(-12), W=360, H=170, pl=6, base=140, top=14, sw=(W-pl*2)/ms.length;
-    const vals=ms.map(x=>bm.get(x)||{c:0,o:0,b:0}), mx=Math.max(1,...vals.map(v=>adm?Math.max(v.o,v.b):v.c));
-    const bw=Math.min(adm?11:20,sw/(adm?2.6:1.5));
-    const svg=`<svg class="st-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Tren bulanan">`+[0,.5,1].map(t=>`<line x1="${pl}" x2="${W-pl}" y1="${base-(base-top)*t}" y2="${base-(base-top)*t}" stroke="#f0e1a0" stroke-dasharray="3 4"/>`).join('')
-      +ms.map((key,i)=>{const v=vals[i],cx=pl+sw*i+sw/2,hh=x=>Math.max(x>0?2:0,x/mx*(base-top));
-        const lbl=MONTH_NAMES[Number(key.slice(5))-1].slice(0,3)+(ms.length>6?'':' '+key.slice(2,4));
-        const bar=adm?`<rect x="${cx-bw-1}" y="${base-hh(v.o)}" width="${bw}" height="${hh(v.o)}" rx="3" fill="#FFC400"><title>${lbl} · Omzet ${fmtRp(v.o)}</title></rect><rect x="${cx+1}" y="${base-hh(Math.max(0,v.b))}" width="${bw}" height="${hh(Math.max(0,v.b))}" rx="3" fill="#8B6F1F"><title>${lbl} · Laba ${fmtRp(v.b)}</title></rect>`
-          :`<rect x="${cx-bw/2}" y="${base-hh(v.c)}" width="${bw}" height="${hh(v.c)}" rx="3" fill="#FFC400"><title>${lbl} · ${v.c} job</title></rect>`;
-        return bar+(v.c?`<text x="${cx}" y="${base-hh(adm?Math.max(v.o,v.b):v.c)-3}" font-size="8" text-anchor="middle" fill="#5b5646">${v.c}</text>`:'')+`<text x="${cx}" y="${base+14}" font-size="8.5" text-anchor="middle" fill="#5b5646">${lbl}</text>`;}).join('')+`</svg>`;
-    const best=[...bm.entries()].sort((a,b)=>adm?b[1].o-a[1].o:b[1].c-a[1].c)[0];
-    h+=sec('chart','Tren Bulanan',`${adm?'Omzet dan laba bersih':'Jumlah job'} per bulan (maksimal 12 bulan terakhir). Angka kecil di atas batang = jumlah job.`,svg+(adm?`<div class="st-leg"><span><i style="background:#FFC400"></i>Omzet</span><span><i style="background:#8B6F1F"></i>Laba bersih</span></div>`:'')
-      +`<div class="rekap-hint" style="margin-top:10px">Bulan terbaik: <b>${MONTH_NAMES[Number(best[0].slice(5))-1]} ${best[0].slice(0,4)}</b> (${best[1].c} job${adm?', omzet '+fmtRp(best[1].o):''}).</div>`);
-  }
-
-  // ---- progres pekerjaan
-  h+=sec('check-circle','Progres Pekerjaan','Seberapa banyak job pada periode ini yang sudah tuntas.',
-    prog('Edit foto selesai',editN,n,'#4caf50')+prog('Cetak selesai',cetN,n,'#2e7d32')+prog('Sudah dijemput / diantar',kirN,n,'#c99a4e')
-    +(adm?prog('Lunas',lunasN,n,'#FFC400')+prog('Sedekah sudah disalurkan',sedS.length,n,'#8B6F1F'):''));
-
-  // ---- jenis acara (donut)
-  const ja=grp(j=>j.jenisAcara||'Tanpa jenis',adm?hitungOmzet:null);
-  let acc=0;const seg=ja.map(r=>{const col=(JENIS_ACARA_COLORS[r.k]||JENIS_ACARA_COLORS['Lainnya']).accent,s=acc;acc+=r.c/n*100;return {r,col,css:`${col} ${s}% ${acc}%`};});
-  h+=sec('party','Jenis Acara','Komposisi job berdasarkan jenis acara.',`<div class="st-donut"><div class="st-ring" data-c="${n} job" style="background:conic-gradient(${seg.map(x=>x.css).join(',')})"></div><div class="st-lg">${seg.map(x=>`<div><i style="background:${x.col}"></i><span>${esc(x.r.k)}</span><b>${x.r.c} · ${pc(x.r.c,n)}%${adm?' · '+shortRp(x.r.v):''}</b></div>`).join('')}</div></div>`);
-
-  // ---- wilayah
-  const kec=grp(j=>(j.kecamatan||'').trim()).slice(0,8), desa=grp(j=>(j.desa||'').trim()).slice(0,8);
-  h+=sec('map-pin','Wilayah','Lokasi acara paling sering.',`<div class="rekap-group-label">Kecamatan teratas</div>${bars(kec.map(r=>({l:r.k,v:r.c,t:r.c+' job'})))}<div class="rekap-group-label">Desa / kelurahan teratas</div>${bars(desa.map(r=>({l:r.k,v:r.c,t:r.c+' job'})))}`);
-
-  // ---- paket & vendor
-  const pk=grp(j=>(j.paket||'').trim(),adm?hitungOmzet:null).slice(0,8), vd=grp(j=>(j.vendor==='Lainnya'?(j.vendorLain||'Lainnya'):j.vendor)||'Tanpa vendor',adm?hitungOmzet:null);
-  h+=sec('folder','Paket &amp; Vendor','Paket yang paling laku dan asal job.',`<div class="rekap-group-label">Paket terlaris</div>${bars(pk.map(r=>({l:r.k,v:r.c,t:r.c+' job',s:adm?'Omzet '+fmtRp(r.v):''})))}<div class="rekap-group-label">Vendor</div>${bars(vd.map(r=>({l:r.k,v:r.c,t:r.c+' job',s:adm?'Omzet '+fmtRp(r.v):''})))}`);
-
-  // ---- hari dalam seminggu
-  const wd=[0,0,0,0,0,0,0];L.forEach(j=>{if(!j.tanggalAcara)return;const d=new Date(j.tanggalAcara+'T00:00:00');if(!Number.isNaN(d.getTime()))wd[d.getDay()]++;});
-  const wmx=Math.max(1,...wd), HN=['Min','Sen','Sel','Rab','Kam','Jum','Sab'], HF=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'], busy=wd.indexOf(wmx);
-  h+=sec('clock','Hari Tersibuk','Jumlah job menurut hari acara.',`<div class="st-wd">${wd.map((v,i)=>`<div><b>${v}</b><u style="height:${v/wmx*78}%"></u>${HN[i]}</div>`).join('')}</div><div class="rekap-hint" style="margin-top:10px">Paling ramai: <b>${HF[busy]}</b> (${wmx} job).</div>`);
-
-  // ---- keuangan detail (admin)
-  if(adm){
-    const top=[...L].sort((a,b)=>hitungOmzet(b)-hitungOmzet(a))[0], cl=grp(j=>(j.namaKlien||'').trim().toLowerCase()).filter(r=>r.c>1);
-    const km=N(j=>j.jarakAntarKm), ong=N(j=>j.ongkirAntar), ant=L.filter(j=>Number(j.jarakAntarKm)>0).length;
-    h+=sec('money','Keuangan Rinci','Dari mana uang masuk dan ke mana perginya.',`<div class="rk-rows">`+[
-      ['Penghasilan dari klien/mitra',N(j=>j.penghasilan)],['Diskon',-diskon],['Omzet',omzet],['Biaya cetak',-cetak],['Honor tim',-honor],
-      ['Sedekah tersalur',-sedAmt(sedS)],['Harga paket vendor',-N(j=>(j.vendor&&j.vendor!=='Kaone Motret')?j.setoranShia:0)],['Laba bersih',bersih]
-    ].map(([l,v],i,a)=>`<div class="rk-row"><div class="rk-row-label">${l}</div><div class="rk-row-val" style="font-size:16px;${i===a.length-1?'color:var(--ok)':''}">${fmtRp(v)}</div></div>`).join('')+`</div>`
-    +`<div class="rk-alert${sedB.length?'':' ok'}"><div><div class="rk-alert-label">Sedekah belum disalurkan</div><div class="rk-alert-sub">${sedB.length} job</div></div><div class="rk-alert-val">${fmtRp(sedAmt(sedB))}</div></div>`
-    +`<div class="rk-alert${piutang?'':' ok'}"><div><div class="rk-alert-label">Belum dibayar klien</div><div class="rk-alert-sub">${n-lunasN} job belum lunas</div></div><div class="rk-alert-val">${fmtRp(piutang)}</div></div>`
-    +`<div class="rekap-group-label">Status pembayaran</div>`+bars(STATUS_BAYAR_LIST.map(s=>{const a=L.filter(j=>(j.statusPembayaran||'Belum Bayar')===s);return {l:s,v:a.length,t:a.length+' job',s:'Omzet '+fmtRp(a.reduce((x,j)=>x+hitungOmzet(j),0))};})));
-    h+=sec('trend-down','Sorotan','Rekor dan pola yang menarik.',`<div class="st-hi">`
-      +`<div><small>Job omzet tertinggi</small><b>${esc((top.namaKlien||'Tanpa nama'))}</b><span>${fmtRp(hitungOmzet(top))} · ${fmtTgl(top.tanggalAcara)}</span></div>`
-      +`<div><small>Klien langganan</small><b>${cl.length?esc(cl[0].k.replace(/\b\w/g,c=>c.toUpperCase()))+' ('+cl[0].c+'x)':'Belum ada'}</b><span>${cl.length} klien memesan lebih dari sekali</span></div>`
-      +`<div><small>Rata-rata durasi job</small><b>${dec(hari/n)} hari</b><span>${L.filter(j=>getJobDurasiHari(j)>1).length} job lebih dari 1 hari</span></div>`
-      +`<div><small>Antar foto</small><b>${ant} job diantar</b><span>${ant?`Rata-rata ${dec(km/ant)} km · ongkir ${fmtRp(ong)}`:'Belum ada data jarak'}</span></div></div>`);
-  }
-
-  // ---- tim & tugas
-  const tk=tasks.filter(t=>inR(t.tanggal)&&(adm||String(t.userId)===String(currentUserId)||t.username===currentUsername));
-  if(tk.length||adm){
-    const per=new Map();tk.forEach(t=>{const o=per.get(t.username||'-')||{c:0,s:0};o.c++;if((t.status||'Belum')==='Selesai')o.s++;per.set(t.username||'-',o);});
-    const hm=new Map();if(adm)L.forEach(j=>(j.honorTimList||[]).forEach(x=>{const o=hm.get(x.nama||'-')||{c:0,v:0};o.c++;o.v+=Number(x.nominal)||0;hm.set(x.nama||'-',o);}));
-    const rows=[...per.entries()].sort((a,b)=>b[1].c-a[1].c).map(([u,o])=>({l:u,v:o.c,t:`${o.s}/${o.c} selesai`,s:pc(o.s,o.c)+'% tuntas'}));
-    h+=sec('user',adm?'Tim &amp; Tugas':'Tugas Saya',adm?'Beban tugas dan honor tiap anggota Tim.':'Tugas Anda pada periode ini.',
-      `<div class="rekap-group-label">Tugas (${tk.length}, ${tk.filter(t=>(t.status||'Belum')==='Selesai').length} selesai)</div>${bars(rows)}`
-      +(adm?`<div class="rekap-group-label">Honor per anggota</div>${bars([...hm.entries()].sort((a,b)=>b[1].v-a[1].v).map(([nm,o])=>({l:nm,v:o.v,t:fmtRp(o.v),s:o.c+' job'})))}`:''));
-  }
-
-  // ---- ulasan klien
-  if(adm&&WS_ID==='default'&&ulasanList.length){
-    const rt=ulasanList.map(u=>Number(u.rating)||0), avg=rt.reduce((a,b)=>a+b,0)/rt.length;
-    h+=sec('star','Penilaian Klien',`Rata-rata <b>${dec(avg)} dari 5</b> dari ${rt.length} penilaian (semua waktu).`,bars([5,4,3,2,1].map(s=>{const c=rt.filter(x=>x===s).length;return {l:'★'.repeat(s),v:c,t:c+' ('+pc(c,rt.length)+'%)'};})));
-  }
-  return h;
-}
-(function(){const app=document.getElementById('app');if(!app)return;
-  app.addEventListener('click',e=>{if(currentView==='statistik'&&e.target.closest('#stDl')){stDownload();return;}const b=e.target.closest('[data-stp]');if(!b||currentView!=='statistik')return;stPeriod=b.dataset.stp;refreshView();});
-  app.addEventListener('change',e=>{if(currentView!=='statistik')return;if(e.target.id==='stFrom'){stFrom=e.target.value;refreshView();}else if(e.target.id==='stTo'){stTo=e.target.value;refreshView();}else if(e.target.id==='stVendor'){stVendor=e.target.value;refreshView();}else if(e.target.id==='stJenis'){stJenis=e.target.value;refreshView();}});})();
-</script>
-
-<style id="syncDotCss">
-.topbar-meta .sync-dot{--sd:#ffc400;flex:none;width:7px;height:7px !important;min-width:7px;margin-left:auto !important;border-radius:50%;background:var(--sd);cursor:pointer;font-size:0;line-height:0;transition:background-color .3s;position:relative}
-.topbar-meta .sync-dot::before{content:'';position:absolute;inset:-14px}
-.sync-dot[data-state="synced"]{--sd:#3ddc84}
-.sync-dot[data-state="saving"],.sync-dot[data-state="loading"]{--sd:#ffc400;animation:sdPulse 1.1s ease-in-out infinite}
-.sync-dot[data-state="offline"]{--sd:#ff5a4f}
-.sync-dot:focus-visible{outline:1.5px solid #fff;outline-offset:3px}
-@keyframes sdPulse{0%,100%{opacity:1}50%{opacity:.35}}
-@media(prefers-reduced-motion:reduce){.sync-dot{animation:none !important}}
-</style>
-<style id="perfCss">
-.copyright-bar{margin-top:14px !important}
-.tk-list>*,.task-person-card,.report-card{content-visibility:auto;contain-intrinsic-size:auto 110px}
-@media(max-width:900px){.overlay{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}}
-</style>
-<script id="perfJs">
-/* Percepatan: tab Tugas (pencarian job & hitung bonus tidak lagi diulang-ulang) dan scroll lebih ringan. Tidak mengubah data/hasil hitungan. */
-(function(){
-  var jm=null, jr=null, jl=-1;
-  function build(){ jm=new Map(); jr=jobs; jl=jobs.length; for(var i=0;i<jobs.length;i++){ var k=String(jobs[i].id); if(!jm.has(k)) jm.set(k,i); } }
-  window.getTaskJob=function(task){
-    var id=String(task.jobId);
-    if(!jm||jr!==jobs||jl!==jobs.length) build();
-    var i=jm.get(id), j=i!=null?jobs[i]:null;
-    if(!j||String(j.id)!==id){ build(); i=jm.get(id); j=i!=null?jobs[i]:null; }
-    return j||null;
-  };
-  var on=false, C=new Map();
-  ['userTaskHours','userBonusAdjustments','userBonusAdjustHours','userBonusMonthsAll','userTaskHoursBulan','userTotalBonusHoursBulan','userBonusRupiah','userFinishedBonusRupiah','userClaimedTotalRupiah','userClaimableBonusRupiah','userPendingBonusClaims'].forEach(function(n){
-    var f=window[n]; if(typeof f!=='function') return;
-    window[n]=function(){
-      if(!on) return f.apply(this,arguments);
-      var k=n+'|'+Array.prototype.join.call(arguments,'|');
-      if(C.has(k)) return C.get(k);
-      var r=f.apply(this,arguments); C.set(k,r); return r;
-    };
-  });
-  var vt=window.viewTugas;
-  if(typeof vt==='function') window.viewTugas=function(){ on=true; C.clear(); try{ return vt.apply(this,arguments); } finally{ on=false; C.clear(); } };
-})();
-</script>
-<script id="kcKbJs">
-/* Android/Chrome: ukuran halaman ikut mengecil saat keyboard muncul (lihat meta viewport interactive-widget), jadi kolom ketik chat
-   tepat di atas keyboard. Pengaman di bawah hanya menggeser sedikit kalau masih ada bagian kolom ketik yang tertutup, dan TIDAK
-   pernah memaksa daftar pesan turun ke bawah kalau pengguna sedang membaca pesan lama. */
-(function(){
-  var kc=document.getElementById('kc'), vv=window.visualViewport;
-  if(!kc) return;
-  function on(){ return kc.classList.contains('on'); }
-  function correct(){
-    if(!on()) return;
-    var c=kc.querySelector('.c'); if(!c) return;
-    var vb=vv?(vv.offsetTop+vv.height):window.innerHeight;
-    var over=Math.ceil(c.getBoundingClientRect().bottom-vb);
-    if(over>1){
-      var m=kc.querySelector('.m'), near=m?(m.scrollHeight-m.scrollTop-m.clientHeight<160):false;
-      kc.style.height=Math.max(200,kc.getBoundingClientRect().height-over)+'px';
-      if(near&&m) m.scrollTop=m.scrollHeight;
-    }
-  }
-  function later(){ [0,120,350,700,1200].forEach(function(d){ setTimeout(correct,d); }); }
-  document.addEventListener('focusin',function(e){ if(on()&&e.target&&e.target.id==='ki') later(); });
-  if(vv){ vv.addEventListener('resize',later); }
-  window.addEventListener('resize',later);
-})();
-</script>
 </body>
 </html>

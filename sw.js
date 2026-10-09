@@ -6,7 +6,7 @@
    - Aset statis (ikon, manifest): cache-first */
 importScripts('push-handler.js');
 
-const CACHE = 'kaone-motret-v4';
+const CACHE = 'kaone-motret-v5';
 const CORE = [
   './',
   'index.html',

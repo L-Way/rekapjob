@@ -570,6 +570,25 @@
   .bb-main-cap{display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:var(--ok); margin-top:3px;}
   .bb-main-cap .ic{width:14px; height:14px;}
   .bb-main-cap.off{color:var(--ink-soft); font-weight:500;}
+  .bb-main-cap.low{color:var(--warn); align-items:flex-start; line-height:1.4;}
+  .bb-main-cap.low .ic{margin-top:1px; flex:none;}
+  .bb-item.r.low .bb-amt{color:var(--warn);}
+  .bb-dot.low{background:var(--warn);}
+  /* Riwayat klaim bonus */
+  .ch-sum{display:flex; gap:6px; flex-wrap:wrap; margin:0 0 10px;}
+  .ch-sum span{font-size:11.5px; font-weight:600; padding:4px 10px; border-radius:999px; background:#fff; border:1px solid var(--line); color:var(--ink-soft);}
+  .ch-sum b{color:var(--ink);}
+  .ch-list{display:grid; gap:8px;}
+  .ch-item{background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 12px;}
+  .ch-top{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .ch-amt{font-size:15px; font-weight:800; letter-spacing:-.02em; margin-right:auto;}
+  .ch-who{font-size:12.5px; font-weight:700; width:100%;}
+  .ch-st{font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:999px; white-space:nowrap;}
+  .ch-st.ok{background:#e5f5e6; color:var(--ok);}
+  .ch-st.wait{background:#fff1c9; color:var(--warn);}
+  .ch-meta{font-size:11.5px; line-height:1.5; color:var(--ink-soft); margin-top:4px; overflow-wrap:anywhere;}
+  .ch-meta b{color:var(--ink); font-weight:600;}
+  .ch-empty{font-size:12px; color:var(--ink-soft); padding:4px 0;}
   .bb-total{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-top:14px; padding-top:12px; border-top:1px dashed var(--gold-light); font-size:12.5px; color:var(--ink-soft);}
   .bb-total b{color:var(--ink); font-size:13px; white-space:nowrap;}
   .bb-total + .bb-hours{margin-top:2px;}
@@ -4262,6 +4281,8 @@ async function kaoneAturPassword(id){
    Admin (menu Pengaturan). Akun biasa tidak pernah menarik daftar lengkap ini. */
 let akunList = [];
 let akunLoading = false;
+let akunSudahMuat = false;   // true setelah daftar akun berhasil dimuat sekali (supaya menu Tugas tidak menampilkan Rp 0 sebelum data datang)
+let akunGagalMuat = false;
 async function pullAkunFromCloud(){
   if(!cloudSyncEnabled || !isAdmin()) return false;
   akunLoading = true;
@@ -4272,14 +4293,17 @@ async function pullAkunFromCloud(){
       .select('id,username,role,nama_lengkap,disetujui,created_at')
       .order('created_at', { ascending:true });
     if(error) throw error;
+    const berubah = !akunSudahMuat || JSON.stringify(data||[]) !== JSON.stringify(akunList);
     akunList = data || [];
-    akunLoading = false;
+    akunLoading = false; akunSudahMuat = true; akunGagalMuat = false;
     if(currentView==='pengaturan') render();
+    else if(currentView==='tugas' && berubah) refreshView();   // menu Tugas memakai daftar akun untuk hitung Bonus Tim & Rekap Per Akun
     return true;
   }catch(e){
     console.error('Gagal memuat daftar akun (pastikan tabel kaone_motret_users sudah dibuat)', e);
-    akunLoading = false;
+    akunLoading = false; akunGagalMuat = true;
     if(currentView==='pengaturan') render();
+    else if(currentView==='tugas' && !akunSudahMuat) refreshView();
     return false;
   }
 }
@@ -6645,6 +6669,18 @@ function teamBonusBreakdown(people){
 }
 // Kartu Bonus Tim (Admin): angka utama = bonus yang masih bisa diklaim, lalu rincian & pengaturan.
 function renderTeamBonusCard(people, pendingList){
+  if(!akunSudahMuat){
+    return `
+    <div class="task-bonus-box tbc">
+      <div class="task-bonus-row">
+        <div>
+          <div class="task-bonus-label bb-label">${ic('money')} Bonus Tim</div>
+          <div class="task-bonus-amount bb-main-amt">…</div>
+          <div class="bb-main-cap off">${akunGagalMuat ? 'Gagal memuat akun Tim. Tekan Refresh untuk mencoba lagi.' : 'Memuat data akun Tim…'}</div>
+        </div>
+      </div>
+    </div>`;
+  }
   const b = teamBonusBreakdown(people);
   const pendRp = pendingList.reduce((t,c)=>t+(Number(c.jumlah)||0),0);
   return `
@@ -6667,10 +6703,59 @@ function renderTeamBonusCard(people, pendingList){
     </div>`;
 }
 // Keterangan di bawah angka utama kartu bonus.
-function bonusHeadCaption(ready){
+// Syarat minimal klaim terkecil (1 WDP atau tunai, mana yang lebih kecil).
+function klaimMinimal(){ return Math.min(MIN_KLAIM_TUNAI, MIN_KLAIM_WDP); }
+// cekMin = true untuk tampilan SATU akun: kalau saldo ada tapi belum mencapai minimal klaim, jangan bilang "siap diklaim".
+function bonusHeadCaption(ready, cekMin){
+  if(ready>0 && cekMin && ready<klaimMinimal()){
+    return `<div class="bb-main-cap low">${ic('clock')} <span>Belum bisa diklaim, minimal ${fmtRp(klaimMinimal())}. Kurang ${fmtRp(klaimMinimal()-ready)} lagi.</span></div>`;
+  }
   return ready>0
     ? `<div class="bb-main-cap">${ic('check-circle')} Siap diklaim sekarang</div>`
     : `<div class="bb-main-cap off">Belum ada yang bisa diklaim</div>`;
+}
+// Nama bulan singkat + waktu untuk riwayat klaim, mis. "2 Okt 2026, 14.30".
+function fmtWaktuKlaim(ts){
+  const d = new Date(Number(ts));
+  if(!ts || Number.isNaN(d.getTime())) return '-';
+  return new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'}).format(d) + ' WIB';
+}
+// Riwayat klaim bonus. claims = daftar klaim; showWho = tampilkan nama akun (untuk Admin, semua akun).
+// Mendukung klaim lama (menyimpan jam & bulanList) maupun klaim baru (menyimpan saldoSebelum/saldoSesudah).
+function renderClaimHistory(claims, showWho){
+  const list = (claims||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(!list.length) return `<div class="ch-empty">Belum ada klaim bonus.</div>`;
+  const sum = f => list.filter(f).reduce((t,c)=>t+(Number(c.jumlah)||0),0);
+  const selesai = list.filter(c=>c.status==='Dicairkan'), menunggu = list.filter(c=>c.status!=='Dicairkan');
+  const head = `<div class="ch-sum">
+      <span>Total diklaim <b>${fmtRp(sum(()=>true))}</b></span>
+      <span>Sudah diterima <b>${fmtRp(sum(c=>c.status==='Dicairkan'))}</b> (${selesai.length}x)</span>
+      ${menunggu.length ? `<span>Menunggu <b>${fmtRp(sum(c=>c.status!=='Dicairkan'))}</b> (${menunggu.length}x)</span>` : ''}
+    </div>`;
+  const items = list.map(c=>{
+    const isWdp = c.jenis==='WDP', done = c.status==='Dicairkan';
+    const detail = [];
+    detail.push(isWdp ? (c.qty && c.hargaWdp ? `${claimQty(c)} WDP × ${fmtRp(c.hargaWdp)}` : 'WDP') : 'Tunai');
+    if(Number(c.jam)>0) detail.push(`dari <b>${fmtTaskHours(c.jam)}</b> kerja`);
+    if(Array.isArray(c.bulanList) && c.bulanList.length) detail.push('bonus ' + c.bulanList.map(b=>escapeHtml(fmtBulanLabel(b))).join(', '));
+    const lines = [`Diajukan ${escapeHtml(fmtWaktuKlaim(c.createdAt))}`];
+    if(done && c.cairAt) lines.push(`${isWdp?'Dikirim':'Dicairkan'} ${escapeHtml(fmtWaktuKlaim(c.cairAt))}${c.cairBy?' oleh '+escapeHtml(c.cairBy):''}`);
+    else if(!done) lines.push(`Menunggu ${claimVerbMenunggu(c)} oleh Admin`);
+    const saldo = (c.saldoSebelum!=null && c.saldoSesudah!=null) ? `<div class="ch-meta">Saldo klaim ${fmtRp(c.saldoSebelum)} → ${fmtRp(c.saldoSesudah)}</div>` : '';
+    const ml = (showWho && isWdp && c.mlId) ? `<div class="ch-meta">ID Game <b>${escapeHtml(c.mlId)}</b> (Server ${escapeHtml(c.mlZone||'-')})</div>` : '';
+    return `<div class="ch-item">
+      <div class="ch-top">
+        ${showWho ? `<div class="ch-who">${ic('user')} ${escapeHtml(c.username||'-')}</div>` : ''}
+        <span class="ch-amt">${fmtRp(c.jumlah)}</span>
+        <span class="claim-type-badge ${isWdp?'wdp':'tunai'}">${isWdp?ic('sparkle'):ic('money')} ${claimJenisLabel(c)}</span>
+        <span class="ch-st ${done?'ok':'wait'}">${done ? (isWdp?'Terkirim':'Dicairkan') : 'Menunggu'}</span>
+      </div>
+      <div class="ch-meta">${detail.join(' · ')}</div>
+      <div class="ch-meta">${lines.join('<br>')}</div>
+      ${saldo}${ml}
+    </div>`;
+  }).join('');
+  return head + `<div class="ch-list">${items}</div>`;
 }
 // Satu kartu klaim bonus yang menunggu diproses Admin.
 function renderPendingClaimCard(c){
@@ -6727,8 +6812,10 @@ function renderBonusBreakdownData(b, who){
          : `${fmtRp(b.pendingRp)} masih menunggu diproses Admin, sisanya sudah selesai`);
     rows.push(`<li class="bb-item c"><span class="bb-dot c"></span><div><div class="bb-name">Sudah diklaim</div><div class="bb-note">${note}</div></div><div class="bb-amt">${fmtRp(b.claimed)}</div></li>`);
   }
-  rows.push(`<li class="bb-item r"><span class="bb-dot r"></span><div><div class="bb-name">Siap diklaim sekarang</div><div class="bb-note">${
-    b.ready>0 ? (who==='tim' ? 'Bisa diajukan lewat tombol Klaim Bonus' : (b.readyAccounts!=null ? `${b.readyAccounts} dari ${b.accounts} akun Tim bisa mengajukan klaim` : 'Bisa diajukan akun Tim kapan saja')) : 'Belum ada yang bisa diklaim'
+  const low = b.ready>0 && b.readyAccounts==null && b.ready<klaimMinimal();   // satu akun, saldo ada tapi belum cukup
+  rows.push(`<li class="bb-item r${low?' low':''}"><span class="bb-dot ${low?'low':'r'}"></span><div><div class="bb-name">${low?'Saldo klaim (belum cukup)':'Siap diklaim sekarang'}</div><div class="bb-note">${
+    low ? `Belum bisa diklaim: minimal 1 WDP ${fmtRp(MIN_KLAIM_WDP)} atau tunai ${fmtRp(MIN_KLAIM_TUNAI)}. Kurang ${fmtRp(klaimMinimal()-b.ready)} lagi.`
+    : b.ready>0 ? (who==='tim' ? 'Bisa diajukan lewat tombol Klaim Bonus' : (b.readyAccounts!=null ? `${b.readyAccounts} dari ${b.accounts} akun Tim bisa mengajukan klaim` : 'Bisa diajukan akun Tim kapan saja')) : 'Belum ada yang bisa diklaim'
   }</div></div><div class="bb-amt">${fmtRp(b.ready)}</div></li>`);
   if(b.waiting>0){
     const note = b.waitMonths.length
@@ -12877,7 +12964,7 @@ function viewTugas(){
           <div>
             <div class="task-bonus-label bb-label">${ic('money')} Bonus Tim</div>
             <div class="task-bonus-amount bb-main-amt">${fmtRp(claimableRp)}</div>
-            ${bonusHeadCaption(claimableRp)}
+            ${bonusHeadCaption(claimableRp, true)}
           </div>
           <button type="button" class="bonus-adjust-btn" data-bonus-adjust="${escapeHtml(a.id)}">${ic('settings')} Atur Bonus</button>
         </div>
@@ -12886,6 +12973,7 @@ function viewTugas(){
           <span class="task-mini-stat">${ic('video')} ${list.filter(t=>t.role==='Videografer').length} videografer</span>
           <span class="task-mini-stat">${ic('money')} ${fmtRp(totalHonorTimAkun(a.id, jobs))} honor job</span>
         </div>` + renderBonusBreakdown(a.id, 'admin'))}
+        ${tgFold('riwayat-klaim-'+a.id, `Riwayat klaim (${(bonusClaims||[]).filter(c=>String(c.userId)===String(a.id)).length})`, renderClaimHistory((bonusClaims||[]).filter(c=>String(c.userId)===String(a.id)), false))}
       </div>
     </div>`;
   }).join('') : '';
@@ -12917,11 +13005,12 @@ function viewTugas(){
         <div>
           <div class="task-bonus-label bb-label">${ic('money')} Bonus Saya</div>
           <div class="task-bonus-amount bb-main-amt">${fmtRp(myClaimableRp)}</div>
-          ${bonusHeadCaption(myClaimableRp)}
+          ${bonusHeadCaption(myClaimableRp, true)}
         </div>
         <button type="button" class="bonus-claim-btn" id="btnClaimBonus" ${myClaimableRp>=Math.min(MIN_KLAIM_TUNAI,MIN_KLAIM_WDP)?'':'disabled'} title="${escapeHtml(claimButtonTitle(myClaimableRp, myNextClaim))}">${ic('phone')} Klaim Bonus</button>
       </div>
       ${tgFold('bonus-saya', 'Lihat rincian bonus', renderBonusBreakdown(currentUserId, 'tim'))}
+      ${tgFold('riwayat-klaim-saya', `Riwayat klaim saya (${(bonusClaims||[]).filter(c=>String(c.userId)===String(currentUserId)).length})`, renderClaimHistory((bonusClaims||[]).filter(c=>String(c.userId)===String(currentUserId)), false))}
       ${myPendingClaims.map(c=>`
       <div class="bonus-claim-alert">
         <span><span class="claim-type-badge ${c.jenis==='WDP'?'wdp':'tunai'}">${c.jenis==='WDP'?ic('sparkle'):ic('money')} ${claimJenisLabel(c)}</span> klaim sebesar <b>${fmtRp(c.jumlah)}</b> diajukan ${escapeHtml(formatCommentTime(c.createdAt))}, sudah dikirim ke WhatsApp Admin, menunggu ${claimVerbMenunggu(c)}.${c.jenis==='WDP'?` (ID Game: ${escapeHtml(c.mlId||'-')}, Server: ${escapeHtml(c.mlZone||'-')})`:''}</span>
@@ -12975,7 +13064,9 @@ function viewTugas(){
       </div>
     </div>` : ''}
 
-    ${tgFold('rekap-akun', `${ic('chart')} Rekap Per Akun Tim <span class="tg-count">${people.length}</span>`, personRows || `<div class="tg-empty">Belum ada akun Tim.</div>`, 'tg-card')}`:''}
+    ${tgFold('riwayat-klaim-semua', `${ic('receipt')} Riwayat Klaim Bonus <span class="tg-count">${(bonusClaims||[]).length}</span>`, renderClaimHistory(bonusClaims, true), 'tg-card')}
+
+    ${tgFold('rekap-akun', `${ic('chart')} Rekap Per Akun Tim <span class="tg-count">${people.length}</span>`, personRows || `<div class="tg-empty">${akunSudahMuat ? 'Belum ada akun Tim.' : (akunGagalMuat ? 'Gagal memuat akun Tim.' : 'Memuat akun Tim…')}</div>`, 'tg-card')}`:''}
 
     ${tkRekapHtml({filtered, tabCount, filterUser, filterRole, filterStatus, filterFrom, filterTo, filterQ, filterActive, people, todayYmd, mine})}
   </div>
@@ -15578,7 +15669,7 @@ function attachHandlers(){
     btn.disabled = true;
     const original = btn.textContent;
     btn.textContent = '⏳ Memeriksa...';
-    const r = await tugasTarikSenyap();
+    const [r] = await Promise.all([tugasTarikSenyap(), isAdmin() ? pullAkunFromCloud() : null]);
     btn.disabled = false;
     btn.textContent = original;
     if(r.ok && r.changed && currentView==='tugas') refreshView();

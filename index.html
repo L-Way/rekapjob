@@ -8168,6 +8168,16 @@ function refreshView(){
 const KJ_DIAFRAGMA = '<svg class="dash-ap" viewBox="-100 -100 200 200" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle r="92"/>'
   + [0,1,2,3,4,5].map(k=>'<path d="M38 0L71.4 57.9" transform="rotate('+(k*60)+')"/>').join('')
   + '<path d="M38 0L19 32.9-19 32.9-38 0-19-32.9 19-32.9z"/></svg>';
+// Penulisan nama tim: 1 nama = nama saja, 2 nama = "A & B", 3 nama atau lebih = "A, B, & C".
+// Menerima array atau teks bebas (dipisah koma, titik koma, &, + atau kata " dan "), jadi data lama otomatis tampil rapi.
+function formatNamaTim(v){
+  let a = Array.isArray(v) ? v : String(v||'').split(/\s*[,;&+\n]\s*|\s+dan\s+/i);
+  a = a.map(x=>String(x).replace(/\s+/g,' ').trim()).filter(Boolean);
+  a = a.filter((x,i)=>a.findIndex(y=>y.toLowerCase()===x.toLowerCase())===i);
+  if(a.length<=1) return a[0]||'';
+  if(a.length===2) return a[0]+' & '+a[1];
+  return a.slice(0,-1).join(', ')+', & '+a[a.length-1];
+}
 function jobStartTs(j){
   if(!j || !j.tanggalAcara) return 0;
   const m = String(j.jamAcara||'').match(/(\d{1,2})[:.](\d{2})/);
@@ -8178,8 +8188,9 @@ function jobStartTs(j){
 function fmtCountdown(ts){
   const diff = ts - Date.now();
   if(diff<=0) return 'Sedang berlangsung';
-  const mnt = Math.floor(diff/60000), d = Math.floor(mnt/1440), h = Math.floor((mnt%1440)/60), m = mnt%60;
-  const t = d>=1 ? d+' hari '+h+' jam' : (h>=1 ? h+' jam '+m+' menit' : Math.max(1,m)+' menit');
+  const tot = Math.floor(diff/1000), d = Math.floor(tot/86400), h = Math.floor((tot%86400)/3600), m = Math.floor((tot%3600)/60), sc = tot%60;
+  const p2 = x => String(x).padStart(2,'0');
+  const t = d>=1 ? d+' hari '+h+' jam '+p2(m)+' menit '+p2(sc)+' detik' : (h>=1 ? h+' jam '+p2(m)+' menit '+p2(sc)+' detik' : m+' menit '+p2(sc)+' detik');
   return 'Mulai dalam '+t;
 }
 setInterval(()=>{
@@ -8187,7 +8198,7 @@ setInterval(()=>{
     const sp = el.querySelector('span'), t = fmtCountdown(Number(el.dataset.cd));
     if(sp && sp.textContent!==t) sp.textContent = t;
   });
-}, 30000);
+}, 1000);
 
 const CK_DEFAULT = ['Cek baterai & kartu memori','Cek perlengkapan (lensa, flash, tripod)','Konfirmasi lokasi & jam ke klien','Backup foto setelah acara','Seleksi foto'];
 function ckProgress(j){
@@ -8347,7 +8358,7 @@ function viewBeranda(){
     }
     const h = hariLagi(nextJob);
     const cdTs = jobStartTs(nextJob);
-    const cdHtml = cdTs ? `<div class="dash-cd" data-cd="${cdTs}">${ic('clock')}<span>${escapeHtml(fmtCountdown(cdTs))}</span></div>` : '';
+    const cdHtml = cdTs ? `<div class="dash-cd" data-cd="${cdTs}">${ic('clock')}<span style="font-variant-numeric:tabular-nums">${escapeHtml(fmtCountdown(cdTs))}</span></div>` : '';
     const dur = getJobDurasiHari(nextJob);
     const jam = (nextJob.jamAcara||'').trim();
     const lok = lokasiText(nextJob);
@@ -8358,7 +8369,7 @@ function viewBeranda(){
       jam ? `<li>${ic('clock')}<span>${escapeHtml(jam.replace(':','.'))} WIB</span></li>` : '',
       `<li>${ic('map-pin')}<span class="${lok?'':'mut'}">${lok ? escapeHtml(lok) : 'Lokasi belum diisi'}</span></li>`,
       `<li>${ic('money')}<span><span class="pay-pill ${bayarTone(nextJob)}">${escapeHtml(bayarLabel(nextJob))}</span>${sisa>0 && isAdmin() ? ` <span class="mut">· Sisa ${escapeHtml(fmtRp(sisa))}</span>` : ''}</span></li>`,
-      timJob.length ? `<li>${ic('user')}<span>Tim: ${escapeHtml(timJob.join(', '))}</span></li>`
+      timJob.length ? `<li>${ic('user')}<span>Tim: ${escapeHtml(formatNamaTim(timJob))}</span></li>`
         : (isAdmin() ? `<li>${ic('user')}<span class="mut">Belum ada tugas Tim dibagikan</span></li>` : '')
     ].filter(Boolean).join('');
     return `
@@ -9190,7 +9201,7 @@ function buildJobFormHtml(j){
             ${opt(VENDOR_LIST, d.vendor)}
           </select>
         </div>
-        <div><label>Tim / Freelancer</label><input type="text" name="timFreelancer" value="${escapeHtml(d.timFreelancer||'')}" placeholder="Nama tim / freelancer" autocomplete="off"></div>
+        <div><label>Tim / Freelancer</label><input type="text" name="timFreelancer" value="${escapeHtml(formatNamaTim(d.timFreelancer))}" placeholder="Contoh: Andi, Budi, & Citra" autocomplete="off" onblur="this.value=formatNamaTim(this.value)"></div>
         <div class="full" id="vendorLainWrap" style="display:${d.vendor==='Lainnya'?'block':'none'}"><label>Sebutkan Vendor Lainnya</label><input type="text" name="vendorLain" value="${escapeHtml(d.vendorLain||'')}" placeholder="Nama vendor / relasi"></div>
         </div>
 
@@ -9486,6 +9497,7 @@ function bindJobFormEvents(scopeEl, onDone){
     // Kalau tidak ada anggota yang dipilih (mis. job lama belum pernah dibagi), honorTimList
     // dikosongkan saja - nilai total honorTim di atas tetap tersimpan apa adanya.
     data.cetak = bacaCetak();
+    data.timFreelancer = formatNamaTim(data.timFreelancer);
     data.honorTimList = jobFormHonorTim.map(x=>({userId:x.userId, nama:x.nama, nominal:Number(x.nominal)||0}));
     // Sedekah selalu dihitung ulang otomatis di titik penyimpanan, supaya konsisten
     // walau kolom lain sempat diubah tanpa memicu event input.
@@ -10027,7 +10039,7 @@ function buildMonthlyCopyText(selectedKeys){
       const namaHari = namaHariID(new Date(j.tanggalAcara+'T00:00:00'));
       const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : (j.jenisAcara||'-');
       const desa = desaDisplay(j) || '-';
-      const tim = (j.timFreelancer||'').trim();
+      const tim = formatNamaTim(j.timFreelancer);
       const timLine = tim ? `\n    Tim   : ${tim}` : '';
       const noUrut = getJobNo(j.id);
       const itemMap = {no:noUrut, tanggal:tglLabel, hari:namaHari, desa, acara:jenis, tim, timLine};
@@ -10872,7 +10884,7 @@ function openDateModal(dateIso){
         ${(j.deskripsiPaket||'').trim() ? `<div class="mj-row"><span>Deskripsi Paket</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.deskripsiPaket.trim())}</span></div>` : ''}
         ${isAdmin() ? `<div class="mj-row"><span>WhatsApp</span><span>${escapeHtml(j.noWhatsapp||'-')}</span></div>` : ''}
         <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
-        <div class="mj-row"><span>Tim/Freelancer</span><span>${escapeHtml(j.timFreelancer||'-')}</span></div>
+        <div class="mj-row"><span>Tim/Freelancer</span><span>${escapeHtml(formatNamaTim(j.timFreelancer)||'-')}</span></div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" data-open-maps="${j.id}">${ic('map')} Buka di Maps</button>
           <button type="button" class="btn btn-outline" data-gcal="${j.id}">${ic('calendar')} Tambah ke Google Calendar</button>
@@ -11320,7 +11332,7 @@ function openJobDetailModal(jobId){
       ...(pengirimanMetode(j.pengiriman)==='diantar' && j.linkMapsAntar ? [['Link Maps Antar', j.linkMapsAntar]] : []),
       ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
-      ['Tim/Freelancer', j.timFreelancer||'-'],
+      ['Tim/Freelancer', formatNamaTim(j.timFreelancer)||'-'],
     ]},
     {title:'Keuangan', rows:keuanganRowsUntukRole(j)},
     {title:'Catatan', rows:[
@@ -11436,7 +11448,7 @@ function buildJobPosterHtml(j){
       ...(isAdmin() && pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
       ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
-      ['Tim/Freelancer', j.timFreelancer||'-'],
+      ['Tim/Freelancer', formatNamaTim(j.timFreelancer)||'-'],
     ]},
     {title:'Keuangan', rows:keuanganRowsUntukRole(j), highlightLast:isAdmin()},
     {title:'Catatan', rows:[
@@ -11674,7 +11686,7 @@ function copyJobDetails(jobId){
       ...(pengirimanMetode(j.pengiriman)==='diantar' && j.linkMapsAntar ? [['Link Maps Antar', j.linkMapsAntar]] : []),
       ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
-      ['Tim/Freelancer', j.timFreelancer||'-'],
+      ['Tim/Freelancer', formatNamaTim(j.timFreelancer)||'-'],
     ]},
     {title:ic('money')+' Keuangan', rows:keuanganRowsUntukRole(j)},
   ];
@@ -15358,6 +15370,7 @@ function importExcelFile(file){
           }
           newJobData[f.field] = (v===undefined || v===null) ? '' : (typeof v === 'string' ? v.trim() : v);
         });
+        if(newJobData.timFreelancer) newJobData.timFreelancer = formatNamaTim(newJobData.timFreelancer);
 
         // Kolom antar: ongkos hanya berlaku untuk pengiriman "Diantar"; titik antar diturunkan dari link-nya.
         if(Object.prototype.hasOwnProperty.call(newJobData,'ongkirAntar')) newJobData.ongkirAntar = parseRibuan(newJobData.ongkirAntar);
@@ -15759,6 +15772,9 @@ const CHANGELOG = [
     version: '1.17.2',
     tanggal: '9 Oktober 2026',
     items: [
+      { kategori: 'Peningkatan', teks: 'Penulisan nama tim kini seragam di seluruh aplikasi: satu nama ditulis apa adanya, dua nama menjadi "A & B", dan tiga nama atau lebih menjadi "A, B, & C".' },
+      { kategori: 'Peningkatan', teks: 'Hitung mundur di kartu Job berikutnya kini sampai detik dan berjalan langsung tiap detik.' },
+      { kategori: 'Fitur', teks: 'Statistik diperluas: laba dan margin per jenis acara, paket, dan vendor; perbandingan lengkap dengan periode lalu; tabel tahun ke tahun dan 24 bulan terakhir; musim ramai; klien teratas berdasarkan belanja; jam kerja tim dan per peran; sorotan otomatis; ekspor CSV; keterangan grafik bisa disentuh di HP; dan halaman ikut diperbarui saat ada data baru.' },
       { kategori: 'Fitur', teks: 'Menu baru "Statistik" (buka lewat tombol Lainnya). Isinya ringkasan lengkap: omzet dan laba, tren per bulan, progres edit/cetak/antar/lunas, jenis acara, wilayah, paket terlaris, hari tersibuk, keuangan rinci, tim dan tugas, serta penilaian klien. Bisa difilter per periode. Akun Tim hanya melihat statistik job dan tugasnya sendiri, tanpa data keuangan.' },
       { kategori: 'Peningkatan', teks: 'Tulisan "Data tersimpan otomatis ke cloud. Disarankan rutin cadangkan data." di bagian bawah dihapus, dan jarak ke footer dibuat lebih rapat.' },
       { kategori: 'Peningkatan', teks: 'Status sinkron di bagian atas kini berupa titik kecil berwarna: hijau = data tersinkron, kuning berkedip = sedang menyimpan/memuat, merah = mode offline. Sentuh titiknya untuk melihat keterangannya.' },
@@ -16961,6 +16977,7 @@ const RT_EVENT_PREFIXES = ['ulasan_','taskcomment_','laporan_','bonusclaim_','ta
 const RT_LAUNCH_VIEWS = ['beranda','daftar','kalender','tugas','statistik','laporan','ulasan','pengaturan','notif'];
 // Bagian data yang dipakai tiap halaman → halaman hanya digambar ulang kalau bagian ini berubah
 const RT_VIEW_DEPS = {
+  statistik: ['jobs','tasks'],
   beranda:  ['jobs','tasks','bonusAdjustments','bonusClaims','bonusRate','minKlaimTunai','minKlaimWdp'],
   daftar:   ['jobs'],
   kalender: ['jobs','thanksOverrides','thanksFontSize','posterThemeOverrides','layoutOverrides'],
@@ -19812,7 +19829,7 @@ function stDownload(){
   const el=document.getElementById('stPoster');
   if(!el||!window.html2canvas){ toast('Fitur unduh belum siap, coba lagi sebentar.'); return; }
   toast('Menyiapkan gambar…');
-  html2canvas(el,{scale:2,backgroundColor:'#FFFBEA',useCORS:true,ignoreElements:x=>x.classList&&x.classList.contains('st-nodl')}).then(c=>{
+  html2canvas(el,{scale:(el.scrollHeight>5000?1:2),backgroundColor:'#FFFBEA',useCORS:true,ignoreElements:x=>x.classList&&x.classList.contains('st-nodl')}).then(c=>{
     const a=document.createElement('a'); a.download='statistik-kaone-motret.png'; a.href=c.toDataURL('image/png'); a.click();
   }).catch(()=>toast('Gagal membuat gambar.'));
 }
@@ -19980,6 +19997,100 @@ function stBody(){
   });
   var vt=window.viewTugas;
   if(typeof vt==='function') window.viewTugas=function(){ on=true; C.clear(); try{ return vt.apply(this,arguments); } finally{ on=false; C.clear(); } };
+})();
+</script>
+<style id="statistikPlusCss">
+.st-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.st-tbl{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap}
+.st-tbl th{text-align:left;font-weight:700;color:var(--ink-soft);padding:6px 8px;border-bottom:1px solid var(--line)}
+.st-tbl td{padding:7px 8px;border-bottom:1px solid var(--line)}
+.st-tbl td:not(:first-child),.st-tbl th:not(:first-child){text-align:right}
+.st-up{color:var(--ok);font-weight:700}.st-dn{color:var(--danger);font-weight:700}.st-na{color:var(--ink-soft)}
+.st-ins{margin:0;padding-left:18px;font-size:13.5px;line-height:1.65}.st-ins li{margin-bottom:6px}
+.st-exp{display:flex;gap:8px;flex-wrap:wrap}.st-chart rect{cursor:pointer}
+</style>
+<script id="statistikPlusJs">
+/* Statistik Plus: profitabilitas, banding periode lalu, tahun ke tahun, musim ramai, klien teratas, tim, sorotan otomatis, ekspor CSV. Hanya membaca data. */
+(function(){
+  const om=j=>Number(hitungOmzet(j))||0, br=j=>Number(hitungBersih(j))||0;
+  const sum=(a,f)=>a.reduce((s,j)=>s+(Number(f(j))||0),0), pc=(x,y)=>y?Math.round(x/y*100):0;
+  const dec=v=>(Math.round(v*10)/10).toString().replace('.',',');
+  const sr=v=>{v=Number(v)||0;const s=v<0?'-':'',x=Math.abs(v);return s+'Rp '+(x>=1e9?dec(x/1e9)+' M':x>=1e6?dec(x/1e6)+' jt':x>=1e3?Math.round(x/1e3)+' rb':x);};
+  const piu=a=>sum(a,j=>j.statusPembayaran==='Lunas'?0:Math.max(0,hitungSisaPembayaran(j)));
+  const dlt=(c,p,neu)=>p?`<span class="${neu?'st-na':c>=p?'st-up':'st-dn'}">${c>=p?'▲':'▼'} ${Math.abs(Math.round((c-p)/Math.abs(p)*100))}%</span>`:'<span class="st-na">-</span>';
+  const sec=(i,t,d,b,x)=>`<div class="card st-sec${x||''}"><h3>${ic(i)} ${t}</h3><p class="rekap-desc">${d}</p>${b}</div>`;
+  const tbl=(head,rows)=>`<div class="st-scroll"><table class="st-tbl"><tr>${head.map(x=>`<th>${x}</th>`).join('')}</tr>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table></div>`;
+  function flt(){const [ra,rb]=stRange();return {ra,rb,inR:d=>stPeriod==='all'||(d&&(!ra||d>=ra)&&(!rb||d<=rb)),okF:j=>(!stVendor||j.vendor===stVendor)&&(!stJenis||j.jenisAcara===stJenis)};}
+  function agg(){const {inR,okF}=flt(), A=jobs.filter(j=>okF(j)&&j.tanggalAcara), L=A.filter(j=>inR(j.tanggalAcara)), bm=new Map(), by=new Map();
+    A.forEach(j=>{const m=j.tanggalAcara.slice(0,7);[[bm,m],[by,m.slice(0,4)]].forEach(([M,k])=>{const o=M.get(k)||{c:0,o:0,b:0};o.c++;o.o+=om(j);o.b+=br(j);M.set(k,o);});});
+    return {A,L,bm,by,inR,okF};}
+  const MN=k=>MONTH_NAMES[Number(k.slice(5))-1].slice(0,3)+' '+k.slice(2,4);
+  function plus(){
+    const adm=isAdmin(), esc=escapeHtml, {A,L,bm,by,inR,okF}=agg(), n=L.length; if(!n) return '';
+    const vend=j=>(j.vendor==='Lainnya'?(j.vendorLain||'Lainnya'):j.vendor)||'Tanpa vendor';
+    let h='';
+    if(adm){
+      const prof=kf=>{const m=new Map();L.forEach(j=>{const k=kf(j);if(!k)return;const o=m.get(k)||{k,c:0,o:0,b:0};o.c++;o.o+=om(j);o.b+=br(j);m.set(k,o);});return [...m.values()].sort((a,b)=>b.b-a.b).slice(0,8);};
+      const pb=rows=>{const mx=Math.max(1,...rows.map(r=>Math.abs(r.b)));return rows.length?`<div class="st-bars">${rows.map(r=>`<div class="st-bar"><div class="st-bt"><span>${esc(r.k)}</span><b>${sr(r.b)}</b></div><i><u style="width:${Math.max(3,Math.abs(r.b)/mx*100)}%${r.b<0?';background:#b3261e':''}"></u></i><small>${r.c} job · Omzet ${sr(r.o)} · Margin ${pc(r.b,r.o)}% · Laba/job ${sr(r.b/r.c)}</small></div>`).join('')}</div>`:'<div class="empty-state">Belum ada data.</div>';};
+      h+=sec('money','Profitabilitas','Laba bersih per kelompok, dari yang paling menguntungkan. Omzet besar belum tentu laba besar.',`<div class="rekap-group-label">Per jenis acara</div>${pb(prof(j=>j.jenisAcara||'Tanpa jenis'))}<div class="rekap-group-label">Per paket</div>${pb(prof(j=>(j.paket||'').trim()))}<div class="rekap-group-label">Per vendor</div>${pb(prof(vend))}`);
+    }
+    const pr=stPrevRange(), P=pr?jobs.filter(j=>okF(j)&&j.tanggalAcara&&j.tanggalAcara>=pr[0]&&j.tanggalAcara<=pr[1]):null;
+    if(P){
+      const rows=[['Jumlah job',n,P.length,0,0]];
+      if(adm){const so=sum(L,om),sp=sum(P,om);rows.push(['Omzet',so,sp,1,0],['Laba bersih',sum(L,br),sum(P,br),1,0],['Omzet rata-rata / job',so/n,P.length?sp/P.length:0,1,0],['Biaya cetak',sum(L,j=>j.biayaCetak),sum(P,j=>j.biayaCetak),1,1],['Honor tim',sum(L,j=>j.honorTim),sum(P,j=>j.honorTim),1,1],['Diskon',sum(L,j=>j.diskon),sum(P,j=>j.diskon),1,1],['Belum dibayar',piu(L),piu(P),1,1]);}
+      h+=sec('trend-down','Dibanding Periode Lalu',`Pembanding: ${fmtTgl(pr[0])} sampai ${fmtTgl(pr[1])}.`,tbl(['','Sekarang','Lalu','Selisih'],rows.map(([l,c,p,m,ne])=>[l,m?sr(c):c,m?sr(p):p,dlt(c,p,ne)])));
+    }
+    const mon=[...bm.keys()].sort().reverse().slice(0,24), yrs=[...by.keys()].sort().reverse(), v=o=>o?(adm?o.o:o.c):0;
+    h+=sec('calendar','Tahun ke Tahun','Semua waktu. Mengikuti filter vendor dan jenis acara, bukan filter periode.',
+      tbl(['Tahun','Job'].concat(adm?['Omzet','Laba','Margin']:[],['Vs thn lalu']),yrs.map(y=>{const o=by.get(y);return [y,o.c].concat(adm?[sr(o.o),sr(o.b),pc(o.b,o.o)+'%']:[],[dlt(v(o),v(by.get(String(Number(y)-1))))]);}))
+      +`<div class="rekap-group-label">Per bulan (24 bulan terakhir)</div>`
+      +tbl(['Bulan','Job'].concat(adm?['Omzet','Laba']:[],['Vs thn lalu']),mon.map(k=>{const o=bm.get(k);return [MN(k),o.c].concat(adm?[sr(o.o),sr(o.b)]:[],[dlt(v(o),v(bm.get((Number(k.slice(0,4))-1)+k.slice(4))))]);})));
+    const sm=Array(12).fill(0);A.forEach(j=>{sm[Number(j.tanggalAcara.slice(5,7))-1]++;});const smx=Math.max(1,...sm);
+    h+=sec('party','Musim Ramai','Jumlah job menurut bulan kalender (semua tahun digabung) untuk melihat musim ramai dan sepi.',`<div class="st-bars">${sm.map((x,i)=>`<div class="st-bar"><div class="st-bt"><span>${MONTH_NAMES[i]}</span><b>${x} job</b></div><i><u style="width:${x?Math.max(3,x/smx*100):0}%"></u></i></div>`).join('')}</div>`);
+    if(adm){
+      const cm=new Map();L.forEach(j=>{const nm=(j.namaKlien||'').trim();if(!nm)return;const k=nm.toLowerCase(),o=cm.get(k)||{nm,c:0,o:0,last:''};o.c++;o.o+=om(j);if((j.tanggalAcara||'')>o.last)o.last=j.tanggalAcara;cm.set(k,o);});
+      const cr=[...cm.values()].sort((a,b)=>b.o-a.o).slice(0,10), tot=sum(L,om), t3=cr.slice(0,3).reduce((s,r)=>s+r.o,0);
+      if(cr.length) h+=sec('user','Klien Teratas','10 klien dengan total belanja terbesar pada periode ini.',tbl(['#','Klien','Job','Total','Terakhir'],cr.map((r,i)=>[i+1,esc(r.nm),r.c,sr(r.o),r.last?fmtTgl(r.last):'-']))+`<div class="rekap-hint" style="margin-top:10px">3 klien teratas menyumbang <b>${pc(t3,tot)}%</b> dari omzet.</div>`);
+    }
+    const tk=tasks.filter(t=>inR(t.tanggal)&&(adm||String(t.userId)===String(currentUserId)||t.username===currentUsername));
+    if(tk.length){
+      const hrs=t=>{let r=0;try{(getTaskSlots(t)||[]).forEach(x=>{const a=String(x&&x.mulai||'').split(':').map(Number),b=String(x&&x.selesai||'').split(':').map(Number);if(a.length<2||b.length<2||[...a,...b].some(Number.isNaN))return;let d=(b[0]*60+b[1])-(a[0]*60+a[1]);if(d<0)d+=1440;r+=d/60;});}catch(e){}return r;};
+      const grp=kf=>{const m=new Map();tk.forEach(t=>{const k=kf(t),o=m.get(k)||{c:0,s:0,h:0};o.c++;if((t.status||'Belum')==='Selesai')o.s++;o.h+=hrs(t);m.set(k,o);});return [...m.entries()].sort((a,b)=>b[1].h-a[1].h||b[1].c-a[1].c);};
+      const row=([k,o])=>[esc(k),o.c,pc(o.s,o.c)+'%',dec(o.h)+' jam'];
+      h+=sec('user',adm?'Jam Kerja Tim':'Jam Kerja Saya','Jumlah tugas, persentase tuntas, dan total jam dari sesi tugas pada periode ini.',(adm?`<div class="rekap-group-label">Per anggota</div>${tbl(['Anggota','Tugas','Tuntas','Jam'],grp(t=>t.username||'-').map(row))}`:'')+`<div class="rekap-group-label">Per peran</div>${tbl(['Peran','Tugas','Tuntas','Jam'],grp(t=>t.role||'Tanpa peran').map(row))}`);
+    }
+    // sorotan otomatis
+    const ins=[], now=new Date(), mk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'), sumM=(from,to)=>{let c=0,o=0;bm.forEach((x,k)=>{if(k>=from&&k<=to){c+=x.c;o+=x.o;}});return {c,o};};
+    const bk=[...bm.entries()].sort((a,b)=>adm?b[1].b-a[1].b:b[1].c-a[1].c)[0];
+    if(bk) ins.push(`Bulan terbaik: <b>${MN(bk[0])}</b> (${bk[1].c} job${adm?', laba '+sr(bk[1].b):''}).`);
+    const c3=sumM(mk(new Date(now.getFullYear(),now.getMonth()-2,1)),mk(now)), p3=sumM(mk(new Date(now.getFullYear(),now.getMonth()-5,1)),mk(new Date(now.getFullYear(),now.getMonth()-3,1)));
+    if(p3.c) ins.push(`3 bulan terakhir ${adm?'omzet':'jumlah job'} ${(adm?c3.o>=p3.o:c3.c>=p3.c)?'naik':'turun'} <b>${Math.abs(Math.round(((adm?c3.o:c3.c)-(adm?p3.o:p3.c))/(adm?p3.o||1:p3.c)*100))}%</b> dibanding 3 bulan sebelumnya.`);
+    if(adm){
+      const jm=new Map();L.forEach(j=>{const k=j.jenisAcara||'Tanpa jenis',o=jm.get(k)||{o:0,b:0,c:0};o.o+=om(j);o.b+=br(j);o.c++;jm.set(k,o);});
+      const bj=[...jm.entries()].filter(([,o])=>o.o>0).sort((a,b)=>b[1].b/b[1].o-a[1].b/a[1].o)[0];
+      if(bj) ins.push(`Margin tertinggi ada di <b>${esc(bj[0])}</b> (${pc(bj[1].b,bj[1].o)}%, ${bj[1].c} job).`);
+      const so=sum(L,om),pi=piu(L);
+      if(so) ins.push(`Omzet yang sudah terbayar <b>${pc(so-pi,so)}%</b>${pi?`, sisa tagihan ${sr(pi)}`:', semua sudah lunas'}.`);
+    }
+    h+=sec('trend-down','Sorotan Otomatis','Kesimpulan singkat dari data pada filter yang aktif.',`<ul class="st-ins">${ins.map(x=>`<li>${x}</li>`).join('')}</ul>`);
+    h+=`<div class="card st-sec st-nodl"><h3>${ic('download')} Ekspor Data</h3><p class="rekap-desc">Unduh sebagai CSV (pemisah titik koma, cocok untuk Excel dan Google Sheets). Daftar job mengikuti filter yang aktif.</p><div class="st-exp"><button type="button" class="btn btn-outline" data-stx="jobs">Daftar Job</button><button type="button" class="btn btn-outline" data-stx="bulan">Ringkasan Bulanan</button></div></div>`;
+    return h;
+  }
+  function csv(name,rows){const q=v=>{v=v==null?'':String(v);return /[";,\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+rows.map(r=>r.map(q).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);}
+  function exportCsv(kind){
+    const adm=isAdmin(), {L,bm}=agg(), d=new Date().toISOString().slice(0,10);
+    if(kind==='bulan'){csv('statistik-bulanan-'+d+'.csv',[['Bulan','Job'].concat(adm?['Omzet','Laba bersih']:[])].concat([...bm.keys()].sort().map(k=>{const o=bm.get(k);return [k,o.c].concat(adm?[Math.round(o.o),Math.round(o.b)]:[]);})));return;}
+    csv('daftar-job-'+d+'.csv',[['Tanggal','Klien','Jenis acara','Paket','Vendor','Kecamatan','Desa','Status bayar','Edit','Cetak','Pengiriman'].concat(adm?['Omzet','Laba bersih','Sisa pembayaran','Biaya cetak','Honor tim','Diskon']:[])]
+      .concat([...L].sort((a,b)=>a.tanggalAcara<b.tanggalAcara?-1:1).map(j=>[j.tanggalAcara,j.namaKlien,j.jenisAcara,j.paket,j.vendor==='Lainnya'?(j.vendorLain||'Lainnya'):j.vendor,j.kecamatan,j.desa,j.statusPembayaran,j.prosesEdit,j.prosesCetak,j.pengiriman].concat(adm?[Math.round(om(j)),Math.round(br(j)),Math.round(hitungSisaPembayaran(j)||0),j.biayaCetak,j.honorTim,j.diskon]:[]))));
+  }
+  const o0=window.stBody;
+  window.stBody=function(){let h=o0.apply(this,arguments);try{h+=plus();}catch(e){console.error('Statistik Plus',e);}return h;};
+  const app=document.getElementById('app');
+  if(app) app.addEventListener('click',e=>{
+    if(currentView!=='statistik'||!e.target.closest) return;
+    const x=e.target.closest('[data-stx]'); if(x){exportCsv(x.dataset.stx);return;}
+    const r=e.target.closest('.st-chart rect'); if(r){const t=r.querySelector('title'); if(t&&t.textContent&&typeof toast==='function') toast(t.textContent);}
+  });
 })();
 </script>
 <script id="kcKbJs">

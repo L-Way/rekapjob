@@ -6418,6 +6418,32 @@ async function pesananPulihkan(id){
   renderNotifBadge();
 }
 
+// Hapus PERMANEN dari Supabase (bukan sekadar dipindah ke tab Diabaikan). Job yang sudah dibuat dari pesanan tidak ikut terhapus.
+async function pesananHapus(id){
+  const p = pesananCari(id);
+  if(!p || !psnAdaFitur()) return;
+  const tertaut = (p.status==='dikonfirmasi' || p.status==='digabung');
+  if(!confirm('Hapus permanen pesanan dari "' + (p.nama || 'klien') + '"?\n\nData dihapus sepenuhnya dari database dan TIDAK bisa dikembalikan.' + (tertaut ? '\n\nJob yang sudah dibuat dari pesanan ini tidak ikut terhapus.' : ''))) return;
+  try{
+    const { data, error } = await supabaseClient.from(PESANAN_TABLE).delete().eq('id', id).select('id');
+    if(error) throw error;
+    if(!data || !data.length){
+      // Tidak ada baris yang terhapus: sudah dihapus dari perangkat lain, atau ditolak karena tidak ada izin.
+      const { data: masih } = await supabaseClient.from(PESANAN_TABLE).select('id').eq('id', id).maybeSingle();
+      if(masih){ toast('Pesanan tidak bisa dihapus (tidak ada izin).'); return; }
+    }
+    pesananList = pesananList.filter(x=>String(x.id)!==String(id));
+    psnAntriTulis(psnAntriBaca().filter(x=>String(x.id)!==String(id)));
+    toast('Pesanan dihapus permanen');
+  }catch(e){
+    console.error('Gagal menghapus pesanan', e);
+    toast('Gagal menghapus pesanan. Periksa koneksi lalu coba lagi.');
+    return;
+  }
+  refreshView();
+  renderNotifBadge();
+}
+
 /* ---------- tampilan ---------- */
 function pesananBannerHtml(){
   if(!psnAdaFitur()) return '';
@@ -6483,7 +6509,7 @@ function psnKartuHtml(p){
     </div>
     <ul class="psn-rows">${rows.join('')}</ul>
     ${warn}${detailHtml}
-    ${aksi ? `<div class="ulasan-actions">${aksi}</div>` : ''}
+    <div class="ulasan-actions">${aksi}<button type="button" class="btn btn-danger" data-psn-act="hapus" data-psn-id="${escapeHtml(p.id)}">${ic('trash')} Hapus</button></div>
   </div>`;
 }
 function viewPesanan(){
@@ -6528,6 +6554,7 @@ document.addEventListener('click', (e)=>{
   else if(act==='gabung') pesananGabung(id, b.dataset.psnJob);
   else if(act==='abaikan') pesananAbaikan(id);
   else if(act==='pulihkan') pesananPulihkan(id);
+  else if(act==='hapus') pesananHapus(id);
   else if(act==='filter'){ pesananFilter = b.dataset.psnVal || 'baru'; refreshView(); }
   else if(act==='muat') pullPesanan();
 });
@@ -16238,6 +16265,7 @@ const CHANGELOG = [
     version: '1.18.0',
     tanggal: '10 Oktober 2026',
     items: [
+      { kategori: 'Fitur', teks: 'Menu Pesanan Masuk punya tombol Hapus di setiap pesanan. Menekannya menghapus pesanan sepenuhnya dari database (tidak bisa dikembalikan), sedangkan job yang sudah dibuat darinya tetap ada.' },
       { kategori: 'Fitur', teks: 'Form Input/Edit Job punya kolom baru \"Add-On\" (di bawah Deskripsi Paket). Add-On dari pesanan klien masuk ke kolom ini, dan tetap ikut tampil di isi paket pada pesan WhatsApp, kwitansi, QR, dan kalender.' },
       { kategori: 'Perbaikan', teks: 'Bagian Hasil Cetak di HP dirapikan: tiap baris cukup nama dan harga, jumlah, bingkai, dan ukuran baru muncul setelah dicentang.' },
       { kategori: 'Perubahan', teks: 'Catatan dari pesanan klien kini masuk ke kolom Catatan apa adanya, tanpa label atau penanda tambahan.' },

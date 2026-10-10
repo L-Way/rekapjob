@@ -3972,6 +3972,28 @@ function ic(name, cls){
 ========================================================= */
 
 /* =========================================================
+   🔒 ATURAN KHUSUS: RUANG CHAT RAHASIA - JANGAN PERNAH DISEBUT DI CHANGELOG 🔒
+   (berlaku untuk SIAPA PUN atau APA PUN yang mengedit file ini, termasuk AI assistant
+   seperti Claude, tanpa terkecuali dan tanpa perlu diminta ulang)
+
+   Ruang chat rahasia (ikon © yang dibuka 2x klik, akun hanya-chat, kode berawalan kc, kk, dan kaone_chat_,
+   panggilan suara/video di dalamnya, pemberitahuan ganti nama panggilan, layar hitam privasi
+   di recent apps, konfigurasi TURN, dan hal lain yang berkaitan dengannya) bersifat RAHASIA.
+
+   1. DILARANG KERAS menulis APA PUN tentang ruang chat rahasia itu di array CHANGELOG
+      (cari "const CHANGELOG") maupun di teks apa pun yang diturunkan dari CHANGELOG,
+      seperti pop-up "Apa yang Baru" dan daftar riwayat perubahan - baik secara terang-terangan
+      maupun samar (mis. "chat", "panggilan", "video call", "nama panggilan", "layar hitam",
+      "recent apps", "notifikasi chat"). Jangan buat entri atau item untuk perubahan semacam itu.
+   2. Ini adalah PENGECUALIAN RESMI dari ATURAN WAJIB di atas: perubahan yang HANYA menyangkut
+      ruang chat rahasia TIDAK perlu entri CHANGELOG dan TIDAK perlu menaikkan APP_VERSION.
+      Kalau satu perubahan menyentuh chat DAN bagian lain aplikasi, catat di CHANGELOG hanya
+      bagian yang bukan chat, tanpa menyinggung chat sedikit pun.
+   3. Kalau menemukan item CHANGELOG lama yang menyebut ruang chat rahasia, JANGAN diteruskan
+      atau dijadikan contoh. Laporkan ke pemilik file supaya ditangani.
+========================================================= */
+
+/* =========================================================
    AKUN VENDOR (ruang kerja terpisah) - v1.17.0
    Admin bisa berpindah antara Kaone Motret (bawaan), Kaone Studio, dan Bukti Sarjana tanpa
    login ulang. Tiap ruang kerja punya data sendiri: baris cloud sendiri ('ws-<id>' di tabel
@@ -15875,19 +15897,12 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.17.3'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.17.2'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
-  {
-    version: '1.17.3',
-    tanggal: '10 Oktober 2026',
-    items: [
-      { kategori: 'Fitur', teks: 'Saat ruang chat sedang terbuka lalu aplikasi dipindah ke latar atau dilihat lewat daftar aplikasi terbaru (recent apps), layar otomatis menghitam sehingga isi chat tidak terlihat di pratinjaunya. Layar kembali normal begitu aplikasi dibuka lagi.' },
-    ]
-  },
   {
     version: '1.17.2',
     tanggal: '9 Oktober 2026',
@@ -18241,7 +18256,7 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
    sedang terbuka. Skrip ini sengaja dipasang SEBELUM skrip chat, supaya lapisan hitam terpasang
    lebih dulu daripada penutupan chat otomatis saat halaman tersembunyi. */
 (function(){
-  var d=document,w=window,cov=null,aktif=false,tmr=0,sentuh=false;
+  var d=document,w=window,cov=null,aktif=false,tmr=0,sentuh=false,sebab='',t0=0;
   try{ sentuh=w.matchMedia('(pointer:coarse)').matches; }catch(e){}
   function terbuka(){
     var k=d.getElementById('kc'),c=d.getElementById('kcc');
@@ -18256,30 +18271,59 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
     d.body.appendChild(cov);
     return cov;
   }
+  /* Sedang ada panggilan (layar panggilan terbuka)? Dialog izin kamera/mikrofon dan jendela sistem
+     membuat jendela kehilangan fokus (blur) padahal pengguna masih di aplikasi, jadi blur saja
+     tidak boleh menghitamkan layar panggilan. */
+  function dalamPanggilan(){ var c=d.getElementById('kcc'); return !!(c&&c.classList.contains('on')); }
   function cek(){
     if(!aktif){ clearInterval(tmr); tmr=0; return; }
-    if(d.visibilityState==='visible' && d.hasFocus()) buka();
+    if(d.visibilityState!=='visible') return;
+    /* tersembunyi sungguhan -> buka begitu terlihat lagi; hanya-blur -> buka juga bila fokus tak kunjung kembali */
+    if(sebab==='hidden' || d.hasFocus() || Date.now()-t0>1200) buka();
   }
-  function tutup(){
+  function tutup(e){
+    var dariBlur = !!(e && e.type==='blur');
+    if(dariBlur && dalamPanggilan()) return;
     if(aktif || !terbuka()) return;
     var o=buat(); if(!o) return;
+    sebab = dariBlur ? 'blur' : 'hidden'; t0=Date.now();
     aktif=true; o.style.display='block'; void o.offsetHeight; /* paksa tergambar sekarang juga */
-    clearInterval(tmr); tmr=setInterval(cek,600);
+    clearInterval(tmr); tmr=setInterval(cek,400);
   }
   function buka(){
     if(!aktif) return;
-    aktif=false; clearInterval(tmr); tmr=0;
+    aktif=false; sebab=''; clearInterval(tmr); tmr=0;
     if(cov) cov.style.display='none';
   }
-  d.addEventListener('visibilitychange',function(){ if(d.visibilityState==='hidden') tutup(); else buka(); },true);
+  d.addEventListener('visibilitychange',function(e){ if(d.visibilityState==='hidden') tutup(e); else buka(); },true);
   w.addEventListener('pagehide',tutup);
   w.addEventListener('pageshow',buka);
   d.addEventListener('freeze',tutup);
   d.addEventListener('resume',buka);
   /* Di HP/tablet, jendela kehilangan fokus lebih dulu saat tombol recent apps ditekan. */
   if(sentuh){ w.addEventListener('blur',tutup); w.addEventListener('focus',buka); }
+  /* Pengaman tambahan: sentuhan/ketukan apa pun begitu aplikasi terlihat lagi langsung membuka layar. */
+  ['touchstart','pointerdown','keydown','mousemove'].forEach(function(n){ d.addEventListener(n,function(){ if(aktif && d.visibilityState==='visible') buka(); },true); });
   buat();
 })();
+</script>
+<script id="kcTurnCfg">
+/* ===== KONFIGURASI TURN (relay panggilan suara/video) =====
+   Tanpa server TURN, panggilan sering gagal di jaringan seluler/NAT ketat (hanya STUN yang dipakai).
+   Isi SALAH SATU cara di bawah (boleh keduanya). Lalu-lintas panggilan tetap terenkripsi
+   (DTLS-SRTP): server TURN hanya meneruskan paket, tidak bisa membaca isi suara/video.
+
+   A) PALING MUDAH & STABIL - akun gratis Metered (20 GB/bulan): daftar di https://dashboard.metered.ca,
+      buat aplikasi, lalu isi nama aplikasi dan API key-nya di bawah. Kredensial diambil otomatis
+      dan diperbarui sendiri.
+   B) Daftar manual: isi KAONE_TURN dengan server milik sendiri (mis. coturn) atau hasil dari penyedia lain,
+      contoh: {urls:['turn:turn.contoh.com:443?transport=tcp'], username:'user', credential:'sandi'}
+
+   Kalau A dan B kosong, dipakai cadangan Open Relay publik (KAONE_TURN_PUBLIK). Cadangan ini
+   gratis tetapi bersama dan tidak dijamin selalu aktif; untuk panggilan yang andal isi cara A atau B. */
+window.KAONE_TURN_METERED = { app: '', key: '' };
+window.KAONE_TURN = [];
+window.KAONE_TURN_PUBLIK = true;
 </script>
 <script id="kcJs">
 (function(){
@@ -18794,17 +18838,17 @@ var kLt=kTG('kcTema_'),kLp=kTG('kcTemaP_');if(kLt)th(kLt);
 $('kc').classList.add('on');
 var r=(await sb.from('kaone_chat_status').select('*'));(r.data||[]).forEach(function(x){if(x.user_id==me){if(kLp&&kLt){th(kLt);kTS(kLt)}else{th(x.tema||kLt||tema);try{localStorage.setItem('kcTema_'+me,tema)}catch(e){}}}else{lo=lo||{};lo.t=x.terakhir_online}});th(tema);menu();
 await pfLoad();st();
-await load();bellRead();conn();setTimeout(kNotifAsk,1500);kPingRpc(sb);sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}});kcBersih();clearInterval(kcTk);kcTk=setInterval(kcTick,1000);var bn=0;bt=setInterval(function(){kcSweep();st();kPingRpc(sb);kPoll();if(++bn%5==0)sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}})},60000)}
+try{kkTurnLoad(1)}catch(e){}await load();bellRead();conn();setTimeout(kNotifAsk,1500);kPingRpc(sb);sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}});kcBersih();clearInterval(kcTk);kcTk=setInterval(kcTick,1000);var bn=0;bt=setInterval(function(){kcSweep();st();kPingRpc(sb);kPoll();if(++bn%5==0)sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}})},60000)}
 function bellRead(){try{var b=kcBellGet();if(b&&b.id)markNotifRead('chat_'+b.id)}catch(e){}}
 function close(){try{kkAbort()}catch(e){}if(rcS)recStop(false);kPingRpc(sb);pkClose();selClear();dn={};dr0=false;kUnSet=false;kUnId=null;kUnN=0;if(lo)lo.k=0;$('kc').classList.remove('on');clearInterval(bt);clearInterval(kcTk);if(db)sb.removeChannel(db);if(rm)sb.removeChannel(rm);db=rm=null}
 async function load(){var r=await sb.from('kaone_chat_pesan').select('*').order('dikirim_at');msgs={};(r.data||[]).forEach(function(m){msgs[m.id]=m});
-if(!kUnSet){kUnSet=true;var un=Object.keys(msgs).map(function(k){return msgs[k]}).filter(function(m){return m.pengirim!=me&&!m.dilihat_at&&!m.dihapus_at}).sort(function(x,y){return x.dikirim_at<y.dikirim_at?-1:1});kUnId=un.length?un[0].id:null;kUnN=un.length}
+if(!kUnSet){kUnSet=true;var un=Object.keys(msgs).map(function(k){return msgs[k]}).filter(function(m){return m.pengirim!=me&&!m.dilihat_at&&!m.dihapus_at&&!kNmDec(m)}).sort(function(x,y){return x.dikirim_at<y.dikirim_at?-1:1});kUnId=un.length?un[0].id:null;kUnN=un.length}
 draw();
 if(kUnId){var d=$('kud'),el=$('km');if(d)el.scrollTop+=d.getBoundingClientRect().top-el.getBoundingClientRect().top-48}
 ack()}
 function ack(){sb.rpc('kaone_chat_diterima').then(function(){if(document.visibilityState=='visible')sb.rpc('kaone_chat_dibaca').then(function(){},function(){})})}
 function conn(){db=sb.channel('kaone-chat-db').on('postgres_changes',{event:'*',schema:'public',table:'kaone_chat_pesan'},function(p){
-if(p.eventType=='DELETE'){delete msgs[p.old.id]}else{msgs[p.new.id]=p.new;if(p.new.pengirim!=me){ack();if(p.eventType=='INSERT'&&lo&&lo.k){lo.k=0;clearTimeout(tt);st()}}}draw()})
+if(p.eventType=='DELETE'){delete msgs[p.old.id]}else{msgs[p.new.id]=p.new;if(p.new.pengirim!=me){if(p.eventType=='INSERT')kNmToast(p.new);ack();if(p.eventType=='INSERT'&&lo&&lo.k){lo.k=0;clearTimeout(tt);st()}}}draw()})
 .on('postgres_changes',{event:'*',schema:'public',table:'kaone_chat_profil'},function(){pfLoad()})
 .on('postgres_changes',{event:'*',schema:'public',table:'kaone_chat_status'},function(p){if(p.new&&p.new.user_id!=me){lo=lo||{};lo.t=p.new.terakhir_online;st()}}).subscribe();
 sb.realtime.setAuth().then(function(){rm=sb.channel('kaone-chat-room',{config:{private:true,presence:{key:me},broadcast:{self:false}}})
@@ -18841,7 +18885,24 @@ function kcLeft(m){var s=Math.max(0,new Date(m.kedaluwarsa_at).getTime()-Date.no
 function kcBersih(){try{sb.rpc('kaone_chat_foto_bersih').then(function(){},function(){})}catch(e){}}
 function kcSweep(){var ch=0;Object.keys(msgs).forEach(function(k){var m=msgs[k];if(m.tipe=='foto'&&!m.dihapus_at){if(m.hilang_at&&m.media_path&&m.pengirim==me&&!kGS['r'+m.id]){kGS['r'+m.id]=1;try{sb.storage.from('kaone-chat').remove([m.media_path]).then(function(){},function(){})}catch(e){}}
 var fu=m.kedaluwarsa_at&&new Date(m.kedaluwarsa_at).getTime()>Date.now();if((fu&&!m.hilang_at)||(kcGone(m)&&!kGS[m.id]))ch=1}});if(ch){draw();kcBersih()}}
-function bub(m){var pvx,own=m.pengirim==me,c='',x=m.balas_ke&&msgs[m.balas_ke];if(m.dihapus_at)return '<div class="b'+(own?' me':'')+' del">'+ic('ban')+' Pesan ini sudah dihapus<div class="t">'+tm(m.dikirim_at)+'</div></div>';
+/* ===== PEMBERITAHUAN GANTI NAMA PANGGILAN =====
+   - Nama kamu / nama lawan chat yang diganti oleh pemiliknya -> dikirim sebagai pesan sistem (tipe 'teks'
+     dengan penanda khusus) sehingga tampil di layar chat KEDUA pihak, juga bila salah satunya sedang offline.
+   - Nama yang kamu beri untuk lawan chat bersifat pribadi -> catatan hanya tersimpan & tampil di perangkat ini. */
+I.kedit='<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>';
+var KNM='kc:nama:',kLNc=null,kLNu=null;
+function kNmDec(m){try{if(!m||m.tipe!='teks'||typeof m.isi!='string'||m.isi.indexOf(KNM)!==0)return null;var o=JSON.parse(m.isi.slice(KNM.length));return(o&&typeof o.b=='string')?o:null}catch(e){return null}}
+async function kNmPost(a,b){try{var r=await sb.from('kaone_chat_pesan').insert({tipe:'teks',isi:KNM+JSON.stringify({a:a,b:b}),pengirim:me}).select().single();if(r&&r.data){msgs[r.data.id]=r.data;draw()}}catch(e){}}
+function kLNget(){if(!me)return[];if(kLNu!==me){try{kLNc=JSON.parse(localStorage.getItem('kcLN_'+me)||'[]')}catch(e){kLNc=[]}if(!Array.isArray(kLNc))kLNc=[];kLNu=me}return kLNc}
+function kLNadd(nm){var l=kLNget();l.push({id:'ln_'+Date.now(),tipe:'lokal',dikirim_at:new Date().toISOString(),isi:nm||''});if(l.length>40)l.splice(0,l.length-40);try{localStorage.setItem('kcLN_'+me,JSON.stringify(l))}catch(e){}draw()}
+function kNmToast(m){var d=kNmDec(m);if(d)toast((AL||d.a||'Lawan chat')+' mengubah nama panggilan')}
+function kNmNote(m){var h,sub,t=tm(m.dikirim_at);
+if(m.tipe=='lokal'){h=m.isi?'Kamu mengubah nama lawan chat menjadi <b>&ldquo;'+E(m.isi)+'&rdquo;</b>':'Kamu menghapus nama panggilan lawan chat';sub='Hanya terlihat olehmu'}
+else{var d=kNmDec(m);if(!d)return '';
+if(m.pengirim==me){h='Kamu mengubah nama panggilan menjadi <b>&ldquo;'+E(d.b)+'&rdquo;</b>';sub=d.a?'Sebelumnya &ldquo;'+E(d.a)+'&rdquo;':''}
+else{h='<b>'+E(AL||d.a||'Lawan chat')+'</b> mengubah nama panggilan menjadi <b>&ldquo;'+E(d.b)+'&rdquo;</b>';sub=''}}
+return '<div class="kcn'+(dr0&&!dn[m.id]?' in':'')+'" role="status"><div class="kcp"><span class="kci">'+ic('kedit')+'</span><span class="kcx">'+h+'</span></div><div class="kcs">'+(sub?sub+' &middot; ':'')+t+'</div></div>'}
+function bub(m){var nn=kNmNote(m);if(nn)return nn;var pvx,own=m.pengirim==me,c='',x=m.balas_ke&&msgs[m.balas_ke];if(m.dihapus_at)return '<div class="b'+(own?' me':'')+' del">'+ic('ban')+' Pesan ini sudah dihapus<div class="t">'+tm(m.dikirim_at)+'</div></div>';
 if(kcGone(m)){var ga=dr0&&dn[m.id]&&!kGS[m.id];kGS[m.id]=1;return '<div class="b'+(own?' me':'')+' del gone'+(ga?' ga':'')+'">'+ic('ban')+' Foto ini telah hilang otomatis<div class="t">'+tm(m.dikirim_at)+'</div></div>'}
 if(m.tipe=='teks')c=kTxt(m);
 else if(m.tipe=='panggilan')c=kcCard(m,own);
@@ -18857,7 +18918,7 @@ function kDayLabel(d){var n=new Date(),t0=new Date(n.getFullYear(),n.getMonth(),
 if(dd<=0)return 'Hari ini';if(dd==1)return 'Kemarin';
 if(dd<7){var w=d.toLocaleDateString('id-ID',{weekday:'long'});return w.charAt(0).toUpperCase()+w.slice(1)}
 return d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}
-function draw(){var wasLive=dr0,el=$('km'),b=el.scrollHeight-el.scrollTop-el.clientHeight<120,a=Object.keys(msgs).map(function(k){return msgs[k]}).sort(function(x,y){return x.dikirim_at<y.dikirim_at?-1:1});
+function draw(){var wasLive=dr0,el=$('km'),b=el.scrollHeight-el.scrollTop-el.clientHeight<120,a=Object.keys(msgs).map(function(k){return msgs[k]}).concat(kLNget()).sort(function(x,y){return x.dikirim_at<y.dikirim_at?-1:1});
 rgn={};var hh='',lastDay='';a.forEach(function(m){var d=new Date(m.dikirim_at),dk=isNaN(d)?'':d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
 if(dk&&dk!==lastDay){lastDay=dk;hh+='<div class="kds"><span>'+kDayLabel(d)+'</span></div>'}
 if(kUnId&&m.id===kUnId)hh+='<div class="kud" id="kud"><span>'+kUnN+' pesan belum dibaca</span></div>';
@@ -18920,7 +18981,15 @@ function kkNotifOff(){try{if(kk.nt){kk.nt.close();kk.nt=null}if(navigator.servic
 function kkInit(role,v){clearTimeout(kk.tout);clearTimeout(kk.et);clearInterval(kk.tm);kk.role=role;kk.v=v?1:0;kk.conn=0;kk.ans=0;kk.t0=0;kk.mute=0;kk.cam=1;kk.rm=0;kk.rc=1;kk.mini=0;kk.txt='';fm='user';q=[];kk.st=role=='out'?'out':'ring-in';
 $('kcy').innerHTML=ic(v?'video':'phone');kkIdent();kkCls()}
 function kkIceFlush(){clearTimeout(kk.it);kk.itp=0;var b=kk.ib||[];kk.ib=[];if(b.length)send({t:'ice',c:b})}
-function kkIceServers(){var a=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun.cloudflare.com:3478']}];if(window.KAONE_TURN&&window.KAONE_TURN.length)a=a.concat(window.KAONE_TURN);return a}
+var kkTD=null,kkTT=0,kkTP=null;
+function kkTurnLoad(ms){var c=window.KAONE_TURN_METERED;if(!c||!c.app||!c.key)return Promise.resolve();if(kkTD&&Date.now()-kkTT<1800000)return Promise.resolve();
+if(!kkTP)kkTP=fetch('https://'+encodeURIComponent(c.app)+'.metered.live/api/v1/turn/credentials?apiKey='+encodeURIComponent(c.key)).then(function(r){return r.ok?r.json():Promise.reject()}).then(function(a){if(Array.isArray(a)&&a.length){kkTD=a;kkTT=Date.now()}}).catch(function(){}).then(function(){kkTP=null});
+return Promise.race([kkTP,new Promise(function(r){setTimeout(r,ms||2000)})])}
+function kkIceServers(){var a=[{urls:['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun.cloudflare.com:3478']}],t=0;
+if(window.KAONE_TURN&&window.KAONE_TURN.length){a=a.concat(window.KAONE_TURN);t=1}
+if(kkTD&&kkTD.length){a=a.concat(kkTD);t=1}
+if(!t&&window.KAONE_TURN_PUBLIK!==false)a=a.concat([{urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp','turns:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'}]);
+return a}
 function kkCT(){clearTimeout(kk.ct);kk.ct=setTimeout(function(){if(kk.st=='live'&&!kk.conn){try{send({t:'end'})}catch(e){}kkFinish('selesai');kkS('Koneksi gagal');toast('Koneksi gagal: jaringan tidak mengizinkan panggilan langsung')}},25000)}
 function mk(){var px=pc=new RTCPeerConnection({iceServers:kkIceServers()});kk.ib=[];kk.itp=0;clearTimeout(kk.it);px.onicecandidate=function(e){if(pc!==px)return;if(e.candidate){kk.ib.push(e.candidate);if(!kk.itp){kk.itp=1;kk.it=setTimeout(kkIceFlush,150)}}else kkIceFlush()};
 px.ontrack=function(e){$('kr').srcObject=e.streams[0]};
@@ -18928,7 +18997,7 @@ px.onconnectionstatechange=function(){if(pc!==px)return;var s=px.connectionState
 if(s=='connected'){if(!kk.conn){kk.conn=1;kk.t0=Date.now();clearInterval(kk.tm);kk.tm=setInterval(kkTick,1000);try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}send({t:'media',m:kk.mute?1:0,c:kk.cam?1:0})}kkTick();kkCls()}
 else if(s=='disconnected'){if(kk.conn)kkS('Menyambung kembali…')}
 else if(s=='failed'||s=='closed')kkFinish('selesai')}}
-async function med(v){ls=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:v?{facingMode:fm}:false});$('kl').srcObject=ls;$('kl').classList.toggle('mir',fm=='user');ls.getTracks().forEach(function(t){pc.addTrack(t,ls)});kkCls()}
+async function med(v){var au={echoCancellation:true,noiseSuppression:true};try{ls=await navigator.mediaDevices.getUserMedia({audio:au,video:v?{facingMode:fm}:false})}catch(e1){if(!v)throw e1;try{ls=await navigator.mediaDevices.getUserMedia({audio:au,video:true})}catch(e2){ls=await navigator.mediaDevices.getUserMedia({audio:au,video:false});kk.cam=0;toast('Kamera tidak bisa dipakai, lanjut suara saja')}}$('kl').srcObject=ls;$('kl').classList.toggle('mir',fm=='user');ls.getTracks().forEach(function(t){pc.addTrack(t,ls)});kkCls()}
 function kkStop(){clearTimeout(kk.tout);clearTimeout(kk.ct);clearTimeout(kk.it);kk.itp=0;kk.ib=[];clearInterval(kk.tm);kkRing(0);kkNotifOff();var p=pc;pc=null;if(p){try{p.close()}catch(e){}}if(ls){ls.getTracks().forEach(function(t){t.stop()});ls=null}$('kl').srcObject=null;$('kr').srcObject=null;inc=null;q=[]}
 function kkTeardown(){clearTimeout(kk.et);kkStop();kk.st='idle';kk.conn=0;kk.mini=0;kkCls()}
 /* akhiri panggilan + tulis riwayat (hanya penelepon) + tampilkan keterangan singkat */
@@ -18944,9 +19013,9 @@ function kkMute(){if(kk.st!='live'&&kk.st!='out')return;kk.mute=kk.mute?0:1;if(l
 function kkCam(){if(!kk.v||!ls||(kk.st!='live'&&kk.st!='out'))return;kk.cam=kk.cam?0:1;ls.getVideoTracks().forEach(function(t){t.enabled=!!kk.cam});send({t:'media',m:kk.mute?1:0,c:kk.cam?1:0});kkCls()}
 async function call(v){if((kk.st!='idle'&&kk.st!='end')||pc)return;if(!rm){toast('Belum terhubung, coba lagi');return}
 kkInit('out',v);kkS('Memanggil…');kkAC();
-try{mk();await med(v);var o=await pc.createOffer();await pc.setLocalDescription(o);send({t:'offer',v:v,s:o});if(!(lo&&lo.on))cpush('panggilan');kkRing(1);
+try{await kkTurnLoad(2000);if(kk.st!='out')return;mk();await med(v);var o=await pc.createOffer();await pc.setLocalDescription(o);send({t:'offer',v:v,s:o});if(!(lo&&lo.on))cpush('panggilan');kkRing(1);
 kk.tout=setTimeout(function(){if(kk.st=='out'){send({t:'end'});kkFinish('tak')}},45000)}
-catch(e){kkTeardown();toast('Kamera/mikrofon ditolak')}}
+catch(e){kkTeardown();toast(e&&e.name=='NotAllowedError'?'Izin kamera/mikrofon ditolak':'Panggilan gagal tersambung, coba lagi')}}
 async function sig(p){if(!p)return;
 if(p.t=='offer'){if((kk.st!='idle'&&kk.st!='end')||pc){send({t:'sibuk'});return}kkInit('in',p.v?1:0);inc=p;send({t:'ring'});var tx='Panggilan '+(p.v?'video':'suara')+' masuk';kkS(tx);kkRing(2);kkNotif(tx);
 kk.tout=setTimeout(function(){if(kk.st=='ring-in'){kkTeardown()}},60000)}
@@ -18958,8 +19027,8 @@ else if(p.t=='sibuk'){if(kk.st=='out')kkFinish('sibuk')}
 else if(p.t=='media'){kk.rm=p.m?1:0;kk.rc=p.c===0?0:1;kkCls()}
 else if(p.t=='end'){if(kk.st=='ring-in'){kkTeardown();toast('Panggilan tak terjawab')}else if(kk.st=='out')kkFinish('tak');else if(kk.st=='live')kkFinish('selesai')}}
 async function jawab(){if(!inc||kk.st!='ring-in')return;var o=inc;clearTimeout(kk.tout);kkRing(0);kkNotifOff();kkAC();kk.st='live';kkS('Menghubungkan…');kkCT();kkCls();
-try{mk();await med(o.v);await pc.setRemoteDescription(o.s);q.forEach(function(c){pc.addIceCandidate(c)});q=[];var a=await pc.createAnswer();await pc.setLocalDescription(a);send({t:'answer',s:a});inc=null}
-catch(e){send({t:'end'});kkTeardown();toast('Kamera/mikrofon ditolak')}}
+try{await kkTurnLoad(1500);if(kk.st!='live')return;mk();await med(o.v);await pc.setRemoteDescription(o.s);q.forEach(function(c){pc.addIceCandidate(c)});q=[];var a=await pc.createAnswer();await pc.setLocalDescription(a);send({t:'answer',s:a});inc=null}
+catch(e){send({t:'end'});kkTeardown();toast(e&&e.name=='NotAllowedError'?'Izin kamera/mikrofon ditolak':'Panggilan gagal tersambung, coba lagi')}}
 async function flip(){if(!ls||!pc||!kk.v)return;fm=fm=='user'?'environment':'user';try{var s=await navigator.mediaDevices.getUserMedia({video:{facingMode:fm}}),n=s.getVideoTracks()[0],snd0=pc.getSenders().find(function(x){return x.track&&x.track.kind=='video'});n.enabled=!!kk.cam;if(snd0){snd0.replaceTrack(n);ls.getVideoTracks().forEach(function(t){t.stop()});ls=new MediaStream([n].concat(ls.getAudioTracks()));$('kl').srcObject=ls;$('kl').classList.toggle('mir',fm=='user')}}catch(e){fm=fm=='user'?'environment':'user';toast('Kamera tidak bisa dibalik')}}
 /* kartu riwayat panggilan di chat */
 function kcInfo(m){var s=String(m.isi||''),p=s.split('|');if(p[0]=='v1')return{v:p[1]=='video'?1:0,r:p[2]||'selesai',d:+p[3]||0};return{v:/^video/i.test(s)?1:0,r:'selesai',d:0}}
@@ -18984,12 +19053,14 @@ if(!ok){try{var v=await sb.from('kaone_chat_profil').select('foto_at').eq('user_
 if(!ok&&!gone){toast('Foto belum bisa dihapus. Jalankan SQL hapus foto di Supabase chat');return false}
 try{if(rm)rm.send({type:'broadcast',event:'foto',payload:{}})}catch(e){}
 return true}
-async function pfSave(){var n=$('kpn').value.trim();if(!n)return toast('Nama tidak boleh kosong');
+async function pfSave(){var n=$('kpn').value.trim();if(!n)return toast('Nama tidak boleh kosong');var oldN=((P[me]&&P[me].nama)||'').trim(),oldA=AL||'',newA=$('kpl').value.trim();
 var bt=$('kps');if(bt.disabled)return;bt.disabled=true;
 try{
 if(pend){var u=await sb.storage.from('kaone-chat').upload('profil/'+me+'.jpg',pend.blob,{contentType:'image/jpeg',upsert:true});if(u.error)return toast('Gagal unggah foto')}
 else if(delFoto){if(!(await fotoHapus()))return}
-await sb.rpc('kaone_chat_simpan_profil',{p_nama:n,p_foto:!!pend});await sb.rpc('kaone_chat_simpan_alias',{p_nama:$('kpl').value.trim()});
+var kr1=await sb.rpc('kaone_chat_simpan_profil',{p_nama:n,p_foto:!!pend});var kr2=await sb.rpc('kaone_chat_simpan_alias',{p_nama:newA});
+if(!(kr1&&kr1.error)&&oldN&&oldN!==n)await kNmPost(oldN,n);
+if(!(kr2&&kr2.error)&&newA!==oldA)kLNadd(newA);
 var hp=delFoto;pend=null;delFoto=false;delete U[me];if(hp&&P[me])P[me].foto_at=null;await pfLoad();shut('kpf');if(hp)toast('Foto profil dihapus')
 }finally{bt.disabled=false}}
 function crOpen(f){var im=new Image();im.onload=function(){cim=im;cz=1;ox=oy=0;$('kzm').value=1;crDraw();$('kcr').classList.add('on')};im.src=URL.createObjectURL(f)}
@@ -19385,7 +19456,7 @@ else if(t.dataset.jq){var d=new Date();if(t.dataset.jq=='b'){d.setDate(d.getDate
 else if(t.id=='kstb')stkOpen();else if(t.id=='kmj'){shut('kst');jdOpen('')}else if(t.id=='kjs')jdSave();else if(t.id=='kjc')shut('kjd')});
 })();
 var kLP=0;
-document.addEventListener('visibilitychange',function(){if(document.visibilityState=='hidden'&&$('kc').classList.contains('on')&&!pc){close()}});
+document.addEventListener('visibilitychange',function(){if(document.visibilityState=='hidden'&&$('kc').classList.contains('on')&&!pc&&kk.st!='ring-in'&&kk.st!='out'&&kk.st!='live'){close()}});
 /* ---- MODE HANYA-CHAT: ruang chat selalu terbuka, tidak bisa ditutup, hanya bisa Keluar akun ---- */
 (function(){var busy=0,gagal=0,mulai=0,coba=0,errOpen='';
 function layar(msg,detail){var kc=$('kc');if(!kc||$('kcg'))return;var d=document.createElement('div');d.id='kcg';
@@ -19494,6 +19565,15 @@ window.addEventListener('scroll', function(){ window.__kmLastScroll = Date.now()
 #kc .m>:first-child{margin-top:auto}
 #kc .kds{align-self:center;margin:8px 0 4px;flex:none}
 #kc .kds span{display:inline-block;padding:4px 12px;border-radius:8px;background:var(--ki);color:var(--kt);font-size:12px;font-weight:600;box-shadow:var(--ks);opacity:.95}
+/* Pemberitahuan ganti nama panggilan di layar chat */
+#kc .kcn{align-self:center;flex:none;max-width:90%;margin:8px 0;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}
+#kc .kcn .kcp{display:inline-flex;align-items:flex-start;gap:8px;padding:7px 14px 7px 8px;border-radius:16px;background:var(--ki);color:var(--kt);font-size:12.5px;line-height:1.45;box-shadow:var(--ks);border:1px solid rgba(127,127,127,.2);text-align:left;overflow-wrap:anywhere}
+#kc .kcn .kci{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:rgba(127,127,127,.22);font-size:12px}
+#kc .kcn .kcx b{font-weight:700}
+#kc .kcn .kcs{font-size:11px;opacity:.7;color:var(--kt)}
+#kc .kcn.in{animation:kcnIn .5s cubic-bezier(.2,.9,.3,1.25) both}
+@keyframes kcnIn{from{opacity:0;transform:translateY(10px) scale(.92)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#kc .kcn.in{animation:none}}
 #kc .kud{align-self:stretch;flex:none;margin:8px -10px;padding:5px 10px;text-align:center;background:rgba(127,127,127,.22);color:var(--kt);font-size:12px;font-weight:700}
 /* Header & kolom ketik tetap di tempatnya saat keyboard muncul */
 #kc{bottom:auto;overscroll-behavior:contain;will-change:transform}

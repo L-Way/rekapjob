@@ -1191,6 +1191,32 @@
   .ulasan-comment{margin-top:10px; font-size:13.5px; line-height:1.65; color:#3a3423; white-space:pre-wrap;}
   .ulasan-actions{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
 
+  /* ---------- PESANAN MASUK (booking dari klien) ---------- */
+  .psn-tabs{display:flex; gap:8px; flex-wrap:wrap; margin:16px 0 4px;}
+  .psn-tab{border:1px solid var(--line); background:#fffef9; color:var(--ink-soft); border-radius:999px; padding:7px 14px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit;}
+  .psn-tab.on{background:var(--gold); color:#241f0f; border-color:var(--gold);}
+  .psn-tab .n{margin-left:6px; font-weight:700;}
+  .psn-card.is-baru{border-left:4px solid var(--gold);}
+  .psn-rows{list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:5px; font-size:13px; color:#3a3423;}
+  .psn-rows li{display:flex; gap:8px; align-items:flex-start;}
+  .psn-rows .ic{margin-top:2px; flex:none; opacity:.75;}
+  .psn-warn{margin-top:12px; padding:10px 12px; border-radius:10px; background:#fdf0d5; border:1px solid #ecd49a; color:#6b4b00; font-size:12.5px; line-height:1.55;}
+  .psn-warn b{display:block; margin-bottom:2px;}
+  .psn-warn ul{margin:6px 0 0; padding-left:18px;}
+  .psn-note{margin-top:10px; font-size:11.5px; color:var(--ink-soft); line-height:1.5;}
+  .psn-detail{margin-top:12px; font-size:12.5px;}
+  .psn-detail summary{cursor:pointer; color:var(--gold-deep,#8a6a10); font-weight:600;}
+  .psn-detail dl{margin:8px 0 0; display:grid; grid-template-columns:minmax(110px,32%) 1fr; gap:4px 12px;}
+  .psn-detail dt{color:var(--ink-soft);}
+  .psn-detail dd{margin:0; word-break:break-word; white-space:pre-wrap;}
+  .psn-banner{display:flex; align-items:center; gap:12px; width:100%; margin:0 0 14px; padding:13px 16px; border-radius:14px; border:1px solid #ecd49a; background:linear-gradient(135deg,#fff3c9,#ffe39a); color:#3b2a00; cursor:pointer; text-align:left; font-family:inherit;}
+  .psn-banner .pb-ico{font-size:20px; display:flex;}
+  .psn-banner .pb-tx{flex:1; display:flex; flex-direction:column; font-size:12.5px;}
+  .psn-banner .pb-tx b{font-size:14px;}
+  .psn-formbox{margin:0 0 14px; font-size:12.5px; line-height:1.55;}
+  .psn-formbox b{display:block; margin-bottom:3px;}
+  .mi-badge{background:#d94f3d; color:#fff; border-radius:999px; font-size:11px; font-weight:700; padding:2px 8px; margin-right:6px;}
+
   /* ---------- POSTER TESTIMONI / ULASAN KLIEN (1080x1920, untuk unggahan Story IG) ----------
      Desain elegan bertema gelap-emas, senada dengan identitas Kaone Motret, dibuat KHUSUS
      untuk file gambar yang diunduh - bukan tampilan kartu ulasan di layar. */
@@ -2307,18 +2333,9 @@
   .jf #durasiHariHintWrap .field-hint{margin:0; font-size:11.5px; color:#5c4a12;}
   .jf .jarak-box,.jf .ongkir-box{background:#fff9e6; border:1px solid #f0e4a6; padding:11px 14px;}
   /* Kotak "Ambil dari Pricelist" di atas form Input/Edit Job */
-  .jf .pl-box{background:#fff9e6; border:1px dashed var(--gold); border-radius:12px; padding:12px 14px; margin:14px 0 4px;}
   .jf .pl-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; margin-bottom:9px;}
   .jf .pl-head b{font-size:13.5px; color:var(--ink);}
   .jf .pl-head span{font-size:11.5px; color:var(--ink-soft);}
-  .jf .pl-row{display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) auto; gap:8px; align-items:center;}
-  .jf .pl-row .btn{white-space:nowrap;}
-  @media (max-width:640px){ .jf .pl-row{grid-template-columns:1fr;} .jf .pl-row .btn{width:100%;} }
-  .jf .pl-status{margin-top:8px; font-size:12px; line-height:1.6; color:var(--ink-soft);}
-  .jf .pl-status:empty{display:none;}
-  .jf .pl-status.is-ok{color:var(--ok);}
-  .jf .pl-status.is-warn{color:var(--warn);}
-  .jf .pl-status.is-err{color:var(--danger);}
   .jf .jarak-box .jr-group-label,.jf .ongkir-box .jr-group-label{text-transform:none; letter-spacing:0; font-size:11.5px; display:flex; align-items:center; gap:6px;}
   /* Kolom Instagram: senada kolom +62, prefix @ permanen + tombol buka profil */
   .ig-field-wrap{display:flex; align-items:stretch; gap:8px;}
@@ -2366,18 +2383,6 @@
   .modal.modal-form .jf-head-right{display:flex; align-items:center; gap:8px;}
   .modal.modal-form .jf-del-btn{width:38px; height:38px; min-height:38px; padding:0;}
   /* Kotak Pricelist: baris ringkas yang bisa dilipat */
-  .jf .pl-box{padding:0; margin:0; overflow:hidden;}
-  .jf .pl-box > summary{display:flex; align-items:center; gap:11px; padding:10px 14px; cursor:pointer; list-style:none; user-select:none; -webkit-tap-highlight-color:transparent;}
-  .jf .pl-box > summary::-webkit-details-marker{display:none;}
-  .jf .pl-ico{width:32px; height:32px; border-radius:9px; background:#fff; border:1px solid #efe2a0; color:#7a6400; display:grid; place-items:center; flex-shrink:0;}
-  .jf .pl-ico .ic{width:16px; height:16px;}
-  .jf .pl-sum-tx{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px;}
-  .jf .pl-sum-tx b{font-size:13.5px; color:var(--ink);}
-  .jf .pl-sum-tx span{font-size:11.5px; color:var(--ink-soft); line-height:1.35;}
-  .jf .pl-chev{width:20px; height:20px; flex-shrink:0; color:var(--ink-soft); transform:rotate(180deg); transition:transform .25s ease, color .2s ease;}
-  .jf .pl-chev .ic{width:20px; height:20px;}
-  .jf .pl-box[open] .pl-chev{transform:rotate(0deg); color:var(--warn);}
-  .jf .pl-body{padding:2px 14px 14px;}
   /* Bar total & tombol: menempel penuh di dasar popup */
   .modal.modal-form .jf-bar{
     position:sticky; bottom:0; z-index:8; margin:6px calc(-1 * var(--fx)) calc(-1 * var(--fb));
@@ -3143,7 +3148,7 @@
   .jf .fin-group{padding:8px 10px; gap:8px;}
   .jf .fin-title,.jf .da-title{font-size:11.5px; margin-bottom:5px;}
   .jf .cx-row{gap:6px; padding:5px 0; font-size:12px;}
-  .jf .antar-wrap,.jf .pl-box{padding:8px 10px; font-size:12px;}
+  .jf .antar-wrap{padding:8px 10px; font-size:12px;}
   .jf .jf-check{font-size:12px; gap:6px;}
   .jf .btn,.jf button{font-size:12px;}
   .jf .jf-bar{padding:7px 12px; gap:8px;}
@@ -4779,7 +4784,7 @@ function pesanBookingPanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="booking" style="display:none;">
     <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai untuk mengabari klien setelah Booking &amp; DP diterima, kirim manual lewat tombol "Konfirmasi Booking/DP" di Detail Job. Isinya masih bisa diedit sebelum dikirim.</p>
     <textarea id="pesanBookingTpl" rows="11" style="width:100%">${escapeHtml(PESAN_BOOKING_TPL)}</textarea>
-    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {mempelai} {acara} {tanggal} {paket} {deskripsiPaketLine} {dp} {sisa} {maps}. {deskripsiPaketLine} otomatis kosong kalau Deskripsi Paket belum diisi. {mempelai} berisi Nama Kedua Mempelai (hanya untuk Marbagas/Patuaekkon/Margondang, selain itu kosong), belum dipakai di pesan bawaan, silakan tambahkan sendiri kalau perlu.</div>
+    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {mempelai} {acara} {tanggal} {paket} {deskripsiPaketLine} {dp} {sisa} {maps}. {deskripsiPaketLine} otomatis kosong kalau Deskripsi Paket belum diisi. {mempelai} berisi Nama Kedua Mempelai (hanya untuk Wedding/Patuaekkon/Margondang, selain itu kosong), belum dipakai di pesan bawaan, silakan tambahkan sendiri kalau perlu.</div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
       <button type="button" class="btn btn-primary" onclick="simpanPesanBooking()">Simpan pesan</button>
       <button type="button" class="btn btn-outline" onclick="resetPesanBooking()">Kembalikan bawaan</button>
@@ -4960,7 +4965,7 @@ function bukaInstagramByBtn(btn){
 const INSTAGRAM_ROLES_BY_ACARA = {
   'Margondang 1 Hari': ['Pengantin Laki-laki','Pengantin Perempuan'],
   'Margondang 2 Hari': ['Pengantin Laki-laki','Pengantin Perempuan'],
-  'Marbagas': ['Pengantin Laki-laki','Pengantin Perempuan'],
+  'Wedding': ['Pengantin Laki-laki','Pengantin Perempuan'],
   'Patuaekkon': ['Pengantin Laki-laki','Pengantin Perempuan'],
   'Mangayun/Aqiqah': ['Ayah','Ibu','Anak'],
   'Wisuda': ['Wisudawan'],
@@ -4972,7 +4977,7 @@ function getInstagramRoles(jenisAcara){
    Hanya muncul di form Job untuk jenis acara yang memang punya sepasang mempelai.
    Kalau nanti ada jenis acara lain yang perlu kolom ini, cukup tambahkan namanya di
    daftar berikut (harus SAMA PERSIS dengan nilai di JENIS_ACARA_LIST). */
-const JENIS_ACARA_MEMPELAI = ['Marbagas','Patuaekkon','Margondang 1 Hari','Margondang 2 Hari'];
+const JENIS_ACARA_MEMPELAI = ['Wedding','Patuaekkon','Margondang 1 Hari','Margondang 2 Hari'];
 function isJenisMempelai(jenisAcara){
   return JENIS_ACARA_MEMPELAI.indexOf(jenisAcara) !== -1;
 }
@@ -5017,7 +5022,7 @@ function instagramFieldsHtml(roles, list){
 function onJenisAcaraChange(sel){
   const jenisLainWrap = document.getElementById('jenisLainWrap');
   if(jenisLainWrap) jenisLainWrap.style.display = sel.value==='Lainnya' ? 'block' : 'none';
-  // Kolom Nama Kedua Mempelai: tampil hanya untuk Marbagas/Patuaekkon/Margondang. Isiannya
+  // Kolom Nama Kedua Mempelai: tampil hanya untuk Wedding/Patuaekkon/Margondang. Isiannya
   // tidak dihapus di sini (kalau salah pilih lalu balik lagi, ketikan tidak hilang) -
   // baru dikosongkan saat form disimpan kalau jenis acaranya memang bukan yang relevan.
   const mempelaiWrap = document.getElementById('mempelaiWrap');
@@ -5036,7 +5041,7 @@ function onJenisAcaraChange(sel){
    catatan kalender - bukan lagi diselipkan ke teks Catatan.
    Cara menambah kolom: tambahkan {key, label} ke kelompok yang sesuai di bawah ini.
    Kelompok "umum" berlaku untuk SEMUA jenis acara (begitu Jenis Acara dipilih).
-   Kelompok ditentukan oleh detailGrupAcara(): Marbagas/Patuaekkon = pernikahan,
+   Kelompok ditentukan oleh detailGrupAcara(): Wedding/Patuaekkon = pernikahan,
    Margondang = margondang, Mangayun/Aqiqah = mangayun, Wisuda = wisuda, dan jenis
    "Lainnya" yang diawali kata "Undangan"/"Margondang" ikut kelompok itu. */
 const DETAIL_ACARA_SKEMA = {
@@ -5085,7 +5090,7 @@ function detailEkstraKunci(judul){ return 'x_' + String(judul||'').toLowerCase()
 function detailAcaraLabel(key){ return DETAIL_ACARA_LABEL[key] || detailAcaraEkstraLabel[key] || key; }
 function detailGrupAcara(jenisAcara, jenisAcaraLain){
   const j = String(jenisAcara||'');
-  if(j==='Marbagas' || j==='Patuaekkon') return 'pernikahan';
+  if(j==='Wedding' || j==='Patuaekkon') return 'pernikahan';
   if(/^Margondang/i.test(j)) return 'margondang';
   if(j==='Mangayun/Aqiqah') return 'mangayun';
   if(j==='Wisuda') return 'wisuda';
@@ -5569,11 +5574,11 @@ async function saveUlasanPublishTargets(id, targets){
 }
 
 
-const JENIS_ACARA_LIST = ['Marbagas','Mangayun/Aqiqah','Margondang 1 Hari','Margondang 2 Hari','Wisuda','Patuaekkon','Lainnya'];
+const JENIS_ACARA_LIST = ['Wedding','Mangayun/Aqiqah','Margondang 1 Hari','Margondang 2 Hari','Wisuda','Patuaekkon','Lainnya'];
 
 // Warna kartu detail job - berbeda tiap jenis acara supaya gambar yang diunduh mudah dibedakan sekilas
 const JENIS_ACARA_COLORS = {
-  'Marbagas':            {hdr1:'#2a1216', hdr2:'#4a2029', accent:'#d0a441', soft:'#f2dfa8'},
+  'Wedding':            {hdr1:'#2a1216', hdr2:'#4a2029', accent:'#d0a441', soft:'#f2dfa8'},
   'Mangayun/Aqiqah':      {hdr1:'#2a1520', hdr2:'#472339', accent:'#e2a0b8', soft:'#f6dce6'},
   'Margondang 1 Hari':    {hdr1:'#0f2224', hdr2:'#1c3a3d', accent:'#5cc2c7', soft:'#c9ecee'},
   'Margondang 2 Hari':    {hdr1:'#1c1530', hdr2:'#332750', accent:'#ab8fe0', soft:'#e2d7f5'},
@@ -6100,6 +6105,8 @@ function normalizeJobWhitespace(job){
   Object.keys(cleaned).forEach(k=>{
     if(typeof cleaned[k] === 'string') cleaned[k] = cleaned[k].trim();
   });
+  // Jenis Acara "Marbagas" sudah diganti namanya jadi "Wedding": job lama otomatis ikut terbaca "Wedding".
+  if(cleaned.jenisAcara === 'Marbagas') cleaned.jenisAcara = 'Wedding';
   return cleaned;
 }
 function normalizeJobsWhitespace(list){
@@ -6124,6 +6131,400 @@ let posterThemeOverrides = loadPosterThemeOverrides();
 let layoutOverrides = loadLayoutOverrides();
 const ULASAN_STORAGE_KEY = 'kaoneMotret_ulasan_v1';
 let ulasanList = loadUlasanLocal();
+
+/* =========================================================
+   PESANAN MASUK (booking dari klien)
+   Data yang klien isi di form pricelist / isi biodata ikut masuk otomatis ke tabel Supabase
+   kaone_motret_pesanan_masuk. Pesanan BELUM menjadi job: Admin memeriksa lalu menekan
+   "Konfirmasi Booking". Pencegah data dobel (tiga lapis):
+   1) kunci kirim unik dari isi data (di database) - kirim dua kali / jaringan mengulang tidak membuat baris baru;
+   2) deteksi pesanan atau job yang mirip (No. WhatsApp + tanggal acara) - ditandai & bisa digabung;
+   3) pesanan yang sudah diproses dikunci di server - hanya bisa diproses SEKALI, dari perangkat mana pun.
+========================================================= */
+const PESANAN_TABLE = 'kaone_motret_pesanan_masuk';
+const PESANAN_ANTRI_KEY = 'kaoneMotret_pesananKunciAntri_v1';
+const PSN_LABEL = {
+  'wedding':'Wedding (Pricelist)', 'mangayun':'Mangayun/Aqiqah (Pricelist)', 'margondang':'Margondang (Pricelist)',
+  'bio-wedding':'Wedding (Biodata)', 'bio-margondang':'Margondang (Biodata)', 'bio-mangayun':'Mangayun/Aqiqah (Biodata)',
+  'bio-wisuda':'Wisuda (Biodata)', 'bio-undangan':'Undangan Digital (Biodata)'
+};
+// Kolom form pricelist (kunci payload) -> judul kolom Spreadsheet yang dibaca plNormalize()
+const PSN_HEADER = {
+  nama:'Nama', namaPemesan:'Nama Pemesan', noWhatsapp:'No. WhatsApp', namaMempelai:'Nama Mempelai',
+  igPengantinWanita:'IG Pengantin Wanita', igPengantinPria:'IG Pengantin Pria',
+  namaAnak:'Nama Anak', igAnak:'IG Anak', namaIbu:'Nama Ibu', igIbu:'IG Ibu', namaAyah:'Nama Ayah', igAyah:'IG Ayah',
+  paket:'Paket', addOn:'Add-On', pemilihanFoto:'Pemilihan Foto', tanggalAcara:'Tanggal Acara',
+  waktuAcara:'Waktu Acara', jamAcara:'Jam Acara', jumlahHariAcara:'Jumlah Hari Acara', alamat:'Alamat', maps:'Maps',
+  pengambilanHasilCetak:'Pengambilan Hasil Cetak', konsepPakaian:'Konsep Pakaian', igVendor:'IG Vendor',
+  catatan:'Catatan', kodeVoucher:'Kode Voucher', diskon:'Diskon', dp:'DP', total:'Total'
+};
+const PSN_EKSTRA = { hargaPaket:'Harga Paket', ongkir:'Ongkos Kirim', subtotal:'Subtotal', sisaPembayaran:'Sisa Pembayaran', totalSetelahHari:'Total Setelah Hari' };
+const PSN_UANG = ['hargaPaket','ongkir','subtotal','sisaPembayaran','totalSetelahHari','diskon','dp','total'];
+const PSN_STATUS = {
+  baru:{t:'Baru', c:'badge-warn'}, dikonfirmasi:{t:'Dikonfirmasi', c:'badge-ok'},
+  digabung:{t:'Digabung ke job', c:'badge-ok'}, diabaikan:{t:'Diabaikan', c:'badge-bad'}
+};
+let pesananList = [];
+let pesananLoading = false;
+let pesananFilter = 'baru';
+let pendingPesanan = null;      // pesanan yang sedang dikonfirmasi lewat form job: {id, mode:'baru'|'gabung', jobId, nama}
+let psnPullTimer = null;
+
+function pesananCari(id){ return pesananList.find(p=>String(p.id)===String(id)) || null; }
+function pesananBaruCount(){ return pesananList.filter(p=>p.status==='baru').length; }
+function psnAdaFitur(){ return isAdmin() && (typeof WS_ID==='undefined' || WS_ID==='default'); }
+
+// Data pesanan -> bentuk "baris Spreadsheet" (judul kolom -> isi) yang sudah dipahami plNormalize()
+function psnFields(p){
+  const pl = (p && p.payload) || {};
+  if(String(p.sumber||'').indexOf('bio-')===0) return Object.assign({}, pl.fields || {});
+  const out = {};
+  Object.keys(PSN_HEADER).forEach(k=>{
+    if(pl[k]!==undefined && pl[k]!==null && String(pl[k])!=='') out[PSN_HEADER[k]] = pl[k];
+  });
+  return out;
+}
+// Semua isian apa adanya (untuk tampilan "Lihat semua isian")
+function psnSemuaIsian(p){
+  const pl = (p && p.payload) || {};
+  if(String(p.sumber||'').indexOf('bio-')===0){
+    return Object.keys(pl.fields||{}).map(k=>[k, pl.fields[k]]).filter(x=>String(x[1]??'').trim()!=='');
+  }
+  const rows = [];
+  Object.keys(PSN_HEADER).concat(Object.keys(PSN_EKSTRA)).forEach(k=>{
+    if(pl[k]===undefined || pl[k]===null || String(pl[k]).trim()==='') return;
+    const label = PSN_HEADER[k] || PSN_EKSTRA[k];
+    rows.push([label, PSN_UANG.indexOf(k)>-1 && isFinite(Number(pl[k])) ? fmtRp(Number(pl[k])) : pl[k]]);
+  });
+  return rows;
+}
+function psnTglPanjang(iso){
+  if(!iso) return '';
+  const d = new Date(String(iso).slice(0,10) + 'T00:00:00');
+  if(isNaN(d.getTime())) return String(iso);
+  return d.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+}
+function psnRelatif(ts){
+  const t = Date.parse(ts);
+  if(isNaN(t)) return '';
+  const sdt = Math.max(0, Math.round((Date.now()-t)/1000));
+  if(sdt<60) return 'baru saja';
+  if(sdt<3600) return Math.floor(sdt/60) + ' menit lalu';
+  if(sdt<86400) return Math.floor(sdt/3600) + ' jam lalu';
+  if(sdt<86400*30) return Math.floor(sdt/86400) + ' hari lalu';
+  return new Date(t).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'});
+}
+function psnRingkas(p){
+  try{
+    const d = plNormalize(p.sumber, psnFields(p));
+    const a = d.alamat;
+    const lokasi = a ? [a.desa, a.kecamatan && ('Kec. ' + a.kecamatan), a.kabupaten && ('Kab. ' + a.kabupaten)].filter(Boolean).join(', ') : '';
+    return { ok:true, d, nama: d.namaKlien || p.nama || 'Tanpa nama', mempelai: d.namaMempelai || '',
+      tanggal: (d.tanggal && d.tanggal.start) || p.tanggal_acara || '',
+      tanggalSelesai: (d.tanggal && d.tanggal.end) || '',
+      jam: d.jam || '', lokasi, paket: d.paket || '',
+      harga: d.penghasilan || 0, diskon: d.diskon || 0, dp: d.dp || 0 };
+  }catch(e){
+    return { ok:false, nama: p.nama || 'Tanpa nama', tanggal: p.tanggal_acara || '', err: String((e && e.message) || e) };
+  }
+}
+// Bedanya isian pesanan ini dengan pesanan lain yang mirip (untuk kasus klien mengirim ulang / merevisi)
+function psnBeda(p, lain){
+  const a = psnFields(p), b = psnFields(lain), out = [];
+  Object.keys(a).forEach(k=>{
+    const x = String(a[k]==null?'':a[k]).trim(), y = String(b[k]==null?'':b[k]).trim();
+    if(x!==y) out.push({k, baru:x, lama:y});
+  });
+  return out.slice(0, 8);
+}
+// Cari kemungkinan dobel: pesanan lain & job yang sudah ada dengan No. WhatsApp + tanggal acara yang sama
+function psnDuplikat(p){
+  const pesananLain = p.sidik_jari ? pesananList.filter(x=>String(x.id)!==String(p.id) && x.sidik_jari===p.sidik_jari) : [];
+  const wa = p.wa || '', tgl = p.tanggal_acara || '';
+  const idJobTertaut = new Set();
+  pesananLain.forEach(x=>{ if(x.job_id && (x.status==='dikonfirmasi' || x.status==='digabung')) idJobTertaut.add(String(x.job_id)); });
+  const jobSama = jobs.filter(j=> idJobTertaut.has(String(j.id)) ||
+    (wa && tgl && plNationalDigits(j.noWhatsapp)===wa && String(j.tanggalAcara||'')===tgl));
+  const jobWaSama = wa ? jobs.filter(j=> jobSama.indexOf(j)===-1 && plNationalDigits(j.noWhatsapp)===wa) : [];
+  return { pesananLain, jobSama, jobWaSama };
+}
+function psnJudulJob(j){
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'') : (j.jenisAcara||'');
+  return [jenis, j.namaKlien].filter(Boolean).join(' ') || 'Tanpa nama';
+}
+
+/* ---------- data: ambil / kunci / ubah status ---------- */
+async function pullPesanan(senyap){
+  if(!cloudSyncEnabled || !supabaseClient || !psnAdaFitur()) return false;
+  if(!senyap){ pesananLoading = true; if(currentView==='pesanan') render(); }
+  try{
+    const { data, error } = await supabaseClient.from(PESANAN_TABLE).select('*')
+      .order('dibuat_pada', { ascending:false }).limit(400);
+    if(error) throw error;
+    const sebelum = JSON.stringify(pesananList.map(x=>[x.id, x.status, x.job_id]));
+    pesananList = data || [];
+    pesananLoading = false;
+    await pesananKirimAntrian();
+    const sesudah = JSON.stringify(pesananList.map(x=>[x.id, x.status, x.job_id]));
+    if((currentView==='pesanan' || currentView==='beranda') && (!senyap || sebelum!==sesudah)) refreshView();
+    renderNotifBadge();
+    return true;
+  }catch(e){
+    console.error('Gagal memuat pesanan masuk (pastikan tabel kaone_motret_pesanan_masuk sudah dibuat)', e);
+    pesananLoading = false;
+    if(currentView==='pesanan') render();
+    return false;
+  }
+}
+async function pesananStatusTerbaru(id){
+  try{
+    const { data, error } = await supabaseClient.from(PESANAN_TABLE).select('status').eq('id', id).maybeSingle();
+    if(error) throw error;
+    return data ? data.status : null;
+  }catch(e){ return undefined; }   // undefined = tidak bisa memeriksa (offline)
+}
+function psnAntriBaca(){ try{ return JSON.parse(localStorage.getItem(PESANAN_ANTRI_KEY) || '[]'); }catch(e){ return []; } }
+function psnAntriTulis(a){ try{ if(a.length) localStorage.setItem(PESANAN_ANTRI_KEY, JSON.stringify(a)); else localStorage.removeItem(PESANAN_ANTRI_KEY); }catch(e){} }
+async function pesananKirimAntrian(){
+  const a = psnAntriBaca();
+  if(!a.length) return;
+  const sisa = [];
+  for(const x of a){ const r = await pesananKunci(x.id, x.status, x.jobId, true); if(r==='gagal') sisa.push(x); }
+  psnAntriTulis(sisa);
+}
+// Kunci pesanan: HANYA berhasil kalau statusnya masih "baru" (jadi tidak bisa diproses dua kali)
+// Hasil: 'ok' | 'sudah' (sudah diproses di tempat lain) | 'gagal' (jaringan; dicoba lagi otomatis nanti)
+async function pesananKunci(id, status, jobId, dariAntrian){
+  try{
+    const { data, error } = await supabaseClient.from(PESANAN_TABLE)
+      .update({ status, job_id: jobId ? String(jobId) : null, dikonfirmasi_pada: new Date().toISOString() })
+      .eq('id', id).eq('status', 'baru').select('id');
+    if(error) throw error;
+    if(data && data.length){
+      const p = pesananCari(id);
+      if(p){ p.status = status; p.job_id = jobId ? String(jobId) : null; }
+      return 'ok';
+    }
+    return 'sudah';
+  }catch(e){
+    console.warn('Mengunci pesanan gagal', e);
+    if(!dariAntrian){ const a = psnAntriBaca(); a.push({id, status, jobId}); psnAntriTulis(a); }
+    return 'gagal';
+  }
+}
+async function pesananUbahStatus(id, dari, ke){
+  try{
+    const { data, error } = await supabaseClient.from(PESANAN_TABLE)
+      .update({ status: ke, job_id: null, dikonfirmasi_pada: null })
+      .eq('id', id).eq('status', dari).select('id');
+    if(error) throw error;
+    if(!data || !data.length) return 'sudah';
+    const p = pesananCari(id);
+    if(p){ p.status = ke; p.job_id = null; }
+    return 'ok';
+  }catch(e){ console.warn('Ubah status pesanan gagal', e); return 'gagal'; }
+}
+
+/* ---------- aksi ---------- */
+async function pesananMulai(p, gabungJobId){
+  if(!psnAdaFitur()) return;
+  // Periksa status TERBARU di server dulu: cegah pesanan yang sama diproses dua kali dari dua perangkat
+  const st = await pesananStatusTerbaru(p.id);
+  if(st===undefined){ toast('Tidak bisa memeriksa status pesanan. Periksa koneksi lalu coba lagi.'); return; }
+  if(st!=='baru'){ toast('Pesanan ini sudah diproses di perangkat lain.'); pullPesanan(true); return; }
+  let data;
+  try{ data = plNormalize(p.sumber, psnFields(p)); }
+  catch(e){ toast('Data pesanan tidak bisa dibaca: ' + ((e && e.message) || e)); return; }
+  pendingPesanan = { id: p.id, mode: gabungJobId ? 'gabung' : 'baru', jobId: gabungJobId ? String(gabungJobId) : null, nama: p.nama || '' };
+  editingId = gabungJobId ? gabungJobId : null;
+  navigate('form', { pesanan:true });
+  setTimeout(()=>{
+    const form = document.getElementById('jobForm');
+    if(!form){ pendingPesanan = null; toast('Form job tidak terbuka. Coba lagi.'); return; }
+    let r = null;
+    try{ r = plApplyToForm(form, data); }catch(e){ console.error('Mengisi form dari pesanan gagal', e); }
+    psnPasangBannerForm(form, p, r);
+  }, 80);
+}
+function psnPasangBannerForm(form, p, r){
+  if(!pendingPesanan) return;
+  document.querySelectorAll('.psn-formbox').forEach(x=>x.remove());
+  const box = document.createElement('div');
+  box.className = 'info-box psn-formbox';
+  const gabung = pendingPesanan.mode==='gabung';
+  const msgs = [];
+  if(r){
+    msgs.push('Terisi otomatis (' + r.filled.length + ' kolom): ' + (r.filled.join(', ') || '-') + '.');
+    (r.failed||[]).forEach(x=>msgs.push('Gagal masuk: ' + x));
+    (r.review||[]).forEach(x=>msgs.push('Periksa: ' + x));
+    (r.info||[]).forEach(x=>msgs.push(x));
+  }
+  box.innerHTML = '<b>' + ic('inbox') + ' ' + (gabung ? 'Menggabungkan pesanan ke job ini: ' : 'Konfirmasi Booking dari: ') + escapeHtml(p.nama || 'klien') + '</b>' +
+    'Periksa semua kolom, lalu tekan Simpan. Setelah tersimpan, pesanan otomatis ditandai ' + (gabung ? '"Digabung ke job"' : '"Dikonfirmasi"') + ' dan tidak bisa diproses lagi.' +
+    '<br>Harga dari form klien belum diverifikasi, cocokkan dengan pricelist. Honor Tim, Biaya Cetak, dan Sedekah tidak diisi otomatis.' +
+    (msgs.length ? '<ul style="margin:6px 0 0; padding-left:18px;">' + msgs.map(m=>'<li>' + escapeHtml(m) + '</li>').join('') + '</ul>' : '');
+  form.parentNode.insertBefore(box, form);
+  try{ box.scrollIntoView({block:'start', behavior:'smooth'}); }catch(e){}
+}
+// Dipanggil tepat setelah job tersimpan dari form
+async function pesananSelesaiDenganJob(pend, jobId){
+  const status = pend.mode==='gabung' ? 'digabung' : 'dikonfirmasi';
+  const hasil = await pesananKunci(pend.id, status, jobId);
+  if(hasil==='ok') toast(pend.mode==='gabung' ? 'Pesanan digabung ke job' : 'Booking dikonfirmasi');
+  else if(hasil==='sudah') alert('Perhatian: pesanan ini ternyata sudah diproses di perangkat lain. Periksa Daftar Job, kemungkinan ada job dobel untuk klien ini.');
+  else toast('Job tersimpan. Status pesanan akan diperbarui otomatis begitu koneksi pulih.');
+  if(currentView==='pesanan') refreshView();
+  renderNotifBadge();
+}
+async function pesananKonfirmasi(id){
+  const p = pesananCari(id);
+  if(!p) return;
+  const dup = psnDuplikat(p);
+  if(dup.jobSama.length){
+    const j = dup.jobSama[0];
+    const ok = confirm('Sudah ada job dengan No. WhatsApp dan tanggal yang sama:\n\n' + psnJudulJob(j) + ' (' + psnTglPanjang(j.tanggalAcara) + ')\n\nKalau ini revisi dari klien yang sama, pilih Batal lalu gunakan tombol "Gabung ke job ini".\n\nTetap buat JOB BARU?');
+    if(!ok) return;
+  }
+  pesananMulai(p, null);
+}
+function pesananGabung(id, jobId){
+  const p = pesananCari(id), j = jobs.find(x=>String(x.id)===String(jobId));
+  if(!p || !j){ toast('Job tujuan tidak ditemukan.'); return; }
+  if(!confirm('Gabungkan pesanan ini ke job:\n\n' + psnJudulJob(j) + ' (' + psnTglPanjang(j.tanggalAcara) + ')\n\nKolom yang ada isinya di pesanan akan MENIMPA isi job itu (kolom kosong tidak diubah). Anda masih bisa memeriksa dulu di form sebelum menyimpan.')) return;
+  pesananMulai(p, jobId);
+}
+async function pesananAbaikan(id){
+  const p = pesananCari(id);
+  if(!p) return;
+  if(!confirm('Abaikan pesanan dari "' + (p.nama || 'klien') + '"? Pesanan tidak dihapus, hanya dipindah ke tab Diabaikan dan bisa dipulihkan.')) return;
+  const r = await pesananUbahStatus(id, 'baru', 'diabaikan');
+  if(r==='ok') toast('Pesanan diabaikan');
+  else if(r==='sudah') toast('Pesanan ini sudah diproses di perangkat lain.');
+  else toast('Gagal mengubah status. Periksa koneksi.');
+  if(r!=='ok') pullPesanan(true); else refreshView();
+  renderNotifBadge();
+}
+async function pesananPulihkan(id){
+  const r = await pesananUbahStatus(id, 'diabaikan', 'baru');
+  if(r==='ok') toast('Pesanan dipulihkan ke Baru'); else toast('Gagal memulihkan pesanan.');
+  if(r!=='ok') pullPesanan(true); else refreshView();
+  renderNotifBadge();
+}
+
+/* ---------- tampilan ---------- */
+function pesananBannerHtml(){
+  if(!psnAdaFitur()) return '';
+  const n = pesananBaruCount();
+  if(!n) return '';
+  return `<button type="button" class="psn-banner" data-psn-act="buka">
+    <span class="pb-ico">${ic('inbox')}</span>
+    <span class="pb-tx"><b>${n} pesanan baru dari klien</b><span>Periksa lalu tekan Konfirmasi Booking</span></span>
+    <span class="pb-go">${ic('chevron-right')}</span>
+  </button>`;
+}
+function psnKartuHtml(p){
+  const r = psnRingkas(p);
+  const st = PSN_STATUS[p.status] || PSN_STATUS.baru;
+  const dup = (p.status==='baru') ? psnDuplikat(p) : { pesananLain:[], jobSama:[], jobWaSama:[] };
+  const rows = [];
+  if(r.tanggal) rows.push(`<li>${ic('calendar')}<span>${escapeHtml(psnTglPanjang(r.tanggal))}${(r.tanggalSelesai && r.tanggalSelesai!==r.tanggal) ? ' &ndash; ' + escapeHtml(psnTglPanjang(r.tanggalSelesai)) : ''}${r.jam ? ' · ' + escapeHtml(r.jam) + ' WIB' : ''}</span></li>`);
+  else rows.push(`<li>${ic('calendar')}<span class="mut">Tanggal acara tidak terbaca, periksa di detail</span></li>`);
+  if(r.lokasi) rows.push(`<li>${ic('map-pin')}<span>${escapeHtml(r.lokasi)}</span></li>`);
+  if(p.wa) rows.push(`<li>${ic('phone')}<span>0${escapeHtml(p.wa)}</span></li>`);
+  if(r.paket) rows.push(`<li>${ic('camera')}<span>${escapeHtml(r.paket)}</span></li>`);
+  if(r.ok && (r.harga || r.dp)){
+    const sisa = Math.max(0, (r.harga||0) - (r.diskon||0) - (r.dp||0));
+    rows.push(`<li>${ic('money')}<span>Total ${fmtRp(Math.max(0,(r.harga||0)-(r.diskon||0)))} · DP ${fmtRp(r.dp||0)} · Sisa ${fmtRp(sisa)}</span></li>`);
+  }
+  let warn = '';
+  if(dup.jobSama.length){
+    const j = dup.jobSama[0];
+    warn += `<div class="psn-warn"><b>${ic('warning')} Sudah ada job untuk klien &amp; tanggal ini</b>${escapeHtml(psnJudulJob(j))} (${escapeHtml(psnTglPanjang(j.tanggalAcara))}). Kalau ini revisi dari klien, gunakan "Gabung ke job ini" supaya tidak ada job dobel.</div>`;
+  }
+  if(dup.pesananLain.length){
+    const lain = dup.pesananLain[0];
+    const beda = psnBeda(p, lain);
+    warn += `<div class="psn-warn"><b>${ic('warning')} Mirip dengan ${dup.pesananLain.length} pesanan lain</b>
+      Diterima ${escapeHtml(psnRelatif(lain.dibuat_pada))} dari ${escapeHtml(PSN_LABEL[lain.sumber]||lain.sumber)} (status: ${escapeHtml((PSN_STATUS[lain.status]||{}).t||lain.status)}).
+      ${beda.length ? 'Yang berbeda:<ul>' + beda.map(b=>`<li>${escapeHtml(b.k)}: ${escapeHtml(b.lama||'-')} &rarr; <b style="display:inline;">${escapeHtml(b.baru||'-')}</b></li>`).join('') + '</ul>' : 'Isiannya sama persis (kemungkinan terkirim dua kali).'}</div>`;
+  }
+  if(!dup.jobSama.length && dup.jobWaSama.length){
+    const j = dup.jobWaSama[0];
+    warn += `<div class="psn-note">${ic('user')} No. WhatsApp ini juga punya job lain: ${escapeHtml(psnJudulJob(j))} (${escapeHtml(psnTglPanjang(j.tanggalAcara))}).</div>`;
+  }
+  const detail = psnSemuaIsian(p);
+  const detailHtml = detail.length ? `<details class="psn-detail"><summary>Lihat semua isian klien (${detail.length})</summary><dl>${detail.map(x=>`<dt>${escapeHtml(x[0])}</dt><dd>${escapeHtml(String(x[1]))}</dd>`).join('')}</dl></details>` : '';
+  let aksi = '';
+  if(p.status==='baru'){
+    aksi = `<button type="button" class="btn btn-primary" data-psn-act="konfirmasi" data-psn-id="${escapeHtml(p.id)}">${ic('check-circle')} Konfirmasi Booking</button>`
+      + (dup.jobSama.length ? `<button type="button" class="btn btn-outline" data-psn-act="gabung" data-psn-id="${escapeHtml(p.id)}" data-psn-job="${escapeHtml(dup.jobSama[0].id)}">Gabung ke job ini</button>` : '')
+      + `<button type="button" class="btn btn-outline" data-psn-act="abaikan" data-psn-id="${escapeHtml(p.id)}">Abaikan</button>`;
+  }else if(p.status==='dikonfirmasi' || p.status==='digabung'){
+    const j = p.job_id ? jobs.find(x=>String(x.id)===String(p.job_id)) : null;
+    aksi = j ? `<button type="button" class="btn btn-outline" data-view-job="${escapeHtml(j.id)}">Lihat Job</button>`
+             : `<span class="psn-note">Job terkait sudah tidak ada di daftar.</span>`;
+  }else if(p.status==='diabaikan'){
+    aksi = `<button type="button" class="btn btn-outline" data-psn-act="pulihkan" data-psn-id="${escapeHtml(p.id)}">Pulihkan jadi Baru</button>`;
+  }
+  const sub = [PSN_LABEL[p.sumber] || p.sumber, 'diterima ' + psnRelatif(p.dibuat_pada)].filter(Boolean).join(' · ');
+  return `<div class="ulasan-card psn-card is-${escapeHtml(p.status)}">
+    <div class="ulasan-card-top">
+      <div>
+        <div class="ulasan-name">${escapeHtml(r.nama)}${r.mempelai ? ' <span style="font-weight:500;color:var(--ink-soft);">· ' + escapeHtml(r.mempelai) + '</span>' : ''} <span class="badge ${st.c}">${escapeHtml(st.t)}</span></div>
+        <div class="ulasan-sub">${escapeHtml(sub)}</div>
+      </div>
+    </div>
+    <ul class="psn-rows">${rows.join('')}</ul>
+    ${warn}${detailHtml}
+    ${aksi ? `<div class="ulasan-actions">${aksi}</div>` : ''}
+  </div>`;
+}
+function viewPesanan(){
+  const cnt = s => pesananList.filter(p=>p.status===s).length;
+  const tabs = [['baru','Baru'],['dikonfirmasi','Dikonfirmasi'],['digabung','Digabung'],['diabaikan','Diabaikan'],['semua','Semua']];
+  const daftar = pesananFilter==='semua' ? pesananList : pesananList.filter(p=>p.status===pesananFilter);
+  return `
+  <div class="card">
+    <div class="cal-controls">
+      <h2 style="margin:0;">${ic('inbox')} Pesanan Masuk</h2>
+      <button type="button" class="btn btn-outline" data-psn-act="muat">${pesananLoading ? ic('hourglass') + ' Memuat...' : ic('refresh') + ' Muat Ulang'}</button>
+    </div>
+    <p style="color:var(--ink-soft); font-size:12.5px; margin:-6px 0 4px;">
+      Data yang diisi klien di halaman pricelist &amp; isi biodata masuk ke sini otomatis. Pesanan baru menjadi job setelah Anda menekan Konfirmasi Booking.
+    </p>
+    ${!cloudSyncEnabled ? `<div class="info-box">${ic('warning')} Sinkronisasi cloud belum aktif.</div>` : ''}
+    <div class="psn-tabs" role="tablist">
+      ${tabs.map(t=>`<button type="button" role="tab" class="psn-tab${pesananFilter===t[0]?' on':''}" data-psn-act="filter" data-psn-val="${t[0]}">${t[1]}<span class="n">${t[0]==='semua' ? pesananList.length : cnt(t[0])}</span></button>`).join('')}
+    </div>
+    ${(!pesananLoading && daftar.length===0) ? `
+      <div class="empty-state"><div class="em">${ic('mailbox-empty')}</div>${pesananFilter==='baru' ? 'Tidak ada pesanan baru.' : 'Belum ada pesanan di tab ini.'}</div>
+    ` : `<div class="ulasan-list">${daftar.map(psnKartuHtml).join('')}</div>`}
+  </div>`;
+}
+
+/* ---------- realtime & klik ---------- */
+function rtOnPesanan(p){
+  try{
+    if(p && p.eventType==='INSERT' && p.new && !pesananList.some(x=>String(x.id)===String(p.new.id))){
+      toast('Pesanan baru dari ' + (p.new.nama || 'klien'));
+    }
+  }catch(e){}
+  clearTimeout(psnPullTimer);
+  psnPullTimer = setTimeout(()=>pullPesanan(true), 500);
+}
+document.addEventListener('click', (e)=>{
+  const b = e.target.closest('[data-psn-act]');
+  if(!b) return;
+  const act = b.dataset.psnAct, id = b.dataset.psnId;
+  if(act==='buka') navigate('pesanan');
+  else if(act==='konfirmasi') pesananKonfirmasi(id);
+  else if(act==='gabung') pesananGabung(id, b.dataset.psnJob);
+  else if(act==='abaikan') pesananAbaikan(id);
+  else if(act==='pulihkan') pesananPulihkan(id);
+  else if(act==='filter'){ pesananFilter = b.dataset.psnVal || 'baru'; refreshView(); }
+  else if(act==='muat') pullPesanan();
+});
+setInterval(()=>{ if(document.visibilityState==='visible' && navigator.onLine && psnAdaFitur()) pullPesanan(true); }, 90000);
 let ulasanLoading = false;
 let tasks = loadTasksLocal();
 let editingTaskId = null; // id tugas yang sedang diedit Admin lewat form Pembagian Tugas (null = mode tambah baru)
@@ -7745,6 +8146,7 @@ function moreMenuItems(){
   return [
     {view:'statistik',  icon:'chart',    label:'Statistik'},
     {view:'laporan',    icon:'alert',    label: adm ? 'Laporan' : 'Buat Laporan'},
+    ...((WS_ID==='default' && adm) ? [{view:'pesanan',   icon:'inbox',    label:'Pesanan Masuk', badge: pesananBaruCount()}] : []), // booking dari klien
     ...(WS_ID==='default' ? [{view:'ulasan',     icon:'star',     label:'Saran & Penilaian'}] : []), // ulasan klien milik Kaone Motret
     {view:'pengaturan', icon:'settings', label:'Pengaturan'}
   ];
@@ -7787,6 +8189,7 @@ function renderMoreList(){
     <button type="button" class="more-item${currentView===it.view?' active':''}" data-more-view="${it.view}">
       <span class="mi-ico">${ic(it.icon)}</span>
       <span class="mi-label">${escapeHtml(it.label)}</span>
+      ${it.badge ? `<span class="mi-badge">${it.badge}</span>` : ''}
       <span class="mi-chev">${ic('chevron-right')}</span>
     </button>`).join('');
 }
@@ -7812,7 +8215,7 @@ function closeMoreSheet(returnFocus){
 }
 // Menandai tab yang aktif. "Lainnya" menyala kalau halaman yang dibuka ada di dalam sheet-nya.
 function syncBottomNav(view){
-  const moreViews = ['statistik','laporan','ulasan','pengaturan'];
+  const moreViews = ['statistik','laporan','pesanan','ulasan','pengaturan'];
   document.querySelectorAll('#bottomNav .bn-tab[data-nav-view]').forEach(b=>{
     const on = b.dataset.navView === view;
     b.classList.toggle('active', on);
@@ -7962,7 +8365,7 @@ function playAppTransition(dir){
         selesai selagi masih transparan.
      4. Halaman baru mengalir masuk dari arah tab yang diklik dengan pelambatan yang halus.
    Ketukan beruntun hanya mengganti tujuan akhir, tidak menumpuk animasi. */
-const NAV_ORDER = ['beranda','daftar','kalender','tugas','statistik','laporan','ulasan','pengaturan'];
+const NAV_ORDER = ['beranda','daftar','kalender','tugas','statistik','laporan','pesanan','ulasan','pengaturan'];
 const NAV_SMOOTH = {token:0, leaving:false, target:null, dir:0, entered:true};
 function scrollToTopInstant(){
   const el = document.documentElement, prev = el.style.scrollBehavior;
@@ -8209,7 +8612,9 @@ function navigate(view, opts){
   // username/password akun sendiri lewat panel "Akun Saya". Kontrol yang
   // mengubah data job (Pulihkan Data, Hapus Semua, Import Excel, dsb.) di
   // dalamnya tetap dikunci sendiri lewat class admin-only.
-  if(!isAdmin() && view==='form') view = 'beranda';
+  if(!isAdmin() && (view==='form' || view==='pesanan')) view = 'beranda';
+  // Pesanan yang sedang dikonfirmasi hanya berlaku selama form yang dibuka dari tombol "Konfirmasi Booking"
+  if(!(view==='form' && opts && opts.pesanan)) pendingPesanan = null;
   // Urutan ini dipakai untuk menentukan arah animasi "berjalan pindah" (lihat
   // playAppTransition): kalau tab tujuan ada di sebelah kanan tab sebelumnya
   // di menu bawah, halaman baru masuk dari kanan, begitu juga sebaliknya.
@@ -8229,6 +8634,7 @@ function navigate(view, opts){
   if(opts && opts.instantScroll) scrollToTopInstant();
   else window.scrollTo({top:0,behavior:'smooth'});
   if(view==='ulasan') pullUlasanFromCloud();
+  if(view==='pesanan') pullPesanan(true);
   if(view==='form' && isAdmin()) pullTeamAccountsPublic();
   if(view==='tugas' && isAdmin()) pullAkunFromCloud();
   // Data 'tasks' sebelumnya hanya ditarik SEKALI saat aplikasi pertama dibuka, jadi kalau
@@ -8255,6 +8661,7 @@ function render(){
   else if(currentView==='statistik') app.innerHTML = viewStatistik();
   else if(currentView==='laporan') app.innerHTML = viewLaporan();
   else if(currentView==='ulasan') app.innerHTML = viewUlasan();
+  else if(currentView==='pesanan') app.innerHTML = viewPesanan();
   else if(currentView==='pengaturan') app.innerHTML = viewPengaturan();
   attachHandlers();
 }
@@ -8553,6 +8960,8 @@ function viewBeranda(){
       <p>${escapeHtml(ringkasLengkap)}</p>
     </header>
 
+    ${pesananBannerHtml()}
+
     ${nextCard}
 
     ${weekHtml}
@@ -8568,11 +8977,11 @@ function viewBeranda(){
    FORM INPUT / EDIT JOB
 ========================================================= */
 /* =========================================================
-   AMBIL DATA DARI PRICELIST (Input/Edit Job)
-   Admin/tim cukup memilih sumber + mengetik No. WhatsApp klien, lalu data yang
-   sudah diisi klien di website (Wedding / Mangayun & Aqiqah / Margondang / Isi
-   Biodata) terisi otomatis ke form job. Pencariannya lewat endpoint ?action=findClient
-   di masing-masing Google Apps Script - nomor WA harus COCOK PERSIS.
+   ISI FORM JOB DARI DATA KLIEN (Input/Edit Job)
+   Data yang diisi klien di website (Wedding / Mangayun & Aqiqah / Margondang / Isi
+   Biodata) masuk ke menu Pesanan Masuk. Tombol "Konfirmasi Booking" di sana membuka form
+   job dan mengisinya lewat plNormalize() + plApplyToForm() di bagian ini. (Panel lama
+   "Ambil dari Pricelist" yang mencari lewat No. WhatsApp ke Google Apps Script sudah dihapus.)
 
    Yang SENGAJA tidak diisi otomatis: Honor Tim, Biaya Cetak, Sedekah, dan sejenisnya
    (perhitungan internal studio, tidak ada di data pricelist). Ongkos Antar juga tidak
@@ -8584,9 +8993,8 @@ function viewBeranda(){
    padanan di form dimasukkan ke Catatan; (3) setiap kolom yang diklaim "terisi" dibaca
    ulang dari form (plApplyToForm) - kalau nilainya ternyata tidak masuk, dilaporkan.
 ========================================================= */
-const PRICELIST_MOTRET_URL = 'https://script.google.com/macros/s/AKfycbw8x8Q0G39087QZc4gh4QL0bkLdp5L3v1watARJymjb6xiIbgLC0s3fr90vEib4mZKObQ/exec';
-const PRICELIST_STUDIO_URL = 'https://script.google.com/macros/s/AKfycbzQf4G5NuPpJFrPkJSI9ulirladgU1QCqjbWS6NiClEKBBSW8JigsL9UKx_YrGB_21zCA/exec';
-const PRICELIST_KEY_STORE = 'kaoneMotret_pricelistAdminKey_v1';
+// Kode Admin lama untuk server pricelist tidak dipakai lagi (pencarian lewat No. WhatsApp sudah dihapus): bersihkan sisa di perangkat.
+try{ localStorage.removeItem('kaoneMotret_pricelistAdminKey_v1'); }catch(_){}
 const PRICELIST_SOURCES = {
   'wedding':        { label:'Pricelist Wedding',            kind:'motret', form:'' },
   'mangayun':       { label:'Pricelist Mangayun & Aqiqah',  kind:'motret', form:'mangayun' },
@@ -8760,8 +9168,8 @@ function plNormalizeCore(sourceKey, f){
         else if(hari==='3'){ out.jenis = 'Lainnya'; out.jenisLain = 'Margondang 3 Hari'; }
         else out.jenis = 'Margondang 1 Hari';
       } else {
-        out.jenis = 'Marbagas'; out.jenisKeep = ['Marbagas','Patuaekkon'];
-        out.catatanJenis = 'Pricelist Wedding mencakup Marbagas dan Patuaekkon, periksa Jenis Acara.';
+        out.jenis = 'Wedding'; out.jenisKeep = ['Wedding','Patuaekkon'];
+        out.catatanJenis = 'Pricelist Wedding mencakup Wedding dan Patuaekkon, periksa Jenis Acara.';
         det('konsepPakaian', g('Konsep Pakaian'));
       }
     }
@@ -8769,7 +9177,7 @@ function plNormalizeCore(sourceKey, f){
     det('igVendor', g('IG Vendor'));
     { const ht = g('Harga Tidak Cocok');   // diisi form pricelist kalau harga yang dikirim klien tidak sama dengan daftar harga
       if(ht && !/^(tidak|no|false|0|-)$/i.test(ht)) out.peringatan.push('Pricelist menandai "Harga Tidak Cocok" (' + ht + '), periksa harga paket dan biaya sebelum disimpan.'); }
-    if(g('Catatan')) lines.push('Catatan klien: ' + g('Catatan'));
+    if(g('Catatan')) lines.push('Catatan Penting untuk Fotografer: ' + g('Catatan'));
     return out;
   }
 
@@ -8812,7 +9220,7 @@ function plNormalizeCore(sourceKey, f){
   out.pengambilan = /^diantar/i.test(p) ? 'Diantar' : (/^dijemput/i.test(p) ? 'Dijemput' : '');
   det('pemilihanFoto', g('Pemilihan Foto'));
   det('igVendor', [g('Instagram Semua Vendor'), g('IG All Vendor')].filter((x,i,a)=>x && a.indexOf(x)===i).join(' ; '));
-  if(g('Catatan Penting Untuk Fotografer')) lines.push('Catatan klien: ' + g('Catatan Penting Untuk Fotografer'));
+  if(g('Catatan Penting Untuk Fotografer')) lines.push('Catatan Penting untuk Fotografer: ' + g('Catatan Penting Untuk Fotografer'));
   if(fk==='mangayun'){
     out.namaKlien = g('Nama Pemesan/Penanggung Jawab');
     out.jenis = 'Mangayun/Aqiqah';
@@ -8836,8 +9244,8 @@ function plNormalizeCore(sourceKey, f){
         if(ws) det('waktuSelesai', ws); else if(g('Waktu Selesai Acara')) lines.push('Waktu Selesai: ' + g('Waktu Selesai Acara')); }
     } else {
       out.jam = plParseWaktu(f['Waktu Acara']);
-      out.jenis = 'Marbagas'; out.jenisKeep = ['Marbagas','Patuaekkon'];
-      out.catatanJenis = 'Biodata Wedding mencakup Marbagas dan Patuaekkon, periksa Jenis Acara.';
+      out.jenis = 'Wedding'; out.jenisKeep = ['Wedding','Patuaekkon'];
+      out.catatanJenis = 'Biodata Wedding mencakup Wedding dan Patuaekkon, periksa Jenis Acara.';
       det('konsepPakaian', g('Adat/Konsep Pakaian'));
     }
   }
@@ -8869,38 +9277,6 @@ function plNormalize(sourceKey, raw){
   return out;
 }
 
-// Memanggil endpoint findClient. Mengembalikan {status:'found', fields} | {status:'notfound'} | {status:'error', message}.
-async function plFetchClient(sourceKey, phoneRaw, attempt){
-  const src = PRICELIST_SOURCES[sourceKey];
-  const national = plNationalDigits(phoneRaw);
-  if(!/^8\d{8,11}$/.test(national)) return { status:'error', message:'Nomor WhatsApp tidak valid. Contoh: 0812xxxxxxxx.' };
-  let url = (src.kind==='motret' ? PRICELIST_MOTRET_URL : PRICELIST_STUDIO_URL) + '?action=findClient&phone=' + encodeURIComponent('0'+national);
-  if(src.kind==='motret' && src.form) url += '&form=' + encodeURIComponent(src.form);
-  if(src.kind==='studio') url += '&formKey=' + encodeURIComponent(src.formKey);
-  let savedKey = ''; try{ savedKey = localStorage.getItem(PRICELIST_KEY_STORE) || ''; }catch(_){}
-  if(savedKey) url += '&key=' + encodeURIComponent(savedKey);
-  const ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
-  const timer = setTimeout(()=>{ if(ctrl) ctrl.abort(); }, 20000);
-  let json;
-  try{
-    const res = await fetch(url, ctrl ? { signal:ctrl.signal } : undefined);
-    if(!res.ok) return { status:'error', message:'Server pricelist menjawab error ('+res.status+').' };
-    json = await res.json();
-  }catch(e){
-    return { status:'error', message: (e && e.name==='AbortError') ? 'Server pricelist terlalu lama menjawab. Coba lagi.' : 'Tidak bisa menghubungi server pricelist. Periksa koneksi internet.' };
-  }finally{ clearTimeout(timer); }
-  if(json && json.ok===false){
-    if(/kode admin/i.test(String(json.message||'')) && !attempt){
-      const k = window.prompt('Server pricelist meminta Kode Admin (ADMIN_KEY di Apps Script). Masukkan kodenya:');
-      if(k){ try{ localStorage.setItem(PRICELIST_KEY_STORE, k.trim()); }catch(_){} return plFetchClient(sourceKey, phoneRaw, true); }
-      return { status:'error', message:'Kode Admin diperlukan untuk mengambil data.' };
-    }
-    if(/kode admin/i.test(String(json.message||''))){ try{ localStorage.removeItem(PRICELIST_KEY_STORE); }catch(_){} }
-    return { status:'error', message: json.message || 'Server pricelist menolak permintaan.' };
-  }
-  if(!json || json.found!==true || !json.fields) return { status:'notfound' };
-  return { status:'found', fields:json.fields };
-}
 
 function plSetVal(form, sel, value, fire){
   const el = form.querySelector(sel);
@@ -8963,12 +9339,12 @@ function plApplyToForm(form, data){
   }
   // 2) Data klien
   put('Nama Klien', '[name="namaKlien"]', data.namaKlien);
-  //    Nama Kedua Mempelai (kolomnya hanya ada isinya kalau Jenis Acara sudah Marbagas/Patuaekkon/Margondang)
+  //    Nama Kedua Mempelai (kolomnya hanya ada isinya kalau Jenis Acara sudah Wedding/Patuaekkon/Margondang)
   if(data.namaMempelai){
     if(isJenisMempelai(jenisSel ? jenisSel.value : '')){
       put('Nama Kedua Mempelai', '[name="namaMempelai"]', data.namaMempelai);
     } else {
-      review.push('Nama mempelai "' + data.namaMempelai + '" tidak diisikan karena Jenis Acara bukan Marbagas/Patuaekkon/Margondang, pilih jenisnya lalu isi manual.');
+      review.push('Nama mempelai "' + data.namaMempelai + '" tidak diisikan karena Jenis Acara bukan Wedding/Patuaekkon/Margondang, pilih jenisnya lalu isi manual.');
     }
   }
   //    Detail Acara: kolom nyata sesuai Jenis Acara (kolomnya baru ada setelah Jenis Acara diterapkan di atas)
@@ -9152,62 +9528,6 @@ function plApplyToForm(form, data){
   return { filled, review, info, failed };
 }
 
-function plPanelHtml(terbuka){
-  const opt = k => `<option value="${k}">${escapeHtml(PRICELIST_SOURCES[k].label)}</option>`;
-  // Kotak ini bisa dilipat. Saat membuat job baru terbuka (karena paling sering dipakai di situ),
-  // saat mengedit job yang sudah ada ia tertutup jadi satu baris ringkas supaya form langsung kelihatan.
-  return `<details class="pl-box" id="plBox"${terbuka?' open':''}>
-    <summary>
-      <span class="pl-ico">${ic('clipboard')}</span>
-      <span class="pl-sum-tx"><b>Ambil dari Pricelist</b><span>Isi otomatis dari data yang klien sudah isi di website</span></span>
-      <span class="pl-chev">${ic('arrow-up')}</span>
-    </summary>
-    <div class="pl-body">
-      <div class="pl-row">
-        <select id="plSource" aria-label="Sumber data">
-          <optgroup label="Formulir Pemesanan (Pricelist)">${['wedding','mangayun','margondang'].map(opt).join('')}</optgroup>
-          <optgroup label="Formulir Isi Biodata">${['bio-wedding','bio-margondang','bio-mangayun','bio-wisuda','bio-undangan'].map(opt).join('')}</optgroup>
-        </select>
-        <input type="text" id="plPhone" inputmode="numeric" placeholder="No. WhatsApp klien, mis. 0812xxxxxxxx" autocomplete="off" aria-label="No. WhatsApp klien">
-        <button type="button" class="btn btn-outline" id="plBtn">Ambil &amp; Isi</button>
-      </div>
-      <div class="pl-status" id="plStatus" role="status" aria-live="polite"></div>
-    </div>
-  </details>`;
-}
-function plBindPanel(scopeEl){
-  const form = scopeEl.querySelector('#jobForm');
-  const btn = scopeEl.querySelector('#plBtn');
-  if(!form || !btn) return;
-  const phone = scopeEl.querySelector('#plPhone'), srcSel = scopeEl.querySelector('#plSource'), status = scopeEl.querySelector('#plStatus');
-  let busy = false;
-  const say = (msg, kind)=>{ status.className = 'pl-status' + (kind ? ' is-'+kind : ''); status.textContent = ''; if(Array.isArray(msg)) msg.forEach(m=>{ const d=document.createElement('div'); d.textContent=m; status.appendChild(d); }); else status.textContent = msg; };
-  async function run(){
-    if(busy) return;
-    busy = true; btn.disabled = true;
-    say('Mencari data…');
-    try{
-      const res = await plFetchClient(srcSel.value, phone.value);
-      if(res.status==='error'){ say(res.message,'err'); return; }
-      if(res.status==='notfound'){ say('Tidak ada data dengan nomor tersebut di "'+PRICELIST_SOURCES[srcSel.value].label+'". Pastikan nomornya sama persis dengan yang diisi klien, atau coba sumber lain.','err'); return; }
-      const data = plNormalize(srcSel.value, res.fields);
-      const sudahIsi = (form.querySelector('[name="namaKlien"]')?.value || '').trim() !== '';
-      if(sudahIsi && !window.confirm('Form ini sudah berisi data. Timpa kolom yang ada datanya di pricelist dengan data dari "'+PRICELIST_SOURCES[srcSel.value].label+'"?\n\n(Kolom yang tidak ada datanya di pricelist tidak dikosongkan. Catatan yang Anda ketik sendiri tetap dipertahankan.)')){ say('Dibatalkan, form tidak diubah.'); return; }
-      const r = plApplyToForm(form, data);
-      const msgs = ['✓ Masuk & terverifikasi (' + r.filled.length + ' kolom): ' + (r.filled.join(', ') || '-') + '.'];
-      r.failed.forEach(x=>msgs.push('✗ Gagal masuk: ' + x));
-      r.review.forEach(x=>msgs.push('⚠ ' + x));
-      r.info.forEach(x=>msgs.push('ℹ ' + x));
-      msgs.push('Honor Tim, Biaya Cetak, dan Sedekah tidak diisi otomatis. Periksa kembali semua kolom sebelum menyimpan.');
-      say(msgs, (r.failed.length || r.review.length) ? 'warn' : 'ok');
-    }catch(e){
-      console.error('Ambil dari pricelist gagal', e);
-      say('Terjadi kesalahan saat mengisi form: ' + (e && e.message ? e.message : e), 'err');
-    }finally{ busy = false; btn.disabled = false; }
-  }
-  btn.addEventListener('click', run);
-  phone.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); run(); } });
-}
 
 function buildJobFormHtml(j){
   const d = j || {
@@ -9247,7 +9567,6 @@ function buildJobFormHtml(j){
           ${j?`<button type="button" class="icon-btn icon-btn-danger jf-del-btn" id="btnDeleteJob" title="Hapus job ini" aria-label="Hapus job ini">${ic('trash')}</button>`:''}
         </div>
       </div>
-      ${plPanelHtml(!j)}
       <section class="jf-sec open"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('user')}</span><div class="jf-sec-htx"><h3>Data Klien &amp; Acara</h3><p>Siapa yang memesan dan kapan acaranya.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
         <div><label>Nama Klien / Pemesan</label><input type="text" name="namaKlien" value="${escapeHtml(d.namaKlien)}" placeholder="Nama klien" autocomplete="off"></div>
         <div><label>No. WhatsApp</label>${waFieldHtml(d.noWhatsapp)}</div>
@@ -9482,7 +9801,6 @@ function viewForm(){
 function bindJobFormEvents(scopeEl, onDone){
   const form = scopeEl.querySelector('#jobForm');
   if(!form) return;
-  plBindPanel(scopeEl);
   // Link Maps Antar (hanya tampil saat Pengiriman = Diantar) + status bayar otomatis dari DP
   {
     const linkIn = scopeEl.querySelector('#linkMapsAntarInput');
@@ -9609,7 +9927,7 @@ function bindJobFormEvents(scopeEl, onDone){
     Object.keys(data).forEach(k=>{
       if(typeof data[k] === 'string') data[k] = data[k].trim();
     });
-    // Nama Kedua Mempelai hanya berlaku untuk Marbagas/Patuaekkon/Margondang. Kalau jenis
+    // Nama Kedua Mempelai hanya berlaku untuk Wedding/Patuaekkon/Margondang. Kalau jenis
     // acaranya (sudah) bukan itu, kosongkan supaya tidak ada nama "nyangkut" dari isian lama.
     if(!isJenisMempelai(data.jenisAcara)) data.namaMempelai = '';
     // Validasi rentang tanggal acara: Tanggal Selesai wajib ada dan tidak boleh lebih awal
@@ -9633,14 +9951,23 @@ function bindJobFormEvents(scopeEl, onDone){
     // Sedekah selalu dihitung ulang otomatis di titik penyimpanan, supaya konsisten
     // walau kolom lain sempat diubah tanpa memicu event input.
     data.sedekahNominal = hitungSedekah(data);
+    // Job ini dibuat/diperbarui dari tombol "Konfirmasi Booking" (menu Pesanan Masuk)?
+    let pendPesanan = null;
+    if(pendingPesanan && (pendingPesanan.mode==='gabung' ? String(editingId)===String(pendingPesanan.jobId) : !editingId)){
+      pendPesanan = pendingPesanan;
+      data.asalPesananId = pendPesanan.id;
+    }
+    let jobIdTersimpan = editingId;
     if(editingId){
       const idx = jobs.findIndex(x=>x.id===editingId);
       jobs[idx] = {...jobs[idx], ...data};
     } else {
-      jobs.push({id:uid(), createdAt:Date.now(), ...data});
+      jobIdTersimpan = uid();
+      jobs.push({id:jobIdTersimpan, createdAt:Date.now(), ...data});
     }
     saveJobs();
     toast(editingId ? 'Job berhasil diperbarui' : 'Job baru berhasil disimpan');
+    if(pendPesanan){ pendingPesanan = null; pesananSelesaiDenganJob(pendPesanan, jobIdTersimpan); }
     editingId = null;
     onDone('saved');
   });
@@ -15897,12 +16224,21 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.17.2'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.18.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.18.0',
+    tanggal: '10 Oktober 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Menu baru \"Pesanan Masuk\" (di Lainnya, plus banner di Beranda dan notifikasi push). Data yang diisi klien di form pricelist dan isi biodata kini otomatis masuk ke database, lalu Admin menekan \"Konfirmasi Booking\" untuk membuatnya jadi job (form Input Job terisi otomatis). Pesanan yang mirip (No. WhatsApp dan tanggal sama) ditandai, bisa digabung ke job yang sudah ada, dan pesanan yang sudah diproses terkunci supaya tidak jadi dobel.' },
+      { kategori: 'Perubahan', teks: 'Panel Ambil dari Pricelist di form Input/Edit Job dihapus, karena data klien kini masuk lewat menu Pesanan Masuk (tombol Konfirmasi Booking).' },
+      { kategori: 'Perubahan', teks: 'Jenis Acara \"Marbagas\" diganti namanya menjadi \"Wedding\". Job lama yang tersimpan sebagai Marbagas otomatis terbaca Wedding. Catatan dari klien di form pricelist kini diberi label \"Catatan Penting untuk Fotografer\" sesuai form aslinya.' },
+    ]
+  },
   {
     version: '1.17.2',
     tanggal: '9 Oktober 2026',
@@ -16626,6 +16962,20 @@ function buildNotificationsRaw(){
     });
   });
 
+  // 1c2) Pesanan baru dari klien yang belum dikonfirmasi (hanya Admin)
+  if(psnAdaFitur()){
+    pesananList.filter(p=>p.status==='baru').forEach(p=>{
+      list.push({
+        id: 'pesanan_' + p.id,
+        view: 'pesanan',
+        icon: ic('inbox'),
+        title: `Pesanan baru dari ${p.nama || 'klien'}`,
+        desc: [PSN_LABEL[p.sumber] || '', p.tanggal_acara ? psnTglPanjang(p.tanggal_acara) : ''].filter(Boolean).join(' · '),
+        onClick: ()=>{ closeNotifPanel(); navigate('pesanan'); }
+      });
+    });
+  }
+
   // 1d) Komentar baru dari Admin pada tugas milik akun Tim ini
   if(!isAdmin()){
     tasks.forEach(t=>{
@@ -17110,7 +17460,7 @@ if(appVersionTagEl) appVersionTagEl.textContent = 'v' + APP_VERSION;
 const RT_PREFS_KEY  = 'kaoneMotret_rtPrefs_v1';
 const RT_PROMPT_KEY = 'kaoneMotret_rtPromptDismissed_v1';
 const RT_EVENT_PREFIXES = ['ulasan_','taskcomment_','laporan_','bonusclaim_','tasknew_','claimpaid_'];
-const RT_LAUNCH_VIEWS = ['beranda','daftar','kalender','tugas','statistik','laporan','ulasan','pengaturan','notif'];
+const RT_LAUNCH_VIEWS = ['beranda','daftar','kalender','tugas','statistik','laporan','pesanan','ulasan','pengaturan','notif'];
 // Bagian data yang dipakai tiap halaman → halaman hanya digambar ulang kalau bagian ini berubah
 const RT_VIEW_DEPS = {
   statistik: ['jobs','tasks'],
@@ -17664,8 +18014,9 @@ function rtConnect(){
     ch.on('postgres_changes', isAdmin()
         ? { event:'*', schema:'public', table:SYNC_TABLE, filter:'id=eq.' + SYNC_ROW_ID }
         : { event:'*', schema:'public', table:'kaone_sinyal', filter:'id=eq.1' }, rtOnDataEvent)
-      .on('postgres_changes', { event:'*', schema:'public', table:ULASAN_TABLE }, rtOnUlasan)
-      .subscribe((status, err)=>{
+      .on('postgres_changes', { event:'*', schema:'public', table:ULASAN_TABLE }, rtOnUlasan);
+    if(psnAdaFitur()) ch.on('postgres_changes', { event:'*', schema:'public', table:PESANAN_TABLE }, rtOnPesanan);
+    ch.subscribe((status, err)=>{
         if(ch !== rtChannel) return;                        // abaikan callback dari channel lama
         if(status === 'SUBSCRIBED'){ rtSetState('live'); rtCatchUp('tersambung'); }
         else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){ rtSetState('reconnecting'); if(err) console.warn('Realtime:', err.message || err); }
@@ -17793,6 +18144,7 @@ function initAppAfterAuth(){
   // Tarik juga daftar Saran & Penilaian dari klien (tabel Supabase terpisah) supaya
   // badge notifikasi & menu "Saran & Penilaian" langsung menampilkan data terbaru.
   pullUlasanFromCloud();
+  pullPesanan(true);   // Pesanan Masuk (booking dari klien) - badge & banner Beranda
 
   // Nyalakan notifikasi real-time (Supabase Realtime) - lihat bagian "NOTIFIKASI REAL-TIME".
   rtStart();
@@ -19818,7 +20170,7 @@ document.addEventListener('click',function(e){
   var BLN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   var BLN3=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
   var WARNA={
-    'Marbagas':{bg:'#FFE9A8',fg:'#7A5A00',e:'\uD83D\uDC8D'},
+    'Wedding':{bg:'#FFE9A8',fg:'#7A5A00',e:'\uD83D\uDC8D'},
     'Mangayun/Aqiqah':{bg:'#FFD6E4',fg:'#8A3556',e:'\uD83C\uDF7C'},
     'Margondang 1 Hari':{bg:'#CDEFF0',fg:'#1F6B70',e:'\uD83E\uDD41'},
     'Margondang 2 Hari':{bg:'#E6DCFA',fg:'#5B418F',e:'\uD83E\uDD41'},

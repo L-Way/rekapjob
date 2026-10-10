@@ -4,6 +4,16 @@
    Lalu tambahkan 'push-handler.js' ke daftar file cache di sw.js (kalau sw.js punya daftar cache),
    dan naikkan nama/versi cache supaya perangkat mengambil sw.js yang baru. */
 
+/* Ikon khusus per jenis notifikasi. Server hanya mengirim kata kunci (mis. ikon: 'pesanan'), bukan alamat gambar,
+   jadi isi pesan tidak bisa dipakai untuk menampilkan gambar dari luar. File ikon dicek dulu: kalau belum ada
+   di situs, otomatis memakai ikon bawaan (notifikasi tidak pernah tampil tanpa ikon). */
+const IKON_PUSH = {
+  pesanan: { icon: 'icons/notif-pesanan-192.png', badge: 'icons/notif-badge-96.png' }
+};
+async function adaFile(path) {
+  try { const r = await fetch(path, { cache: 'no-store' }); return !!(r && r.ok); } catch (e) { return false; }
+}
+
 self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: 'Kaone Motret', body: event.data ? event.data.text() : '' }; }
@@ -21,6 +31,12 @@ self.addEventListener('push', (event) => {
     // Kalau aplikasi sedang terbuka & terlihat, aplikasi sudah menampilkan notifikasinya sendiri.
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     if (wins.some((w) => w.visibilityState === 'visible')) return;
+    const ikon = IKON_PUSH[data.ikon];
+    if (ikon) {
+      const [okIcon, okBadge] = await Promise.all([adaFile(ikon.icon), adaFile(ikon.badge)]);
+      if (okIcon) options.icon = ikon.icon;
+      if (okBadge) options.badge = ikon.badge;
+    }
     await self.registration.showNotification(title, options);
   })());
 });

@@ -6,7 +6,7 @@
    - Aset statis (ikon, manifest): cache-first */
 importScripts('push-handler.js');
 
-const CACHE = 'kaone-motret-v5';
+const CACHE = 'kaone-motret-v6';
 const CORE = [
   './',
   'index.html',
@@ -16,7 +16,9 @@ const CORE = [
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
   'icons/apple-touch-icon.png',
-  'icons/favicon-32.png'
+  'icons/favicon-32.png',
+  'icons/notif-pesanan-192.png',
+  'icons/notif-badge-96.png'
 ];
 
 self.addEventListener('install', (event) => {

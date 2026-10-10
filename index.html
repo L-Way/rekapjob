@@ -15875,12 +15875,19 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.17.2'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.17.3'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.17.3',
+    tanggal: '10 Oktober 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Saat ruang chat sedang terbuka lalu aplikasi dipindah ke latar atau dilihat lewat daftar aplikasi terbaru (recent apps), layar otomatis menghitam sehingga isi chat tidak terlihat di pratinjaunya. Layar kembali normal begitu aplikasi dibuka lagi.' },
+    ]
+  },
   {
     version: '1.17.2',
     tanggal: '9 Oktober 2026',
@@ -18228,6 +18235,52 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 <div class="k i"><button type="button" class="x" id="kkt" data-i="phoneoff" aria-label="Tolak panggilan"></button><span>Tolak</span></div>
 <div class="k i"><button type="button" class="y" id="kcy" data-i="accept" aria-label="Jawab panggilan"></button><span>Jawab</span></div>
 </div></div>
+<script id="kcPrivJs">
+/* Layar chat otomatis menghitam saat aplikasi masuk ke "recent apps" / pengalih aplikasi,
+   supaya isi chat tidak terlihat di pratinjaunya. Hanya aktif kalau ruang chat (atau panggilan)
+   sedang terbuka. Skrip ini sengaja dipasang SEBELUM skrip chat, supaya lapisan hitam terpasang
+   lebih dulu daripada penutupan chat otomatis saat halaman tersembunyi. */
+(function(){
+  var d=document,w=window,cov=null,aktif=false,tmr=0,sentuh=false;
+  try{ sentuh=w.matchMedia('(pointer:coarse)').matches; }catch(e){}
+  function terbuka(){
+    var k=d.getElementById('kc'),c=d.getElementById('kcc');
+    return !!((k&&k.classList.contains('on'))||(c&&c.classList.contains('on')));
+  }
+  function buat(){
+    if(cov||!d.body) return cov;
+    cov=d.createElement('div'); cov.id='kcpv'; cov.setAttribute('aria-hidden','true');
+    cov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483647;background:#000;display:none;touch-action:none;-webkit-user-select:none;user-select:none';
+    /* Pengaman: kalau layar hitam sempat tertinggal, ketuk sekali untuk membukanya. */
+    cov.addEventListener('click',function(e){ e.stopPropagation(); buka(); });
+    d.body.appendChild(cov);
+    return cov;
+  }
+  function cek(){
+    if(!aktif){ clearInterval(tmr); tmr=0; return; }
+    if(d.visibilityState==='visible' && d.hasFocus()) buka();
+  }
+  function tutup(){
+    if(aktif || !terbuka()) return;
+    var o=buat(); if(!o) return;
+    aktif=true; o.style.display='block'; void o.offsetHeight; /* paksa tergambar sekarang juga */
+    clearInterval(tmr); tmr=setInterval(cek,600);
+  }
+  function buka(){
+    if(!aktif) return;
+    aktif=false; clearInterval(tmr); tmr=0;
+    if(cov) cov.style.display='none';
+  }
+  d.addEventListener('visibilitychange',function(){ if(d.visibilityState==='hidden') tutup(); else buka(); },true);
+  w.addEventListener('pagehide',tutup);
+  w.addEventListener('pageshow',buka);
+  d.addEventListener('freeze',tutup);
+  d.addEventListener('resume',buka);
+  /* Di HP/tablet, jendela kehilangan fokus lebih dulu saat tombol recent apps ditekan. */
+  if(sentuh){ w.addEventListener('blur',tutup); w.addEventListener('focus',buka); }
+  buat();
+})();
+</script>
 <script id="kcJs">
 (function(){
 var F1='ui-rounded,"Nunito","Quicksand","Segoe UI",system-ui,sans-serif',F2='"Zen Maru Gothic","Noto Sans JP","Segoe UI",system-ui,sans-serif';

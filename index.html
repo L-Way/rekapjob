@@ -3387,6 +3387,19 @@ body.chat-only .to-top-btn,body.chat-only .bottomnav,body.chat-only .more-layer,
 .jf .cx-row{padding:9px 12px; gap:8px;}
 .jf .cx-c{min-width:0;}
 .jf .cx-s{max-width:100%;}
+.jf .cx-qw{display:inline-flex; align-items:center; gap:7px; margin:0; font-size:12px; font-weight:600; color:var(--ink-soft);}
+/* Hasil Cetak di HP: tiap baris ringkas (nama + harga). Jumlah / ukuran baru muncul setelah dicentang. */
+@container (max-width:560px){
+  .jf .cx{gap:7px;}
+  .jf .cx-row{grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"n p" "c c"; gap:0 10px; padding:10px 12px;}
+  .jf .cx-n{grid-area:n; min-width:0;}
+  .jf .cx-p{grid-area:p; text-align:right; white-space:nowrap; font-size:11.5px;}
+  .jf .cx-c{grid-area:c; display:none; flex-wrap:wrap; align-items:center; gap:8px 16px; margin-top:9px; padding-top:9px; border-top:1px dashed #ecdca0;}
+  .jf .cx-row:has(input[data-cx]:checked) .cx-c{display:flex;}
+  .jf .cx-bq{display:flex; align-items:center; gap:10px; flex:1 1 100%;}
+  .jf .cx-bq .cx-b{flex:0 1 auto; min-width:0; white-space:normal;}
+  .jf .cx-s{flex:1 1 100%;}
+}
 /* Ikon pin di dalam kolom koordinat / link maps tidak boleh menimpa teks */
 .jf .maps-input-wrap input.maps-input{padding-left:34px;}
 
@@ -4746,7 +4759,7 @@ function bangunPesanSelesai(j){
       ongkir = titik ? `\n${titik}` : '';
     }
   }
-  const map={nama:(j.namaKlien||'').trim(), mempelai:mempelaiTeks(j), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'', deskripsiPaket:j.deskripsiPaket||'', sisa:fmtRp(sisa), tagihan, ajakan, ongkir, maps:mapsStudioLink()};
+  const map={nama:(j.namaKlien||'').trim(), mempelai:mempelaiTeks(j), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'', deskripsiPaket:deskripsiGabung(j), sisa:fmtRp(sisa), tagihan, ajakan, ongkir, maps:mapsStudioLink()};
   return renderWaTpl(PESAN_SELESAI_TPL,map);
 }
 function pesanSelesaiPanelHtml(){
@@ -4775,7 +4788,7 @@ function resetPesanBooking(){ document.getElementById('pesanBookingTpl').value=P
 function bangunPesanBooking(j){
   const jenis=j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'acara') : (j.jenisAcara||'acara');
   const sisa=Math.max(0,hitungSisaPembayaran(j));
-  const deskripsi=(j.deskripsiPaket||'').trim();
+  const deskripsi=deskripsiGabung(j);
   const deskripsiPaketLine=deskripsi ? `Detail : ${deskripsi}\n` : '';
   const map={nama:(j.namaKlien||'').trim(), mempelai:mempelaiTeks(j), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'-', deskripsiPaket:deskripsi, deskripsiPaketLine, dp:fmtRp(j.dp), sisa:fmtRp(sisa), maps:mapsStudioLink()};
   return renderWaTpl(PESAN_BOOKING_TPL,map);
@@ -5322,7 +5335,7 @@ function cetakInput(e){
 function cetakSectionHtml(d){
   const c=d.cetak||{}, H=HARGA_CETAK, cur=(k,a,def)=>(c[k]&&c[k][a]!=null)?c[k][a]:def;
   const chk=k=>`<input type="checkbox" data-cx="${k}" ${c[k]&&c[k].on?'checked':''}>`;
-  const qty=k=>`<input type="number" min="1" max="99" class="cx-q" data-cx-qty="${k}" value="${cur(k,'qty',1)}" aria-label="Jumlah">`;
+  const qty=k=>`<label class="cx-qw"><span>Jumlah</span><input type="number" min="1" max="99" class="cx-q" data-cx-qty="${k}" value="${cur(k,'qty',1)}" aria-label="Jumlah"></label>`;
   const so=(k,arr,v,fmt)=>`<select class="cx-s" data-cx-sel="${k}">${arr.map(x=>`<option value="${x}" ${String(x)===String(v)?'selected':''}>${fmt(x)}</option>`).join('')}</select>`;
   const row=(k,name,price,ctrl)=>`<div class="cx-row"><label class="cx-n">${chk(k)}<b>${name}</b></label><span class="cx-p">${price}</span><span class="cx-c">${ctrl}</span></div>`;
   return `<section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('camera')}</span><div class="jf-sec-htx"><h3>Hasil Cetak</h3><p>Centang yang dipesan. Otomatis masuk ke Deskripsi Paket dan Biaya Cetak.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div>
@@ -5827,6 +5840,7 @@ const EXCEL_FIELD_MAP = [
   {header:'No WhatsApp', field:'noWhatsapp'},
   {header:'Paket', field:'paket'},
   {header:'Deskripsi Paket', field:'deskripsiPaket'},
+  {header:'Add-On', field:'addOn'},
   {header:'Desa', field:'desa'},
   {header:'Dusun (opsional)', field:'dusun'},
   {header:'Kecamatan', field:'kecamatan'},
@@ -6218,7 +6232,7 @@ function psnRingkas(p){
   try{
     const d = plNormalize(p.sumber, psnFields(p));
     const a = d.alamat;
-    const lokasi = a ? [a.desa, a.kecamatan && ('Kec. ' + a.kecamatan), a.kabupaten && ('Kab. ' + a.kabupaten)].filter(Boolean).join(', ') : '';
+    const lokasi = a ? [a.desa, a.kecamatan && ('Kec. ' + a.kecamatan), a.kabupaten && ('Kab. ' + a.kabupaten), a.provinsi && ('Prov. ' + a.provinsi)].filter(Boolean).join(', ') : '';
     return { ok:true, d, nama: d.namaKlien || p.nama || 'Tanpa nama', mempelai: d.namaMempelai || '',
       tanggal: (d.tanggal && d.tanggal.start) || p.tanggal_acara || '',
       tanggalSelesai: (d.tanggal && d.tanggal.end) || '',
@@ -6352,17 +6366,10 @@ function psnPasangBannerForm(form, p, r){
   const box = document.createElement('div');
   box.className = 'info-box psn-formbox';
   const gabung = pendingPesanan.mode==='gabung';
-  const msgs = [];
-  if(r){
-    msgs.push('Terisi otomatis (' + r.filled.length + ' kolom): ' + (r.filled.join(', ') || '-') + '.');
-    (r.failed||[]).forEach(x=>msgs.push('Gagal masuk: ' + x));
-    (r.review||[]).forEach(x=>msgs.push('Periksa: ' + x));
-    (r.info||[]).forEach(x=>msgs.push(x));
-  }
-  box.innerHTML = '<b>' + ic('inbox') + ' ' + (gabung ? 'Menggabungkan pesanan ke job ini: ' : 'Konfirmasi Booking dari: ') + escapeHtml(p.nama || 'klien') + '</b>' +
-    'Periksa semua kolom, lalu tekan Simpan. Setelah tersimpan, pesanan otomatis ditandai ' + (gabung ? '"Digabung ke job"' : '"Dikonfirmasi"') + ' dan tidak bisa diproses lagi.' +
-    '<br>Harga dari form klien belum diverifikasi, cocokkan dengan pricelist. Honor Tim, Biaya Cetak, dan Sedekah tidak diisi otomatis.' +
-    (msgs.length ? '<ul style="margin:6px 0 0; padding-left:18px;">' + msgs.map(m=>'<li>' + escapeHtml(m) + '</li>').join('') + '</ul>' : '');
+  const gagal = (r && r.failed) ? r.failed.map(x=>String(x).split(' (')[0]) : [];
+  box.innerHTML = '<b>' + ic('inbox') + ' ' + (gabung ? 'Gabung pesanan ke job ini: ' : 'Konfirmasi Booking: ') + escapeHtml(p.nama || 'klien') + '</b>' +
+    'Periksa kolomnya, lalu tekan Simpan.' +
+    (gagal.length ? '<br>Belum terisi: ' + escapeHtml(gagal.join(', ')) + '.' : '');
   form.parentNode.insertBefore(box, form);
   try{ box.scrollIntoView({block:'start', behavior:'smooth'}); }catch(e){}
 }
@@ -9114,13 +9121,13 @@ function plCoordsFromLink(raw){
   }
   return '';
 }
-// "Desa, Kec. X, Kab. Y" (format yang dirangkai form pricelist) -> tiga kolom terpisah.
+// "Desa, Kec. X, Kab. Y, Prov. Z" (format yang dirangkai form pricelist) -> kolom terpisah.
 function plParseAlamat(raw){
   const s = plClean(raw);
   if(!s) return null;
-  const m = s.match(/^(.*?),\s*Kec\.\s*(.*?),\s*Kab\.\s*(.*)$/i);
-  if(m) return { desa:m[1].trim(), kecamatan:m[2].trim(), kabupaten:m[3].trim(), terurai:true };
-  return { desa:s, kecamatan:'', kabupaten:'', terurai:false };
+  const m = s.match(/^(.*?),\s*Kec\.\s*(.*?),\s*Kab\.\s*(.*?)(?:,\s*Prov(?:insi)?\.?\s*(.+))?$/i);
+  if(m) return { desa:m[1].trim(), kecamatan:m[2].trim(), kabupaten:m[3].trim(), provinsi:(m[4]||'').trim(), terurai:true };
+  return { desa:s, kecamatan:'', kabupaten:'', provinsi:'', terurai:false };
 }
 function plWithoutAddOnNone(v){
   const s = plClean(v);
@@ -9131,7 +9138,7 @@ function plWithoutAddOnNone(v){
 function plNormalizeCore(sourceKey, f){
   const src = PRICELIST_SOURCES[sourceKey];
   const out = { namaKlien:'', namaMempelai:'', wa:'', jenis:'', jenisKeep:[], jenisLain:'', tanggal:null, jam:'',
-    alamat:null, maps:'', paket:'', deskripsi:'', ig:{}, pengambilan:'', penghasilan:0, diskon:0, dp:0,
+    alamat:null, maps:'', paket:'', deskripsi:'', addOn:'', ig:{}, pengambilan:'', penghasilan:0, diskon:0, dp:0,
     catatanBaris:[], catatanJenis:'', detail:{}, peringatan:[] };
   const g = k => plClean(f[k]);
   const lines = out.catatanBaris;
@@ -9144,8 +9151,7 @@ function plNormalizeCore(sourceKey, f){
     out.maps = g('Maps');
     out.alamat = plParseAlamat(f['Alamat']);
     out.paket = g('Paket');
-    const addon = plWithoutAddOnNone(f['Add-On']);
-    if(addon) out.deskripsi = 'Add-On: ' + addon;
+    out.addOn = plWithoutAddOnNone(f['Add-On']);   // kolom Add-On sendiri (bukan lagi diselipkan ke Deskripsi Paket)
     out.pengambilan = /^(Diantar|Dijemput)$/i.test(g('Pengambilan Hasil Cetak')) ? (/^diantar$/i.test(g('Pengambilan Hasil Cetak'))?'Diantar':'Dijemput') : '';
     out.diskon = plNum(f['Diskon']);
     out.dp = plNum(f['DP']);
@@ -9177,7 +9183,7 @@ function plNormalizeCore(sourceKey, f){
     det('igVendor', g('IG Vendor'));
     { const ht = g('Harga Tidak Cocok');   // diisi form pricelist kalau harga yang dikirim klien tidak sama dengan daftar harga
       if(ht && !/^(tidak|no|false|0|-)$/i.test(ht)) out.peringatan.push('Pricelist menandai "Harga Tidak Cocok" (' + ht + '), periksa harga paket dan biaya sebelum disimpan.'); }
-    if(g('Catatan')) lines.push('Catatan Penting untuk Fotografer: ' + g('Catatan'));
+    if(g('Catatan')) lines.push(g('Catatan'));
     return out;
   }
 
@@ -9200,7 +9206,7 @@ function plNormalizeCore(sourceKey, f){
     det('institusi', g('Universitas/Institusi')); det('jenjang', g('Jenjang'));
     det('lokasiAcara', g('Lokasi')); det('sesiDiminati', g('Sesi Diminati'));
     det('lokasiOutdoor', g('Lokasi Foto Outdoor'));
-    if(g('Catatan')) lines.push('Catatan klien: ' + g('Catatan'));
+    if(g('Catatan')) lines.push(g('Catatan'));
     out.ig = { 'Wisudawan':'' };
     return out;
   }
@@ -9220,7 +9226,7 @@ function plNormalizeCore(sourceKey, f){
   out.pengambilan = /^diantar/i.test(p) ? 'Diantar' : (/^dijemput/i.test(p) ? 'Dijemput' : '');
   det('pemilihanFoto', g('Pemilihan Foto'));
   det('igVendor', [g('Instagram Semua Vendor'), g('IG All Vendor')].filter((x,i,a)=>x && a.indexOf(x)===i).join(' ; '));
-  if(g('Catatan Penting Untuk Fotografer')) lines.push('Catatan Penting untuk Fotografer: ' + g('Catatan Penting Untuk Fotografer'));
+  if(g('Catatan Penting Untuk Fotografer')) lines.push(g('Catatan Penting Untuk Fotografer'));
   if(fk==='mangayun'){
     out.namaKlien = g('Nama Pemesan/Penanggung Jawab');
     out.jenis = 'Mangayun/Aqiqah';
@@ -9288,9 +9294,6 @@ function plSetVal(form, sel, value, fire){
 
 // Menerapkan data ke form. HANYA mengisi kolom yang ada datanya (tidak pernah mengosongkan
 // kolom yang sudah terisi). Mengembalikan daftar kolom yang terisi & yang perlu dicek manual.
-const PL_CATATAN_MARK = '- Dari pricelist -';
-const PL_CATATAN_MARK_LAMA = '\u2014 Dari pricelist \u2014'; // penanda versi lama, tetap dikenali supaya catatan lama tidak menumpuk dobel
-function plCatatanIdx(t){ const a = t.indexOf(PL_CATATAN_MARK), b = t.indexOf(PL_CATATAN_MARK_LAMA); return (a>-1 && b>-1) ? Math.min(a,b) : (a>-1 ? a : b); }
 // Mengisi form dari data pricelist yang sudah dinormalisasi (plNormalize), lalu MEMBACA ULANG
 // setiap kolom yang diklaim terisi. Mengembalikan:
 //   filled : kolom yang terisi DAN terbukti masuk (nilai di form = nilai dari pricelist)
@@ -9407,6 +9410,7 @@ function plApplyToForm(form, data){
     put('Desa', '[name="desa"]', data.alamat.desa);
     if(data.alamat.kecamatan) put('Kecamatan', '[name="kecamatan"]', data.alamat.kecamatan);
     if(data.alamat.kabupaten) put('Kabupaten', '[name="kabupaten"]', data.alamat.kabupaten);
+    if(data.alamat.provinsi) put('Provinsi', '[name="provinsi"]', data.alamat.provinsi);
     if(!data.alamat.terurai) review.push('Alamat dari pricelist berformat lama (satu kolom), seluruhnya ditaruh di kolom Desa, pecah manual ke Kecamatan/Kabupaten.');
   }
   const coord = plCoordsFromLink(data.maps);
@@ -9425,6 +9429,7 @@ function plApplyToForm(form, data){
   }
   // 5) Paket
   put('Paket', '[name="paket"]', data.paket);
+  if(data.addOn) put('Add-On', '[name="addOn"]', data.addOn);
   {
     const taDesk = form.querySelector('[name="deskripsiPaket"]');
     const mCetak = taDesk ? cetakAmbilBaris(taDesk.value).join('\n') : '';
@@ -9479,34 +9484,20 @@ function plApplyToForm(form, data){
       }
     }
   }
-  // 9) Catatan gabungan. Catatan yang diketik manual TIDAK ditimpa: blok pricelist diberi
-  //    penanda, jadi tarik ulang hanya mengganti blok itu (tidak menumpuk dobel).
+  // 9) Catatan dari klien: dimasukkan APA ADANYA ke kolom Catatan (tanpa label / penanda tambahan).
+  //    Catatan yang sudah diketik manual tidak ditimpa; kalau teks yang sama sudah ada, tidak ditambah dobel.
   if(data.catatanBaris && data.catatanBaris.length){
     const ta = form.querySelector('[name="catatan"]');
     if(ta){
-      const block = PL_CATATAN_MARK + '\n' + data.catatanBaris.join('\n');
-      const cur = String(ta.value || '');
-      const at = plCatatanIdx(cur);
-      const manual = (at>-1 ? cur.slice(0, at) : cur).replace(/\s+$/,'');
-      ta.value = manual ? manual + '\n\n' + block : block;
-      ta.dispatchEvent(new Event('input',{bubbles:true}));
+      const note = data.catatanBaris.join('\n');
+      const cur = String(ta.value || '').trim();
+      if(cur.indexOf(note) === -1){
+        ta.value = cur ? cur + '\n\n' + note : note;
+        ta.dispatchEvent(new Event('input',{bubbles:true}));
+      }
       filled.push('Catatan');
-      verify('Catatan', true, ()=>String(ta.value).indexOf(block)>-1);
+      verify('Catatan', true, ()=>String(ta.value).indexOf(note)>-1);
     }
-  }
-  if(!(data.catatanBaris && data.catatanBaris.length)){
-    // Semua data pricelist sekarang masuk kolom Detail Acara: blok "Dari pricelist" lama di Catatan
-    // (hasil penarikan sebelumnya) sudah tidak relevan dan dibuang. Catatan ketikan sendiri tetap utuh.
-    const ta0 = form.querySelector('[name="catatan"]');
-    const cur0 = ta0 ? String(ta0.value || '') : '';
-    const at0 = plCatatanIdx(cur0);
-    if(ta0 && at0>-1){
-      ta0.value = cur0.slice(0, at0).replace(/\s+$/,'');
-      ta0.dispatchEvent(new Event('input',{bubbles:true}));
-    }
-  }
-  if(data.kolomLain && data.kolomLain.length){
-    info.push('Pertanyaan pricelist yang belum punya kolom, dibuatkan kolom sendiri di Detail Acara (bukan Catatan): ' + data.kolomLain.map(x=>x.k).join(', ') + '.');
   }
 
   // 10) VERIFIKASI: baca ulang tiap kolom yang diklaim terisi.
@@ -9532,7 +9523,7 @@ function plApplyToForm(form, data){
 function buildJobFormHtml(j){
   const d = j || {
     tanggalAcara:'', tanggalSelesai:'', jamAcara:'', desa:'', dusun:'', adaDusun:false, kecamatan:'', kabupaten:'', provinsi:'', linkMaps:'', koordinat:'',
-    jenisAcara:'', jenisAcaraLain:'', namaKlien:'', namaMempelai:'', noWhatsapp:'', instagramList:[], detailAcara:{}, paket:'', deskripsiPaket:'',
+    jenisAcara:'', jenisAcaraLain:'', namaKlien:'', namaMempelai:'', noWhatsapp:'', instagramList:[], detailAcara:{}, paket:'', deskripsiPaket:'', addOn:'',
     prosesEdit:'Belum Selesai', prosesCetak:'Belum Selesai', pengiriman:'Belum Dijemput', linkMapsAntar:'', jarakAntarKm:'', ongkirAntar:'',
     vendor:'', vendorLain:'', timFreelancer:'', dp:'', biayaCetak:'', honorTim:'', honorTimList:[], diskon:'',
     penghasilan:'', sedekahNominal:'', sedekahStatus:'Belum', setoranShia:'',
@@ -9589,6 +9580,10 @@ function buildJobFormHtml(j){
         <div class="full">
           <label>Deskripsi Paket</label>
           <textarea name="deskripsiPaket" rows="3" placeholder="Rincian isi paket, misal: 1 album 20R, cetak 4R 50 lembar, softfile semua foto, dll.">${escapeHtml(d.deskripsiPaket||'')}</textarea>
+        </div>
+        <div class="full">
+          <label>Add-On</label>
+          <textarea name="addOn" rows="2" placeholder="Add-On yang dipesan klien, misal: Drone, album tambahan 20R, dll.">${escapeHtml(d.addOn||'')}</textarea>
         </div>
         </div>
 
@@ -10352,7 +10347,7 @@ function renderDaftarTable(){
   if(q){
     const qDigits = q.replace(/[^0-9]/g,'');
     list = list.filter(j=>{
-      const hay = [j.namaKlien,j.namaMempelai,j.desa,j.dusun,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket, ...Object.values(j.detailAcara || {})]
+      const hay = [j.namaKlien,j.namaMempelai,j.desa,j.dusun,j.kecamatan,j.kabupaten,j.provinsi,j.jenisAcara,j.vendor,j.vendorLain,j.paket,j.deskripsiPaket,j.addOn, ...Object.values(j.detailAcara || {})]
         .join(' ').toLowerCase();
       if(hay.includes(q)) return true;
       if(isAdmin() && qDigits && String(j.noWhatsapp||'').replace(/[^0-9]/g,'').includes(qDigits)) return true;
@@ -11340,6 +11335,7 @@ function openDateModal(dateIso){
         <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}, ${escapeHtml(j.kabupaten||'-')}</span></div>
         <div class="mj-row"><span>Paket</span><span>${escapeHtml(j.paket||'-')}</span></div>
         ${(j.deskripsiPaket||'').trim() ? `<div class="mj-row"><span>Deskripsi Paket</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.deskripsiPaket.trim())}</span></div>` : ''}
+        ${(j.addOn||'').trim() ? `<div class="mj-row"><span>Add-On</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.addOn.trim())}</span></div>` : ''}
         ${isAdmin() ? `<div class="mj-row"><span>WhatsApp</span><span>${escapeHtml(j.noWhatsapp||'-')}</span></div>` : ''}
         <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
         <div class="mj-row"><span>Tim/Freelancer</span><span>${escapeHtml(namaTimLengkap(j, j.timFreelancer)||'-')}</span></div>
@@ -11780,6 +11776,7 @@ function openJobDetailModal(jobId){
       ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
+      ['Add-On', j.addOn||'-'],
     ]},
     ...(detailAcaraRows(j).length ? [{title:'Detail Acara', rows:detailAcaraRows(j)}] : []),
     {title:'Status & Proses', rows:[
@@ -11897,6 +11894,7 @@ function buildJobPosterHtml(j){
       ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', truncateText(j.deskripsiPaket, 160) || '-'],
+      ['Add-On', truncateText(j.addOn, 160) || '-'],
     ]},
     ...(detailAcaraRows(j,{tanpaUmum:true, maks:70}).length ? [{title:'Detail Acara', rows:detailAcaraRows(j,{tanpaUmum:true, maks:70})}] : []),
     {title:'Status & Proses', rows:[
@@ -12134,6 +12132,7 @@ function copyJobDetails(jobId){
       ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', j.deskripsiPaket||'-'],
+      ['Add-On', j.addOn||'-'],
     ]},
     ...(detailAcaraRows(j).length ? [{title:ic('clipboard')+' Detail Acara', rows:detailAcaraRows(j)}] : []),
     {title:ic('settings')+' Status & Proses', rows:[
@@ -12407,8 +12406,13 @@ function kwSha256(str){
 // Sumber tunggal isi paket untuk QR & kwitansi: kalau job punya ceklis Hasil Cetak (j.cetak),
 // daftar cetak dibuat ulang dari data terstruktur itu, bukan dari teks yang sudah diketik.
 // Job lama / tanpa ceklis → memakai Deskripsi Paket apa adanya.
+// Deskripsi Paket + Add-On digabung (Add-On punya kolom sendiri, tapi tetap ikut tampil di isi paket).
+function deskripsiGabung(j){
+  const d = String((j && j.deskripsiPaket) || '').trim(), a = String((j && j.addOn) || '').trim();
+  return a ? (d ? d + '\n' : '') + 'Add-On: ' + a : d;
+}
 function kwDeskripsiBagian(j){
-  const txt = String(j.deskripsiPaket||'').trim(), c = j.cetak;
+  const txt = deskripsiGabung(j), c = j.cetak;
   if(!c || typeof c!=='object' || !['f16','f12','f10','f6','album','fd'].some(k=>c[k] && c[k].on)) return {base:txt, blok:''};
   const sel = {f16:{},f12:{},f10:{},f6:{},album:{},fd:{},...c};
   return {base:cetakBuangBaris(txt), blok:hitungCetak(sel).lines.join('\n')};
@@ -12911,7 +12915,7 @@ function buildKwitansiPosterHtml(j, qr){
         </div>
       </div>
       <div class="kw-body">
-        ${((j.deskripsiPaket||'').trim() || qr) ? `
+        ${(deskripsiGabung(j) || qr) ? `
         <div class="kw-package${qr?' has-qr':''}">
           <div class="kw-package-main">
             <div class="kw-package-label">Isi Paket</div>
@@ -13013,7 +13017,7 @@ function jobEventDetails(j){
   // Gabungkan nama paket & deskripsi paket menjadi catatan acara di Google Calendar / ICS
   const detailLines = [];
   if((j.paket||'').trim()) detailLines.push(`Paket: ${j.paket.trim()}`);
-  if((j.deskripsiPaket||'').trim()) detailLines.push(`Deskripsi Paket: ${j.deskripsiPaket.trim()}`);
+  if(deskripsiGabung(j)) detailLines.push(`Deskripsi Paket: ${deskripsiGabung(j)}`);
   if(j.namaKlien) detailLines.push(`Klien: ${j.namaKlien}`);
   if(isJenisMempelai(j.jenisAcara) && (j.namaMempelai||'').trim()) detailLines.push(`Mempelai: ${j.namaMempelai.trim()}`);
   detailAcaraRows(j).forEach(([l,v])=>detailLines.push(`${l}: ${v}`));
@@ -16234,6 +16238,11 @@ const CHANGELOG = [
     version: '1.18.0',
     tanggal: '10 Oktober 2026',
     items: [
+      { kategori: 'Fitur', teks: 'Form Input/Edit Job punya kolom baru \"Add-On\" (di bawah Deskripsi Paket). Add-On dari pesanan klien masuk ke kolom ini, dan tetap ikut tampil di isi paket pada pesan WhatsApp, kwitansi, QR, dan kalender.' },
+      { kategori: 'Perbaikan', teks: 'Bagian Hasil Cetak di HP dirapikan: tiap baris cukup nama dan harga, jumlah, bingkai, dan ukuran baru muncul setelah dicentang.' },
+      { kategori: 'Perubahan', teks: 'Catatan dari pesanan klien kini masuk ke kolom Catatan apa adanya, tanpa label atau penanda tambahan.' },
+      { kategori: 'Perubahan', teks: 'Konfirmasi Booking: kotak keterangan di atas form diringkas, hanya berisi nama klien dan kolom yang belum terisi.' },
+      { kategori: 'Fitur', teks: 'Kolom \"Provinsi\" ditambahkan di alamat acara pada semua halaman pricelist dan isi biodata. Provinsi ikut terisi otomatis saat Konfirmasi Booking.' },
       { kategori: 'Fitur', teks: 'Menu baru \"Pesanan Masuk\" (di Lainnya, plus banner di Beranda dan notifikasi push). Data yang diisi klien di form pricelist dan isi biodata kini otomatis masuk ke database, lalu Admin menekan \"Konfirmasi Booking\" untuk membuatnya jadi job (form Input Job terisi otomatis). Pesanan yang mirip (No. WhatsApp dan tanggal sama) ditandai, bisa digabung ke job yang sudah ada, dan pesanan yang sudah diproses terkunci supaya tidak jadi dobel.' },
       { kategori: 'Perubahan', teks: 'Panel Ambil dari Pricelist di form Input/Edit Job dihapus, karena data klien kini masuk lewat menu Pesanan Masuk (tombol Konfirmasi Booking).' },
       { kategori: 'Perubahan', teks: 'Jenis Acara \"Marbagas\" diganti namanya menjadi \"Wedding\". Job lama yang tersimpan sebagai Marbagas otomatis terbaca Wedding. Catatan dari klien di form pricelist kini diberi label \"Catatan Penting untuk Fotografer\" sesuai form aslinya.' },
@@ -19245,14 +19254,24 @@ I.kedit='<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z
 var KNM='kc:nama:',kLNc=null,kLNu=null;
 function kNmDec(m){try{if(!m||m.tipe!='teks'||typeof m.isi!='string'||m.isi.indexOf(KNM)!==0)return null;var o=JSON.parse(m.isi.slice(KNM.length));return(o&&typeof o.b=='string')?o:null}catch(e){return null}}
 async function kNmPost(a,b){try{var r=await sb.from('kaone_chat_pesan').insert({tipe:'teks',isi:KNM+JSON.stringify({a:a,b:b}),pengirim:me}).select().single();if(r&&r.data){msgs[r.data.id]=r.data;draw()}}catch(e){}}
+/* Nama panggilan yang diberikan SATU pihak untuk lawan chatnya -> juga dikirim sebagai pesan sistem, supaya
+   pihak yang dipanggil melihatnya: "[nama lawan chat] mengubah nama panggilan Anda jadi ...". */
+var KAL='kc:alias:';
+function kAlDec(m){try{if(!m||m.tipe!='teks'||typeof m.isi!='string'||m.isi.indexOf(KAL)!==0)return null;var o=JSON.parse(m.isi.slice(KAL.length));return(o&&typeof o.b=='string')?o:null}catch(e){return null}}
+async function kAlPost(a,b){try{var r=await sb.from('kaone_chat_pesan').insert({tipe:'teks',isi:KAL+JSON.stringify({a:a,b:b}),pengirim:me}).select().single();if(r&&r.data){msgs[r.data.id]=r.data;draw();return true}}catch(e){}return false}
+function kAlWho(){return AL||(other&&P[other]&&P[other].nama)||'Lawan chat'}
 function kLNget(){if(!me)return[];if(kLNu!==me){try{kLNc=JSON.parse(localStorage.getItem('kcLN_'+me)||'[]')}catch(e){kLNc=[]}if(!Array.isArray(kLNc))kLNc=[];kLNu=me}return kLNc}
 function kLNadd(nm){var l=kLNget();l.push({id:'ln_'+Date.now(),tipe:'lokal',dikirim_at:new Date().toISOString(),isi:nm||''});if(l.length>40)l.splice(0,l.length-40);try{localStorage.setItem('kcLN_'+me,JSON.stringify(l))}catch(e){}draw()}
-function kNmToast(m){var d=kNmDec(m);if(d)toast((AL||d.a||'Lawan chat')+' mengubah nama panggilan')}
+function kNmToast(m){var d=kNmDec(m);if(d){toast((AL||d.a||(other&&P[other]&&P[other].nama)||'Lawan chat')+' mengubah nama panggilannya');return}var q=kAlDec(m);if(q)toast(kAlWho()+(q.b?' mengubah nama panggilan Anda jadi '+q.b:' menghapus nama panggilan Anda'))}
 function kNmNote(m){var h,sub,t=tm(m.dikirim_at);
-if(m.tipe=='lokal'){h=m.isi?'Kamu mengubah nama lawan chat menjadi <b>&ldquo;'+E(m.isi)+'&rdquo;</b>':'Kamu menghapus nama panggilan lawan chat';sub='Hanya terlihat olehmu'}
+var q=kAlDec(m);
+if(q){sub=q.a?'Sebelumnya &ldquo;'+E(q.a)+'&rdquo;':'';
+if(m.pengirim==me){var nm=(other&&P[other]&&P[other].nama)||'lawan chat';h=q.b?'Anda mengubah nama panggilan <b>'+E(nm)+'</b> jadi <b>&ldquo;'+E(q.b)+'&rdquo;</b>':'Anda menghapus nama panggilan <b>'+E(nm)+'</b>'}
+else{h='<b>'+E(kAlWho())+'</b> '+(q.b?'mengubah nama panggilan Anda jadi <b>&ldquo;'+E(q.b)+'&rdquo;</b>':'menghapus nama panggilan Anda')}}
+else if(m.tipe=='lokal'){h=m.isi?'Kamu mengubah nama lawan chat menjadi <b>&ldquo;'+E(m.isi)+'&rdquo;</b>':'Kamu menghapus nama panggilan lawan chat';sub='Hanya terlihat olehmu'}
 else{var d=kNmDec(m);if(!d)return '';
 if(m.pengirim==me){h='Kamu mengubah nama panggilan menjadi <b>&ldquo;'+E(d.b)+'&rdquo;</b>';sub=d.a?'Sebelumnya &ldquo;'+E(d.a)+'&rdquo;':''}
-else{h='<b>'+E(AL||d.a||'Lawan chat')+'</b> mengubah nama panggilan menjadi <b>&ldquo;'+E(d.b)+'&rdquo;</b>';sub=''}}
+else{h='<b>'+E(AL||d.a||(other&&P[other]&&P[other].nama)||'Lawan chat')+'</b> mengubah nama panggilannya menjadi <b>&ldquo;'+E(d.b)+'&rdquo;</b>';sub=''}}
 return '<div class="kcn'+(dr0&&!dn[m.id]?' in':'')+'" role="status"><div class="kcp"><span class="kci">'+ic('kedit')+'</span><span class="kcx">'+h+'</span></div><div class="kcs">'+(sub?sub+' &middot; ':'')+t+'</div></div>'}
 function bub(m){var nn=kNmNote(m);if(nn)return nn;var pvx,own=m.pengirim==me,c='',x=m.balas_ke&&msgs[m.balas_ke];if(m.dihapus_at)return '<div class="b'+(own?' me':'')+' del">'+ic('ban')+' Pesan ini sudah dihapus<div class="t">'+tm(m.dikirim_at)+'</div></div>';
 if(kcGone(m)){var ga=dr0&&dn[m.id]&&!kGS[m.id];kGS[m.id]=1;return '<div class="b'+(own?' me':'')+' del gone'+(ga?' ga':'')+'">'+ic('ban')+' Foto ini telah hilang otomatis<div class="t">'+tm(m.dikirim_at)+'</div></div>'}
@@ -19412,7 +19431,7 @@ if(pend){var u=await sb.storage.from('kaone-chat').upload('profil/'+me+'.jpg',pe
 else if(delFoto){if(!(await fotoHapus()))return}
 var kr1=await sb.rpc('kaone_chat_simpan_profil',{p_nama:n,p_foto:!!pend});var kr2=await sb.rpc('kaone_chat_simpan_alias',{p_nama:newA});
 if(!(kr1&&kr1.error)&&oldN&&oldN!==n)await kNmPost(oldN,n);
-if(!(kr2&&kr2.error)&&newA!==oldA)kLNadd(newA);
+if(!(kr2&&kr2.error)&&newA!==oldA){if(!(await kAlPost(oldA,newA)))kLNadd(newA)}
 var hp=delFoto;pend=null;delFoto=false;delete U[me];if(hp&&P[me])P[me].foto_at=null;await pfLoad();shut('kpf');if(hp)toast('Foto profil dihapus')
 }finally{bt.disabled=false}}
 function crOpen(f){var im=new Image();im.onload=function(){cim=im;cz=1;ox=oy=0;$('kzm').value=1;crDraw();$('kcr').classList.add('on')};im.src=URL.createObjectURL(f)}

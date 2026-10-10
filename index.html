@@ -8289,9 +8289,8 @@ function jobStartTs(j){
 function fmtCountdown(ts){
   const diff = ts - Date.now();
   if(diff<=0) return 'Sedang berlangsung';
-  const tot = Math.floor(diff/1000), d = Math.floor(tot/86400), h = Math.floor((tot%86400)/3600), m = Math.floor((tot%3600)/60), sc = tot%60;
-  const p2 = x => String(x).padStart(2,'0');
-  const t = d>=1 ? d+' hari '+h+' jam '+p2(m)+' menit '+p2(sc)+' detik' : (h>=1 ? h+' jam '+p2(m)+' menit '+p2(sc)+' detik' : m+' menit '+p2(sc)+' detik');
+  const tot = Math.floor(diff/1000), d = Math.floor(tot/86400), h = Math.floor((tot%86400)/3600);
+  const t = d>=1 ? (h>=1 ? d+' hari '+h+' jam' : d+' hari') : (h>=1 ? h+' jam' : 'kurang dari 1 jam');
   return 'Mulai dalam '+t;
 }
 setInterval(()=>{
@@ -19267,6 +19266,23 @@ Object.assign(M,m);Object.assign(STK,c);
 var st=document.createElement('style');
 st.textContent='.ka{transform-box:fill-box;transform-origin:50% 90%;animation-duration:2.4s;animation-iteration-count:infinite;animation-timing-function:ease-in-out}.k1{animation-name:kA1}.k2{animation-name:kA2;animation-duration:2.1s}.k3{animation-name:kA3;animation-duration:1.8s}.k4{animation-name:kA4;animation-duration:2.6s;transform-origin:50% 100%}.k5{animation-name:kA5;animation-duration:3.2s}.k6{animation-name:kA6;animation-duration:2.2s}.k7{animation-name:kA7;animation-duration:7s;animation-timing-function:linear;transform-origin:50% 50%}.k8{animation-name:kA8;animation-duration:2s}.kb{transform-box:fill-box;transform-origin:50% 50%;animation:kB 1.6s ease-in-out infinite}.kd{animation:kD 1.5s ease-in infinite}'+'@keyframes kA1{0%,100%{transform:none}30%{transform:translateY(-3px) scale(.96,1.06)}55%{transform:scale(1.06,.94)}75%{transform:translateY(-1px)}}@keyframes kA2{0%,100%{transform:rotate(0)}25%{transform:rotate(-9deg)}75%{transform:rotate(9deg)}}@keyframes kA3{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}@keyframes kA4{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}@keyframes kA5{0%,100%{transform:translateY(-2px) rotate(-3deg)}50%{transform:translateY(1.5px) rotate(3deg)}}@keyframes kA6{0%,45%,100%{transform:none}8%{transform:translateX(-1.2px) rotate(-5deg)}16%{transform:translateX(1.2px) rotate(5deg)}24%{transform:translateX(-1.2px) rotate(-5deg)}32%{transform:translateX(1.2px) rotate(5deg)}}@keyframes kA7{to{transform:rotate(360deg)}}@keyframes kA8{0%,100%{transform:scale(1)}25%{transform:scale(1.1,.9)}50%{transform:scale(.92,1.08)}75%{transform:scale(1.04,.97)}}@keyframes kB{0%,100%{opacity:.3;transform:scale(.6)}50%{opacity:1;transform:scale(1.15)}}@keyframes kD{0%{transform:translateY(-1px);opacity:0}20%{opacity:1}100%{transform:translateY(5px);opacity:0}}@media (prefers-reduced-motion:reduce){.ka,.kb,.kd{animation:none}}';
 document.head.appendChild(st);
+})();
+/* ===== 5 STIKER CIUMAN ===== */
+(function(){
+var n=0,D='fill="#3b2230"',P='fill="#ff7fa8" opacity=".75"',R='#ff4d6d';
+function g(a,b){return '<g class="ka k'+a+'" style="animation-delay:-'+((n++*.53)%2.6).toFixed(2)+'s">'+b+'</g>'}
+function ht(x,y,sc,col,dl){return '<g class="kb"'+(dl?' style="animation-delay:-'+dl+'s"':'')+'><path transform="translate('+x+' '+y+') scale('+sc+')" fill="'+col+'" d="M12 21s-7-4.5-9.3-9A5.3 5.3 0 0 1 12 6a5.3 5.3 0 0 1 9.3 6c-2.3 4.5-9.3 9-9.3 9z"/></g>'}
+function shut(x1,x2,y){return '<path d="M'+(x1-1.3)+' '+y+'q1.3-1.5 2.6 0M'+(x2-1.3)+' '+y+'q1.3-1.5 2.6 0" fill="none" stroke="#3b2230" stroke-width=".9" stroke-linecap="round"/>'}
+function pucker(x,y){return '<path d="M'+(x-1.5)+' '+y+'q1.5-1.8 3 0-.2 2-1.5 2t-1.5-2z" fill="'+R+'"/>'}
+var S={
+kciuman:['#ffd23f',g(1,'<circle cx="12" cy="13.4" r="8.4"/>'+shut(8.6,15.4,11.8)+pucker(12,15.6)+'<ellipse cx="6.4" cy="14.4" rx="1.5" ry=".9" '+P+'/><ellipse cx="17.6" cy="14.4" rx="1.5" ry=".9" '+P+'/>')+ht(16.6,.4,.3,R)+ht(19.4,4.4,.18,R,.6)],
+kbibir:['#ff4d6d',g(3,'<path d="M2.4 12.2c3-1.2 5.6-4.4 9.6-2 4-2.4 6.6.8 9.6 2-2.2 5.2-5.6 8.6-9.6 8.6s-7.4-3.4-9.6-8.6z"/><path d="M3 12.4q9 2.4 18 0" fill="none" stroke="#a81f3c" stroke-width="1" stroke-linecap="round"/><ellipse cx="9.4" cy="15.8" rx="2.4" ry=".9" fill="#fff" opacity=".35"/>')+ht(18.4,1.6,.26,'#ff8fb8')+ht(2.8,2.6,.2,'#ff8fb8',.8)],
+kpasangan:['#ffd23f',g(2,'<circle cx="7.8" cy="14" r="6"/><circle cx="16.2" cy="14" r="6" fill="#ffb8d8"/>'+shut(6.6,6.6,12.6).replace(/M5\.3 12\.6q1\.3-1\.5 2\.6 0M5\.3 12\.6q1\.3-1\.5 2\.6 0/,'M5.5 12.6q1.3-1.5 2.6 0')+'<path d="M15.9 12.6q1.3-1.5 2.6 0" fill="none" stroke="#3b2230" stroke-width=".9" stroke-linecap="round"/><ellipse cx="11.9" cy="16" rx="1.5" ry="1.1" fill="'+R+'"/><ellipse cx="5.2" cy="15.6" rx="1.2" ry=".8" '+P+'/><ellipse cx="18.8" cy="15.6" rx="1.2" ry=".8" '+P+'/>')+ht(9.2,.4,.3,R)+ht(14.2,3.2,.18,R,.7)],
+kkucingcium:['#f2b35e',g(4,'<path d="M3.6 3.6l5 3.2-3.8 5zM20.4 3.6l-5 3.2 3.8 5z" fill="#e09a3a"/><circle cx="12" cy="13.6" r="8.2"/>'+shut(8.6,15.4,12)+pucker(12,15.8)+'<path d="M4.4 14.4l3-.4M4.6 16.6l2.8-1M19.6 14.4l-3-.4M19.4 16.6l-2.8-1" stroke="#3b2230" stroke-width=".6" stroke-linecap="round"/><ellipse cx="6.6" cy="14.6" rx="1.3" ry=".8" '+P+'/><ellipse cx="17.4" cy="14.6" rx="1.3" ry=".8" '+P+'/>')+ht(18.2,.6,.28,R)+ht(21,5.2,.16,R,.5)],
+kmwah:['#ffc83d',g(8,'<circle cx="10.4" cy="13.2" r="8.4"/><path d="M6.6 11.6q1.3-1.5 2.6 0" fill="none" stroke="#3b2230" stroke-width=".9" stroke-linecap="round"/><circle cx="13.6" cy="11.4" r="1.1" '+D+'/><path d="M9.6 15.4q1.2-1.6 2.4 0-.2 1.8-1.2 1.8t-1.2-1.8z" fill="'+R+'"/><ellipse cx="5.2" cy="14.4" rx="1.4" ry=".9" '+P+'/><ellipse cx="15.6" cy="14.4" rx="1.4" ry=".9" '+P+'/>')+ht(15.8,13,.3,R,.2)+ht(19.2,8,.24,'#ff6f95',.7)+ht(20.2,2.8,.18,'#ff8fb8',1.2)]
+};
+var c={},m={};Object.keys(S).forEach(function(k){c[k]=S[k][0];m[k]=S[k][1]});
+Object.assign(M,m);Object.assign(STK,c);
 })();
 I.smile='<circle cx="12" cy="12" r="9"/><path d="M8.5 14.2q3.5 3.4 7 0"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/>';
 I.clock='<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>';

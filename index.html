@@ -19912,6 +19912,7 @@ else if(t.dataset.gk)gifKeyAsk();
 else if(t.dataset.gl){var x=gifFromLink($('kgl').value);if(x)gifSend(x,0,0);else toast('Link Giphy tidak dikenali')}
 else if(t.dataset.gc)gifHide()});
 })();
+window.kaoneAdaPanggilan=function(){try{return !!kk&&(kk.st=='live'||kk.st=='out'||kk.st=='ring-in')}catch(e){return false}};
 var kLP=0;
 document.addEventListener('visibilitychange',function(){if(document.visibilityState=='hidden'&&$('kc').classList.contains('on')&&!pc&&kk.st!='ring-in'&&kk.st!='out'&&kk.st!='live'){close()}});
 /* ---- MODE HANYA-CHAT: ruang chat selalu terbuka, tidak bisa ditutup, hanya bisa Keluar akun ---- */
@@ -19938,6 +19939,7 @@ else{try{var q=await (window.supabaseClient||supabaseClient).rpc('kaone_chat_per
 }
 gagal=1;layar('Ruang chat belum bisa dibuka. Periksa koneksi internet, lalu coba lagi.',why)}
 window.kaoneChatBuka=function(){window.__kaoneChatWant=1;gagal=0;coba=0;var g=$('kcg');if(g)g.remove();pastikan()};
+try{var u0=new URL(location.href);if(u0.searchParams.has('_r')){u0.searchParams.delete('_r');history.replaceState(null,'',u0.pathname+u0.search+u0.hash)}}catch(e){}
 window.kaoneChatMulai=function(){if(mulai)return;mulai=1;
 if(!$('kmo')){var b=document.createElement('button');b.className='it';b.id='kmo';b.type='button';b.innerHTML='<span></span>Keluar akun';
 b.addEventListener('click',function(){shut('kst');logout()});$('kstx').parentNode.before(b)}
@@ -20430,7 +20432,7 @@ document.addEventListener('click',function(e){
     }
     root.innerHTML='<div class="lh-wrap"><header class="lh-top"><div class="lh-ava" aria-hidden="true">'+esc(nama.charAt(0))+'</div>'
       +'<div class="lh-hi"><h1>Halo, '+esc(nama)+' \uD83C\uDF37</h1><p>'+sapaan()+' \u00B7 jadwal Admin</p></div>'
-      +'<button type="button" class="lh-ib'+(S.loading?' spin':'')+'" data-act="reload" aria-label="Muat ulang jadwal">'+IC.refresh+'</button>'
+      +'<button type="button" class="lh-ib'+(S.loading||S.hr?' spin':'')+'" data-act="hard" aria-label="Muat ulang total">'+IC.refresh+'</button>'
       +'<button type="button" class="lh-ib" data-act="menu" aria-label="Menu">'+IC.dots+'</button></header>'+body
       +'</div><div class="lh-menu" id="lhMenu"><div class="box"><button type="button" data-act="keluar">'+IC.out+'Keluar akun</button></div></div>';
     root.scrollTop=scroll;
@@ -20447,6 +20449,23 @@ document.addEventListener('click',function(e){
     }).catch(function(e){
       console.warn('Jadwal belum bisa dimuat',e);S.error=true;
     }).then(function(){S.loading=false;paint()});
+  }
+  /* Muat ulang total: hapus cache aplikasi (Cache Storage), minta service worker cek versi baru, lalu buka ulang dengan
+     parameter anti-cache. Login, pesan, dan langganan notifikasi TIDAK dihapus. Dicek online dulu lewat berkas non-halaman
+     (di sw.js langsung ke jaringan), karena kalau cache dihapus saat offline, aplikasi tidak bisa dibuka lagi. */
+  function flash(msg){var o=document.createElement('div');o.textContent=msg;o.setAttribute('role','status');
+    o.style.cssText='position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:100003;max-width:80vw;padding:10px 16px;border-radius:14px;background:#3b372f;color:#fff;font:700 13px system-ui,sans-serif;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.25)';
+    document.body.appendChild(o);setTimeout(function(){o.remove()},2600)}
+  async function hardRefresh(){
+    if(S.hr)return;
+    try{if(typeof window.kaoneAdaPanggilan==='function'&&window.kaoneAdaPanggilan()&&!confirm('Sedang ada panggilan. Tetap muat ulang?'))return}catch(e){}
+    S.hr=true;paint();
+    try{if(navigator.onLine===false)throw 0;var pr=await fetch('manifest.webmanifest?_r='+Date.now(),{cache:'no-store'});if(!pr||!pr.ok)throw 0}
+    catch(e){S.hr=false;paint();flash('Tidak ada koneksi. Coba lagi saat online.');return}
+    flash('Memuat ulang\u2026');
+    try{if(window.caches&&caches.keys){var ks=await caches.keys();await Promise.all(ks.map(function(k){return caches.delete(k)}))}}catch(e){}
+    try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){var rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(function(r){return r.update().catch(function(){})}))}}catch(e){}
+    try{var u=new URL(location.href);u.searchParams.set('_r',Date.now());location.replace(u.toString())}catch(e){location.reload()}
   }
   function bukaChat(){
     window.__kaoneChatWant=1;
@@ -20467,6 +20486,7 @@ document.addEventListener('click',function(e){
       var a=b.getAttribute('data-act'),m=$('lhMenu');
       if(a==='reload'){load()}
       else if(a==='menu'){if(m)m.classList.add('on')}
+      else if(a==='hard'){if(m)m.classList.remove('on');hardRefresh()}
       else if(a==='keluar'){if(m)m.classList.remove('on');if(typeof logout==='function')logout()}
       return;
     }

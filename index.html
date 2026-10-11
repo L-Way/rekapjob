@@ -3776,6 +3776,7 @@ body{background:radial-gradient(800px 480px at 95% -8%,#ffe38a,transparent 60%),
 <symbol id="ic-road" viewBox="0 0 24 24"><path d="M9 3 L4 21"/><path d="M15 3 L20 21"/><line x1="12" y1="4" x2="12" y2="7"/><line x1="12" y1="10.5" x2="12" y2="13.5"/><line x1="12" y1="17" x2="12" y2="20"/></symbol>
 <symbol id="ic-mailbox-empty" viewBox="0 0 24 24"><path d="M4 10 a5 5 0 0 1 10 0 v8 H4 Z"/><line x1="1.5" y1="18" x2="16.5" y2="18"/><line x1="14" y1="7" x2="20" y2="7"/></symbol>
 <symbol id="ic-inbox" viewBox="0 0 24 24"><polyline points="3,12 8,12 10,15 14,15 16,12 21,12"/><path d="M6 5 h12 l3 7 v7 H3 v-7 Z"/></symbol>
+<symbol id="ic-pesanan" viewBox="0 0 24 24"><circle cx="12" cy="7.2" r="4"/><circle cx="12" cy="7.2" r="0.9"/><path d="M3 13.5h5.2l1.4 2.6h4.8l1.4-2.6H21V20H3Z"/></symbol>
 <symbol id="ic-printer" viewBox="0 0 24 24"><path d="M6 8 V3 h12 v5"/><rect x="3" y="8" width="18" height="8" rx="1"/><path d="M6 16 v5 h12 v-5"/><line x1="7" y1="11.5" x2="7" y2="11.51"/></symbol>
 <symbol id="ic-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2"/><line x1="10" y1="19" x2="14" y2="19"/></symbol>
 <symbol id="ic-mail" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="1.5"/><polyline points="3.5,6.5 12,13 20.5,6.5"/></symbol>
@@ -6367,7 +6368,7 @@ function psnPasangBannerForm(form, p, r){
   box.className = 'info-box psn-formbox';
   const gabung = pendingPesanan.mode==='gabung';
   const gagal = (r && r.failed) ? r.failed.map(x=>String(x).split(' (')[0]) : [];
-  box.innerHTML = '<b>' + ic('inbox') + ' ' + (gabung ? 'Gabung pesanan ke job ini: ' : 'Konfirmasi Booking: ') + escapeHtml(p.nama || 'klien') + '</b>' +
+  box.innerHTML = '<b>' + ic('pesanan') + ' ' + (gabung ? 'Gabung pesanan ke job ini: ' : 'Konfirmasi Booking: ') + escapeHtml(p.nama || 'klien') + '</b>' +
     'Periksa kolomnya, lalu tekan Simpan.' +
     (gagal.length ? '<br>Belum terisi: ' + escapeHtml(gagal.join(', ')) + '.' : '');
   form.parentNode.insertBefore(box, form);
@@ -6450,7 +6451,7 @@ function pesananBannerHtml(){
   const n = pesananBaruCount();
   if(!n) return '';
   return `<button type="button" class="psn-banner" data-psn-act="buka">
-    <span class="pb-ico">${ic('inbox')}</span>
+    <span class="pb-ico">${ic('pesanan')}</span>
     <span class="pb-tx"><b>${n} pesanan baru dari klien</b><span>Periksa lalu tekan Konfirmasi Booking</span></span>
     <span class="pb-go">${ic('chevron-right')}</span>
   </button>`;
@@ -6519,7 +6520,7 @@ function viewPesanan(){
   return `
   <div class="card">
     <div class="cal-controls">
-      <h2 style="margin:0;">${ic('inbox')} Pesanan Masuk</h2>
+      <h2 style="margin:0;">${ic('pesanan')} Pesanan Masuk</h2>
       <button type="button" class="btn btn-outline" data-psn-act="muat">${pesananLoading ? ic('hourglass') + ' Memuat...' : ic('refresh') + ' Muat Ulang'}</button>
     </div>
     <p style="color:var(--ink-soft); font-size:12.5px; margin:-6px 0 4px;">
@@ -8180,7 +8181,7 @@ function moreMenuItems(){
   return [
     {view:'statistik',  icon:'chart',    label:'Statistik'},
     {view:'laporan',    icon:'alert',    label: adm ? 'Laporan' : 'Buat Laporan'},
-    ...((WS_ID==='default' && adm) ? [{view:'pesanan',   icon:'inbox',    label:'Pesanan Masuk', badge: pesananBaruCount()}] : []), // booking dari klien
+    ...((WS_ID==='default' && adm) ? [{view:'pesanan',   icon:'pesanan',    label:'Pesanan Masuk', badge: pesananBaruCount()}] : []), // booking dari klien
     ...(WS_ID==='default' ? [{view:'ulasan',     icon:'star',     label:'Saran & Penilaian'}] : []), // ulasan klien milik Kaone Motret
     {view:'pengaturan', icon:'settings', label:'Pengaturan'}
   ];
@@ -8516,6 +8517,7 @@ function kbLive(e){
   if(e.type==='more') return !!document.getElementById('moreLayer')?.classList.contains('open');
   if(e.type==='notif') return !!document.getElementById('notifPanel');
   if(e.type==='stk') return !!document.getElementById('kstk')?.classList.contains('on');
+  if(e.type==='gif') return !!document.getElementById('kgif')?.classList.contains('on');
   return true;
 }
 function kbOpen(type){
@@ -8603,6 +8605,7 @@ function kbHandleBack(n, foreign){
     else if(e.type==='more') closeMoreSheet(false);
     else if(e.type==='notif') closeNotifPanel();
     else if(e.type==='stk'){ const sp=document.getElementById('kstk'); if(sp) sp.classList.remove('on'); }
+    else if(e.type==='gif'){ const sp=document.getElementById('kgif'); if(sp) sp.classList.remove('on'); }
     else if(e.type==='view') goView = true;
     else if(e.type==='guard') root = true;
   }
@@ -16265,6 +16268,7 @@ const CHANGELOG = [
     version: '1.18.0',
     tanggal: '10 Oktober 2026',
     items: [
+      { kategori: 'Perubahan', teks: 'Menu Pesanan Masuk punya ikon baru (lensa kamera masuk ke kotak pesanan) di menu, banner Beranda, dan daftar notifikasi.' },
       { kategori: 'Fitur', teks: 'Menu Pesanan Masuk punya tombol Hapus di setiap pesanan. Menekannya menghapus pesanan sepenuhnya dari database (tidak bisa dikembalikan), sedangkan job yang sudah dibuat darinya tetap ada.' },
       { kategori: 'Fitur', teks: 'Form Input/Edit Job punya kolom baru \"Add-On\" (di bawah Deskripsi Paket). Add-On dari pesanan klien masuk ke kolom ini, dan tetap ikut tampil di isi paket pada pesan WhatsApp, kwitansi, QR, dan kalender.' },
       { kategori: 'Perbaikan', teks: 'Bagian Hasil Cetak di HP dirapikan: tiap baris cukup nama dan harga, jumlah, bingkai, dan ukuran baru muncul setelah dicentang.' },
@@ -17005,7 +17009,7 @@ function buildNotificationsRaw(){
       list.push({
         id: 'pesanan_' + p.id,
         view: 'pesanan',
-        icon: ic('inbox'),
+        icon: ic('pesanan'),
         title: `Pesanan baru dari ${p.nama || 'klien'}`,
         desc: [PSN_LABEL[p.sumber] || '', p.tanggal_acara ? psnTglPanjang(p.tanggal_acara) : ''].filter(Boolean).join(' · '),
         onClick: ()=>{ closeNotifPanel(); navigate('pesanan'); }
@@ -19311,7 +19315,7 @@ if(lim)c='<div class="md">Media sudah habis dilihat</div>';
 else if(m.tipe=='foto'&&(pvx=pvOf(m)))c='<div class="md pv" data-o="'+m.id+'"><div class="pw"><img alt="" src="'+pvx+'"></div><div class="cap">'+ic('image')+'<span class="kct">Foto'+sisa+'</span></div></div>';
 else c='<div class="md'+(m.tipe=='foto'?' ph':'')+'" data-o="'+m.id+'"><span class="kct">'+ik+sisa+'</span></div>'}
 var tk=own?'<i class="'+(m.dilihat_at?'r':'')+'">'+ic(m.diterima_at||m.dilihat_at?'check2':'check')+'</i>':'';
-var rx=chips(m);return '<div class="rw2'+(own?' me':'')+(rx?' hr':'')+(kS[m.id]?' sel':'')+(dr0&&!dn[m.id]?' pop':'')+'" data-mid="'+m.id+'"><div class="b'+(own?' me':'')+(kIsStk(m)?' stk':'')+'">'+(x?'<div class="q">'+E(x.dihapus_at?'Pesan ini sudah dihapus':x.tipe=='teks'?kPlain(x):'['+x.tipe+']')+'</div>':'')+c+'<div class="t">'+tm(m.dikirim_at)+tk+'</div>'+rx+'</div></div>'}
+var rx=chips(m);return '<div class="rw2'+(own?' me':'')+(rx?' hr':'')+(kS[m.id]?' sel':'')+(dr0&&!dn[m.id]?' pop':'')+'" data-mid="'+m.id+'"><div class="b'+(own?' me':'')+(kIsStk(m)?' stk':'')+(kGifId(m)?' gf':'')+'">'+(x?'<div class="q">'+E(x.dihapus_at?'Pesan ini sudah dihapus':x.tipe=='teks'?kPlain(x):'['+x.tipe+']')+'</div>':'')+c+'<div class="t">'+tm(m.dikirim_at)+tk+'</div>'+rx+'</div></div>'}
 var kUnId=null,kUnN=0,kUnSet=false;
 function kDayLabel(d){var n=new Date(),t0=new Date(n.getFullYear(),n.getMonth(),n.getDate()),d0=new Date(d.getFullYear(),d.getMonth(),d.getDate()),dd=Math.round((t0-d0)/864e5);
 if(dd<=0)return 'Hari ini';if(dd==1)return 'Kemarin';
@@ -19537,7 +19541,7 @@ function cpush(id){try{if(!kaoneChatBoleh())return;var c=window.supabaseClient||
 c.auth.getSession().then(function(x){var t=x.data&&x.data.session&&x.data.session.access_token;if(!t)return;
 fetch(PUSH_FUNCTION_URL,{method:'POST',keepalive:true,headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+t},body:JSON.stringify({target:{chat:true},notif:{tag:String(id)}})}).catch(function(){})}).catch(function(){})}catch(e){}}
 var wn=null,wme=null,wperan=null,wbusy=false,wlp=0;
-function kBody(m){if(!m||m.dihapus_at)return '';if(m.tipe=='teks'){var t=String(m.isi||'');return t.indexOf('::stk:')==0?'Stiker':t.replace(/\s+/g,' ').trim().slice(0,160)}if(m.tipe=='panggilan')return kcTitle(m,false);return {foto:'Foto',video:'Video',suara:'Pesan suara'}[m.tipe]||''}
+function kBody(m){if(!m||m.dihapus_at)return '';if(m.tipe=='teks'){var t=String(m.isi||'');return t.indexOf('::stk:')==0?'Stiker':t.indexOf('::gif:')==0?'GIF':t.replace(/\s+/g,' ').trim().slice(0,160)}if(m.tipe=='panggilan')return kcTitle(m,false);return {foto:'Foto',video:'Video',suara:'Pesan suara'}[m.tipe]||''}
 function wping(c){if(document.visibilityState=='visible'&&Date.now()-wlp>55000){wlp=Date.now();kPingRpc(c)}}
 function cnotif(m){var tag='kaone-chat-'+m.id;
 if($('kc').classList.contains('on'))return;
@@ -19586,7 +19590,7 @@ else{$('kops').innerHTML='<span class="od"></span>Belum ada info online';$('kopd
 function pkClose(){var k=$('kpk');if(k)k.classList.remove('on');if(pkEl){pkEl.classList.remove('lp');pkEl=null}pkId=null}
 function pkOpen(id,bEl){var m=msgs[id];if(!m||m.dihapus_at||!bEl)return;pkId=id;var k=$('kpk'),box=$('kpkb'),mine=(m.reaksi||{})[me],h='',own=m.pengirim==me;
 EM.forEach(function(e,i){h+='<button class="pe'+(mine==e?' sel':'')+'" data-e="'+e+'" style="animation-delay:'+(80+i*50)+'ms">'+e+'</button>'});
-$('kpke').innerHTML=h;$('kpksal').style.display=m.tipe=='teks'&&m.isi&&!kIsStk(m)?'':'none';
+$('kpke').innerHTML=h;$('kpksal').style.display=m.tipe=='teks'&&m.isi&&!kIsStk(m)&&!kGifId(m)?'':'none';
 if(pkEl)pkEl.classList.remove('lp');pkEl=bEl;bEl.classList.add('lp');
 box.style.alignItems=own?'flex-end':'flex-start';k.classList.add('on');pkAt=Date.now();
 var W=k.clientWidth,br=bEl.getBoundingClientRect(),bw=box.offsetWidth,bh=box.offsetHeight,above=br.top-bh-10>70,top=above?br.top-bh-10:Math.min(br.bottom+10,k.clientHeight-bh-8);
@@ -19812,8 +19816,8 @@ I.clock='<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>';
 try{kLkC=JSON.parse(localStorage.getItem('kcLk')||'{}')||{}}catch(e){}
 function kStkId(m){var s=m&&m.tipe=='teks'&&typeof m.isi=='string'&&m.isi.indexOf('::stk:')==0?m.isi.slice(6):'';return STK[s]?s:''}
 function kIsStk(m){return !!kStkId(m)}
-function kPlain(m){return kIsStk(m)?'[Stiker]':m.isi}
-function kTxt(m){var s=kStkId(m);if(s)return '<div class="sv">'+mo(s,STK[s])+'</div>';
+function kPlain(m){return kIsStk(m)?'[Stiker]':kGifId(m)?'[GIF]':m.isi}
+function kTxt(m){var s=kStkId(m);if(s)return '<div class="sv">'+mo(s,STK[s])+'</div>';var gi=kGifId(m);if(gi)return kGifHtml(gi);
 var h=E(m.isi).replace(/\n/g,'<br>'),u=(m.isi.match(/https?:\/\/[^\s<>"']+/)||[''])[0].replace(/[.,;:!?)\]]+$/,'');
 h=h.replace(/https?:\/\/[^\s<]+/g,function(x){var t=(x.match(/[.,;:!?)\]]+$/)||[''])[0],a=x.slice(0,x.length-t.length);return '<a class="lkx" href="'+a+'" target="_blank" rel="noopener noreferrer">'+a+'</a>'+t});
 var c=u&&kLkC[u];if(u&&!c)kLkGet(u);
@@ -19853,6 +19857,60 @@ if(!t){if(e.target.id=='kstk')stkHide();else if(e.target.id=='kjd')e.target.clas
 if(t.dataset.sk)stkSend(t.dataset.sk);else if(t.dataset.jx)jdDel(t.dataset.jx);
 else if(t.dataset.jq){var d=new Date();if(t.dataset.jq=='b'){d.setDate(d.getDate()+1);d.setHours(7,0,0,0)}else d=new Date(Date.now()+t.dataset.jq*6e4);d.setSeconds(0,0);$('kjw').value=jdFmt(d)}
 else if(t.id=='kstb')stkOpen();else if(t.id=='kmj'){shut('kst');jdOpen('')}else if(t.id=='kjs')jdSave();else if(t.id=='kjc')shut('kjd')});
+})();
+/* ===== KIRIM GIF (Giphy) =====
+   Yang masuk ke Supabase HANYA baris teks kecil '::gif:<id>[:LxT]' (sama seperti stiker).
+   File GIF dimuat langsung dari CDN Giphy oleh browser masing-masing pihak, pencarian pun langsung
+   ke api.giphy.com -> tanpa Storage, tanpa Edge Function, tanpa egress file di Supabase.
+   API key Giphy: isi KC_GIPHY_KEY di bawah, atau ketuk "Atur API key" di panel GIF (disimpan di perangkat). */
+var KC_GIPHY_KEY='h5miQGuUzXYCyfwQsee7knHR4A4QaayG';
+var KC_GIPHY_RATING='pg-13';
+var kGfT=0,kGfN=0;
+function kGifKey(){var k='';try{k=localStorage.getItem('kcGiphyKey')||''}catch(e){}return k||KC_GIPHY_KEY||''}
+function kGifId(m){var s=m&&m.tipe=='teks'&&typeof m.isi=='string'&&m.isi.indexOf('::gif:')==0?m.isi:'';if(!s)return null;
+var r=/^::gif:([A-Za-z0-9]{5,40})(?::(\d{2,4})x(\d{2,4}))?$/.exec(s);return r?{id:r[1],w:+r[2]||0,h:+r[3]||0}:null}
+function kGifHtml(g){var st=g.w&&g.h?'aspect-ratio:'+g.w+'/'+g.h:'min-height:110px';
+return '<img class="kgi" alt="GIF" loading="lazy" decoding="async" referrerpolicy="no-referrer" style="'+st+'" src="https://media.giphy.com/media/'+g.id+'/200w.gif" onerror="kcGifErr(this)">'}
+window.kcGifErr=function(el){try{var sp=document.createElement('span');sp.className='kgx';sp.textContent='GIF tidak tersedia';el.replaceWith(sp)}catch(e){}};
+function gifFromLink(t){t=String(t||'').trim();if(!/giphy\.com/i.test(t))return '';
+var m=/giphy\.com\/media\/(?:[^\/?#]+\/)*?([A-Za-z0-9]{5,40})\/[^\/?#]*\.(?:gif|webp|mp4)/i.exec(t)||/giphy\.com\/gifs\/(?:[^\/?#]*-)?([A-Za-z0-9]{5,40})(?:[\/?#]|$)/i.exec(t)||/giphy\.com\/(?:embed|clips|stickers)\/(?:[^\/?#]*-)?([A-Za-z0-9]{5,40})(?:[\/?#]|$)/i.exec(t)||/i\.giphy\.com\/(?:media\/)?([A-Za-z0-9]{5,40})(?:[\/?#.]|$)/i.exec(t);
+return m?m[1]:''}
+async function gifLoad(q){var g=$('kgg'),s=$('kgs'),k=kGifKey();
+if(!k){g.innerHTML='';s.innerHTML='Belum ada API key Giphy. <u data-gk="1">Atur API key</u>, atau tempel link GIF Giphy di bawah.';return}
+var my=++kGfN;s.textContent='Memuat…';
+try{var u='https://api.giphy.com/v1/gifs/'+(q?'search':'trending')+'?api_key='+encodeURIComponent(k)+'&limit=24&rating='+KC_GIPHY_RATING+(q?'&lang=id&q='+encodeURIComponent(q):'');
+var r=await fetch(u);if(my!=kGfN)return;if(!r.ok)throw new Error(r.status);var j=await r.json();if(my!=kGfN)return;
+var a=(j.data||[]).filter(function(x){return x&&/^[A-Za-z0-9]{5,40}$/.test(x.id||'')});
+g.innerHTML=a.map(function(x){var f=(x.images&&(x.images.fixed_width_small||x.images.fixed_width))||{},
+src=/^https:\/\/media\d*\.giphy\.com\//.test(f.url||'')?f.url:'https://media.giphy.com/media/'+x.id+'/100w.gif';
+return '<button type="button" data-gi="'+x.id+'" data-gw="'+(+f.width||0)+'" data-gh="'+(+f.height||0)+'" aria-label="GIF"><img alt="" loading="lazy" referrerpolicy="no-referrer" src="'+E(src)+'"></button>'}).join('');
+s.textContent=a.length?'':'GIF tidak ditemukan'}
+catch(e){if(my==kGfN)s.innerHTML='Gagal memuat GIF (cek API key / koneksi). <u data-gk="1">Atur API key</u>'}}
+function gifOpen(){var sp=$('kgif');sp.classList.add('on');try{kbOpen('gif')}catch(e){}if(!$('kgg').children.length)gifLoad($('kgq').value.trim())}
+function gifHide(){var sp=$('kgif');if(!sp)return;sp.classList.remove('on');try{kbClose('gif')}catch(e){}}
+async function gifSend(id,w,h){if(!/^[A-Za-z0-9]{5,40}$/.test(id||''))return;gifHide();
+var d=(w>9&&h>9&&w<10000&&h<10000)?':'+w+'x'+h:'',o={tipe:'teks',isi:'::gif:'+id+d};
+if(rep)o.balas_ke=rep;rp(null);try{navigator.vibrate&&navigator.vibrate(10)}catch(e){}await put(o)}
+function gifKeyAsk(){var v=prompt('Tempel API key Giphy (dari developers.giphy.com):',kGifKey());if(v===null)return;v=v.trim();
+if(v&&!/^[A-Za-z0-9]{16,64}$/.test(v))return toast('API key tidak valid');
+try{if(v)localStorage.setItem('kcGiphyKey',v);else localStorage.removeItem('kcGiphyKey')}catch(e){}gifLoad($('kgq').value.trim())}
+(function(){var st=document.createElement('style');
+st.textContent='#kc .rw2 .b.gf{padding:3px}#kc .b.gf .t{padding:2px 6px 0}#kc .kgi{display:block;width:min(200px,56vw);height:auto;max-height:280px;object-fit:contain;border-radius:12px;background:#0001}#kc .kgx{display:block;padding:10px 12px;font-size:13px;opacity:.7}'
++'#kgif .sc{touch-action:pan-y;overscroll-behavior:contain}#kgq,#kgl{width:100%;box-sizing:border-box}#kgg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-height:42dvh;overflow:auto;overscroll-behavior:contain}#kgg button{aspect-ratio:1;border-radius:12px;overflow:hidden;padding:0;background:var(--ki);box-shadow:var(--ks)}#kgg button:active{transform:scale(.94)}#kgg img{width:100%;height:100%;object-fit:cover;display:block}#kgs{font-size:12.5px;opacity:.75;min-height:1em}#kgs u{text-decoration:underline;cursor:pointer}#kgif .gl{display:flex;gap:8px}#kgif .gl input{flex:1;min-width:0}#kgif .gl button{padding:0 14px;border-radius:12px;background:var(--ki);box-shadow:var(--ks);font-weight:700}#kgif small{font-size:11px;opacity:.55;text-align:right}';
+document.head.appendChild(st);
+var w=document.createElement('div');
+w.innerHTML='<div class="sh" id="kgif"><div class="sc"><b>GIF</b><input type="search" id="kgq" placeholder="Cari GIF…" autocomplete="off" enterkeyhint="search"><div id="kgg"></div><div id="kgs"></div><div class="gl"><input type="text" id="kgl" placeholder="atau tempel link Giphy" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" data-gl="1">Kirim</button></div><small>Powered by GIPHY</small><div class="rw"><button type="button" data-gc="1">Tutup</button></div></div></div>';
+while(w.firstChild)$('kc').appendChild(w.firstChild);
+var gb=document.createElement('button');gb.id='kgb';gb.type='button';gb.className='g';gb.setAttribute('aria-label','GIF');gb.textContent='GIF';gb.style.cssText='font-weight:800;font-size:12px;letter-spacing:.3px';$('ki').before(gb);
+gb.addEventListener('click',gifOpen);
+$('kgq').addEventListener('input',function(){clearTimeout(kGfT);var v=this.value.trim();kGfT=setTimeout(function(){gifLoad(v)},450)});
+$('kgl').addEventListener('keydown',function(e){if(e.key=='Enter'){e.preventDefault();var x=gifFromLink(this.value);if(x)gifSend(x,0,0);else toast('Link Giphy tidak dikenali')}});
+$('kgif').addEventListener('click',function(e){var t=e.target.closest('[data-gi],[data-gk],[data-gl],[data-gc]');
+if(!t){if(e.target.id=='kgif')gifHide();return}
+if(t.dataset.gi)gifSend(t.dataset.gi,+t.dataset.gw,+t.dataset.gh);
+else if(t.dataset.gk)gifKeyAsk();
+else if(t.dataset.gl){var x=gifFromLink($('kgl').value);if(x)gifSend(x,0,0);else toast('Link Giphy tidak dikenali')}
+else if(t.dataset.gc)gifHide()});
 })();
 var kLP=0;
 document.addEventListener('visibilitychange',function(){if(document.visibilityState=='hidden'&&$('kc').classList.contains('on')&&!pc&&kk.st!='ring-in'&&kk.st!='out'&&kk.st!='live'){close()}});

@@ -10483,11 +10483,22 @@ function monthKeyLabel(key){
 
 const CPB_FORMAT_KEY = 'kaoneMotret_formatSalinBulan_v1';
 const CPB_FORMAT_DEFAULT = {
+  pembuka: '📸 *KAONE MOTRET*',
+  bulan: '_Daftar Job · {bulan}_\n━━━━━━━━━━━━━━━\n\n{items}\n\n━━━━━━━━━━━━━━━\nTotal *{total} job*',
+  item: '*{no}.* 🗓 *{tglLengkap}* · {hari}\n🎬 {acara}\n📍 {desa}{timBaris}',
+};
+// Format bawaan versi lama: kalau yang tersimpan (di perangkat/cloud) masih persis ini, otomatis
+// diganti ke bawaan baru. Format yang sudah diubah sendiri oleh pengguna tidak disentuh.
+const CPB_FORMAT_DEFAULT_LAMA = {
   pembuka: '📸 *KAONE MOTRET - DAFTAR JOB*',
   bulan: '📅 *{BULAN}*\n━━━━━━━━━━━━━━━━━━━━━\n{items}\n\nTotal: {total} job',
   item: '{no}. Tgl {tanggal} ({hari}) - {desa}\n    Acara : {acara}{timLine}',
 };
 function normCpbFormat(obj){
+  const r = normCpbFormatRaw(obj), L = CPB_FORMAT_DEFAULT_LAMA;
+  return (r.pembuka===L.pembuka && r.bulan===L.bulan && r.item===L.item) ? {...CPB_FORMAT_DEFAULT} : r;
+}
+function normCpbFormatRaw(obj){
   const o = obj && typeof obj==='object' ? obj : {};
   return {
     pembuka: (typeof o.pembuka==='string' && o.pembuka.trim()) ? o.pembuka : CPB_FORMAT_DEFAULT.pembuka,
@@ -10524,6 +10535,10 @@ function buildMonthlyCopyText(selectedKeys){
       const isoAwal = semuaHari[0], isoAkhir = semuaHari[semuaHari.length-1];
       const tglAwal = Number(isoAwal.slice(8,10));
       const tglAkhir = Number(isoAkhir.slice(8,10));
+      const blnAwal = BLN_PENDEK[Number(isoAwal.slice(5,7))-1], blnAkhir = BLN_PENDEK[Number(isoAkhir.slice(5,7))-1];
+      // {tglLengkap} selalu memuat nama bulan: "3 Okt", "10–11 Okt", atau "31 Okt–1 Nov"
+      const tglLengkap = isoAwal===isoAkhir ? `${tglAwal} ${blnAwal}`
+        : (isoAwal.slice(0,7)===isoAkhir.slice(0,7) ? `${tglAwal}–${tglAkhir} ${blnAwal}` : `${tglAwal} ${blnAwal}–${tglAkhir} ${blnAkhir}`);
       const tglLabel = isoAwal===isoAkhir ? `${tglAwal}`
         : (isoAwal.slice(0,7)===isoAkhir.slice(0,7) ? `${tglAwal}-${tglAkhir}`
           : `${tglAwal} ${BLN_PENDEK[Number(isoAwal.slice(5,7))-1]}-${tglAkhir} ${BLN_PENDEK[Number(isoAkhir.slice(5,7))-1]}`);
@@ -10533,7 +10548,8 @@ function buildMonthlyCopyText(selectedKeys){
       const tim = formatNamaTim(j.timFreelancer); // salinan: hanya tim yang dipilih bertugas, nama admin tidak otomatis ikut
       const timLine = tim ? `\n    Tim   : ${tim}` : '';
       const noUrut = getJobNo(j.id);
-      const itemMap = {no:noUrut, tanggal:tglLabel, hari:namaHari, desa, acara:jenis, tim, timLine};
+      const timBaris = tim ? `\n👥 ${tim}` : '';
+      const itemMap = {no:noUrut, tanggal:tglLabel, tglLengkap, hari:namaHari, desa, acara:jenis, tim, timLine, timBaris};
       return fmt.item.replace(/\{(\w+)\}/g,(m,k)=>k in itemMap?itemMap[k]:m);
     });
 
@@ -10563,7 +10579,7 @@ function renderWaRichText(raw){
   lines.forEach(line=>{
     const m = line.match(/^>\s?(.*)$/);
     const content = m ? m[1] : line;
-    const esc = escapeHtml(content).replace(/\*([^\n*]+)\*/g,'<b>$1</b>');
+    const esc = escapeHtml(content).replace(/\*([^\n*]+)\*/g,'<b>$1</b>').replace(/(^|\s)_([^\n_]+)_(?=\s|$)/g,'$1<i>$2</i>');
     const lineHtml = `<div class="wa-line">${esc || '&nbsp;'}</div>`;
     if(m){ quoteBuf.push(lineHtml); } else { flushQuote(); html += lineHtml; }
   });
@@ -10582,7 +10598,7 @@ function extractRawFromRichPreview(container){
   const lines = [];
   const lineToRaw = (el)=>{
     const tmp = document.createElement('div');
-    tmp.innerHTML = el.innerHTML.replace(/<b>(.*?)<\/b>/gi, '*$1*').replace(/<br\s*\/?>/gi, '\n');
+    tmp.innerHTML = el.innerHTML.replace(/<b>(.*?)<\/b>/gi, '*$1*').replace(/<i>(.*?)<\/i>/gi, '_$1_').replace(/<br\s*\/?>/gi, '\n');
     return (tmp.textContent || '').replace(/\n+$/,'');
   };
   container.childNodes.forEach(node=>{
@@ -10637,7 +10653,7 @@ function openCopyPerBulanModal(){
 
       <label style="font-size:12.5px;font-weight:600;margin-top:10px;display:block;">Format per Job</label>
       <textarea id="cpbFmtItem" rows="3" style="width:100%;font-size:12.5px;font-family:monospace;margin-top:4px;">${escapeHtml(CPB_FORMAT.item)}</textarea>
-      <div class="field-hint" style="margin-top:4px;">Kode: {no} {tanggal} {hari} {desa} {acara} {tim} {timLine}. {timLine} otomatis kosong kalau Tim/Freelancer belum diisi.</div>
+      <div class="field-hint" style="margin-top:4px;">Kode: {no} {tanggal} {tglLengkap} {hari} {desa} {acara} {tim} {timLine} {timBaris}. {tglLengkap} = tanggal + nama bulan (mis. 10–11 Okt). {timLine} dan {timBaris} otomatis kosong kalau Tim/Freelancer belum diisi.</div>
 
       <div class="form-actions" style="justify-content:flex-start;margin-top:10px;">
         <button type="button" class="btn btn-primary" id="cpbFmtSave">Simpan Format</button>

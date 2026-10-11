@@ -3887,7 +3887,7 @@ body{background:radial-gradient(800px 480px at 95% -8%,#ffe38a,transparent 60%),
     </div>
   </div>
   <div class="topbar-meta">
-    <div class="datetime-strip" id="headerClock">Memuat waktu...</div>
+    <div class="hdr-clock"><svg class="ic" aria-hidden="true"><use href="#ic-clock"></use></svg><div class="datetime-strip" id="headerClock">Memuat waktu...</div></div>
     <div class="datetime-strip sync-dot" id="syncStatus" data-state="loading" role="status" aria-live="polite" aria-label="Memuat data dari cloud..." title="Memuat data dari cloud..." tabindex="0"></div>
   </div>
 </header>
@@ -10516,18 +10516,21 @@ function buildMonthlyCopyText(selectedKeys){
       .sort((a,b)=> a.tanggalAcara.localeCompare(b.tanggalAcara));
 
     const items = monthJobs.map((j)=>{
-      // Satu job = satu baris tanggal (bukan per-hari), tetap acara yang sama meski
-      // berdurasi >1 hari. Tanggalnya dipotong (clip) ke rentang bulan yang sedang
-      // disalin, lalu ditulis "awal-akhir" kalau >1 hari di bulan ini, atau tanggal
-      // tunggal kalau cuma 1 hari.
-      const rangeInMonth = getJobDateRange(j).filter(iso=> iso.slice(0,7)===key);
-      const tglAwal = Number(rangeInMonth[0].slice(8,10));
-      const tglAkhir = Number(rangeInMonth[rangeInMonth.length-1].slice(8,10));
-      const tglLabel = tglAwal===tglAkhir ? `${tglAwal}` : `${tglAwal}-${tglAkhir}`;
-      const namaHari = namaHariID(new Date(j.tanggalAcara+'T00:00:00'));
+      // Satu job = satu baris tanggal (bukan per-hari), tetap satu acara/projek meski berdurasi >1 hari.
+      // Ditulis apa adanya: SEMUA hari job ikut tertulis, termasuk bagian yang jatuh di bulan lain.
+      // Satu bulan: "10-11". Beda bulan: "31 Okt-1 Nov".
+      const semuaHari = getJobDateRange(j);
+      const BLN_PENDEK = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      const isoAwal = semuaHari[0], isoAkhir = semuaHari[semuaHari.length-1];
+      const tglAwal = Number(isoAwal.slice(8,10));
+      const tglAkhir = Number(isoAkhir.slice(8,10));
+      const tglLabel = isoAwal===isoAkhir ? `${tglAwal}`
+        : (isoAwal.slice(0,7)===isoAkhir.slice(0,7) ? `${tglAwal}-${tglAkhir}`
+          : `${tglAwal} ${BLN_PENDEK[Number(isoAwal.slice(5,7))-1]}-${tglAkhir} ${BLN_PENDEK[Number(isoAkhir.slice(5,7))-1]}`);
+      const namaHari = formatNamaTim(semuaHari.map(iso=>namaHariID(new Date(iso+'T00:00:00')))); // semua hari job, mis. "Sabtu & Ahad"
       const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : (j.jenisAcara||'-');
       const desa = desaDisplay(j) || '-';
-      const tim = namaTimLengkap(j, j.timFreelancer);
+      const tim = formatNamaTim(j.timFreelancer); // salinan: hanya tim yang dipilih bertugas, nama admin tidak otomatis ikut
       const timLine = tim ? `\n    Tim   : ${tim}` : '';
       const noUrut = getJobNo(j.id);
       const itemMap = {no:noUrut, tanggal:tglLabel, hari:namaHari, desa, acara:jenis, tim, timLine};
@@ -12178,7 +12181,7 @@ function copyJobDetails(jobId){
       ...(pengirimanMetode(j.pengiriman)==='diantar' && j.linkMapsAntar ? [['Link Maps Antar', j.linkMapsAntar]] : []),
       ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
-      ['Tim/Freelancer', namaTimLengkap(j, j.timFreelancer)||'-'],
+      ['Tim/Freelancer', formatNamaTim(j.timFreelancer)||'-'],
     ]},
     {title:ic('money')+' Keuangan', rows:keuanganRowsUntukRole(j)},
   ];
@@ -20720,6 +20723,29 @@ function stBody(){
 .sync-dot:focus-visible{outline:1.5px solid #fff;outline-offset:3px}
 @keyframes sdPulse{0%,100%{opacity:1}50%{opacity:.35}}
 @media(prefers-reduced-motion:reduce){.sync-dot{animation:none !important}}
+</style>
+<style id="headerV2Css">
+/* Header v2: bar emas, logo diafragma gelap, lonceng krem, jam + titik status. Hanya menata header. */
+header.topbar{
+  background:#FFD42E; color:#241c06;
+  padding:calc(12px + env(safe-area-inset-top,0px)) calc(14px + env(safe-area-inset-right,0px)) 12px calc(14px + env(safe-area-inset-left,0px));
+  border-radius:0 0 18px 18px; border-bottom:.5px solid #E0B400; box-shadow:none;
+}
+header.topbar .topbar-row{gap:10px; row-gap:10px; flex-wrap:nowrap;}
+header.topbar .brand{gap:10px; min-width:0;}
+header.topbar .brand-badge{width:38px; height:38px; background:#241c06; color:#FFD42E; box-shadow:none; flex:none;}
+header.topbar .brand-text .name{font-size:15px; font-weight:600; letter-spacing:0; line-height:1.2; color:#241c06;}
+header.topbar .brand-text .tag{font-size:11px; letter-spacing:0; text-transform:none; line-height:1.3; color:#5c4500; opacity:1;}
+header.topbar .notif-btn{width:38px; height:38px; background:#FFFBEA; border:0; color:#241c06; box-shadow:none;}
+header.topbar .notif-btn:hover{background:#fff;}
+header.topbar .notif-badge{top:-3px; right:-3px; min-width:17px; height:17px; background:#c0392b; border:0; font-size:11px; font-weight:600;}
+header.topbar .topbar-meta{margin-top:11px; padding-top:10px; border-top:.5px solid rgba(36,28,6,.2); flex-wrap:nowrap; gap:8px;}
+header.topbar .hdr-clock{display:flex; align-items:center; gap:6px; min-width:0; color:#241c06;}
+header.topbar .hdr-clock .ic{width:15px; height:15px; flex:none;}
+header.topbar .topbar-meta .datetime-strip{font-size:12px; letter-spacing:0; color:#241c06; font-variant-numeric:tabular-nums;}
+header.topbar .topbar-meta .sync-dot{width:10px; min-width:10px; height:10px !important;}
+header.topbar .sync-dot[data-state="synced"]{--sd:#2e9d3a;}
+header.topbar .sync-dot:focus-visible{outline-color:#241c06;}
 </style>
 <style id="perfCss">
 .copyright-bar{margin-top:14px !important}

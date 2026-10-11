@@ -8755,9 +8755,14 @@ function jobStartTs(j){
 function fmtCountdown(ts){
   const diff = ts - Date.now();
   if(diff<=0) return 'Sedang berlangsung';
-  const tot = Math.floor(diff/1000), d = Math.floor(tot/86400), h = Math.floor((tot%86400)/3600);
-  const t = d>=1 ? (h>=1 ? d+' hari '+h+' jam' : d+' hari') : (h>=1 ? h+' jam' : 'kurang dari 1 jam');
-  return 'Mulai dalam '+t;
+  const tot = Math.floor(diff/1000), d = Math.floor(tot/86400);
+  if(d<1){
+    // Kurang dari 24 jam lagi: tampil sampai detik (JJ:MM:DD), berjalan tiap detik lewat setInterval di bawah.
+    const p = n=>String(n).padStart(2,'0');
+    return 'Mulai dalam '+p(Math.floor(tot/3600))+':'+p(Math.floor((tot%3600)/60))+':'+p(tot%60);
+  }
+  const h = Math.floor((tot%86400)/3600);
+  return 'Mulai dalam '+(h>=1 ? d+' hari '+h+' jam' : d+' hari');
 }
 setInterval(()=>{
   document.querySelectorAll('[data-cd]').forEach(el=>{
@@ -16258,12 +16263,19 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.18.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.18.1'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.18.1',
+    tanggal: '11 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Hitung mundur di kartu Job berikutnya (Beranda) kini tampil sampai detik (jam:menit:detik) saat acara tinggal kurang dari 24 jam lagi, dan berjalan langsung tiap detik. Kalau masih lebih dari 24 jam, tetap tampil dalam hari dan jam.' },
+    ]
+  },
   {
     version: '1.18.0',
     tanggal: '10 Oktober 2026',

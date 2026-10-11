@@ -15677,6 +15677,7 @@ function viewPengaturan(){
     `}
   </div>
 
+  ${isAdmin()?`<div class="settings-group-title">${ic('lock')} Sambungan API</div>${apiKeyCardHtml()}`:''}
   <div class="settings-group-title">${ic('folder')} Data &amp; Cadangan</div>
   <div class="card">
     <h2 style="margin-top:0;">${ic('settings')} Pengaturan &amp; Cadangan Data</h2>
@@ -16154,6 +16155,135 @@ function attachHandlers(){
 
   // KELOLA AKUN (Admin) - lihat ulang daftar akun
   document.getElementById('btnRefreshAkun')?.addEventListener('click', pullAkunFromCloud);
+
+  // SAMBUNGAN API (Admin) - API key hanya-baca untuk aplikasi lain
+  if(document.getElementById('apiKeyCard')) apiKeyInit();
+}
+
+/* ---------- SAMBUNGAN API (Admin): API key HANYA-BACA untuk aplikasi lain ----------
+   Butuh skrip "api-key-kaone.sql" dijalankan SEKALI di Supabase (SQL Editor). Key dibuat & diperiksa
+   di server; yang tersimpan hanya hash-nya, dan key asli hanya tampil sekali saat dibuat.
+   Data keuangan & bonus disaring di server (lihat fungsi kaone_api_data), bukan di sini. */
+function apiKeyCardHtml(){
+  return `<div class="card" id="apiKeyCard">
+    <h2 style="margin-top:0;">${ic('lock')} API Key untuk Aplikasi Lain</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;">
+      Buat API key supaya aplikasi lain milikmu bisa <b>membaca</b> data job, tugas tim, laporan, dan pesan templat.
+      Hanya baca: aplikasi lain tidak bisa mengubah apa pun. Data keuangan (harga, DP, pembayaran, honor, sedekah) dan bonus tidak ikut dikirim.
+    </p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+      <input type="text" id="apiKeyNama" maxlength="40" placeholder="Nama aplikasi, mis. Aplikasi Invoice" style="flex:1;min-width:190px;">
+      <button type="button" class="btn btn-primary" id="btnApiKeyBuat">${ic('plus')} Buat API Key</button>
+    </div>
+    <div id="apiKeyList" style="margin-top:12px;"><div class="field-hint">Memuat daftar key...</div></div>
+    <button type="button" class="btn btn-outline" id="btnApiKeyContoh" style="margin-top:12px;">${ic('clipboard')} Salin Contoh Penggunaan</button>
+  </div>`;
+}
+function apiKeyTgl(v){
+  if(!v) return '';
+  const d = new Date(v);
+  return isNaN(d) ? '' : d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+}
+function apiKeyContoh(key){
+  return "curl -X POST '" + SUPABASE_URL + "/rest/v1/rpc/kaone_api_data' \\\n" +
+    "  -H 'apikey: " + SUPABASE_ANON_KEY + "' \\\n" +
+    "  -H 'Authorization: Bearer " + SUPABASE_ANON_KEY + "' \\\n" +
+    "  -H 'Content-Type: application/json' \\\n" +
+    "  -d '{\"p_key\":\"" + (key || 'kmk_ISI_API_KEY_KAMU') + "\",\"p_bagian\":\"jobs\",\"p_dari\":\"2026-10-01\",\"p_sampai\":\"2026-10-31\"}'\n\n" +
+    "# p_bagian (opsional): jobs, tasks, reports, pengaturan. Kosongkan untuk semua.\n" +
+    "# p_dari / p_sampai (opsional): batasi job berdasarkan tanggal mulai acara.";
+}
+function apiKeyPesanError(e){
+  const m = String((e && e.message) || '');
+  if(e && (e.code==='PGRST202' || /could not find the function|does not exist/i.test(m))){
+    return 'Fitur ini butuh skrip "api-key-kaone.sql" dijalankan sekali di Supabase (SQL Editor). Setelah itu muat ulang halaman ini.';
+  }
+  return 'Gagal: ' + (m || 'coba lagi sebentar lagi.');
+}
+function apiKeyListHtml(list){
+  if(!list.length) return '<div class="field-hint">Belum ada API key.</div>';
+  return list.map(k=>{
+    const aktif = !k.dicabut_pada;
+    const pakai = k.terakhir_dipakai ? 'Terakhir dipakai ' + apiKeyTgl(k.terakhir_dipakai) : 'Belum pernah dipakai';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);${aktif?'':'opacity:.55;'}">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:13.5px;">${escapeHtml(k.nama)} <span style="font-weight:500;font-size:11.5px;color:${aktif?'var(--ok)':'var(--danger)'};">${aktif?'Aktif':'Dicabut'}</span></div>
+        <div style="font-size:11.5px;color:var(--ink-soft);margin-top:2px;"><code>${escapeHtml(k.awalan)}…</code> · Dibuat ${escapeHtml(apiKeyTgl(k.dibuat_pada))} · ${escapeHtml(aktif?pakai:'Dicabut ' + apiKeyTgl(k.dicabut_pada))}</div>
+      </div>
+      ${aktif?`<button type="button" class="btn btn-outline btn-danger" data-api-cabut="${escapeHtml(k.id)}">${ic('trash')} Cabut</button>`:''}
+    </div>`;
+  }).join('');
+}
+async function apiKeyMuat(){
+  const box = document.getElementById('apiKeyList');
+  if(!box) return;
+  if(!cloudSyncEnabled){ box.innerHTML = '<div class="field-hint">Perlu terhubung ke cloud.</div>'; return; }
+  try{
+    const { data, error } = await supabaseClient.rpc('kaone_api_daftar', { p_ws: SYNC_ROW_ID });
+    if(error) throw error;
+    const list = Array.isArray(data) ? data : [];
+    box.innerHTML = apiKeyListHtml(list);
+    box.querySelectorAll('[data-api-cabut]').forEach(btn=>{
+      const item = list.find(k=>String(k.id)===String(btn.dataset.apiCabut));
+      btn.addEventListener('click', ()=> apiKeyCabut(btn.dataset.apiCabut, item ? item.nama : ''));
+    });
+  }catch(e){
+    console.error('Gagal memuat API key', e);
+    box.innerHTML = `<div class="field-hint" style="color:var(--danger);">${escapeHtml(apiKeyPesanError(e))}</div>`;
+  }
+}
+async function apiKeyBuat(){
+  const input = document.getElementById('apiKeyNama');
+  const btn = document.getElementById('btnApiKeyBuat');
+  const nama = (input && input.value || '').trim();
+  if(!nama){ toast('Isi nama aplikasi dulu'); input && input.focus(); return; }
+  if(btn) btn.disabled = true;
+  try{
+    const { data, error } = await supabaseClient.rpc('kaone_api_buat', { p_ws: SYNC_ROW_ID, p_nama: nama });
+    if(error) throw error;
+    if(input) input.value = '';
+    apiKeyMuat();
+    showModal(`
+      <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+      <h3>${ic('lock')} API Key Dibuat</h3>
+      <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">
+        Untuk <b>${escapeHtml(data.nama)}</b>. <b>Salin sekarang</b>: key ini hanya tampil sekali dan tidak bisa dilihat lagi.
+        Kalau hilang, cabut lalu buat yang baru.
+      </div>
+      <textarea id="apiKeyHasil" readonly rows="2" style="width:100%;font-family:monospace;font-size:12.5px;">${escapeHtml(data.key)}</textarea>
+      <div class="form-actions" style="justify-content:flex-start;margin-top:10px;">
+        <button type="button" class="btn btn-primary" id="btnApiKeySalin">${ic('clipboard')} Salin Key</button>
+        <button type="button" class="btn btn-outline" id="btnApiKeySalinContoh">Salin Contoh Penggunaan</button>
+      </div>
+      <div class="field-hint" style="margin-top:8px;">Simpan key ini seperti kata sandi. Siapa pun yang memegangnya bisa membaca data job (tanpa keuangan dan bonus).</div>
+    `);
+    const key = data.key;
+    document.getElementById('btnApiKeySalin')?.addEventListener('click', ()=> copyToClipboard(key, 'API key disalin'));
+    document.getElementById('btnApiKeySalinContoh')?.addEventListener('click', ()=> copyToClipboard(apiKeyContoh(key), 'Contoh penggunaan disalin'));
+  }catch(e){
+    console.error('Gagal membuat API key', e);
+    alert(apiKeyPesanError(e));
+  }finally{
+    if(btn) btn.disabled = false;
+  }
+}
+async function apiKeyCabut(id, nama){
+  if(!confirm('Cabut API key' + (nama ? ' "' + nama + '"' : '') + '? Aplikasi yang memakainya langsung tidak bisa mengambil data lagi. Ini tidak bisa dibatalkan.')) return;
+  try{
+    const { error } = await supabaseClient.rpc('kaone_api_cabut', { p_id: id });
+    if(error) throw error;
+    toast('API key dicabut');
+    apiKeyMuat();
+  }catch(e){
+    console.error('Gagal mencabut API key', e);
+    alert(apiKeyPesanError(e));
+  }
+}
+function apiKeyInit(){
+  document.getElementById('btnApiKeyBuat')?.addEventListener('click', apiKeyBuat);
+  document.getElementById('apiKeyNama')?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); apiKeyBuat(); } });
+  document.getElementById('btnApiKeyContoh')?.addEventListener('click', ()=> copyToClipboard(apiKeyContoh(''), 'Contoh penggunaan disalin'));
+  apiKeyMuat();
 }
 
 /* ---------- Export gambar (html2canvas) ---------- */
@@ -16292,6 +16422,11 @@ const CHANGELOG = [
     version: '1.18.1',
     tanggal: '11 Oktober 2026',
     items: [
+      { kategori: 'Perubahan', teks: 'Header di atas Beranda tampil baru: bar emas dengan logo, lonceng notifikasi, serta tanggal lengkap dan jam WIB. Status tersambung kini cukup titik hijau polos tanpa efek berkilau.' },
+      { kategori: 'Perbaikan', teks: 'Di teks salinan (Daftar Job per bulan dan Detail Job), nama kamu tidak lagi ikut tersalin otomatis walau Saya ikut job ini dicentang. Nama tim hanya tersalin kalau ada tim yang dipilih bertugas di job itu.' },
+      { kategori: 'Perbaikan', teks: 'Teks salinan job beberapa hari kini menulis semua harinya (mis. Sabtu & Ahad), bukan hanya hari pertama. Job yang melewati pergantian bulan ditulis utuh sebagai satu projek (mis. 31 Okt-1 Nov).' },
+      { kategori: 'Perubahan', teks: 'Tampilan teks salinan Daftar Job per bulan didesain ulang: ada ikon, tanggal tebal, dan garis pemisah. Format bawaan lama otomatis diganti; format yang sudah kamu ubah sendiri tidak berubah.' },
+      { kategori: 'Fitur', teks: 'Pengaturan punya bagian baru Sambungan API (khusus Admin): buat, lihat, dan cabut API key hanya-baca untuk menyambungkan aplikasi lain ke data job, tugas tim, dan laporan. Data keuangan dan bonus tidak ikut dikirim.' },
       { kategori: 'Peningkatan', teks: 'Hitung mundur di kartu Job berikutnya (Beranda) kini tampil sampai detik (jam:menit:detik) saat acara tinggal kurang dari 24 jam lagi, dan berjalan langsung tiap detik. Kalau masih lebih dari 24 jam, tetap tampil dalam hari dan jam.' },
     ]
   },
@@ -20479,7 +20614,7 @@ document.addEventListener('click',function(e){
       S.jobs=norm(arr.map(aman));S.error=false;S.stamp=new Date();
     }).catch(function(e){
       console.warn('Jadwal belum bisa dimuat',e);S.error=true;
-    }).then(function(){S.loading=false;paint()});
+    }).then(function(){S.loading=false;paint();popBoot()});
   }
   /* Muat ulang total: hapus cache aplikasi (Cache Storage), minta service worker cek versi baru, lalu buka ulang dengan
      parameter anti-cache. Login, pesan, dan langganan notifikasi TIDAK dihapus. Dicek online dulu lewat berkas non-halaman
@@ -20531,11 +20666,191 @@ document.addEventListener('click',function(e){
     var fab=document.createElement('button');fab.type='button';fab.id='lhFab';fab.setAttribute('aria-label','Buka obrolan');fab.innerHTML=IC.chat;
     fab.addEventListener('click',bukaChat);document.body.appendChild(fab);
     root.addEventListener('click',onClick);
-    if(opts.jobs){S.jobs=norm(opts.jobs);S.loading=false;S.stamp=S.today||new Date();paint();return}
+    popWatchChat();
+    if(opts.jobs){S.jobs=norm(opts.jobs);S.loading=false;S.stamp=S.today||new Date();paint();popBoot();return}
     try{var c=JSON.parse(localStorage.getItem(KEY)||'null');if(Array.isArray(c)&&c.length){S.jobs=norm(c.map(aman));S.loading=false}}catch(e){}
     paint();load();
     document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')load()});
     S.timer=setInterval(function(){if(document.visibilityState==='visible'&&!document.getElementById('kc').classList.contains('on'))load()},90000);
+  }
+  /* POP-UP PEMBERITAHUAN HARI KERJA (khusus beranda & ruang obrolan akun ini).
+     Syarat: hari ini ada job di jadwal.
+     - Beranda: tiap kali aplikasi dibuka setelah pukul 08.00 WIB, maksimal 5x sehari (dihitung saat ditutup).
+       Yang ke-1 TERKUNCI 10 detik (tidak bisa ditutup lewat tombol, klik luar, Esc, atau tombol Kembali); ke-2 s/d ke-5 langsung bisa ditutup.
+       Kalau halaman dimuat ulang sebelum yang ke-1 ditutup, yang ke-1 muncul lagi dan terkunci lagi.
+     - Ruang obrolan: tiap kali ruang obrolan dibuka, maksimal 2x sehari, langsung bisa ditutup.
+     Hitungan harian disimpan di perangkat (kunci kaone_liaww_popup_v1) dan ganti sendiri tiap tanggal WIB. */
+  var PK='kaone_liaww_popup_v1',POP_BERANDA_MAKS=5,POP_CHAT_MAKS=2,POP_KUNCI_DETIK=10,POP_JAM_MULAI=8*60;
+  var WIBF=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+  function wib(){var p={};WIBF.formatToParts(new Date()).forEach(function(x){p[x.type]=x.value});return{d:p.year+'-'+p.month+'-'+p.day,m:(parseInt(p.hour,10)%24)*60+parseInt(p.minute,10)}}
+  function popState(d){var o=null;try{o=JSON.parse(localStorage.getItem(PK)||'null')}catch(e){}if(!o||o.d!==d)o={d:d,b:0,c:0};return o}
+  function popSimpan(o){try{localStorage.setItem(PK,JSON.stringify(o))}catch(e){}}
+  function jobHariIni(d){return S.jobs.filter(function(j){return iso(j.a)<=d&&iso(j.b)>=d})}
+  /* Nama untuk pop-up: [liaww] = nama panggilan yang diberikan akun lawan chat (admin) untuk akun ini,
+     [aku] = nama panggilan yang akun ini berikan untuk lawan chatnya (dipakai di penutup "...mu tersayang").
+     Diambil dari data ruang chat; kalau belum ada/gagal dimuat dalam 3 detik, pakai nama akun / lewati penutup. */
+  var PNAMA=null;
+  function popNama(){
+    if(PNAMA)return PNAMA;
+    var h={liaww:'',aku:''};
+    var kerja=(async function(){
+      var sbc=window.supabaseClient||(typeof supabaseClient!=='undefined'?supabaseClient:null);
+      if(!sbc)return h;
+      try{
+        var ses=await sbc.auth.getSession();
+        var uid=ses&&ses.data&&ses.data.session&&ses.data.session.user&&ses.data.session.user.id;
+        if(!uid)return h;
+        try{var a=await sbc.from('kaone_chat_alias').select('nama_lawan');var r=a&&a.data&&a.data[0]&&a.data[0].nama_lawan;if(r)h.aku=String(r).trim()}catch(e){}
+        try{
+          var m=await sbc.from('kaone_chat_pesan').select('isi').like('isi','kc:alias:%').neq('pengirim',uid).order('dikirim_at',{ascending:false}).limit(1);
+          var row=m&&m.data&&m.data[0];
+          if(row){var o=JSON.parse(String(row.isi).slice(9));if(o&&typeof o.b==='string')h.liaww=o.b.trim()}
+        }catch(e){}
+        if(!h.aku){try{var p=await sbc.from('kaone_chat_profil').select('user_id,nama').neq('user_id',uid).limit(1);var nm=p&&p.data&&p.data[0]&&p.data[0].nama;if(nm)h.aku=String(nm).trim()}catch(e){}}
+      }catch(e){}
+      return h;
+    })();
+    PNAMA=Promise.race([kerja,new Promise(function(res){setTimeout(function(){res(h)},3000)})]).then(function(x){if(!x.liaww&&!x.aku)PNAMA=null;return x});
+    return PNAMA;
+  }
+  function popSign(n){return '<p class="sign">Dengan segenap cinta dan rinduku,'+(n&&n.aku?'<br>'+esc(n.aku)+'mu tersayang. \u2764\uFE0F':' \u2764\uFE0F')+'</p>'}
+  /* Kumpulan teks (Kumpulan_Popup_Romantis_Liaww_165_Teks.docx; teks yang sama persis dibuang). PP = kumpulan paragraf, tiap teks menunjuk nomor paragrafnya.
+     [nama liaww] diganti nama panggilan liaww. Teks dipilih per tanggal WIB: tidak berulang sebelum seluruh daftar terpakai. */
+  var PP=["Hai, sayangku, [nama liaww]. \u2764\ufe0f","Aku mungkin harus lebih fokus pada kamera, pekerjaan, dan orang-orang yang perlu kutemui. Aku ingin menyelesaikan semuanya dengan baik agar nanti bisa kembali mengobrol tanpa pikiranku terbagi.","Kalau rasa rindu datang, tarik napas pelan-pelan dan ingat bahwa kita bisa melanjutkan obrolan saat waktunya memungkinkan. Tidak semua hal harus dijawab seketika agar tetap berarti.","Terima kasih sudah hadir dalam hidupku, termasuk pada hari-hari ketika waktuku tidak selonggar yang kita harapkan. Kehadiranmu tetap menjadi hal yang kusyukuri.","Hai, kesayanganku, [nama liaww]. \ud83c\udf37","Kalau kamu melihatku belum aktif atau belum membalas pesan, ingatlah bahwa ada pekerjaan yang sedang kuselesaikan. Diamku sebentar bukan tanda bahwa perhatian dan sayangku berubah.","Jangan biarkan jeda balasan membuatmu merasa sendirian, ya. Kamu tetap berharga, bahkan ketika aku sedang tidak bisa menemanimu lewat layar.","Setelah semua urusan selesai, aku ingin kembali dengan pikiran yang lebih tenang dan perhatian yang tidak terburu-buru. Kamu layak mendapat waktu yang sungguh-sungguh.","Hai, orang yang selalu kurindukan. \ud83d\udc9b","Aku sedang berusaha menjaga agar pekerjaanku selesai tepat waktu. Setelah semuanya beres, aku ingin menyediakan perhatian yang utuh untuk mendengar cerita dan kabarmu.","Tak perlu menyimpan semua rasa sendiri. Kamu boleh menuliskan cerita, doa, atau hal sederhana yang ingin kamu bagikan kepadaku; aku akan membacanya ketika ada waktu.","Hai, cintaku, [nama liaww]. \ud83d\udc9b","Kesibukan hari ini mungkin membuat waktu kita sedikit berkurang. Aku harap kamu bisa memberiku ruang untuk menyelesaikan urusan, sambil tetap menjalani harimu dengan nyaman.","Jika pikiranmu mulai membuat banyak dugaan, cobalah beri dirimu jeda. Keterlambatan membalas bisa saja berarti aku sedang sibuk, bukan berarti ada sesuatu yang salah di antara kita.","Hai, manisku, ada pesan kecil dariku. \u2764\ufe0f","Aku ingin memberikan hasil terbaik dari pekerjaanku hari ini. Semoga setelah selesai nanti, kita bisa bertukar cerita dengan lebih leluasa dan menikmati waktu kecil milik kita.","Terima kasih sudah menjadi bagian manis dari hariku. Aku menyayangimu dengan tulus, tanpa harus membuat setiap jeda terasa seperti jarak yang jauh.","Hai, cintaku, semoga hatimu sedang baik-baik saja. \ud83c\udf3c","Aku sedang berpindah dari satu urusan ke urusan lain, jadi mungkin tidak selalu bisa menjawab dengan cepat. Terima kasih sudah memahami ritme hariku, sayang.","Bayangkan aku sedang menggenggam tanganmu dari kejauhan. Semoga bayangan kecil itu bisa menemani waktumu sampai aku punya kesempatan untuk kembali menyapa.","Semoga hari ini berjalan lembut untukmu. Simpan sedikit senyum untuk nanti, karena aku ingin ikut mendengar alasan di balik senyummu itu.","Aku ingin kesibukan ini menjadi bagian dari hari yang kita pahami bersama, bukan alasan untuk membuatmu merasa tidak diperhatikan.","Hai, rumah kecil di hatiku. \ud83e\udd79\u2764\ufe0f","Semoga kamu tahu bahwa pesan sederhana darimu pun bisa membuat hari terasa lebih hangat. Aku akan menyimpannya untuk kubaca saat ada kesempatan.","Hai, sayang, sebelum aku kembali fokus, dengarkan ini sebentar, ya. \ud83d\udc8c","Aku ingin kita memberi ruang bagi pekerjaan, istirahat, dan rasa sayang untuk berjalan berdampingan. Semoga kita selalu bisa saling memahami dengan hati yang lapang.","Walau hari ini waktuku terbagi, rasa sayangku tidak harus ikut menjauh. Aku tetap ingin kembali ke percakapan kita dan mendengar bagaimana harimu berjalan.","Rindu ini mungkin harus menunggu sebentar, tetapi bukan berarti ia hilang. Aku akan membawanya sampai kita punya waktu untuk bertukar cerita lagi.","Jaga dirimu baik-baik, ya, cintaku. Aku ingin saat kita kembali mengobrol, kamu punya kabar baik tentang dirimu sendiri juga.","Jangan lupa melakukan sesuatu yang kamu suka hari ini. Aku ingin kamu tetap punya alasan untuk bahagia, bukan hanya menunggu ponsel berbunyi.","Nanti, ketika pekerjaan selesai, aku ingin membaca ceritamu, mendengar hal-hal lucu yang kamu alami, dan berbagi cerita kecil dari hariku juga.","Kalau aku bisa mengirimkan pelukan lewat kata-kata, akan kukirim satu yang hangat untukmu sekarang. Semoga kamu merasa ditemani meski kita sedang melakukan hal yang berbeda.","Jangan merasa harus menunggu sambil menghentikan harimu sendiri. Jalani kegiatanmu, tertawalah kalau ada yang lucu, dan ceritakan semuanya nanti kepadaku.","Aku tidak bisa menjanjikan akan selalu memegang ponsel setiap saat, tetapi aku ingin terus menunjukkan kepadamu bahwa kamu penting bagiku melalui perhatian yang tulus.","Untuk saat ini, izinkan aku menuntaskan pekerjaan dengan tenang. Doamu dan pengertianmu terasa seperti dukungan kecil yang sangat berarti.","Jika nanti aku kembali dengan cerita yang banyak, semoga kamu juga punya banyak hal menyenangkan untuk diceritakan kepadaku.","Kalau ada hal penting yang perlu kamu sampaikan, tuliskan saja dengan nyaman. Aku akan berusaha membacanya saat bisa berhenti sejenak.","Aku sedang membawa kamera dan menyelesaikan beberapa urusan, tetapi ada bagian kecil dari pikiranku yang tetap bertanya apakah kamu sudah makan dan baik-baik saja.","Hari ini aku masih bekerja, ya, sayang. Kalau balasanku agak lama, jangan buru-buru berpikir aku melupakanmu. Aku sedang menyelesaikan tanggung jawabku dan akan menyapamu lagi saat ada waktu.","Semoga kamu bisa memandang hari ini dengan lebih ringan. Kita tidak harus selalu tersedia setiap detik untuk tetap saling peduli."];
+  var POP_B=[["\ud83d\udcf8","Hari ini aku bekerja, sayang","Mengerti, sayang \ud83d\udc9b",[0,1,2,3]],["\u2764\ufe0f","Jangan merasa sendirian, cintaku","Baik, sayangku \ud83d\udc9b",[4,5,6,7]],["\u2600\ufe0f","Titip rindu sebentar, ya","Tenang, aku paham \u2764\ufe0f",[8,9,10,3]],["\ud83d\udc8c","Beri aku waktu sebentar, ya, sayang","Semoga lancar, sayang \ud83d\udc9b",[11,12,13]],["\ud83e\udd1d","Satu hal yang ingin kamu ingat","Kembali kalau sudah senggang \ud83d\udc9b",[14,15,2,16]],["\ud83c\udf37","Kamu tetap dekat di hatiku","Iya, aku tunggu \u2764\ufe0f",[17,18,19,20,21]],["\ud83c\udf24\ufe0f","Semoga harimu tetap hangat","Aku tunggu ceritamu \ud83c\udf37",[22,1,10,23]],["\ud83d\udc9b","Aku akan kembali menyapamu","Sampai nanti, sayang \ud83d\udc8c",[24,5,13,16]],["\ud83d\udcf7","Ada rindu di sela pekerjaanku","Aku mengerti, cintaku \u2764\ufe0f",[0,25]],["\ud83e\udef6","Terima kasih sudah menunggu","Aku kirim doa untukmu \ud83d\ude4f",[4,12,10,26]],["\ud83c\udf19","Nanti kita bercerita lagi","Aku simpan rindumu \ud83d\udc8c",[8,15,27]],["\ud83d\udc90","Simpan senyum itu untukku","Jaga diri juga, ya \u2764\ufe0f",[11,18,13,28]],["\ud83d\udd4a\ufe0f","Pelan-pelan, ya, sayang","Mengerti, sayang \ud83d\udc9b",[14,1,2,25]],["\ud83d\udc96","Kamu tetap istimewa","Baik, sayangku \ud83d\udc9b",[17,5,6,29,7,21]],["\u2615","Temani aku lewat doa kecil","Tenang, aku paham \u2764\ufe0f",[22,9,10,30]],["\u2728","Hari yang sibuk, hati yang sama","Semoga lancar, sayang \ud83d\udc9b",[24,12,13,31,32]],["\ud83c\udf3b","Jangan lupa bahagia hari ini","Kembali kalau sudah senggang \ud83d\udc9b",[0,15,2,16]],["\ud83d\udc8c","Ada pesan kecil untukmu","Iya, aku tunggu \u2764\ufe0f",[4,18,19,3]],["\u2764\ufe0f","Aku sedang berusaha, sayang","Aku tunggu ceritamu \ud83c\udf37",[8,1,23]],["\ud83c\udf08","Semoga waktu terasa ringan","Sampai nanti, sayang \ud83d\udc8c",[11,5,13,33]],["\ud83d\udccd","Aku sedang menyelesaikan tanggung jawab","Aku mengerti, cintaku \u2764\ufe0f",[14,9,2,25]],["\ud83e\udd79","Rinduku tidak ikut sibuk","Aku kirim doa untukmu \ud83d\ude4f",[17,12,10,26]],["\ud83c\udf3c","Jaga dirimu baik-baik, ya","Aku simpan rindumu \ud83d\udc8c",[22,15,10,27,16]],["\ud83d\udcab","Nanti aku punya waktu untukmu","Jaga diri juga, ya \u2764\ufe0f",[24,18,13,28]],["\ud83e\uddf8","Peluk jauh untukmu","Mengerti, sayang \ud83d\udc9b",[0,1]],["\ud83d\udc97","Kamu bukan gangguan bagiku","Baik, sayangku \ud83d\udc9b",[4,5,6,7]],["\ud83c\udf39","Satu pesan sebelum bekerja","Tenang, aku paham \u2764\ufe0f",[8,9,30]],["\u2600\ufe0f","Mari jalani hari dengan tenang","Semoga lancar, sayang \ud83d\udc9b",[11,12,13,25]],["\ud83d\udc9e","Tetaplah jadi dirimu yang ceria","Kembali kalau sudah senggang \ud83d\udc9b",[14,15,2,16]],["\ud83d\udcf7","Aku bawa rindumu hari ini","Iya, aku tunggu \u2764\ufe0f",[17,18,19,20]],["\ud83d\udcf8","Hari ini aku bekerja, sayang","Aku tunggu ceritamu \ud83c\udf37",[22,1,10,23]],["\u2764\ufe0f","Jangan merasa sendirian, cintaku","Sampai nanti, sayang \ud83d\udc8c",[24,5,13,33]],["\u2600\ufe0f","Titip rindu sebentar, ya","Aku mengerti, cintaku \u2764\ufe0f",[0,9,2,3]],["\ud83d\udc8c","Beri aku waktu sebentar, ya, sayang","Aku kirim doa untukmu \ud83d\ude4f",[4,12,29]],["\ud83e\udd1d","Satu hal yang ingin kamu ingat","Aku simpan rindumu \ud83d\udc8c",[8,15,10,27]],["\ud83c\udf37","Kamu tetap dekat di hatiku","Jaga diri juga, ya \u2764\ufe0f",[11,18,13,28,34]],["\ud83c\udf24\ufe0f","Semoga harimu tetap hangat","Mengerti, sayang \ud83d\udc9b",[14,1,2,3]],["\ud83d\udc9b","Aku akan kembali menyapamu","Baik, sayangku \ud83d\udc9b",[17,5,6,16]],["\ud83d\udcf7","Ada rindu di sela pekerjaanku","Tenang, aku paham \u2764\ufe0f",[22,9]],["\ud83e\udef6","Terima kasih sudah menunggu","Semoga lancar, sayang \ud83d\udc9b",[24,12,13,31]],["\ud83c\udf19","Nanti kita bercerita lagi","Kembali kalau sudah senggang \ud83d\udc9b",[0,15,16]],["\ud83d\udc90","Simpan senyum itu untukku","Iya, aku tunggu \u2764\ufe0f",[4,18,19,20]],["\ud83d\udd4a\ufe0f","Pelan-pelan, ya, sayang","Aku tunggu ceritamu \ud83c\udf37",[8,1,10,25]],["\ud83d\udc96","Kamu tetap istimewa","Sampai nanti, sayang \ud83d\udc8c",[11,5,35,13,33,34]],["\u2615","Temani aku lewat doa kecil","Aku mengerti, cintaku \u2764\ufe0f",[14,9,2,25]],["\u2728","Hari yang sibuk, hati yang sama","Aku kirim doa untukmu \ud83d\ude4f",[17,12,10,26,21]],["\ud83c\udf3b","Jangan lupa bahagia hari ini","Aku simpan rindumu \ud83d\udc8c",[22,15,10,27]],["\ud83d\udc8c","Ada pesan kecil untukmu","Jaga diri juga, ya \u2764\ufe0f",[24,18,13,3]],["\u2764\ufe0f","Aku sedang berusaha, sayang","Mengerti, sayang \ud83d\udc9b",[0,1,3]],["\ud83c\udf08","Semoga waktu terasa ringan","Baik, sayangku \ud83d\udc9b",[4,5,6,7]],["\ud83d\udccd","Aku sedang menyelesaikan tanggung jawab","Tenang, aku paham \u2764\ufe0f",[8,9,10,30]],["\ud83e\udd79","Rinduku tidak ikut sibuk","Semoga lancar, sayang \ud83d\udc9b",[11,12,13,31]],["\ud83c\udf3c","Jaga dirimu baik-baik, ya","Kembali kalau sudah senggang \ud83d\udc9b",[14,15,2,16,16]],["\ud83d\udcab","Nanti aku punya waktu untukmu","Iya, aku tunggu \u2764\ufe0f",[17,18,19,20]],["\ud83e\uddf8","Peluk jauh untukmu","Aku tunggu ceritamu \ud83c\udf37",[22,23]],["\ud83d\udc97","Kamu bukan gangguan bagiku","Sampai nanti, sayang \ud83d\udc8c",[24,5,13,33]],["\ud83c\udf39","Satu pesan sebelum bekerja","Aku mengerti, cintaku \u2764\ufe0f",[0,9,25]],["\u2600\ufe0f","Mari jalani hari dengan tenang","Aku kirim doa untukmu \ud83d\ude4f",[4,12,10,25]],["\ud83d\udc9e","Tetaplah jadi dirimu yang ceria","Aku simpan rindumu \ud83d\udc8c",[8,15,10,27]],["\ud83d\udcf7","Aku bawa rindumu hari ini","Jaga diri juga, ya \u2764\ufe0f",[11,18,13,28]],["\ud83d\udcf8","Hari ini aku bekerja, sayang","Mengerti, sayang \ud83d\udc9b",[14,1,2,3]],["\u2764\ufe0f","Jangan merasa sendirian, cintaku","Baik, sayangku \ud83d\udc9b",[17,5,6,7]],["\u2600\ufe0f","Titip rindu sebentar, ya","Tenang, aku paham \u2764\ufe0f",[22,9,10,3]],["\ud83d\udc8c","Beri aku waktu sebentar, ya, sayang","Semoga lancar, sayang \ud83d\udc9b",[24,12,13]],["\ud83e\udd1d","Satu hal yang ingin kamu ingat","Kembali kalau sudah senggang \ud83d\udc9b",[0,15,2,16]],["\ud83c\udf37","Kamu tetap dekat di hatiku","Iya, aku tunggu \u2764\ufe0f",[4,18,19,20,36]],["\ud83c\udf24\ufe0f","Semoga harimu tetap hangat","Aku tunggu ceritamu \ud83c\udf37",[8,1,10,23]],["\ud83d\udc9b","Aku akan kembali menyapamu","Sampai nanti, sayang \ud83d\udc8c",[11,5,13,16]],["\ud83d\udcf7","Ada rindu di sela pekerjaanku","Aku mengerti, cintaku \u2764\ufe0f",[14,25]],["\ud83e\udef6","Terima kasih sudah menunggu","Aku kirim doa untukmu \ud83d\ude4f",[17,12,10,26]],["\ud83c\udf19","Nanti kita bercerita lagi","Aku simpan rindumu \ud83d\udc8c",[22,15,27]],["\ud83d\udc90","Simpan senyum itu untukku","Jaga diri juga, ya \u2764\ufe0f",[24,18,13,28]],["\ud83d\udd4a\ufe0f","Pelan-pelan, ya, sayang","Mengerti, sayang \ud83d\udc9b",[0,1,2,25]],["\ud83d\udc96","Kamu tetap istimewa","Baik, sayangku \ud83d\udc9b",[4,5,6,29,7,36]],["\u2615","Temani aku lewat doa kecil","Tenang, aku paham \u2764\ufe0f",[8,9,10,30]],["\u2728","Hari yang sibuk, hati yang sama","Semoga lancar, sayang \ud83d\udc9b",[11,12,13,31,34]],["\ud83c\udf3b","Jangan lupa bahagia hari ini","Kembali kalau sudah senggang \ud83d\udc9b",[14,15,2,16]],["\ud83d\udc8c","Ada pesan kecil untukmu","Iya, aku tunggu \u2764\ufe0f",[17,18,19,3]],["\u2764\ufe0f","Aku sedang berusaha, sayang","Aku tunggu ceritamu \ud83c\udf37",[22,1,23]],["\ud83c\udf08","Semoga waktu terasa ringan","Sampai nanti, sayang \ud83d\udc8c",[24,5,13,33]],["\ud83d\udccd","Aku sedang menyelesaikan tanggung jawab","Aku mengerti, cintaku \u2764\ufe0f",[0,9,2,25]],["\ud83e\udd79","Rinduku tidak ikut sibuk","Aku kirim doa untukmu \ud83d\ude4f",[4,12,10,26]],["\ud83c\udf3c","Jaga dirimu baik-baik, ya","Aku simpan rindumu \ud83d\udc8c",[8,15,10,27,16]],["\ud83d\udcab","Nanti aku punya waktu untukmu","Jaga diri juga, ya \u2764\ufe0f",[11,18,13,28]],["\ud83e\uddf8","Peluk jauh untukmu","Mengerti, sayang \ud83d\udc9b",[14,1]],["\ud83d\udc97","Kamu bukan gangguan bagiku","Baik, sayangku \ud83d\udc9b",[17,5,6,7]],["\ud83c\udf39","Satu pesan sebelum bekerja","Tenang, aku paham \u2764\ufe0f",[22,9,30]],["\u2600\ufe0f","Mari jalani hari dengan tenang","Semoga lancar, sayang \ud83d\udc9b",[24,12,13,25]],["\ud83d\udc9e","Tetaplah jadi dirimu yang ceria","Kembali kalau sudah senggang \ud83d\udc9b",[0,15,2,16]],["\ud83d\udcf7","Aku bawa rindumu hari ini","Iya, aku tunggu \u2764\ufe0f",[4,18,19,20]],["\ud83d\udcf8","Hari ini aku bekerja, sayang","Aku tunggu ceritamu \ud83c\udf37",[8,1,10,23]],["\u2764\ufe0f","Jangan merasa sendirian, cintaku","Sampai nanti, sayang \ud83d\udc8c",[11,5,13,33]],["\u2600\ufe0f","Titip rindu sebentar, ya","Aku mengerti, cintaku \u2764\ufe0f",[14,9,2,3]],["\ud83d\udc8c","Beri aku waktu sebentar, ya, sayang","Aku kirim doa untukmu \ud83d\ude4f",[17,12,29]],["\ud83e\udd1d","Satu hal yang ingin kamu ingat","Aku simpan rindumu \ud83d\udc8c",[22,15,10,27]],["\ud83c\udf37","Kamu tetap dekat di hatiku","Jaga diri juga, ya \u2764\ufe0f",[24,18,13,28,32]],["\ud83c\udf24\ufe0f","Semoga harimu tetap hangat","Mengerti, sayang \ud83d\udc9b",[0,1,2,3]],["\ud83d\udc9b","Aku akan kembali menyapamu","Baik, sayangku \ud83d\udc9b",[4,5,6,16]],["\ud83d\udcf7","Ada rindu di sela pekerjaanku","Tenang, aku paham \u2764\ufe0f",[8,9]],["\ud83e\udef6","Terima kasih sudah menunggu","Semoga lancar, sayang \ud83d\udc9b",[11,12,13,31]],["\ud83c\udf19","Nanti kita bercerita lagi","Kembali kalau sudah senggang \ud83d\udc9b",[14,15,16]],["\ud83d\udc90","Simpan senyum itu untukku","Iya, aku tunggu \u2764\ufe0f",[17,18,19,20]],["\ud83d\udd4a\ufe0f","Pelan-pelan, ya, sayang","Aku tunggu ceritamu \ud83c\udf37",[22,1,10,25]],["\ud83d\udc96","Kamu tetap istimewa","Sampai nanti, sayang \ud83d\udc8c",[24,5,37,13,33,32]],["\u2615","Temani aku lewat doa kecil","Aku mengerti, cintaku \u2764\ufe0f",[0,9,2,25]],["\u2728","Hari yang sibuk, hati yang sama","Aku kirim doa untukmu \ud83d\ude4f",[4,12,10,26,36]],["\ud83c\udf3b","Jangan lupa bahagia hari ini","Aku simpan rindumu \ud83d\udc8c",[8,15,10,27]],["\ud83d\udc8c","Ada pesan kecil untukmu","Jaga diri juga, ya \u2764\ufe0f",[11,18,13,3]],["\u2764\ufe0f","Aku sedang berusaha, sayang","Mengerti, sayang \ud83d\udc9b",[14,1,3]],["\ud83c\udf08","Semoga waktu terasa ringan","Baik, sayangku \ud83d\udc9b",[17,5,6,7]]];
+  var POP_C=[["\ud83c\udf3b","Jaga hati dan dirimu","Tenang, aku paham \u2764\ufe0f",[4,18,13,28]],["\ud83d\udc9e","Obrolan kita selalu kunanti","Semoga lancar, sayang \ud83d\udc9b",[8,38,36,2,3,25]],["\ud83d\udcf7","Aku sedang menyelesaikan pekerjaan","Kembali kalau sudah senggang \ud83d\udc9b",[11,5,6,7]],["\u2728","Kita sambung lagi nanti","Iya, aku tunggu \u2764\ufe0f",[14,9,10,30,39]],["\ud83e\udd0d","Aku ingin mendengar harimu","Aku tunggu ceritamu \ud83c\udf37",[17,38,13,31]],["\u2615","Titip cerita sampai nanti","Sampai nanti, sayang \ud83d\udc8c",[22,15,16]],["\ud83d\udc8c","Satu sapaan untukmu","Aku mengerti, cintaku \u2764\ufe0f",[24,18,19,3]],["\ud83c\udf24\ufe0f","Semoga kamu tetap tenang","Aku kirim doa untukmu \ud83d\ude4f",[0,38,10,23]],["\ud83e\uddf8","Peluk jauh lewat pesan","Aku simpan rindumu \ud83d\udc8c",[4,5,13,33]],["\u2764\ufe0f","Aku tidak sedang menjauh","Jaga diri juga, ya \u2764\ufe0f",[8,25]],["\ud83c\udf39","Ada tempat untukmu di hariku","Mengerti, sayang \ud83d\udc9b",[11,38,10,26]],["\ud83d\udcab","Sampai aku kembali online","Baik, sayangku \ud83d\udc9b",[14,15,10,27,16]],["\ud83c\udf3c","Biar rindu menunggu sebentar","Tenang, aku paham \u2764\ufe0f",[17,18,13,28]],["\ud83d\udc97","Terima kasih sudah mengerti","Semoga lancar, sayang \ud83d\udc9b",[22,38,3]],["\ud83d\udc8c","Sayangku, temani aku dari jauh, ya","Kembali kalau sudah senggang \ud83d\udc9b",[24,5,6,7]],["\u2764\ufe0f","Pesan kecil di sela kesibukan","Iya, aku tunggu \u2764\ufe0f",[0,9,10,30]],["\ud83e\udef6","Ceritamu tetap kutunggu","Aku tunggu ceritamu \ud83c\udf37",[4,38,13]],["\ud83c\udf37","Jangan sungkan mengirim pesan","Sampai nanti, sayang \ud83d\udc8c",[8,15,2,16]],["\ud83d\udc9b","Aku akan membaca saat senggang","Aku mengerti, cintaku \u2764\ufe0f",[11,18,19,20]],["\u2600\ufe0f","Sebentar saja aku fokus, ya","Aku kirim doa untukmu \ud83d\ude4f",[14,38,10,23,39]],["\ud83e\udd79","Rindu ini kita simpan dulu","Aku simpan rindumu \ud83d\udc8c",[17,5,13,33]],["\ud83c\udf19","Nanti kita lanjutkan cerita","Jaga diri juga, ya \u2764\ufe0f",[22,25]],["\ud83d\udc96","Kamu tetap ada di pikiranku","Mengerti, sayang \ud83d\udc9b",[24,38,10,26]],["\ud83d\udce9","Tinggalkan pesan manis untukku","Baik, sayangku \ud83d\udc9b",[0,15,27]],["\ud83d\udd4a\ufe0f","Jangan khawatir kalau aku lambat","Tenang, aku paham \u2764\ufe0f",[4,18,13,28]],["\ud83c\udf3b","Jaga hati dan dirimu","Semoga lancar, sayang \ud83d\udc9b",[8,38,2,3]],["\ud83d\udc9e","Obrolan kita selalu kunanti","Kembali kalau sudah senggang \ud83d\udc9b",[11,5,6,29,7,16]],["\ud83d\udcf7","Aku sedang menyelesaikan pekerjaan","Iya, aku tunggu \u2764\ufe0f",[14,9,10,30]],["\u2728","Kita sambung lagi nanti","Aku tunggu ceritamu \ud83c\udf37",[17,38,13,31,32]],["\ud83e\udd0d","Aku ingin mendengar harimu","Sampai nanti, sayang \ud83d\udc8c",[22,15,2,16]],["\u2615","Titip cerita sampai nanti","Aku mengerti, cintaku \u2764\ufe0f",[24,18,29]],["\ud83d\udc8c","Satu sapaan untukmu","Aku kirim doa untukmu \ud83d\ude4f",[0,38,10,25]],["\ud83c\udf24\ufe0f","Semoga kamu tetap tenang","Aku simpan rindumu \ud83d\udc8c",[4,5,13,33]],["\ud83e\uddf8","Peluk jauh lewat pesan","Jaga diri juga, ya \u2764\ufe0f",[8,9,2,25]],["\u2764\ufe0f","Aku tidak sedang menjauh","Mengerti, sayang \ud83d\udc9b",[11,38]],["\ud83c\udf39","Ada tempat untukmu di hariku","Baik, sayangku \ud83d\udc9b",[14,15,10,27]],["\ud83d\udcab","Sampai aku kembali online","Tenang, aku paham \u2764\ufe0f",[17,18,13,28,3]],["\ud83c\udf3c","Biar rindu menunggu sebentar","Semoga lancar, sayang \ud83d\udc9b",[22,38,2,3]],["\ud83d\udc97","Terima kasih sudah mengerti","Kembali kalau sudah senggang \ud83d\udc9b",[24,5,29]],["\ud83d\udc8c","Sayangku, temani aku dari jauh, ya","Iya, aku tunggu \u2764\ufe0f",[0,9,10,30]],["\u2764\ufe0f","Pesan kecil di sela kesibukan","Aku tunggu ceritamu \ud83c\udf37",[4,38,13,31]],["\ud83e\udef6","Ceritamu tetap kutunggu","Sampai nanti, sayang \ud83d\udc8c",[8,15,16]],["\ud83c\udf37","Jangan sungkan mengirim pesan","Aku mengerti, cintaku \u2764\ufe0f",[11,18,19,20]],["\ud83d\udc9b","Aku akan membaca saat senggang","Aku kirim doa untukmu \ud83d\ude4f",[14,38,10,23]],["\u2600\ufe0f","Sebentar saja aku fokus, ya","Aku simpan rindumu \ud83d\udc8c",[17,5,13,33,32]],["\ud83e\udd79","Rindu ini kita simpan dulu","Jaga diri juga, ya \u2764\ufe0f",[22,9,2,25]],["\ud83c\udf19","Nanti kita lanjutkan cerita","Mengerti, sayang \ud83d\udc9b",[24,38]],["\ud83d\udc96","Kamu tetap ada di pikiranku","Baik, sayangku \ud83d\udc9b",[0,15,10,27]],["\ud83d\udce9","Tinggalkan pesan manis untukku","Tenang, aku paham \u2764\ufe0f",[4,18,13]],["\ud83d\udd4a\ufe0f","Jangan khawatir kalau aku lambat","Semoga lancar, sayang \ud83d\udc9b",[8,38,2,3]],["\ud83c\udf3b","Jaga hati dan dirimu","Kembali kalau sudah senggang \ud83d\udc9b",[11,5,6,7]],["\ud83d\udc9e","Obrolan kita selalu kunanti","Iya, aku tunggu \u2764\ufe0f",[14,9,34,10,30,3]],["\ud83d\udcf7","Aku sedang menyelesaikan pekerjaan","Aku tunggu ceritamu \ud83c\udf37",[17,38,13,31]],["\u2728","Kita sambung lagi nanti","Sampai nanti, sayang \ud83d\udc8c",[22,15,2,16,37]],["\ud83e\udd0d","Aku ingin mendengar harimu","Aku mengerti, cintaku \u2764\ufe0f",[24,18,19,20]]];
+  function popUbah(a){return{em:a[0],judul:a[1],tombol:a[2],p:a[3].map(function(i){return PP[i]})}}
+  function popHari(d){return Math.floor(Date.UTC(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10))/86400000)}
+  /* urutan: hari ke-N memakai teks ke-N; pop-up ke-2 dst. di hari yang sama melompat sejauh 1/5 (beranda) atau 1/2 (obrolan) daftar */
+  function popPilih(L,d,k,bagi){return popUbah(L[(popHari(d)+k*Math.floor(L.length/bagi))%L.length])}
+  function popTebal(t){
+    var m=t.match(/^([\s\S]*[.!?]\s+)([^.!?]+[.!?]+(?:\s*[^\w\s.!?]+)*)\s*$/);
+    if(m)return m[2].length>150?t:m[1]+'{{'+m[2]+'}}';
+    return t.length<150?'{{'+t+'}}':t;
+  }
+  function popRakit(v,n,info,cls){
+    var nm=esc(n.liaww||namaTampil()),h='',last=v.p.length-1;
+    v.p.forEach(function(t,i){
+      if(i===last)t=popTebal(t);
+      h+='<p>'+t.replace(/\[nama liaww\]/g,nm).replace(/\{\{(.+?)\}\}/g,'<span class="'+cls+'">$1</span>')+'</p>';
+      if(i===0&&info)h+=info;
+    });
+    return h+popSign(n);
+  }
+  function popFx(ov){
+    var fx=document.createElement('div');fx.className='fx';fx.setAttribute('aria-hidden','true');
+    var ch=['\uD83D\uDC9B','\u2764\uFE0F','\uD83D\uDC97','\u2728','\uD83D\uDC96','\uD83C\uDF38'],h='';
+    for(var i=0;i<18;i++){
+      var l=Math.round(Math.random()*96),sz=14+Math.round(Math.random()*18),du=(6+Math.random()*6).toFixed(1),de=(Math.random()*8).toFixed(1),dx=Math.round(Math.random()*70-35);
+      h+='<i style="left:'+l+'%;font-size:'+sz+'px;animation-duration:'+du+'s;animation-delay:-'+de+'s;--dx:'+dx+'px">'+ch[i%ch.length]+'</i>';
+    }
+    fx.innerHTML=h;ov.insertBefore(fx,ov.firstChild);
+  }
+  function popCss(){
+    if($('lhPopCss'))return;
+    var st=document.createElement('style');st.id='lhPopCss';
+    st.textContent='#lhPop{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:rgba(36,28,6,.58);overscroll-behavior:contain}'
+    +'#lhPop .box{width:100%;max-width:380px;max-height:100%;overflow:auto;background:#FFFBEA;border:1.5px solid #f0e1a0;border-radius:24px;padding:24px 20px 18px;text-align:center;color:#241c06;box-shadow:0 24px 60px rgba(0,0,0,.35);font-family:"Bricolage Grotesque",system-ui,sans-serif;outline:0}'
+    +'#lhPop .em{font-size:42px;line-height:1}'
+    +'#lhPop h2{margin:10px 0 6px;font-size:21px;font-weight:800;letter-spacing:-.02em}'
+    +'#lhPop p{margin:10px 0 0;font-size:14px;line-height:1.65;color:#5b5646}'
+    +'#lhPop p.job{font-size:12.5px;font-weight:700;color:#7A5A00;background:#FFF1B8;border-radius:12px;padding:8px 10px}'
+    +'#lhPop p.love{font-size:15px;font-weight:700;color:#B5456B}'
+    +'#lhPop .ok{margin-top:16px;width:100%;min-height:48px;border:0;border-radius:14px;font:700 15px "Bricolage Grotesque",system-ui,sans-serif;background:#e8e2c8;color:#9a9378;cursor:not-allowed}'
+    +'#lhPop .ok:not(:disabled){background:#241c06;color:#FFD42E;cursor:pointer}'
+    +'#lhPop .ok.glow{animation:lhPopGlow 1.4s ease-in-out infinite}'
+    +'@keyframes lhPopGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,196,0,0)}50%{box-shadow:0 0 18px 6px rgba(255,196,0,.8)}}'
+    +'#lhPop p.sign{margin-top:14px;font-size:14px;font-weight:700;font-style:italic;color:#B5456B}'
+    +'#lhPop .fx{position:absolute;inset:0;overflow:hidden;pointer-events:none}'
+    +'#lhPop .fx i{position:absolute;bottom:-40px;font-style:normal;opacity:0;animation:lhFloat linear infinite}'
+    +'@keyframes lhFloat{0%{transform:translate(0,0) scale(.7);opacity:0}12%{opacity:.9}80%{opacity:.7}100%{transform:translate(var(--dx),-110vh) scale(1.15) rotate(14deg);opacity:0}}'
+    +'#lhPop.rom .box{position:relative;z-index:1;animation:lhPopIn .6s cubic-bezier(.2,1.2,.3,1) both}'
+    +'@keyframes lhPopIn{0%{transform:translateY(26px) scale(.88);opacity:0}100%{transform:none;opacity:1}}'
+    +'#lhPop.rom .em{display:inline-block;animation:lhBeat 1.7s ease-in-out infinite}'
+    +'@keyframes lhBeat{0%,100%{transform:scale(1)}14%{transform:scale(1.2)}28%{transform:scale(1)}42%{transform:scale(1.13)}70%{transform:scale(1)}}'
+    +'#lhPop.rom .box>p{opacity:0;animation:lhRise .7s ease-out forwards}'
+    +'#lhPop.rom .box>p:nth-of-type(1){animation-delay:.4s}#lhPop.rom .box>p:nth-of-type(2){animation-delay:.75s}#lhPop.rom .box>p:nth-of-type(3){animation-delay:1.1s}#lhPop.rom .box>p:nth-of-type(4){animation-delay:1.45s}#lhPop.rom .box>p:nth-of-type(5){animation-delay:1.8s}#lhPop.rom .box>p:nth-of-type(6){animation-delay:2.15s}#lhPop.rom .box>p:nth-of-type(7){animation-delay:2.5s}#lhPop.rom .box>p:nth-of-type(8){animation-delay:2.85s}'
+    +'@keyframes lhRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}'
+    +'#lhPop .lv{display:inline-block;font-weight:700;color:#B5456B;animation:lhLove 2.4s ease-in-out infinite}#lhPop .lv0{font-weight:700;color:#B5456B}'
+    +'@keyframes lhLove{0%,100%{transform:scale(1);color:#B5456B}50%{transform:scale(1.04);color:#E0507F}}'
+    +'@media (prefers-reduced-motion:reduce){#lhPop .ok.glow{animation:none;box-shadow:0 0 0 4px rgba(255,196,0,.7)}#lhPop .fx{display:none}#lhPop.rom .box,#lhPop.rom .em,#lhPop .lv{animation:none}#lhPop.rom .box>p{opacity:1;animation:none}}';
+    document.head.appendChild(st);
+  }
+  function popTampil(o){
+    if(S.pop)return false;
+    S.pop=true;popCss();
+    var ov=document.createElement('div');ov.id='lhPop';if(o.anim)ov.className='rom';ov.setAttribute('role','alertdialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','lhPopT');
+    ov.innerHTML='<div class="box" tabindex="-1"><div class="em" aria-hidden="true">'+o.em+'</div><h2 id="lhPopT">'+esc(o.judul)+'</h2>'+o.html+'<button type="button" class="ok" id="lhPopOk"></button></div>';
+    document.body.appendChild(ov);
+    var box=ov.firstChild;if(o.anim)popFx(ov);var ok=ov.querySelector('#lhPopOk'),terkunci=!!o.kunci,selesai=false,t0=Date.now(),iv=null;
+    var LBL=o.tombol||'Mengerti \uD83D\uDC9B';
+    function ruang(){return $('kc')&&$('kc').classList.contains('on')}
+    function tutup(lewatBack){
+      if(selesai||terkunci)return;
+      selesai=true;clearInterval(iv);
+      document.removeEventListener('keydown',onKey,true);document.removeEventListener('focusin',onFocus,true);window.removeEventListener('popstate',onPop);
+      ov.remove();S.pop=false;
+      var st=popState(wib().d);st[o.jenis]=(st[o.jenis]||0)+1;popSimpan(st);
+      if(!lewatBack){try{if(history.state&&history.state.lhPop)history.back()}catch(e){}}
+    }
+    function onKey(e){
+      if(e.key==='Escape'||e.key==='Esc'){e.preventDefault();e.stopPropagation();if(!terkunci)tutup()}
+    }
+    function onFocus(e){if(!ov.contains(e.target)){e.stopPropagation();box.focus()}}
+    function onPop(){
+      if(selesai)return;
+      if(terkunci){try{history.pushState({lhPop:1},'')}catch(e){}}else tutup(true);
+    }
+    try{history.pushState({lhPop:1},'')}catch(e){}
+    document.addEventListener('keydown',onKey,true);document.addEventListener('focusin',onFocus,true);window.addEventListener('popstate',onPop);
+    ok.addEventListener('click',function(){tutup()});
+    function segar(){
+      var sisa=Math.ceil((POP_KUNCI_DETIK*1000-(Date.now()-t0))/1000);
+      if(terkunci&&sisa>0){ok.disabled=true;ok.textContent='Tutup ('+sisa+')';return}
+      if(terkunci){terkunci=false;ok.classList.add('glow')}
+      ok.disabled=false;ok.textContent=LBL;clearInterval(iv);
+    }
+    if(terkunci){segar();iv=setInterval(segar,250)}else{ok.disabled=false;ok.textContent=LBL}
+    try{box.focus()}catch(e){}
+    return true;
+  }
+  function popBeranda(){
+    if(S.pop||S.popWait)return;
+    var w=wib(),st=popState(w.d);
+    if(w.m<POP_JAM_MULAI||st.b>=POP_BERANDA_MAKS)return;
+    var js=jobHariIni(w.d);if(!js.length)return;
+    var kunci=st.b===0,v=popPilih(POP_B,w.d,st.b,POP_BERANDA_MAKS);
+    S.popWait=true;
+    popNama().then(function(n){
+      S.popWait=false;if(S.pop)return;
+      var j=js[0],info='<p class="job">'+esc(j.judul)+(j.jam?' \u00B7 '+esc(jamTxt(j)):'')+(js.length>1?' (+'+(js.length-1)+' job lain)':'')+'</p>';
+      popTampil({jenis:'b',kunci:kunci,anim:true,em:v.em,judul:v.judul,tombol:v.tombol,html:popRakit(v,n,info,'lv')});
+    });
+  }
+  function popBoot(){
+    if(S.popBoot||S.loading||(S.error&&!S.jobs.length))return;
+    S.popBoot=true;
+    var w=wib();
+    if(!jobHariIni(w.d).length)return;
+    if(w.m>=POP_JAM_MULAI){popBeranda();return}
+    /* Aplikasi sudah terbuka sebelum 08.00 WIB: munculkan tepat saat lewat 08.00 */
+    setTimeout(popBeranda,Math.max(1000,(POP_JAM_MULAI-w.m)*60000));
+  }
+  function popChat(){
+    if(S.pop||S.popWait)return;
+    var w=wib(),st=popState(w.d);
+    if(st.c>=POP_CHAT_MAKS||!jobHariIni(w.d).length)return;
+    var v=popPilih(POP_C,w.d,st.c,POP_CHAT_MAKS);
+    S.popWait=true;
+    popNama().then(function(n){
+      S.popWait=false;if(S.pop)return;
+      popTampil({jenis:'c',kunci:false,em:v.em,judul:v.judul,tombol:v.tombol,html:popRakit(v,n,'','lv0')});
+    });
+  }
+  function popWatchChat(){
+    var kc=$('kc');if(!kc||!window.MutationObserver)return;
+    var was=kc.classList.contains('on');
+    new MutationObserver(function(){var on=kc.classList.contains('on');if(on&&!was)popChat();was=on}).observe(kc,{attributes:true,attributeFilter:['class']});
   }
   window.kaoneLiawwHome={start:start};
   if(window.__kaoneChatOnly)start();

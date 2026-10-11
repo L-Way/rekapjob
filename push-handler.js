@@ -8,8 +8,12 @@
    jadi isi pesan tidak bisa dipakai untuk menampilkan gambar dari luar. File ikon dicek dulu: kalau belum ada
    di situs, otomatis memakai ikon bawaan (notifikasi tidak pernah tampil tanpa ikon). */
 const IKON_PUSH = {
-  pesanan: { icon: 'icons/notif-pesanan-192.png', badge: 'icons/notif-badge-96.png' }
+  pesanan: { icon: 'icons/notif-pesanan-192.png' }
 };
+/* Badge = ikon kecil di status bar Android. HARUS monokrom (putih di atas latar transparan): Android hanya memakai
+   bentuknya. Gambar berlatar penuh seperti icon-192.png tampil sebagai kotak putih polos, jadi tidak dipakai di sini.
+   Kalau filenya belum ada di situs, badge dilewati (tidak jatuh ke gambar kotak penuh). */
+const BADGE_MONOKROM = 'icons/notif-badge-96.png';
 async function adaFile(path) {
   try { const r = await fetch(path, { cache: 'no-store' }); return !!(r && r.ok); } catch (e) { return false; }
 }
@@ -21,7 +25,6 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || '',
     icon: 'icons/icon-192.png',
-    badge: 'icons/icon-192.png',
     tag: data.tag || 'kaone-push',   // sama dengan ID notifikasi di aplikasi → tidak muncul dobel
     renotify: false,
     lang: 'id',
@@ -32,11 +35,9 @@ self.addEventListener('push', (event) => {
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     if (wins.some((w) => w.visibilityState === 'visible')) return;
     const ikon = IKON_PUSH[data.ikon];
-    if (ikon) {
-      const [okIcon, okBadge] = await Promise.all([adaFile(ikon.icon), adaFile(ikon.badge)]);
-      if (okIcon) options.icon = ikon.icon;
-      if (okBadge) options.badge = ikon.badge;
-    }
+    const [okIcon, okBadge] = await Promise.all([ikon ? adaFile(ikon.icon) : false, adaFile(BADGE_MONOKROM)]);
+    if (ikon && okIcon) options.icon = ikon.icon;
+    if (okBadge) options.badge = BADGE_MONOKROM;
     await self.registration.showNotification(title, options);
   })());
 });

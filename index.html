@@ -4739,7 +4739,7 @@ document.getElementById('syncStatus')?.addEventListener('click', ()=>{
    ========================================================= */
 const KM_API='https://drricauqbegxqhqgsbnn.supabase.co/functions/v1/kaone-api/v1';
 const KM_KEY='kmMeja_key', KM_ON='kmMeja_on', KM_URL='kmMeja_url';
-const KM_LABEL={booking:'Booking',dp:'DP',sesi:'Sesi',pelunasan:'Pelunasan',pemilihan:'Pilih foto',antrian:'Antrian',edit:'Edit',cetak:'Cetak',antar:'Antar/Jemput',selesai:'Selesai'};
+const KM_LABEL={booking:'Booking',dp:'DP',sesi:'Sesi',pelunasan:'Pelunasan',unggah:'Unggah foto',pemilihan:'Pilih foto',antrian:'Antrian',edit:'Edit',cetak:'Cetak',antar:'Antar/Jemput',selesai:'Selesai'};
 const kmGet=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}};
 const kmKey=()=>kmGet(KM_KEY);
 const kmAktif=()=>isAdmin()&&!!kmKey()&&kmGet(KM_ON)==='1';
@@ -4807,9 +4807,9 @@ function kmFakta(j,projectId){
   const siapa=(mempelaiTeks(j)||j.namaKlien||'').trim();
   const kirim=String(j.pengiriman||''), wa=waDigits(j.noWhatsapp);
   const f={ref:j.id, name:(jenis+' '+siapa).trim(), client_name:(j.namaKlien||'').trim(), client_wa:wa?'62'+wa:'',
-    event_date:kmTgl(j.tanggalAcara), event_end:kmTgl(j.tanggalSelesai)||kmTgl(j.tanggalAcara), event_time:/^\d{2}:\d{2}$/.test(j.jamAcara||'')?j.jamAcara:'',
+    event_date:kmTgl(j.tanggalAcara), event_end:kmTgl(getJobFinishDate(j))||kmTgl(j.tanggalAcara), event_time:/^\d{2}:\d{2}$/.test(j.jamAcara||'')?j.jamAcara:'',
     dp_amount:dp, paid_full:lunas, delivered:kirim.startsWith('Sudah'), delivery_method:/Dijemput/.test(kirim)?'jemput':/Diantar/.test(kirim)?'antar':'',
-    print_done:j.prosesCetak==='Selesai'};
+    print_done:j.prosesCetak==='Selesai', pay_manual:!!j.manualStatusPembayaranSet};
   if(lunas) f.paid_amount=Math.max(0,t.harga-dp);
   if(projectId) f.project_id=projectId;
   return f;
@@ -18694,9 +18694,11 @@ function initAppAfterAuth(){
   // Cek Status Pembayaran job yang harus otomatis jadi "Lunas" begitu app dibuka,
   // lalu ulangi tiap 1 menit supaya job yang lewat pukul 23.59 di hari job itu tetap
   // otomatis tertandai Lunas meski aplikasi dibiarkan terbuka tanpa berpindah menu.
-  autoUpdateJobPaymentStatuses();
+  if(autoUpdateJobPaymentStatuses() && typeof kmJadwal==='function') kmJadwal();
   setInterval(()=>{
-    if(autoUpdateJobPaymentStatuses() && currentView==='daftar') rtRequestRender();
+    const ch=autoUpdateJobPaymentStatuses();
+    if(ch && currentView==='daftar') rtRequestRender();
+    if(ch && typeof kmJadwal==='function') kmJadwal();   // Lunas otomatis -> langsung kirim ke Meja Kaone
   }, 60000);
 
   // Selagi halaman Pembagian Tugas sedang dibuka, tarik ulang data dari cloud secara

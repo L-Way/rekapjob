@@ -3161,6 +3161,15 @@
     .jf input[type=text],.jf input[type=number],.jf input[type=tel],.jf input[type=date],.jf input[type=time],
     .jf input[type=email],.jf input[type=url],.jf input:not([type]),.jf select,.jf textarea{font-size:16px;}
   }
+.km-box{margin:14px 0;padding:14px;border:1px solid var(--line,#e4e4e4);border-radius:14px;background:var(--card,#fff)}
+.km-title{font-weight:800;margin-bottom:8px;display:flex;gap:6px;align-items:center}
+.km-sub{font-size:13px;color:var(--ink-soft,#666);margin:6px 0}
+.km-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.km-chip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;border:1px solid var(--line,#ddd);color:var(--ink-soft,#777);background:transparent}
+.km-chip.km-selesai{background:#16a34a;border-color:#16a34a;color:#fff}.km-chip.km-berjalan{border-color:#d97706;color:#b45309;background:#fff7e6}
+.km-lacak{display:flex;align-items:center;justify-content:space-between;gap:12px}.km-lt{min-width:0}.km-lt b{display:block;font-size:14px}.km-lt small{display:block;font-size:12px;line-height:1.4;color:var(--ink-soft,#666);margin-top:2px}
+.km-link{font-size:12.5px;word-break:break-all;padding:8px 10px;border-radius:10px;background:rgba(127,127,127,.1);margin:8px 0}
+.km-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.km-picks{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto}.km-pick{text-align:left}
 </style>
 <style>
 /* Mode akun hanya-chat: seluruh aplikasi utama disembunyikan, hanya ruang chat yang tampil. */
@@ -4705,6 +4714,281 @@ document.getElementById('syncStatus')?.addEventListener('click', ()=>{
    Pengaturan > Template Pesan WhatsApp - perubahan tersimpan otomatis
    (localStorage + cloud sync) dan selalu dipakai lagi untuk job berikutnya.
 ========================================================= */
+/* =========================================================
+   SAMBUNGAN MEJA KAONE (progres foto otomatis)
+   Rekap Job mengirim FAKTA tiap job (DP, lunas, tanggal acara, antar/jemput, cetak) ke Meja Kaone lewat API key.
+   Meja Kaone yang menentukan tahapnya, lalu Rekap Job menarik balik status pemilihan/antrian/edit.
+   Pembagian tugas:  Rekap Job -> booking, DP, sesi, pelunasan, antar/jemput, selesai
+                     Meja Kaone -> pemilihan foto, antrian, edit  (Proses Edit di sini otomatis "Selesai" saat edit di Meja Kaone selesai)
+   API key & alamat disimpan di perangkat ini saja (bukan di cadangan/cloud), khusus Admin.
+   ========================================================= */
+const KM_API='https://drricauqbegxqhqgsbnn.supabase.co/functions/v1/kaone-api/v1';
+const KM_KEY='kmMeja_key', KM_ON='kmMeja_on', KM_URL='kmMeja_url';
+const KM_LABEL={booking:'Booking',dp:'DP',sesi:'Sesi',pelunasan:'Pelunasan',pemilihan:'Pilih foto',antrian:'Antrian',edit:'Edit',cetak:'Cetak',antar:'Antar/Jemput',selesai:'Selesai'};
+const kmGet=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}};
+const kmKey=()=>kmGet(KM_KEY);
+const kmAktif=()=>isAdmin()&&!!kmKey()&&kmGet(KM_ON)==='1';
+const kmBase=()=>(kmGet(KM_URL)||'https://meja.kaone.web.id/').replace(/\/?$/,'/');
+let kmBusy=false,kmTimer=null,kmFatal='',kmTarikAt=0;
+async function kmCall(path,opt){
+  opt=opt||{};
+  const ac=opt.timeout&&typeof AbortController!=='undefined'?new AbortController():null, tm=ac?setTimeout(()=>ac.abort(),opt.timeout):0;
+  let r; try{ r=await fetch(KM_API+path,{method:opt.method||'GET',headers:Object.assign({'x-api-key':kmKey()},opt.body?{'Content-Type':'application/json'}:{}),body:opt.body?JSON.stringify(opt.body):undefined,signal:ac?ac.signal:undefined}); }finally{ if(tm) clearTimeout(tm); }
+  let d=null; try{ d=await r.json(); }catch(e){}
+  if(!r.ok){ const er=new Error((d&&d.error&&d.error.message)||('Gagal terhubung ('+r.status+')')); er.status=r.status; er.code=(d&&d.error&&d.error.code)||''; throw er; }
+  return d&&d.data;
+}
+const kmTgl=v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v||''))?String(v):'';
+// Fakta job -> dikirim apa adanya; aturan pemetaan ke tahap ada di server Meja Kaone
+function kmFakta(j,projectId){
+  const t=tagihanHariH(j), dp=Number(j.dp)||0;
+  const lunas=j.statusPembayaran==='Lunas'||(t.harga>0&&t.sisa<=0);
+  const jenis=j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Acara'):(j.jenisAcara||'Acara');
+  const siapa=(mempelaiTeks(j)||j.namaKlien||'').trim();
+  const kirim=String(j.pengiriman||''), wa=waDigits(j.noWhatsapp);
+  const f={ref:j.id, name:(jenis+' '+siapa).trim(), client_name:(j.namaKlien||'').trim(), client_wa:wa?'62'+wa:'',
+    event_date:kmTgl(j.tanggalAcara), event_end:kmTgl(j.tanggalSelesai)||kmTgl(j.tanggalAcara), event_time:/^\d{2}:\d{2}$/.test(j.jamAcara||'')?j.jamAcara:'',
+    dp_amount:dp, paid_full:lunas, delivered:kirim.startsWith('Sudah'), delivery_method:/Dijemput/.test(kirim)?'jemput':/Diantar/.test(kirim)?'antar':'',
+    print_done:j.prosesCetak==='Selesai'};
+  if(lunas) f.paid_amount=Math.max(0,t.harga-dp);
+  if(projectId) f.project_id=projectId;
+  return f;
+}
+// job lama yang sudah selesai & lunas tidak otomatis dibuat di Meja Kaone (bisa manual dari Detail Job)
+function kmLayak(j){
+  if(j.kmSkip||j.kmOff) return false;   // Lacak dimatikan -> dilewati diam-diam (bukan galat, tidak dihitung gagal)
+  if(j.kmPid) return true;
+  const f=kmFakta(j), tuntas=f.delivered&&f.paid_full, ev=Date.parse((f.event_end||f.event_date||'')+'T00:00:00')||0;
+  return !tuntas&&(ev===0||ev>=Date.now()-60*864e5);
+}
+// Lacak mati (kmOff) -> tidak ada link, jadi kwitansi & pesan WA otomatis tanpa link progres
+const kmLinkProgres=j=>j&&j.kmToken&&!j.kmOff?kmBase()+'#/t/'+j.kmToken:'';
+// simpan ringkasan tahap dari Meja Kaone; mengembalikan true bila Proses Edit ikut berubah otomatis
+function kmSimpan(j,stages,qa){
+  const s={}; (stages||[]).forEach(x=>{ s[x.key]=x.status; });
+  j.kmStat={s:s,q:qa==null?null:qa};
+  if(s.edit==='selesai'&&j.prosesEdit!=='Selesai'){ j.prosesEdit='Selesai'; j.kmEditAuto=1; return true; }
+  return false;
+}
+// kirim satu job; bila gagal, pesannya disimpan di job supaya terlihat di Detail Job
+// hasil: true = terkirim & berubah, false = tidak ada perubahan, 'off' = Lacak proyek mati (dilewati)
+async function kmKirim(j,paksa,projectId){
+  const f=kmFakta(j,projectId), sig=JSON.stringify(f);
+  if(!paksa&&j.kmSig===sig) return false;
+  if(!paksa&&j.kmErrSig===sig&&Date.now()-(j.kmErrAt||0)<600000) return false;
+  try{
+    const d=await kmCall('/jobs/sync',{method:'POST',body:f});
+    j.kmPid=d.project_id; j.kmToken=d.track_token; j.kmSig=JSON.stringify(kmFakta(j)); j.kmSkip=false;
+    delete j.kmErr; delete j.kmErrAt; delete j.kmErrSig; kmSimpan(j,d.stages,null);
+    return true;
+  }catch(e){
+    // server menolak karena Lacak proyek dimatikan di Meja Kaone: tandai & lewati, bukan galat
+    if(e.code==='LACAK_NONAKTIF'){ j.kmOff=true; delete j.kmErr; delete j.kmErrAt; delete j.kmErrSig; return 'off'; }
+    j.kmErr=e.message; j.kmErrAt=Date.now(); j.kmErrSig=sig;
+    if(e.status===401||e.status===402||e.status===403) kmFatal=e.message;
+    throw e;
+  }
+}
+function kmSimpanSemua(){ saveJobsLocal(); try{ pushToCloud(); }catch(e){} kmRefreshUI(); }
+async function kmSinkron(opts){
+  opts=opts||{};
+  if(kmBusy||!kmAktif()) return {ubah:0,gagal:0,lewat:0};
+  kmBusy=true; kmFatal=''; let ubah=0,gagal=0,lewat=0,n=0;
+  try{
+    for(const j of jobs){
+      if(n>=30||kmFatal) break;
+      if(!kmLayak(j)) continue;
+      n++;
+      try{ const h=await kmKirim(j,false); if(h===true) ubah++; else if(h==='off') lewat++; }catch(e){ gagal++; }
+    }
+  }finally{ kmBusy=false; }
+  if(ubah||gagal||lewat) kmSimpanSemua();
+  return {ubah:ubah,gagal:gagal,lewat:lewat,fatal:kmFatal};
+}
+function kmJadwal(){ if(!kmAktif()) return; clearTimeout(kmTimer); kmTimer=setTimeout(()=>{ kmSinkron().then(()=>kmTarik()); },1500); }
+const kmCekMap={};
+// Cek apakah Lacak sebuah proyek menyala di Meja Kaone: true = menyala, false = dimatikan, null = belum bisa dipastikan
+// (offline, proyek tidak ditemukan, atau baru saja dicek dan masih dalam jeda batasMs)
+async function kmCekLacak(j,batasMs){
+  if(!j||!j.kmPid) return null;
+  if(batasMs&&Date.now()-(kmCekMap[j.id]||0)<batasMs) return null;
+  kmCekMap[j.id]=Date.now();
+  try{ const p=await kmCall('/projects/'+j.kmPid,{timeout:8000}); return p?p.track_on!==false:null; }catch(e){ return null; }
+}
+// tarik status pemilihan/antrian/edit dari Meja Kaone untuk job yang sudah tersambung
+async function kmTarik(paksa){
+  if(!kmAktif()||kmBusy) return;
+  if(!paksa&&Date.now()-kmTarikAt<30000) return;
+  kmTarikAt=Date.now();
+  let ch=false, nyala=false;
+  try{
+    // job yang Lacaknya sempat dimatikan: cek pelan-pelan apakah sudah dinyalakan lagi di Meja Kaone
+    for(const j of jobs.filter(x=>x.kmPid&&x.kmOff).slice(0,8)){
+      if(await kmCekLacak(j,paksa?60000:600000)===true){ j.kmOff=false; ch=true; nyala=true; }
+    }
+    const L=jobs.filter(j=>j.kmPid&&!j.kmOff&&!(j.kmStat&&j.kmStat.s&&j.kmStat.s.selesai==='selesai')).slice(0,200);
+    if(L.length){
+      const d=await kmCall('/jobs/status',{method:'POST',body:{refs:L.map(j=>j.id)}});
+      L.forEach(j=>{
+        const x=d&&d[j.id]; if(!x) return;
+        const lama=JSON.stringify(j.kmStat||null);
+        if(x.track_token&&j.kmToken!==x.track_token){ j.kmToken=x.track_token; ch=true; }
+        if(kmSimpan(j,x.stages,x.queue_ahead)) ch=true;
+        if(JSON.stringify(j.kmStat)!==lama) ch=true;
+      });
+      // server tidak mengembalikan job ini = Lacak proyeknya mati (atau proyeknya hilang): pastikan, lalu tandai supaya dilewati
+      for(const j of L.filter(x=>!(d&&d[x.id])).slice(0,8)){
+        if(await kmCekLacak(j,600000)===false){ j.kmOff=true; ch=true; }
+      }
+    }
+  }catch(e){ console.warn('Tarik status Meja Kaone gagal:',e.message); }
+  if(ch) kmSimpanSemua();
+  if(nyala) kmJadwal();
+}
+function kmRefreshUI(){
+  try{
+    document.querySelectorAll('[data-km-box]').forEach(el=>{ const j=jobs.find(x=>x.id===el.dataset.kmBox); if(j) el.outerHTML=kmBoxHtml(j); });
+    if(typeof refreshView==='function'&&currentView!=='pengaturan'&&!document.getElementById('jobDetailCard')) refreshView();
+    const st=document.getElementById('kmStatus'); if(st) st.innerHTML=kmStatusHtml();
+  }catch(e){}
+}
+// pastikan link progres ada sebelum kwitansi / pesan WA dibuat
+async function kmPastikanTaut(j){
+  if(!kmAktif()||j.kmSkip) return;
+  if(j.kmPid){   // sudah tersambung: pastikan Lacaknya masih menyala sebelum link dipakai di kwitansi / pesan WA
+    const on=await kmCekLacak(j);
+    if(on===false&&!j.kmOff){ j.kmOff=true; kmSimpanSemua(); }
+    else if(on===true&&j.kmOff){ j.kmOff=false; kmSimpanSemua(); kmJadwal(); }
+  }
+  if(j.kmOff||j.kmToken) return;
+  try{ await kmKirim(j,true); kmSimpanSemua(); }catch(e){}
+}
+// sisipkan link progres ke pesan WhatsApp (pakai {progres} bila ada di template, selain itu ditambah di akhir)
+function kmTambahLink(j,teks){
+  const u=kmLinkProgres(j);
+  if(!u) return String(teks).replace(/^[^\n]*\{progres\}[^\n]*(\n|$)/gm,'').replace(/\n{3,}/g,'\n\n').replace(/\s+$/,'');
+  if(/\{progres\}/.test(teks)) return teks.replace(/\{progres\}/g,u);
+  if(teks.indexOf(u)>=0) return teks;
+  return String(teks).replace(/\s+$/,'')+'\n\n📷 Pantau progres foto Kakak di sini:\n'+u;
+}
+/* ---- Kotak "Progres Foto" di Detail Job ---- */
+function kmBoxHtml(j){
+  if(!isAdmin()||!kmKey()) return '';
+  if(!kmAktif()) return '';
+  setTimeout(()=>kmTarik(),0);
+  const u=kmLinkProgres(j), s=(j.kmStat&&j.kmStat.s)||null, q=j.kmStat&&j.kmStat.q;
+  let isi='';
+  if(!j.kmPid){
+    // job belum dikirim: Lacak progres bisa diputuskan dari sini sebelum proyeknya dibuat di Meja Kaone
+    const mati=!!j.kmOff;
+    isi=`<div class="km-lacak"><div class="km-lt"><b>Lacak progres</b><small>${mati?'Mati: job ini tidak dikirim ke Meja Kaone, dan tidak ada link progres di kwitansi maupun pesan WhatsApp.':'Menyala: job dikirim ke Meja Kaone dan klien mendapat link progres.'}</small></div>
+      <label class="toggle-switch"><input type="checkbox" ${mati?'':'checked'} onchange="kmAksi('lacak','${j.id}',this.checked)"><span class="ts-track"></span></label></div>`
+      +(mati?'':`<div class="km-sub">${j.kmErr?'⚠️ '+escapeHtml(j.kmErr):'Job ini belum ada di Meja Kaone.'}</div>
+      <div class="km-btns"><button type="button" class="btn btn-primary" onclick="kmAksi('buat','${j.id}')">Buat di Meja Kaone</button>
+      <button type="button" class="btn btn-outline" onclick="kmAksi('hubung','${j.id}')">Hubungkan ke proyek yang ada</button></div>`);
+  }else if(j.kmOff){
+    isi=`<div class="km-sub">Lacak progres dimatikan di Meja Kaone untuk proyek ini. Job ini dilewati saat sinkron, dan link progres tidak dipasang di kwitansi maupun pesan WhatsApp. Bila Lacak dinyalakan lagi di Meja Kaone, job ini otomatis tersambung kembali.</div>
+      <div class="km-btns"><button type="button" class="btn btn-outline" onclick="kmAksi('cek','${j.id}')">Cek lagi</button></div>`;
+  }else{
+    const chips=Object.keys(KM_LABEL).filter(k=>s&&s[k]&&s[k]!=='lewati').map(k=>`<span class="km-chip km-${s[k]}">${KM_LABEL[k]}</span>`).join('');
+    isi=`<div class="km-chips">${chips||'<span class="km-sub">Memuat tahap…</span>'}</div>
+      ${s&&s.antrian==='berjalan'&&q!=null?`<div class="km-sub">Antrian edit: urutan ke-${q+1}</div>`:''}
+      ${j.kmErr?`<div class="km-sub">⚠️ ${escapeHtml(j.kmErr)}</div>`:''}
+      <div class="km-link">${escapeHtml(u)}</div>
+      <div class="km-btns"><button type="button" class="btn btn-outline" onclick="kmAksi('salin','${j.id}')">Salin link</button>
+      ${waDigits(j.noWhatsapp)?`<button type="button" class="btn btn-wa-quick" onclick="kmAksi('wa','${j.id}')">Kirim link ke klien</button>`:''}
+      <button type="button" class="btn btn-outline" onclick="kmAksi('sinkron','${j.id}')">Sinkronkan</button></div>`;
+  }
+  return `<div class="km-box" data-km-box="${j.id}"><div class="km-title">${ic('check-circle')} Progres Foto (Meja Kaone)</div>${isi}</div>`;
+}
+async function kmAksi(a,id,v){
+  const j=jobs.find(x=>x.id===id); if(!j) return;
+  try{
+    if(a==='lacak'){   // saklar Lacak untuk job yang belum dikirim
+      if(j.kmPid) return;
+      if(!v){ j.kmOff=true; delete j.kmErr; delete j.kmErrAt; delete j.kmErrSig; kmSimpanSemua(); toast('Lacak dimatikan: job ini tidak dikirim ke Meja Kaone'); return; }
+      j.kmOff=false;
+      if(kmLayak(j)){ toast('Mengaktifkan Lacak…'); const h=await kmKirim(j,true); kmSimpanSemua(); toast(h==='off'?'Lacak masih dimatikan di Meja Kaone untuk job ini':'Lacak diaktifkan, tersambung ke Meja Kaone'); }
+      else{ kmSimpanSemua(); toast('Lacak diaktifkan. Job lama ini belum dibuat, tekan "Buat di Meja Kaone".'); }
+      return;
+    }
+    if(a==='cek'){   // job yang Lacaknya mati di Meja Kaone: periksa apakah sudah menyala lagi
+      toast('Memeriksa…');
+      const on=await kmCekLacak(j);
+      if(on===true){ j.kmOff=false; const h=await kmKirim(j,true); await kmTarik(true); kmSimpanSemua(); toast(h==='off'?'Lacak masih dimatikan di Meja Kaone':'Lacak menyala lagi, job tersinkron'); }
+      else if(on===false){ toast('Lacak masih dimatikan di Meja Kaone'); }
+      else toast('Belum bisa memeriksa, coba lagi sebentar lagi');
+      return;
+    }
+    if(a==='salin'){ const u=kmLinkProgres(j); try{ await navigator.clipboard.writeText(u); toast('Link progres disalin'); }catch(e){ prompt('Salin link ini:',u); } return; }
+    if(a==='wa'){ const u=kmLinkProgres(j); window.open(waLinkKlien(j.noWhatsapp,'Halo Kak '+(j.namaKlien||'').trim()+', kakak bisa memantau progres foto di sini ya:\n'+u),'_blank'); return; }
+    if(a==='sinkron'){ toast('Menyinkronkan…'); const h=await kmKirim(j,true); if(h==='off'){ kmSimpanSemua(); toast('Lacak dimatikan di Meja Kaone untuk proyek ini, jadi dilewati'); return; } await kmTarik(true); kmSimpanSemua(); toast('Tersinkron'); return; }
+    if(a==='buat'){ toast('Membuat di Meja Kaone…'); const h=await kmKirim(j,true); kmSimpanSemua(); toast(h==='off'?'Lacak dimatikan di Meja Kaone untuk job ini, jadi dilewati':'Tersambung ke Meja Kaone'); return; }
+    if(a==='hubung'){
+      const list=(await kmCall('/projects?limit=200')).filter(p=>!p.external_ref);
+      const baris=list.length?list.map(p=>`<button type="button" class="btn btn-outline km-pick" onclick="kmHubung('${j.id}','${p.id}')">${escapeHtml(p.name)}${p.client_name?' · '+escapeHtml(p.client_name):''}</button>`).join(''):'<p class="km-sub">Semua proyek di Meja Kaone sudah tersambung ke job lain.</p>';
+      showModal(`<button type="button" class="close-x" id="closeModal">${ic('close')}</button><h3>Hubungkan ke proyek Meja Kaone</h3><p class="km-sub">Pilih proyek yang sama dengan job ini.</p><div class="km-picks">${baris}</div>`);
+      return;
+    }
+  }catch(e){ toast(e.message||'Gagal'); kmSimpanSemua(); }
+}
+async function kmHubung(jobId,projectId){
+  const j=jobs.find(x=>x.id===jobId); if(!j) return;
+  try{ toast('Menghubungkan…'); const h=await kmKirim(j,true,projectId); if(h==='off'){ kmSimpanSemua(); toast('Lacak dimatikan di proyek itu, jadi dilewati'); } else { await kmTarik(true); kmSimpanSemua(); toast('Tersambung'); } }catch(e){ toast(e.message||'Gagal menghubungkan'); }
+  openJobDetailModal(jobId);
+}
+/* ---- Kartu pengaturan ---- */
+function kmStatusHtml(){
+  const L=jobs.filter(j=>j.kmPid).length, e=jobs.filter(j=>j.kmErr&&!j.kmPid||j.kmErr).length, o=jobs.filter(j=>j.kmOff).length;
+  if(!kmKey()) return 'Belum tersambung. Tempel API key dari Meja Kaone (Pengaturan › API & Integrasi), lalu tekan Simpan.';
+  if(!kmAktif()) return 'Sambungan dimatikan.';
+  return `Tersambung. ${L} job sudah ada di Meja Kaone${e?`, ${e} job gagal disinkron (lihat Detail Job)`:''}${o?`, ${o} job Lacak dimatikan (dilewati)`:''}.`;
+}
+function kmCardHtml(){
+  return `<div class="card"><h2 style="margin-top:0;">${ic('check-circle')} Sambungan Meja Kaone</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Booking, DP, sesi, pelunasan, dan antar/jemput dikirim otomatis ke Meja Kaone. Klien mendapat link untuk memantau progres foto, otomatis terpasang di kwitansi dan pesan WhatsApp. Pemilihan foto, antrian, dan edit dibaca balik dari Meja Kaone. Job yang Lacaknya dimatikan dilewati dan tidak mendapat link progres.</p>
+    <label>API Key (izin baca &amp; ubah tahap)</label><input type="password" id="kmKeyIn" value="${escapeHtml(kmKey())}" placeholder="kmk_..." autocomplete="off" style="width:100%">
+    <label style="margin-top:10px;display:block;">Alamat Meja Kaone</label><input id="kmUrlIn" value="${escapeHtml(kmBase())}" style="width:100%">
+    <label style="margin-top:10px;display:flex;gap:8px;align-items:center;"><input type="checkbox" id="kmOnIn" ${kmGet(KM_ON)==='0'?'':'checked'}> Sinkron otomatis aktif</label>
+    <div class="form-actions" style="justify-content:flex-start;margin-top:12px;"><button type="button" class="btn btn-primary" onclick="kmSimpanPengaturan()">Simpan &amp; tes</button>
+    <button type="button" class="btn btn-outline" onclick="kmSinkronSemua()">Sinkronkan semua sekarang</button></div>
+    <div class="field-hint" id="kmStatus" style="margin-top:8px;">${kmStatusHtml()}</div>
+    <div class="field-hint">API key hanya disimpan di perangkat ini dan tidak ikut cadangan. Jangan dibagikan; bila bocor, cabut di Meja Kaone.</div></div>`;
+}
+async function kmSimpanPengaturan(){
+  const key=(document.getElementById('kmKeyIn').value||'').trim(), url=(document.getElementById('kmUrlIn').value||'').trim(), on=document.getElementById('kmOnIn').checked;
+  const st=document.getElementById('kmStatus');
+  if(key&&!/^kmk_[0-9a-f]{48}$/.test(key)){ st.textContent='Format API key tidak dikenali. Salin ulang utuh dari Meja Kaone.'; return; }
+  if(url&&!/^https:\/\/[^\s]+$/.test(url)){ st.textContent='Alamat Meja Kaone harus diawali https://'; return; }
+  try{ localStorage.setItem(KM_KEY,key); localStorage.setItem(KM_URL,url); localStorage.setItem(KM_ON,on?'1':'0'); }catch(e){}
+  if(!key){ st.textContent=kmStatusHtml(); return; }
+  st.textContent='Mengetes sambungan…';
+  try{
+    const me=await kmCall('/me');
+    if(!(me.scopes||[]).includes('write')){ st.textContent='⚠️ Kunci ini hanya berizin baca. Buat kunci baru dengan izin "Baca dan ubah tahap".'; return; }
+    if(!me.subscription_active){ st.textContent='⚠️ Langganan Meja Kaone tidak aktif, jadi sinkron belum bisa menulis. Perpanjang dulu di Meja Kaone.'; return; }
+    if(!on){ st.textContent=kmStatusHtml(); return; }
+    const n=jobs.filter(j=>!j.kmPid&&kmLayak(j)).length;
+    if(n>0&&!confirm('Tersambung ke "'+me.name+'".\n\n'+n+' job yang masih berjalan akan dibuat di Meja Kaone (job lama yang sudah selesai & lunas tidak ikut). Lanjutkan?')){ st.textContent='Tersambung, tetapi belum ada job yang dikirim. Tekan "Sinkronkan semua sekarang" kapan saja.'; return; }
+    st.textContent='Menyinkronkan job…';
+    const r=await kmSinkron({paksa:1}); await kmTarik(true);
+    st.innerHTML=kmStatusHtml()+(r.fatal?' ⚠️ '+escapeHtml(r.fatal):'');
+  }catch(e){ st.textContent='⚠️ '+(e.message||'Gagal tersambung'); }
+}
+async function kmSinkronSemua(){
+  const st=document.getElementById('kmStatus'); if(!kmAktif()){ if(st) st.textContent='Simpan API key dan aktifkan sinkron dulu.'; return; }
+  if(st) st.textContent='Menyinkronkan…';
+  jobs.forEach(j=>{ delete j.kmErrSig; });
+  const r=await kmSinkron({paksa:1}); await kmTarik(true);
+  if(st) st.innerHTML=kmStatusHtml()+(r.fatal?' ⚠️ '+escapeHtml(r.fatal):'');
+}
+// jalan otomatis: saat aplikasi dibuka, tiap 5 menit, dan saat kembali ke aplikasi
+(function(){
+  const boot=setInterval(()=>{ if(kmAktif()){ clearInterval(boot); kmSinkron().then(()=>kmTarik(true)); } },3000);
+  setInterval(()=>{ if(!document.hidden&&kmAktif()) kmSinkron().then(()=>kmTarik(true)); },300000);
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&kmAktif()) kmTarik(); });
+})();
+
 function mapsStudioLink(){ return 'https://www.google.com/maps?q='+ORIGIN_COORD.lat+','+ORIGIN_COORD.lng; }
 function waLinkKlien(no,text){
   let d=String(no||'').replace(/\D/g,'');
@@ -4761,7 +5045,7 @@ function bangunPesanSelesai(j){
     }
   }
   const map={nama:(j.namaKlien||'').trim(), mempelai:mempelaiTeks(j), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'', deskripsiPaket:deskripsiGabung(j), sisa:fmtRp(sisa), tagihan, ajakan, ongkir, maps:mapsStudioLink()};
-  return renderWaTpl(PESAN_SELESAI_TPL,map);
+  return kmTambahLink(j,renderWaTpl(PESAN_SELESAI_TPL,map));
 }
 function pesanSelesaiPanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="selesai">
@@ -4792,7 +5076,7 @@ function bangunPesanBooking(j){
   const deskripsi=deskripsiGabung(j);
   const deskripsiPaketLine=deskripsi ? `Detail : ${deskripsi}\n` : '';
   const map={nama:(j.namaKlien||'').trim(), mempelai:mempelaiTeks(j), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'-', deskripsiPaket:deskripsi, deskripsiPaketLine, dp:fmtRp(j.dp), sisa:fmtRp(sisa), maps:mapsStudioLink()};
-  return renderWaTpl(PESAN_BOOKING_TPL,map);
+  return kmTambahLink(j,renderWaTpl(PESAN_BOOKING_TPL,map));
 }
 function pesanBookingPanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="booking" style="display:none;">
@@ -4889,11 +5173,12 @@ function waQuickSendHtml(j){
   }).join('');
   return `<div class="wa-quick-box"><div class="wa-quick-label">${ic('phone')} Kirim Pesan Template</div><div class="wa-quick-btns">${btns}</div></div>`;
 }
-function openWaTemplateModal(jobId,key){
+async function openWaTemplateModal(jobId,key){
   const j=jobs.find(x=>x.id===jobId); if(!j) return;
   const meta=WA_TPL_META[key]; if(!meta) return;
   if(!isAdmin()) return; // Tim tidak boleh mengirim pesan ke klien
   if(!waDigits(j.noWhatsapp)){ alert('Nomor WhatsApp klien belum diisi. Isi dulu lewat Edit Job.'); return; }
+  if(key==='booking'||key==='selesai'){ try{ await kmPastikanTaut(j); }catch(e){} } // pastikan link progres sudah ada
   const namaKlien=(j.namaKlien||'Klien').trim();
   const inisial=(namaKlien.match(/\b\w/g)||['?']).slice(0,2).join('').toUpperCase();
   const jamSkrg=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
@@ -7675,6 +7960,7 @@ function saveJobsLocal(){
 function saveJobs(){
   saveJobsLocal();
   pushToCloud(); // supaya perubahan langsung tersedia di device lain
+  if(typeof kmJadwal==='function') kmJadwal(); // kirim perubahan job ke Meja Kaone (bila tersambung)
   renderNotifBadge(); // data job berubah -> notifikasi (H-3/bayar/proses) ikut diperbarui
 }
 function uid(){ return 'job_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
@@ -11884,6 +12170,7 @@ function openJobDetailModal(jobId){
     ${kwitansiStatusHtml(j)}
     ${waSelesaiBoxHtml(j)}
     ${waQuickSendHtml(j)}
+    ${kmBoxHtml(j)}
     <div class="modal-actions">
       <button type="button" class="btn btn-outline" data-detail-download="${j.id}">${ic('image')} Unduh Gambar</button>
       <button type="button" class="btn btn-outline" data-detail-story="${j.id}">${ic('phone')} Unduh Gambar Story</button>
@@ -12797,6 +13084,7 @@ async function downloadKwitansiPdf(jobId){
     alert('Pustaka pembuat PDF belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
     return;
   }
+  await kmPastikanTaut(j);
   const qrUrl = await kwQrBuildUrl(j);
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({unit:'mm', format:'a5'});
@@ -12879,6 +13167,14 @@ async function downloadKwitansiPdf(jobId){
     y += catatanLines.length*4.3 + 6;
   }
 
+  const kmU = kmLinkProgres(j);
+  if(kmU){
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(20);
+    doc.text('Pantau progres foto Anda:', marginX, y); y += 4.6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(30,80,200);
+    doc.splitTextToSize(kmU, pageW-marginX*2).forEach(ln=>{ doc.textWithLink(ln, marginX, y, {url:kmU}); y += 4.2; });
+    doc.setTextColor(0); y += 4;
+  }
   if(!qrUrl){
     const footY = Math.max(y+10, pageH-22);
     doc.setDrawColor(225); doc.line(marginX, footY-8, pageW-marginX, footY-8);
@@ -12989,6 +13285,7 @@ function buildKwitansiPosterHtml(j, qr){
           <span class="kw-status-badge">${escapeHtml(j.statusPembayaran||'-')}</span>
         </div>
         ${(j.catatan||'').trim() ? `<div class="kw-note">Catatan: ${escapeHtml(truncateText(j.catatan,140))}</div>` : ''}
+        ${kmLinkProgres(j) ? `<div class="kw-note" style="word-break:break-all;">Pantau progres foto Anda: <b>${escapeHtml(kmLinkProgres(j))}</b></div>` : ''}
       </div>
       <div class="kw-footer">
         <div class="kw-footer-line"></div>
@@ -13008,6 +13305,7 @@ async function downloadKwitansiImage(jobId){
   const j = jobs.find(x=>x.id===jobId);
   if(!j) return;
   toast('Menyiapkan gambar kwitansi...');
+  await kmPastikanTaut(j);
   let qr = null;
   try{ const u = await kwQrBuildUrl(j); if(u) qr = kwQrImage(u, 320); }catch(e){ console.warn('QR kwitansi gagal dibuat', e); }
 
@@ -15620,6 +15918,7 @@ function viewPengaturan(){
   ${hargaCetakCardHtml()}
   ${ongkirAntarCardHtml()}
   ${templateWaCardHtml()}
+  ${kmCardHtml()}
   <div class="settings-group-title">${ic('lock')} Akun</div>`:''}
   <div class="card">
     <h2 style="margin-top:0;">${ic('lock')} Akun Saya</h2>

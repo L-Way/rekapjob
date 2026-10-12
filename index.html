@@ -4817,9 +4817,10 @@ function kmFakta(j,projectId){
 // job lama yang sudah selesai & lunas tidak otomatis dibuat di Meja Kaone (bisa manual dari Detail Job)
 function kmLayak(j){
   if(j.kmSkip||j.kmOff) return false;   // Lacak dimatikan -> dilewati diam-diam (bukan galat, tidak dihitung gagal)
-  if(j.kmPid) return true;
-  const f=kmFakta(j), tuntas=f.delivered&&f.paid_full, ev=Date.parse((f.event_end||f.event_date||'')+'T00:00:00')||0;
-  return !tuntas&&(ev===0||ev>=Date.now()-60*864e5);
+  // v-baru: hanya job HARI INI dan seterusnya yang dikirim otomatis ke Meja Kaone (termasuk yang sudah tersambung: job lewat tidak dikirim ulang).
+  // Job lama tetap bisa dibuat manual lewat tombol "Buat di Meja Kaone" / "Sinkronkan" di Detail Job.
+  const f=kmFakta(j), akhir=f.event_end||f.event_date||'';
+  return !!akhir&&akhir>=kmTodayISO();
 }
 // Lacak mati (kmOff) -> tidak ada link, jadi kwitansi & pesan WA otomatis tanpa link progres
 const kmLinkProgres=j=>j&&j.kmToken&&!j.kmOff?kmBase()+'#/t/'+j.kmToken:'';

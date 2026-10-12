@@ -3168,6 +3168,19 @@
 .km-chip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;border:1px solid var(--line,#ddd);color:var(--ink-soft,#777);background:transparent}
 .km-chip.km-selesai{background:#16a34a;border-color:#16a34a;color:#fff}.km-chip.km-berjalan{border-color:#d97706;color:#b45309;background:#fff7e6}
 .km-lacak{display:flex;align-items:center;justify-content:space-between;gap:12px}.km-lt{min-width:0}.km-lt b{display:block;font-size:14px}.km-lt small{display:block;font-size:12px;line-height:1.4;color:var(--ink-soft,#666);margin-top:2px}
+/* v145: kotak Progres Foto lebih jelas */
+.km-ph{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:2px 0 8px}
+.km-now{min-width:0;display:flex;flex-direction:column}.km-now small{font-size:12px;font-weight:700;color:var(--ink-soft,#666);text-transform:uppercase;letter-spacing:.04em}.km-now b{font-size:20px;line-height:1.2}
+.km-pct{font-size:30px;font-weight:900;line-height:1;color:#16a34a}.km-pct small{font-size:14px;font-weight:800;margin-left:1px}
+.km-bar{height:10px;border-radius:99px;background:rgba(127,127,127,.18);overflow:hidden}.km-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width .4s}
+.km-cnt{font-size:12.5px;color:var(--ink-soft,#666);margin:6px 0 10px}
+.km-steps{list-style:none;margin:0 0 4px;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.km-st{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:99px;border:1px solid var(--line,#ddd);color:var(--ink-soft,#777)}
+.km-st i{font-style:normal;font-size:11px;width:14px;height:14px;display:inline-grid;place-items:center;border-radius:50%}
+.km-st.km-selesai{background:#16a34a;border-color:#16a34a;color:#fff}.km-st.km-selesai i{background:rgba(255,255,255,.25)}
+.km-st.km-berjalan{border-color:#d97706;color:#b45309;background:#fff7e6;box-shadow:0 0 0 2px rgba(217,119,6,.16)}.km-st.km-berjalan i{color:#d97706}
+.km-st.km-belum{opacity:.7}
+.km-note{font-size:13px;margin:8px 0;padding:8px 10px;border-radius:10px;background:rgba(127,127,127,.1)}.km-note.warn{background:#fff3cd;color:#7a5200}
 .km-link{font-size:12.5px;word-break:break-all;padding:8px 10px;border-radius:10px;background:rgba(127,127,127,.1);margin:8px 0}
 .km-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.km-picks{display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto}.km-pick{text-align:left}
 </style>
@@ -4783,7 +4796,7 @@ async function kmCall(path,opt){
   let r; try{ r=await fetch(KM_API+path,{method:opt.method||'GET',headers:Object.assign({'x-api-key':kmKey()},opt.body?{'Content-Type':'application/json'}:{}),body:opt.body?JSON.stringify(opt.body):undefined,signal:ac?ac.signal:undefined}); }finally{ if(tm) clearTimeout(tm); }
   let d=null; try{ d=await r.json(); }catch(e){}
   if(!r.ok){ const er=new Error((d&&d.error&&d.error.message)||('Gagal terhubung ('+r.status+')')); er.status=r.status; er.code=(d&&d.error&&d.error.code)||''; throw er; }
-  return d&&d.data;
+  return d&&(Object.prototype.hasOwnProperty.call(d,'data')?d.data:d);   // v145: toleran bila server mengirim tanpa pembungkus data
 }
 const kmTgl=v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v||''))?String(v):'';
 // Fakta job -> dikirim apa adanya; aturan pemetaan ke tahap ada di server Meja Kaone
@@ -4937,13 +4950,24 @@ function kmBoxHtml(j){
     isi=`<div class="km-sub">Lacak progres dimatikan di Meja Kaone untuk proyek ini. Job ini dilewati saat sinkron, dan link progres tidak dipasang di kwitansi maupun pesan WhatsApp. Bila Lacak dinyalakan lagi di Meja Kaone, job ini otomatis tersambung kembali.</div>
       <div class="km-btns"><button type="button" class="btn btn-outline" onclick="kmAksi('cek','${j.id}')">Cek lagi</button></div>`;
   }else{
-    const chips=Object.keys(KM_LABEL).filter(k=>s&&s[k]&&s[k]!=='lewati').map(k=>`<span class="km-chip km-${s[k]}">${KM_LABEL[k]}</span>`).join('');
-    isi=`<div class="km-chips">${chips||'<span class="km-sub">Memuat tahap…</span>'}</div>
-      ${s&&s.antrian==='berjalan'&&q!=null?`<div class="km-sub">Antrian edit: urutan ke-${q+1}</div>`:''}
-      ${j.kmErr?`<div class="km-sub">⚠️ ${escapeHtml(j.kmErr)}</div>`:''}
+    const ks=Object.keys(KM_LABEL).filter(k=>s&&s[k]&&s[k]!=='lewati');
+    const done=ks.filter(k=>s[k]==='selesai').length, pct=ks.length?Math.round(done/ks.length*100):0;
+    const cur=ks.find(k=>s[k]==='berjalan')||ks.find(k=>s[k]==='belum')||null;
+    const jalan=ks.filter(k=>s[k]==='berjalan');
+    const ikon={selesai:'✓',berjalan:'●',belum:'○'};
+    const steps=ks.map(k=>`<li class="km-st km-${s[k]}"><i>${ikon[s[k]]||'○'}</i><span>${KM_LABEL[k]}</span></li>`).join('');
+    const kepala=!ks.length?'<span class="km-sub">Memuat tahap…</span>':
+      `<div class="km-ph"><div class="km-now"><small>${cur?(s[cur]==='berjalan'?'Sedang dikerjakan':'Berikutnya'):'Status'}</small><b>${cur?KM_LABEL[cur]:'Semua tahap selesai ✓'}</b></div><div class="km-pct" aria-label="${pct} persen">${pct}<small>%</small></div></div>
+      <div class="km-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+      <div class="km-cnt">${done} dari ${ks.length} tahap selesai</div>
+      <ol class="km-steps">${steps}</ol>`;
+    isi=`${kepala}
+      ${s&&s.antrian==='berjalan'&&q!=null?`<div class="km-note">🕑 Antrian edit: urutan ke-${q+1}</div>`:''}
+      ${jalan.length>1?`<div class="km-note warn">Ada ${jalan.length} tahap berjalan bersamaan (${jalan.map(k=>KM_LABEL[k]).join(', ')}). Bila keliru, kembalikan salah satunya ke "Belum" di Meja Kaone, tab Lacak.</div>`:''}
+      ${j.kmErr?`<div class="km-note warn">⚠️ ${escapeHtml(j.kmErr)}</div>`:''}
       <div class="km-link">${escapeHtml(u)}</div>
-      <div class="km-btns"><button type="button" class="btn btn-outline" onclick="kmAksi('salin','${j.id}')">Salin link</button>
-      ${waDigits(j.noWhatsapp)?`<button type="button" class="btn btn-wa-quick" onclick="kmAksi('wa','${j.id}')">Kirim link ke klien</button>`:''}
+      <div class="km-btns">${waDigits(j.noWhatsapp)?`<button type="button" class="btn btn-wa-quick" onclick="kmAksi('wa','${j.id}')">Kirim link ke klien</button>`:''}
+      <button type="button" class="btn btn-outline" onclick="kmAksi('salin','${j.id}')">Salin link</button>
       <button type="button" class="btn btn-outline" onclick="kmAksi('sinkron','${j.id}')">Sinkronkan</button></div>`;
   }
   return `<div class="km-box" data-km-box="${j.id}"><div class="km-title">${ic('check-circle')} Progres Foto (Meja Kaone)</div>${isi}</div>`;
@@ -4995,7 +5019,7 @@ function kmCardHtml(){
   return `<div class="card"><h2 style="margin-top:0;">${ic('check-circle')} Sambungan Meja Kaone</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Booking, DP, sesi, pelunasan, dan antar/jemput dikirim otomatis ke Meja Kaone. Klien mendapat link untuk memantau progres foto, otomatis terpasang di kwitansi dan pesan WhatsApp. Pemilihan foto, antrian, dan edit dibaca balik dari Meja Kaone. Job yang Lacaknya dimatikan dilewati dan tidak mendapat link progres.</p>
     <label>API Key (izin baca &amp; ubah tahap)</label><input type="password" id="kmKeyIn" value="${escapeHtml(kmKey())}" placeholder="kmk_..." autocomplete="off" style="width:100%">
-    <label style="margin-top:10px;display:block;">Alamat Meja Kaone</label><input id="kmUrlIn" value="${escapeHtml(kmBase())}" style="width:100%">
+    <label style="margin-top:10px;display:block;">Alamat Meja Kaone</label><input type="url" id="kmUrlIn" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" value="${escapeHtml(kmBase())}" style="width:100%">
     <label style="margin-top:10px;display:flex;gap:8px;align-items:center;"><input type="checkbox" id="kmOnIn" ${kmGet(KM_ON)==='0'?'':'checked'}> Sinkron otomatis aktif</label>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;"><button type="button" class="btn btn-primary" onclick="kmSimpanPengaturan()">Simpan &amp; tes</button>
     <button type="button" class="btn btn-outline" onclick="kmSinkronSemua()">Sinkronkan semua sekarang</button></div>
@@ -5014,6 +5038,7 @@ async function kmSimpanPengaturan(){
   st.textContent='Mengetes sambungan…';
   try{
     const me=await kmCall('/me');
+    if(!me||typeof me!=='object') throw new Error('Respons tes dari Meja Kaone tidak terbaca. Coba tekan Simpan & tes lagi.');
     if(!(me.scopes||[]).includes('write')){ st.textContent='⚠️ Kunci ini hanya berizin baca. Buat kunci baru dengan izin "Baca dan ubah tahap".'; return; }
     if(!me.subscription_active){ st.textContent='⚠️ Langganan Meja Kaone tidak aktif, jadi sinkron belum bisa menulis. Perpanjang dulu di Meja Kaone.'; return; }
     if(!on){ st.textContent=kmStatusHtml(); return; }

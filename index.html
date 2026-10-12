@@ -4258,6 +4258,7 @@ async function attemptRegister(username, password, namaLengkap){
 function logout(){
   if(!confirm('Yakin ingin keluar dari Buku Job?')) return;
   try{ localStorage.removeItem(AUTH_SESSION_KEY); }catch(e){}
+  try{ kmLepasPerangkat(); }catch(e){}   // API key Meja Kaone tidak tertinggal di perangkat ini (tetap aman di cloud)
   kcBellClear();
   // Cabut push perangkat ini dulu supaya pemilik akun sebelumnya tidak menerima notifikasi
   // di perangkat ini lagi; batas tunggu 2 detik agar logout tidak pernah tertahan.
@@ -4720,7 +4721,8 @@ document.getElementById('syncStatus')?.addEventListener('click', ()=>{
    Meja Kaone yang menentukan tahapnya, lalu Rekap Job menarik balik status pemilihan/antrian/edit.
    Pembagian tugas:  Rekap Job -> booking, DP, sesi, pelunasan, antar/jemput, selesai
                      Meja Kaone -> pemilihan foto, antrian, edit  (Proses Edit di sini otomatis "Selesai" saat edit di Meja Kaone selesai)
-   API key & alamat disimpan di perangkat ini saja (bukan di cadangan/cloud), khusus Admin.
+   API key & alamat disimpan di tabel Supabase "kj_rahasia" yang hanya bisa dibaca/ditulis akun Admin (RLS), sehingga otomatis tersedia di semua perangkat Admin.
+   Salinan di localStorage hanya cache; tidak ikut cadangan/koleksi data dan tidak pernah terlihat akun Tim.
    ========================================================= */
 const KM_API='https://drricauqbegxqhqgsbnn.supabase.co/functions/v1/kaone-api/v1';
 const KM_KEY='kmMeja_key', KM_ON='kmMeja_on', KM_URL='kmMeja_url';
@@ -4729,6 +4731,51 @@ const kmGet=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}};
 const kmKey=()=>kmGet(KM_KEY);
 const kmAktif=()=>isAdmin()&&!!kmKey()&&kmGet(KM_ON)==='1';
 const kmBase=()=>(kmGet(KM_URL)||'https://meja.kaone.web.id/').replace(/\/?$/,'/');
+/* ---- Penyimpanan API key lintas perangkat (tabel kj_rahasia, hanya Admin lewat RLS) ---- */
+const KM_CLOUD='kmMeja_cloud', KM_RAHASIA='meja_kaone';
+let kmCloudAt=0, kmCloudBusy=false;
+function kmSetLokal(o){ try{ if(o.key) localStorage.setItem(KM_KEY,o.key); else localStorage.removeItem(KM_KEY); localStorage.setItem(KM_URL,o.url||''); localStorage.setItem(KM_ON,o.on===false?'0':'1'); localStorage.setItem(KM_CLOUD,'1'); }catch(e){} }
+function kmBersihkanLokal(){ try{ [KM_KEY,KM_ON,KM_URL,KM_CLOUD].forEach(k=>localStorage.removeItem(k)); }catch(e){} }
+// saat keluar akun: hapus salinan di perangkat ini, tetapi hanya bila kunci sudah aman tersimpan di cloud
+function kmLepasPerangkat(){ if(kmGet(KM_CLOUD)==='1') kmBersihkanLokal(); }
+// simpan (atau hapus bila kosong) di cloud; true = berhasil
+async function kmCloudSimpan(){
+  if(!isAdmin()||!supabaseClient) return false;
+  try{
+    if(!kmKey()){ const r=await supabaseClient.from('kj_rahasia').delete().eq('kunci',KM_RAHASIA); if(r.error) throw r.error; try{ localStorage.removeItem(KM_CLOUD); }catch(e){} return true; }
+    const r=await supabaseClient.from('kj_rahasia').upsert({kunci:KM_RAHASIA,nilai:{key:kmKey(),url:kmGet(KM_URL),on:kmGet(KM_ON)!=='0'},updated_at:new Date().toISOString()});
+    if(r.error) throw r.error;
+    try{ localStorage.setItem(KM_CLOUD,'1'); }catch(e){}
+    return true;
+  }catch(e){ console.warn('Simpan API key Meja Kaone ke cloud gagal:',e&&e.message||e); return false; }
+}
+function kmCloudRefreshUI(){
+  try{
+    const k=document.getElementById('kmKeyIn'); if(k&&document.activeElement!==k) k.value=kmKey();
+    const u=document.getElementById('kmUrlIn'); if(u&&document.activeElement!==u) u.value=kmBase();
+    const c=document.getElementById('kmOnIn'); if(c) c.checked=kmGet(KM_ON)!=='0';
+    kmRefreshUI();
+  }catch(e){}
+}
+// ambil dari cloud: cloud adalah sumber utama. Perangkat yang sudah punya kunci tapi belum pernah menyimpannya ke cloud mengunggahnya (sekali).
+async function kmCloudTarik(paksa){
+  if(!isAdmin()||!supabaseClient||kmCloudBusy) return;
+  if(!paksa&&Date.now()-kmCloudAt<60000) return;
+  kmCloudAt=Date.now(); kmCloudBusy=true;
+  try{
+    const r=await supabaseClient.from('kj_rahasia').select('nilai').eq('kunci',KM_RAHASIA).maybeSingle();
+    if(r.error) return;   // offline / tabel belum ada: tetap pakai salinan lokal
+    const v=r.data&&r.data.nilai, sig=()=>kmKey()+'|'+kmGet(KM_URL)+'|'+kmGet(KM_ON);
+    if(v&&v.key){
+      const lama=sig(); kmSetLokal({key:v.key,url:v.url||'',on:v.on!==false});
+      if(lama!==sig()) kmCloudRefreshUI();
+    }else if(kmKey()){
+      if(kmGet(KM_CLOUD)==='1'){ kmBersihkanLokal(); kmCloudRefreshUI(); }   // pernah tersimpan, kini tidak ada = dihapus dari perangkat lain
+      else{ await kmCloudSimpan(); kmCloudRefreshUI(); }                      // pertama kali: unggah dari perangkat ini
+    }
+  }catch(e){ /* diam: sinkron kunci tidak boleh mengganggu aplikasi */ }
+  finally{ kmCloudBusy=false; }
+}
 let kmBusy=false,kmTimer=null,kmFatal='',kmTarikAt=0;
 async function kmCall(path,opt){
   opt=opt||{};
@@ -4953,7 +5000,7 @@ function kmCardHtml(){
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;"><button type="button" class="btn btn-primary" onclick="kmSimpanPengaturan()">Simpan &amp; tes</button>
     <button type="button" class="btn btn-outline" onclick="kmSinkronSemua()">Sinkronkan semua sekarang</button></div>
     <div class="field-hint" id="kmStatus" style="margin-top:8px;">${kmStatusHtml()}</div>
-    <div class="field-hint">API key hanya disimpan di perangkat ini dan tidak ikut cadangan. Jangan dibagikan; bila bocor, cabut di Meja Kaone.</div></div>`;
+    <div class="field-hint">API key disimpan di database Supabase Anda dan hanya bisa dibaca akun Admin, jadi otomatis tersedia di semua perangkat Admin. Tidak ikut cadangan dan tidak terlihat akun Tim. Jangan dibagikan; bila bocor, cabut di Meja Kaone.</div></div>`;
 }
 async function kmSimpanPengaturan(){
   const key=(document.getElementById('kmKeyIn').value||'').trim(), url=(document.getElementById('kmUrlIn').value||'').trim(), on=document.getElementById('kmOnIn').checked;
@@ -4961,7 +5008,9 @@ async function kmSimpanPengaturan(){
   if(key&&!/^kmk_[0-9a-f]{48}$/.test(key)){ st.textContent='Format API key tidak dikenali. Salin ulang utuh dari Meja Kaone.'; return; }
   if(url&&!/^https:\/\/[^\s]+$/.test(url)){ st.textContent='Alamat Meja Kaone harus diawali https://'; return; }
   try{ localStorage.setItem(KM_KEY,key); localStorage.setItem(KM_URL,url); localStorage.setItem(KM_ON,on?'1':'0'); }catch(e){}
-  if(!key){ st.textContent=kmStatusHtml(); return; }
+  const cloudOk=await kmCloudSimpan();
+  const cloudInfo=cloudOk?' Tersimpan untuk semua perangkat Admin.':' ⚠️ Belum tersimpan ke cloud, jadi baru berlaku di perangkat ini (akan dicoba lagi otomatis).';
+  if(!key){ st.textContent=kmStatusHtml()+(cloudOk?' Kunci dihapus dari semua perangkat.':cloudInfo); return; }
   st.textContent='Mengetes sambungan…';
   try{
     const me=await kmCall('/me');
@@ -4972,8 +5021,8 @@ async function kmSimpanPengaturan(){
     if(n>0&&!confirm('Tersambung ke "'+me.name+'".\n\n'+n+' job yang masih berjalan akan dibuat di Meja Kaone (job lama yang sudah selesai & lunas tidak ikut). Lanjutkan?')){ st.textContent='Tersambung, tetapi belum ada job yang dikirim. Tekan "Sinkronkan semua sekarang" kapan saja.'; return; }
     st.textContent='Menyinkronkan job…';
     const r=await kmSinkron({paksa:1}); await kmTarik(true);
-    st.innerHTML=kmStatusHtml()+(r.fatal?' ⚠️ '+escapeHtml(r.fatal):'');
-  }catch(e){ st.textContent='⚠️ '+(e.message||'Gagal tersambung'); }
+    st.innerHTML=kmStatusHtml()+cloudInfo+(r.fatal?' ⚠️ '+escapeHtml(r.fatal):'');
+  }catch(e){ st.textContent='⚠️ '+(e.message||'Gagal tersambung')+cloudInfo; }
 }
 async function kmSinkronSemua(){
   const st=document.getElementById('kmStatus'); if(!kmAktif()){ if(st) st.textContent='Simpan API key dan aktifkan sinkron dulu.'; return; }
@@ -4984,9 +5033,9 @@ async function kmSinkronSemua(){
 }
 // jalan otomatis: saat aplikasi dibuka, tiap 5 menit, dan saat kembali ke aplikasi
 (function(){
-  const boot=setInterval(()=>{ if(kmAktif()){ clearInterval(boot); kmSinkron().then(()=>kmTarik(true)); } },3000);
-  setInterval(()=>{ if(!document.hidden&&kmAktif()) kmSinkron().then(()=>kmTarik(true)); },300000);
-  document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&kmAktif()) kmTarik(); });
+  const boot=setInterval(()=>{ if(isAdmin()){ clearInterval(boot); kmCloudTarik(true).then(()=>{ if(kmAktif()) kmSinkron().then(()=>kmTarik(true)); }); } },3000);
+  setInterval(()=>{ if(document.hidden||!isAdmin()) return; kmCloudTarik().then(()=>{ if(kmAktif()) kmSinkron().then(()=>kmTarik(true)); }); },300000);
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden||!isAdmin()) return; kmCloudTarik().then(()=>{ if(kmAktif()) kmTarik(); }); });
 })();
 
 function mapsStudioLink(){ return 'https://www.google.com/maps?q='+ORIGIN_COORD.lat+','+ORIGIN_COORD.lng; }

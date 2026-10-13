@@ -9432,7 +9432,6 @@ function kbLive(e){
   if(e.type==='modal') return !!document.getElementById('modalOverlay');
   if(e.type==='more') return !!document.getElementById('moreLayer')?.classList.contains('open');
   if(e.type==='notif') return !!document.getElementById('notifPanel');
-  if(e.type==='stk') return !!document.getElementById('kstk')?.classList.contains('on');
   if(e.type==='gif') return !!document.getElementById('kgif')?.classList.contains('on');
   return true;
 }
@@ -9520,7 +9519,6 @@ function kbHandleBack(n, foreign){
     }
     else if(e.type==='more') closeMoreSheet(false);
     else if(e.type==='notif') closeNotifPanel();
-    else if(e.type==='stk'){ const sp=document.getElementById('kstk'); if(sp) sp.classList.remove('on'); }
     else if(e.type==='gif'){ const sp=document.getElementById('kgif'); if(sp) sp.classList.remove('on'); }
     else if(e.type==='view') goView = true;
     else if(e.type==='guard') root = true;
@@ -18156,15 +18154,6 @@ const CHANGELOG = [
     ]
   },
   {
-    version: '1.16.11',
-    tanggal: '13 Oktober 2026',
-    items: [
-      { kategori: 'Peningkatan', teks: 'Di ruang chat, tulisan "Foto ini telah hilang otomatis" kini ikut hilang seperti pesan biasa: tampil sebentar lalu larut dan lenyap dari layar.' },
-      { kategori: 'Fitur', teks: 'Saat satu pihak menghapus pesan, di layarnya muncul penanda "Anda menghapus pesan ini", sedangkan di layar lawan chat pesan tetap ada dan diberi penanda "Dihapus oleh ...".' },
-      { kategori: 'Perubahan', teks: 'Foto dari lawan chat baru hilang dari layar Anda setelah diunduh 3 kali (bukan 1 kali), atau saat Anda menghapusnya sendiri. Jumlah unduhan tampil di bawah foto.' },
-    ]
-  },
-  {
     version: '1.16.10',
     tanggal: '8 Oktober 2026',
     items: [
@@ -20420,6 +20409,7 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 #kc #kcm #kcmc{width:76px;height:76px;border-radius:50%;background:none;border:4px solid #fff;display:grid;place-items:center;padding:0;transition:transform .15s}
 #kc #kcm #kcmc i{width:58px;height:58px;border-radius:50%;background:#fff;display:block;transition:transform .15s}
 #kc #kcm #kcmc:active i{transform:scale(.86)}
+#kc #kcm #kcmg{position:absolute;left:20px;bottom:calc(max(22px,env(safe-area-inset-bottom)) + 13px);width:50px;height:50px;border-radius:50%;background:#0006;border:2px solid #fff6;display:grid;place-items:center;padding:0;font-size:24px}#kc #kcm #kcmg:active{background:#fff3}
 #kc #kcm .kcm2 button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border:0;border-radius:25px;font:inherit;font-weight:700;font-size:16px;cursor:pointer;background:#fff3;color:#fff;-webkit-tap-highlight-color:transparent}
 #kc #kcm .kcm2 #kcms{background:var(--ka);color:var(--kac,#fff)}
 #kc #kcm .kcm2 button[disabled]{opacity:.6;pointer-events:none}
@@ -20460,7 +20450,7 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 <button type="button" id="kkb" aria-label="Kembali ke panggilan"><span class="dd"></span><span id="kkbt"></span><span class="go">Ketuk untuk kembali</span></button>
 <div class="tm" id="ktm" role="dialog" aria-modal="true" aria-label="Tema chat"></div><div class="m" id="km"></div>
 <div class="rp" id="krp"><span id="krt"></span><button id="krx" data-i="close"></button></div>
-<div class="c"><button type="button" id="kdn" aria-label="Ke pesan terbaru" data-i="chevd"></button><div class="klk" aria-hidden="true" data-i="lock"></div><div class="kbx"><textarea id="ki" rows="1" placeholder="Ketik pesan" aria-label="Tulis pesan" autocomplete="off"></textarea><button type="button" class="g" id="kat" data-i="clip" aria-label="Lampirkan foto atau video" title="Lampirkan foto atau video"></button><button type="button" class="g" id="kcam" data-i="camera" aria-label="Ambil foto dengan kamera" title="Ambil foto dengan kamera"></button></div><div class="krb" id="krbar"><button type="button" class="g" id="krdel" data-i="trash" aria-label="Batalkan rekaman" title="Batalkan rekaman"></button><span class="kdot"></span><b id="krtime">0:00</b><span id="krhint">&#8249; Geser untuk batal</span></div><button type="button" id="kmic" data-i="mic" aria-label="Rekam pesan suara"></button></div>
+<div class="c"><button type="button" id="kdn" aria-label="Ke pesan terbaru" data-i="chevd"></button><div class="klk" aria-hidden="true" data-i="lock"></div><div class="kbx"><textarea id="ki" rows="1" placeholder="Ketik pesan" aria-label="Tulis pesan" autocomplete="off"></textarea><button type="button" class="g" id="kcam" data-i="camera" aria-label="Ambil foto dengan kamera" title="Ambil foto dengan kamera"></button></div><div class="krb" id="krbar"><button type="button" class="g" id="krdel" data-i="trash" aria-label="Batalkan rekaman" title="Batalkan rekaman"></button><span class="kdot"></span><b id="krtime">0:00</b><span id="krhint">&#8249; Geser untuk batal</span></div><button type="button" id="kmic" data-i="mic" aria-label="Rekam pesan suara"></button></div>
 <div class="sh" id="kpf"><div class="sc"><b>Profil</b><div class="pf"><div class="pa" id="kpa"></div><button id="kpc" data-i="camera"></button></div><small id="kpz" style="text-align:center"></small><button type="button" id="kpd" class="pdel"><span data-i="trash"></span>Hapus foto</button>
 <label>Nama kamu</label><input id="kpn" maxlength="40" placeholder="Nama"><label>Nama lawan chat <small>(hanya terlihat olehmu)</small></label><input id="kpl" maxlength="40" placeholder="Nama panggilan">
 <div class="rw"><button id="kpx">Batal</button><button id="kps" class="pri">Simpan</button></div></div></div>
@@ -20483,7 +20473,7 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 <div class="rw"><button type="button" id="kpwx">Batal</button><button type="button" id="kpws" class="pri">Simpan sandi</button></div></div></div>
 <div id="kpk"><div id="kpkb"><div id="kpke" class="pkb"></div><button id="kpksal" class="pkb"><span data-i="copy"></span> Salin teks</button></div></div>
 <input type="file" id="kpfile" accept="image/*" hidden>
-<input type="file" id="kf" accept="image/*,video/*" hidden><input type="file" id="kfcam" accept="image/*" capture="environment" hidden><div id="kcm" role="dialog" aria-modal="true" aria-label="Kamera"><video id="kcmv" autoplay playsinline muted></video><img id="kcmp" alt="Hasil foto"><div class="kcmn" id="kcmn"></div><div class="kcmt"><button type="button" id="kcmx" data-i="close" aria-label="Tutup kamera"></button><button type="button" id="kcmw" data-i="flip" aria-label="Balik kamera"></button></div><div class="kcmb"><div class="kcm1"><button type="button" id="kcmc" aria-label="Ambil foto"><i></i></button></div><div class="kcm2"><button type="button" id="kcmr"><span data-i="back"></span>Ulangi</button><button type="button" id="kcms"><span data-i="send"></span>Kirim</button></div></div></div></div>
+<input type="file" id="kf" accept="image/*" hidden><input type="file" id="kfcam" accept="image/*" capture="environment" hidden><div id="kcm" role="dialog" aria-modal="true" aria-label="Kamera"><video id="kcmv" autoplay playsinline muted></video><img id="kcmp" alt="Hasil foto"><div class="kcmn" id="kcmn"></div><div class="kcmt"><button type="button" id="kcmx" data-i="close" aria-label="Tutup kamera"></button><button type="button" id="kcmw" data-i="flip" aria-label="Balik kamera"></button></div><div class="kcmb"><div class="kcm1"><button type="button" id="kcmg" data-i="image" aria-label="Kirim foto dari galeri" title="Kirim foto dari galeri"></button><button type="button" id="kcmc" aria-label="Ambil foto"><i></i></button></div><div class="kcm2"><button type="button" id="kcmr"><span data-i="back"></span>Ulangi</button><button type="button" id="kcms"><span data-i="send"></span>Kirim</button></div></div></div></div>
 <div id="kcv"><div id="kvb"></div><button id="kvd" hidden>Unduh foto</button><button id="kvx">Tutup</button><small id="kvs"></small></div>
 <div id="kcc" role="dialog" aria-modal="true" aria-label="Panggilan"><div class="bg"></div><video id="kr" autoplay playsinline></video><div class="sc1"></div><div class="sc2"></div><video id="kl" autoplay playsinline muted></video>
 <div class="top"><button type="button" id="kkz" data-i="chevd" aria-label="Kecilkan panggilan"></button><div class="who"><b id="kkn">Chat</b><span id="kcs">Memanggil…</span><i class="lk"><em data-i="lock"></em>Panggilan rahasia</i></div><span class="sp"></span></div>
@@ -21359,11 +21349,11 @@ else if(t.closest('#kth'))$('ktm').classList.toggle('on');
 else if(t.dataset.t){th(t.dataset.t);menu();kTS(tema);$('ktm').classList.remove('on')}
 else if(t.dataset.r)rp(t.dataset.r);else if(t.dataset.d){if(confirm('Hapus pesan ini?'))kcTarik(t.dataset.d).then(function(){draw();sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}})})}
 else if(t.closest('[data-o]'))buka(t.closest('[data-o]').dataset.o);else if(t.closest('#kvx')){$('kvb').innerHTML='';$('kcv').classList.remove('on')}
-else if(t.closest('#krx'))rp(null);else if(t.closest('#kat'))$('kf').click();
+else if(t.closest('#krx'))rp(null);
 else if(t.closest('#kcv1'))call(0);else if(t.closest('#kcv2'))call(1);else if(t.closest('#kcy'))jawab();else if(t.closest('#kkt'))kkTolak();else if(t.closest('#kcx'))kkEnd();else if(t.closest('#kcf'))flip();else if(t.closest('#kkm'))kkMute();else if(t.closest('#kkd'))kkCam();else if(t.closest('#kkz'))kkMini(1);else if(t.closest('#kkb'))kkMini(0);else if(t.dataset.cb!==undefined)call(+t.dataset.cb);else if(t.closest('#kav')||t.closest('#kpw'))opOpen();else if(t.closest('#kpd')){delFoto=!!(U[me]&&U[me].u);pend=null;pa()}else if(t.closest('#kpc'))$('kpfile').click();else if(t.closest('#kpx'))shut('kpf');else if(t.closest('#kps'))pfSave();else if(t.closest('#kcb'))shut('kcr');else if(t.closest('#kcp'))crPut()});
 $('ki').addEventListener('keydown',function(e){if(e.key=='Enter'&&!e.shiftKey&&!e.isComposing&&window.innerWidth>700){e.preventDefault();kirim()}});
 var tk0=0;$('ki').addEventListener('input',function(){if($('ki').value&&Date.now()-tk0>1200){tk0=Date.now();rm&&rm.send({type:'broadcast',event:'ketik',payload:{}})}});
-$('kf').addEventListener('change',function(){var f=this.files[0];this.value='';if(f)up(f,f.type.indexOf('video')==0?'video':'foto',f.type)});
+$('kf').addEventListener('change',function(){var f=this.files[0];this.value='';if(!f)return;if(f.type&&f.type.indexOf('image/')!=0){toast('Pilih file foto');return}if($('kcm').classList.contains('on'))cmClose();up(f,'foto',f.type||'image/jpeg')});
 /* ---- KAMERA DI KOLOM PESAN: ambil foto langsung dari kamera, lihat dulu, lalu kirim ---- */
 var cmS=null,cmFm='environment',cmBlob=null,cmUrl='',cmTok=0;
 function cmStop(){if(cmS){try{cmS.getTracks().forEach(function(t){t.stop()})}catch(e){}cmS=null}var v=$('kcmv');if(v)v.srcObject=null}
@@ -21399,6 +21389,7 @@ async function cmSend(){
  if(!cmBlob)return;var b=cmBlob;$('kcms').disabled=true;
  cmClose();toast('Mengirim foto…');await up(b,'foto','image/jpeg')}
 $('kcam').addEventListener('click',cmOpen);
+$('kcmg').addEventListener('click',function(){$('kf').click()});
 $('kcmx').addEventListener('click',cmClose);
 $('kcmc').addEventListener('click',cmShot);
 $('kcmr').addEventListener('click',function(){cmReset();cmStart()});
@@ -21521,7 +21512,7 @@ var rs=await Promise.all(ids.map(function(id){return kcTarik(id)}));draw();if(rs
 function pkPickB(e,el){if(kBusy)return;kBusy=true;el.classList.add('go');try{navigator.vibrate&&navigator.vibrate(10)}catch(x){}setTimeout(function(){kBusy=false;selClear();pkPick(e)},320)}
 (function(){var h=document.querySelector('#kc .h'),d=document.createElement('div');d.id='ksel';
 d.innerHTML='<button id="ksx" aria-label="Batal">'+ic('back')+'</button><b id="ksn"></b><button id="ksd" aria-label="Hapus pesan">'+ic('trash')+'</button>';h.appendChild(d);
-$('ksx').onclick=selClear;$('ksd').onclick=selDel;
+$('ksx').onclick=selClear;$('ksd').onclick=selDel;var kse=document.createElement('style');kse.textContent="#kc #ksel{z-index:6;pointer-events:auto;gap:10px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}#kc #ksel button{all:unset;box-sizing:border-box;cursor:pointer;flex:none;display:inline-flex!important;align-items:center;justify-content:center;gap:6px;min-width:44px;height:44px;border-radius:22px;color:#fff!important;font-size:22px;line-height:1;-webkit-tap-highlight-color:transparent;visibility:visible!important;opacity:1!important}#kc #ksel button svg{display:block!important;width:24px!important;height:24px!important;stroke:#fff!important;fill:none!important}#kc #ksel #ksd{padding:0 16px 0 12px;background:#e5484d;font-size:14px;font-weight:700}#kc #ksel #ksd::after{content:'Hapus'}#kc #ksel #ksx:active{background:#fff3}#kc #ksel #ksd:active{filter:brightness(.85)}#kc #ksel b{flex:1;min-width:0;color:#fff;font-size:16px}";document.head.appendChild(kse);
 var st=document.createElement('style');st.textContent='#kc .h{position:relative}#ksel{position:absolute;inset:0;display:none;align-items:center;gap:8px;padding:env(safe-area-inset-top) 12px 0;background:var(--kh);color:#fff;border-radius:inherit;z-index:2}#kc.sm #ksel{display:flex;animation:kDrop .45s cubic-bezier(.2,1.6,.4,1) both}#ksel b{flex:1;font-size:16px}#ksel button{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;transition:transform .15s}#ksel button:active{transform:scale(.85);background:#fff3}@keyframes kDrop{0%{transform:translateY(-100%)}60%{transform:translateY(6%)}100%{transform:none}}'
 +'#kc .rw2.sel .b{box-shadow:0 0 0 3px var(--ka);animation:kSel .4s cubic-bezier(.2,1.7,.4,1)}#kc .rw2.sel .b::after{content:"\\2713";position:absolute;top:-9px;left:-9px;width:20px;height:20px;border-radius:50%;background:var(--ka);color:var(--kac,#fff);font-size:12px;font-weight:700;display:grid;place-items:center;animation:kBnc .4s cubic-bezier(.2,1.8,.4,1) both}#kc .rw2.me.sel .b::after{left:auto;right:-9px}#kc .b:has(.md.pv){padding:4px 4px 3px}#kc .b:has(.md.pv) .t{padding:0 5px}#kc .md.pv{padding:0;background:none;gap:4px;width:min(240px,66vw);max-width:100%;cursor:pointer}#kc .md.pv .pw{width:100%;max-width:100%;background:none;border-radius:11px;max-height:none;overflow:hidden}#kc .md.pv .pw img{display:block;filter:none!important;transform:none!important;width:100%!important;max-width:100%!important;min-width:0!important;height:auto;border-radius:11px;background:none}#kc .md.pv .cap{padding:0 5px}#kc .rw2 .ac svg{transform:none!important}#kc .md.pv .eye{display:none}#kc .md.ph{min-width:min(200px,56vw);min-height:130px;justify-content:center;flex-direction:column;text-align:center}#kc .md.ph svg{width:34px;height:34px}@keyframes kSel{0%{transform:scale(1)}40%{transform:scale(.94)}100%{transform:scale(1)}}'
 +'@keyframes kBnc{0%{transform:translateY(16px) scale(.3);opacity:0}55%{transform:translateY(-8px) scale(1.25);opacity:1}78%{transform:translateY(2px) scale(.94)}100%{transform:none;opacity:1}}@keyframes kBnc2{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.07);opacity:1}80%{transform:scale(.97)}100%{transform:none;opacity:1}}@keyframes kGo{0%{transform:scale(1)}45%{transform:scale(1.9) translateY(-14px)}100%{transform:scale(1.5) translateY(-30px);opacity:0}}'
@@ -21699,10 +21690,6 @@ var c=u&&kLkC[u];if(u&&!c)kLkGet(u);
 if(c&&c.t)h+='<a class="lkc" href="'+E(u)+'" target="_blank" rel="noopener noreferrer">'+(/^https:\/\/[^\s"'<>]+$/.test(c.i||'')?'<img alt="" loading="lazy" referrerpolicy="no-referrer" src="'+E(c.i)+'">':'')+'<span class="lt"><b>'+E(c.t)+'</b>'+(c.d?'<small>'+E(c.d)+'</small>':'')+'<em>'+E(c.s||'')+'</em></span></a>';
 return h}
 function kLkGet(u){if(kLkQ[u])return;kLkQ[u]=1;sb.functions.invoke('kaone-linkpreview',{body:{url:u}}).then(function(r){var d=r&&r.data;if(d&&d.t){kLkC[u]={t:String(d.t).slice(0,120),d:String(d.d||'').slice(0,160),i:d.i||'',s:String(d.s||'').slice(0,60)};try{var k=Object.keys(kLkC);if(k.length>150)k.slice(0,k.length-150).forEach(function(x){delete kLkC[x]});localStorage.setItem('kcLk',JSON.stringify(kLkC))}catch(e){}draw()}}).catch(function(){})}
-function stkOpen(){var ids=[],h='';(T[tema].m||[]).concat(Object.keys(STK)).forEach(function(k){if(STK[k]&&ids.indexOf(k)<0)ids.push(k)});
-ids.forEach(function(k){h+='<button type="button" data-sk="'+k+'" aria-label="Stiker">'+mo(k,STK[k])+'</button>'});$('kstg').innerHTML=h;var sp=$('kstk'),sc=sp.firstChild;sc.style.transform='';sc.style.animation='';sp.classList.add('on');try{kbOpen('stk')}catch(e){}}
-function stkHide(){var sp=$('kstk');if(!sp)return;sp.classList.remove('on');try{kbClose('stk')}catch(e){}}
-async function stkSend(k){stkHide();var o={tipe:'teks',isi:'::stk:'+k};if(rep)o.balas_ke=rep;rp(null);try{navigator.vibrate&&navigator.vibrate(10)}catch(e){}await put(o)}
 function jdFmt(d){var p=function(n){return String(n).padStart(2,'0')};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())}
 function jdOpen(txt){$('kjt').value=txt||'';var d=new Date(Date.now()+36e5);d.setSeconds(0,0);$('kjw').value=jdFmt(d);$('kjd').classList.add('on');jdList()}
 async function jdList(){var r=await sb.from('kaone_chat_terjadwal').select('id,isi,kirim_at').eq('status','menunggu').order('kirim_at');
@@ -21714,24 +21701,15 @@ var r=await sb.from('kaone_chat_terjadwal').insert({isi:v,kirim_at:d.toISOString
 if($('ki').value.trim()==v){$('ki').value='';kGrow();kSync()}$('kjt').value='';toast('Pesan dijadwalkan');jdList()}
 async function jdDel(id){var r=await sb.from('kaone_chat_terjadwal').delete().eq('id',id).eq('status','menunggu');if(r.error)toast('Gagal membatalkan');jdList()}
 (function(){var st=document.createElement('style');st.textContent='#kc .rw2 .b.stk{background:none;box-shadow:none;border:0;padding:2px 4px}#kc .stk .sv{display:inline-block;transform-origin:50% 90%;animation:kStk 2.8s ease-in-out infinite}#kc .stk .sv svg{width:92px;height:92px;display:block;filter:drop-shadow(0 2px 0 rgba(0,0,0,.12))}@keyframes kStk{0%,100%{transform:none}35%{transform:translateY(-6px) rotate(-4deg) scale(1.04,.97)}70%{transform:rotate(3deg)}}'
-+'#kstk .sc{touch-action:pan-y;overscroll-behavior:contain}#kstk .sc::before{content:"";align-self:center;width:38px;height:4px;border-radius:2px;background:currentColor;opacity:.25;flex:none;margin:-8px 0 2px}#kstg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}#kstg button{aspect-ratio:1;border-radius:16px;background:var(--ki);box-shadow:var(--ks);display:grid;place-items:center;padding:6px}#kstg button:active{transform:scale(.9)}#kc #kstg svg{width:100%;height:100%}'
 +'#kc a.lkx{color:var(--ka);text-decoration:underline;word-break:break-all}#kc .lkc{display:flex;flex-direction:column;margin:4px 0 2px;border-radius:10px;overflow:hidden;background:#0001;color:inherit;text-decoration:none;width:min(260px,64vw)}#kc .lkc img{width:100%;max-height:150px;object-fit:cover;display:block}#kc .lkc .lt{display:flex;flex-direction:column;gap:2px;padding:7px 9px}#kc .lkc b,#kc .lkc small{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3}#kc .lkc b{font-size:13px;-webkit-line-clamp:2}#kc .lkc small{font-size:12px;opacity:.8;-webkit-line-clamp:2}#kc .lkc em{font-size:11px;opacity:.6;font-style:normal}'
 +'#kjt{max-height:120px}#kc .jq{display:flex;gap:6px;flex-wrap:wrap}#kc .jq button{padding:7px 12px;border-radius:16px;background:var(--ki);box-shadow:var(--ks);font-size:13px}#kjl{display:flex;flex-direction:column;gap:6px;max-height:30vh;overflow:auto}#kc .jr{display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:12px;background:var(--ki);font-size:13px}#kc .jr span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#kc .jr button{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;flex:none}';document.head.appendChild(st);
-var w=document.createElement('div');w.innerHTML='<div class="sh" id="kstk"><div class="sc"><b>Stiker</b><div id="kstg"></div></div></div><div class="sh" id="kjd"><div class="sc"><b>Pesan terjadwal</b><textarea id="kjt" rows="3" maxlength="2000" placeholder="Tulis pesan…"></textarea><label for="kjw">Dikirim pada</label><input type="datetime-local" id="kjw"><div class="jq"><button type="button" data-jq="60">+1 jam</button><button type="button" data-jq="180">+3 jam</button><button type="button" data-jq="b">Besok 07.00</button></div><div id="kjl"></div><small>Dikirim otomatis oleh server, walau aplikasi tertutup.</small><div class="rw"><button id="kjc" type="button">Tutup</button><button id="kjs" type="button" class="pri">Jadwalkan</button></div></div></div>';while(w.firstChild)$('kc').appendChild(w.firstChild);
-(function(){var sp=$('kstk'),sc=sp.firstChild,y0=0,t0=0,dy=0,on=0;
-sc.addEventListener('touchstart',function(e){if(e.touches.length!=1||sc.scrollTop>0){on=0;return}y0=e.touches[0].clientY;t0=Date.now();dy=0;on=1},{passive:true});
-sc.addEventListener('touchmove',function(e){if(!on)return;var d=e.touches[0].clientY-y0;if(d<=0){if(dy<=0)return;d=0}if(sc.scrollTop>0&&dy==0){on=0;return}dy=d;sc.style.animation='none';sc.style.transition='none';sc.style.transform='translateY('+d+'px)';sp.style.background='rgba(0,0,0,'+Math.max(0,.53*(1-d/sc.offsetHeight))+')';if(e.cancelable)e.preventDefault()},{passive:false});
-function end(){if(!on)return;on=0;var v=dy/Math.max(1,Date.now()-t0),go=dy>sc.offsetHeight*.3||(dy>40&&v>.5);sc.style.transition='transform .22s ease';sp.style.background='';
-if(go){sc.style.transform='translateY(100%)';setTimeout(function(){stkHide();sc.style.transform='';sc.style.transition='';sc.style.animation=''},210)}
-else{sc.style.transform='';setTimeout(function(){sc.style.transition='';sc.style.animation=''},230)}dy=0}
-sc.addEventListener('touchend',end);sc.addEventListener('touchcancel',end)})();
-var b=document.createElement('button');b.id='kstb';b.type='button';b.className='g';b.setAttribute('aria-label','Stiker');b.innerHTML=ic('smile');$('ki').before(b);
+var w=document.createElement('div');w.innerHTML='<div class="sh" id="kjd"><div class="sc"><b>Pesan terjadwal</b><textarea id="kjt" rows="3" maxlength="2000" placeholder="Tulis pesan…"></textarea><label for="kjw">Dikirim pada</label><input type="datetime-local" id="kjw"><div class="jq"><button type="button" data-jq="60">+1 jam</button><button type="button" data-jq="180">+3 jam</button><button type="button" data-jq="b">Besok 07.00</button></div><div id="kjl"></div><small>Dikirim otomatis oleh server, walau aplikasi tertutup.</small><div class="rw"><button id="kjc" type="button">Tutup</button><button id="kjs" type="button" class="pri">Jadwalkan</button></div></div></div>';while(w.firstChild)$('kc').appendChild(w.firstChild);
 var mi=document.createElement('button');mi.className='it';mi.id='kmj';mi.innerHTML='<span>'+ic('clock')+'</span>Pesan terjadwal';$('kms').after(mi);
-$('kc').addEventListener('click',function(e){var t=e.target.closest('[data-sk],[data-jx],[data-jq],#kstb,#kmj,#kjs,#kjc');
-if(!t){if(e.target.id=='kstk')stkHide();else if(e.target.id=='kjd')e.target.classList.remove('on');return}
-if(t.dataset.sk)stkSend(t.dataset.sk);else if(t.dataset.jx)jdDel(t.dataset.jx);
+$('kc').addEventListener('click',function(e){var t=e.target.closest('[data-jx],[data-jq],#kmj,#kjs,#kjc');
+if(!t){if(e.target.id=='kjd')e.target.classList.remove('on');return}
+if(t.dataset.jx)jdDel(t.dataset.jx);
 else if(t.dataset.jq){var d=new Date();if(t.dataset.jq=='b'){d.setDate(d.getDate()+1);d.setHours(7,0,0,0)}else d=new Date(Date.now()+t.dataset.jq*6e4);d.setSeconds(0,0);$('kjw').value=jdFmt(d)}
-else if(t.id=='kstb')stkOpen();else if(t.id=='kmj'){shut('kst');jdOpen('')}else if(t.id=='kjs')jdSave();else if(t.id=='kjc')shut('kjd')});
+else if(t.id=='kmj'){shut('kst');jdOpen('')}else if(t.id=='kjs')jdSave();else if(t.id=='kjc')shut('kjd')});
 })();
 /* ===== KIRIM GIF (Giphy) =====
    Yang masuk ke Supabase HANYA baris teks kecil '::gif:<id>[:LxT]' (sama seperti stiker).
@@ -22026,6 +22004,8 @@ html.kc-open{background:var(--kb)}
 #kc .krb{border:1px solid var(--kln)}
 
 /* Tombol ke pesan terbaru */
+/* .c punya animasi (kdRise) sehingga membentuk stacking context sendiri; tanpa z-index, tombol di dalamnya ikut tertutup bubble. */
+#kc .c{z-index:4}
 #kc .c #kdn{position:absolute;right:16px;bottom:calc(100% + 12px);width:42px;height:42px;border-radius:50%;background:var(--ki);color:var(--kt);border:1px solid var(--kln);box-shadow:0 8px 20px -6px rgba(0,0,0,.45);opacity:0;transform:translateY(12px) scale(.7);pointer-events:none;transition:opacity .25s,transform .35s var(--ksp);z-index:3;font-size:22px}
 #kc .c #kdn.on{opacity:1;transform:none;pointer-events:auto}
 #kc .c #kdn:active{transform:scale(.9)}

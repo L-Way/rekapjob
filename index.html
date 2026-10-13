@@ -18156,6 +18156,15 @@ const CHANGELOG = [
     ]
   },
   {
+    version: '1.16.11',
+    tanggal: '13 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Di ruang chat, tulisan "Foto ini telah hilang otomatis" kini ikut hilang seperti pesan biasa: tampil sebentar lalu larut dan lenyap dari layar.' },
+      { kategori: 'Fitur', teks: 'Saat satu pihak menghapus pesan, di layarnya muncul penanda "Anda menghapus pesan ini", sedangkan di layar lawan chat pesan tetap ada dan diberi penanda "Dihapus oleh ...".' },
+      { kategori: 'Perubahan', teks: 'Foto dari lawan chat baru hilang dari layar Anda setelah diunduh 3 kali (bukan 1 kali), atau saat Anda menghapusnya sendiri. Jumlah unduhan tampil di bawah foto.' },
+    ]
+  },
+  {
     version: '1.16.10',
     tanggal: '8 Oktober 2026',
     items: [
@@ -20425,6 +20434,10 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 #kc .rw2.me.pop .b{animation-name:kPopMe}
 #kc .b.gone{font-style:italic;opacity:.85}#kc .b.gone svg{width:15px;height:15px;vertical-align:-3px}
 #kc .b.gone.ga{animation:kGone .7s ease both}
+#kc .kgw{display:flex;align-self:flex-start;max-width:80%;overflow:hidden;animation:kGoneOut .7s ease forwards;max-height:90px}#kc .kgw.me{align-self:flex-end}#kc .kgw .b{max-width:100%}
+@keyframes kGoneOut{0%{opacity:.85;max-height:90px;filter:blur(0);transform:none}60%{opacity:0;max-height:90px;filter:blur(6px);transform:scale(.96)}100%{opacity:0;max-height:0;margin:0;padding:0;filter:blur(6px)}}
+#kc .kdl{display:flex;align-items:center;gap:4px;font-size:11.5px;font-style:italic;opacity:.75;margin-top:4px}#kc .kdl svg{width:13px;height:13px}
+@media(prefers-reduced-motion:reduce){#kc .kgw{animation:kGoneOutR .3s ease forwards}@keyframes kGoneOutR{to{opacity:0;max-height:0}}}
 @media(prefers-reduced-motion:reduce){#kc .rw2.pop .b,#kc .rw2.me.pop .b,#kc .rw2.ty .b{animation:kFade .2s both}#kc .b.gone.ga{animation:kFade .2s both}}
 #kcv.nosave img,#kcv.nosave video{pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}#kcv #kvd{background:#0f766e}@media print{#kcv{display:none!important}}
 #kc .kcw{display:inline-block;white-space:nowrap;max-width:100%}#kc .kcd{display:inline-block;white-space:nowrap;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";font-weight:700;letter-spacing:.2px;min-width:7.4ch;text-align:left}
@@ -21080,7 +21093,7 @@ try{kkTurnLoad(1)}catch(e){}await load();bellRead();conn();setTimeout(kNotifAsk,
 function bellRead(){try{var b=kcBellGet();if(b&&b.id)markNotifRead('chat_'+b.id)}catch(e){}}
 function close(){try{kkAbort()}catch(e){}if(rcS)recStop(false);kPingRpc(sb);pkClose();selClear();dn={};dr0=false;kUnSet=false;kUnId=null;kUnN=0;if(lo)lo.k=0;$('kc').classList.remove('on');clearInterval(bt);clearInterval(kcTk);if(db)sb.removeChannel(db);if(rm)sb.removeChannel(rm);db=rm=null}
 async function load(){var r=await sb.from('kaone_chat_pesan').select('*').order('dikirim_at');msgs={};(r.data||[]).forEach(function(m){msgs[m.id]=m});
-if(!kUnSet){kUnSet=true;var un=Object.keys(msgs).map(function(k){return msgs[k]}).filter(function(m){return m.pengirim!=me&&!m.dilihat_at&&!m.dihapus_at&&!kNmDec(m)}).sort(function(x,y){return x.dikirim_at<y.dikirim_at?-1:1});kUnId=un.length?un[0].id:null;kUnN=un.length}
+if(!kUnSet){kUnSet=true;var un=Object.keys(msgs).map(function(k){return msgs[k]}).filter(function(m){return m.pengirim!=me&&!m.dilihat_at&&!m.dihapus_at&&!m.ditarik_at&&!kNmDec(m)}).sort(function(x,y){return x.dikirim_at<y.dikirim_at?-1:1});kUnId=un.length?un[0].id:null;kUnN=un.length}
 draw();
 if(kUnId){var d=$('kud'),el=$('km');if(d)el.scrollTop+=d.getBoundingClientRect().top-el.getBoundingClientRect().top-48}
 ack()}
@@ -21102,13 +21115,22 @@ im.onload=async function(){URL.revokeObjectURL(u);try{var W=im.naturalWidth,H=im
 for(var t=0;t<8;t++){var w=Math.max(1,Math.round(W*k)),h=Math.max(1,Math.round(H*k)),c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.imageSmoothingQuality='high';x.drawImage(im,0,0,w,h);
 var lo=.4,hi=.9,best=null;for(var i=0;i<6;i++){var q=(lo+hi)/2,o=await kcBlob(c,q);if(o&&o.size<=KC_MAX){best=o;lo=q}else hi=q}
 if(best)return ok(best);k*=.8}no(new Error('besar'))}catch(e){no(e)}};im.src=u})}
-function kcGone(m){if(!m||m.tipe!='foto'||m.dihapus_at)return false;if(m.hilang_at)return true;var x=!!(m.kedaluwarsa_at&&Date.now()>=new Date(m.kedaluwarsa_at).getTime());if(m.pengirim==me)return x;if(peran=='lawan')return x||m.jumlah_lihat>=5;return x&&!!m.diunduh_at}
+function kcGone(m){if(!m||m.tipe!='foto'||m.dihapus_at)return false;if(m.hilang_at)return true;var x=!!(m.kedaluwarsa_at&&Date.now()>=new Date(m.kedaluwarsa_at).getTime());if(m.pengirim==me)return x;if(kcHid(m))return true;if(peran=='lawan')return x||m.jumlah_lihat>=5;return kcDlN(m)>=KC_DLMAX}
+var KC_DLMAX=3;
+function kcHidSet(){try{return JSON.parse(localStorage.getItem('kcHide_'+me)||'{}')||{}}catch(e){return{}}}
+function kcHid(m){return !!(m&&((m.disembunyi_oleh&&m.disembunyi_oleh.indexOf&&m.disembunyi_oleh.indexOf(me)>=0)||kcHidSet()[m.id]))}
+function kcDlLocal(id){try{return+(localStorage.getItem('kcDlN_'+id)||0)}catch(e){return 0}}
+function kcDlN(m){return Math.max(+m.jumlah_unduh||0,kcDlLocal(m.id))}
+/* Penanda 'hilang otomatis' ikut hilang seperti pesan biasa: tampil sebentar (hanya bila hilangnya terjadi saat chat dibuka), lalu larut & dihapus dari layar */
+var kcMk={},KC_MKMS=4200;
+function kcMkAlive(id){var t=kcMk[id];return t&&Date.now()-t<KC_MKMS}
 function kcHMS(ms){var s=Math.max(0,Math.floor(ms/1000)),p=function(n){return(n<10?'0':'')+n};return p(Math.floor(s/3600))+':'+p(Math.floor(s%3600/60))+':'+p(s%60)}
 function kcCd(m,lbl){var ms=new Date(m.kedaluwarsa_at).getTime()-Date.now();return ms>0?' <span class="kcw">· '+lbl+' <span class="kcd" data-exp="'+m.kedaluwarsa_at+'">'+kcHMS(ms)+'</span></span>':''}
-function kcCap(m,own){if(m.tipe!='foto')return '';if(own||peran=='lawan')return m.kedaluwarsa_at?kcCd(m,peran=='lawan'?'hilang dalam':'hilang di lawan'):(own?' <span class="kcw">· belum dilihat</span>':'');var c=m.kedaluwarsa_at?(new Date(m.kedaluwarsa_at).getTime()>Date.now()?kcCd(m,'hilang di lawan'):' <span class="kcw">· sudah hilang di lawan</span>'):'';return c+(m.diunduh_at?'':' <span class="kcw">· belum diunduh</span>')}
+function kcCap(m,own){if(m.tipe!='foto')return '';if(own||peran=='lawan')return m.kedaluwarsa_at?kcCd(m,peran=='lawan'?'hilang dalam':'hilang di lawan'):(own?' <span class="kcw">· belum dilihat</span>':'');var c=m.kedaluwarsa_at?(new Date(m.kedaluwarsa_at).getTime()>Date.now()?kcCd(m,'hilang di lawan'):' <span class="kcw">· sudah hilang di lawan</span>'):'';var n=kcDlN(m);return c+' <span class="kcw">· '+(n?'diunduh '+n+'/'+KC_DLMAX+'x':'belum diunduh')+'</span>'}
 var kcTk=0;
-function kcTick(){var t=Date.now(),f=0;document.querySelectorAll('#km .kcd').forEach(function(e){var ms=new Date(e.dataset.exp).getTime()-t;e.textContent=kcHMS(ms);if(ms<=0)f=1});if(f&&!kcTick.w){kcTick.w=1;setTimeout(function(){kcTick.w=0;kcSweep();kcBersih()},800)}}
+function kcTick(){var t=Date.now(),f=0;kcMkSweep();document.querySelectorAll('#km .kcd').forEach(function(e){var ms=new Date(e.dataset.exp).getTime()-t;e.textContent=kcHMS(ms);if(ms<=0)f=1});if(f&&!kcTick.w){kcTick.w=1;setTimeout(function(){kcTick.w=0;kcSweep();kcBersih()},800)}}
 var kcDl=null,kcNS=false;
+function kcMkSweep(){var ch=0,t=Date.now();Object.keys(kcMk).forEach(function(k){if(t-kcMk[k]>=KC_MKMS){delete kcMk[k];ch=1}});if(ch)draw()}
 function kcNoShot(on){kcNS=on;var v=$('kcv');if(v)v.classList.toggle('nosave',on)}
 function kcCover(h){var b=$('kvb');if(b)b.style.visibility=h?'hidden':''}
 document.addEventListener('visibilitychange',function(){if(kcNS)kcCover(document.visibilityState=='hidden')});
@@ -21118,7 +21140,9 @@ document.addEventListener('contextmenu',function(e){if(kcNS&&e.target.closest&&e
 document.addEventListener('dragstart',function(e){if(kcNS)e.preventDefault()});
 document.addEventListener('click',function(e){var t=e.target.closest?e.target:null;if(!t)return;if(t.closest('#kvx')){kcNoShot(false);kcDl=null}else if(t.closest('#kvd'))kcUnduh()});
 async function kcUnduh(){var d=kcDl;if(!d)return;try{var r=await fetch(d.url);if(!r.ok)throw 0;var b=await r.blob(),ext=(d.mime.split('/')[1]||'jpg').replace('jpeg','jpg'),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='foto-'+d.id.slice(0,8)+'.'+ext;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},4000);
-await sb.rpc('kaone_chat_foto_diunduh',{p_id:d.id});if(msgs[d.id]){msgs[d.id].diunduh_at=new Date().toISOString();draw()}toast('Foto tersimpan')}catch(e){toast('Gagal unduh, buka ulang foto')}}
+var n=await kcCountDl(d.id);if(msgs[d.id]){msgs[d.id].jumlah_unduh=n;if(n>=KC_DLMAX)msgs[d.id].diunduh_at=msgs[d.id].diunduh_at||new Date().toISOString()}if(n>=KC_DLMAX){kcDl=null;$('kcv').classList.remove('on');kcNoShot(false);var vb=$('kvb');if(vb)vb.innerHTML='';toast('Foto tersimpan ('+n+'/'+KC_DLMAX+') - foto kini hilang dari chat')}else toast('Foto tersimpan ('+n+'/'+KC_DLMAX+')');draw()}catch(e){toast('Gagal unduh, buka ulang foto')}}
+async function kcCountDl(id){var n=0,ok=false;try{var r=await sb.rpc('kaone_chat_foto_unduh',{p_id:String(id)});if(r&&!r.error&&r.data!=null){n=+r.data;ok=true}}catch(e){}
+if(!ok){n=kcDlLocal(id)+1;try{localStorage.setItem('kcDlN_'+id,String(n))}catch(e){}if(n>=KC_DLMAX){try{await sb.rpc('kaone_chat_foto_diunduh',{p_id:id})}catch(e){}}}return n}
 function kcLeft(m){var s=Math.max(0,new Date(m.kedaluwarsa_at).getTime()-Date.now());return s<60000?'<1 mnt':Math.ceil(s/60000)+' mnt'}
 function kcBersih(){try{sb.rpc('kaone_chat_foto_bersih').then(function(){},function(){})}catch(e){}}
 function kcSweep(){var ch=0;Object.keys(msgs).forEach(function(k){var m=msgs[k];if(m.tipe=='foto'&&!m.dihapus_at){if(m.hilang_at&&m.media_path&&m.pengirim==me&&!kGS['r'+m.id]){kGS['r'+m.id]=1;try{sb.storage.from('kaone-chat').remove([m.media_path]).then(function(){},function(){})}catch(e){}}
@@ -21151,7 +21175,8 @@ if(m.pengirim==me){h='Kamu mengubah nama panggilan menjadi <b>&ldquo;'+E(d.b)+'&
 else{h='<b>'+E(AL||d.a||(other&&P[other]&&P[other].nama)||'Lawan chat')+'</b> mengubah nama panggilannya menjadi <b>&ldquo;'+E(d.b)+'&rdquo;</b>';sub=''}}
 return '<div class="kcn'+(dr0&&!dn[m.id]?' in':'')+'" role="status"><div class="kcp"><span class="kci">'+ic('kedit')+'</span><span class="kcx">'+h+'</span></div><div class="kcs">'+(sub?sub+' &middot; ':'')+t+'</div></div>'}
 function bub(m){var nn=kNmNote(m);if(nn)return nn;var pvx,own=m.pengirim==me,c='',x=m.balas_ke&&msgs[m.balas_ke];if(m.dihapus_at)return '<div class="b'+(own?' me':'')+' del">'+ic('ban')+' Pesan ini sudah dihapus<div class="t">'+tm(m.dikirim_at)+'</div></div>';
-if(kcGone(m)){var ga=dr0&&dn[m.id]&&!kGS[m.id];kGS[m.id]=1;return '<div class="b'+(own?' me':'')+' del gone'+(ga?' ga':'')+'">'+ic('ban')+' Foto ini telah hilang otomatis<div class="t">'+tm(m.dikirim_at)+'</div></div>'}
+if(m.ditarik_at&&own)return '<div class="b me del">'+ic('ban')+' Anda menghapus pesan ini<div class="t">'+tm(m.dikirim_at)+'</div></div>';
+if(kcGone(m)){var ga=dr0&&dn[m.id]&&!kGS[m.id];if(ga&&!kcMk[m.id])kcMk[m.id]=Date.now();kGS[m.id]=1;if(!kcMkAlive(m.id))return '';var kel=Date.now()-kcMk[m.id];return '<div class="kgw'+(own?' me':'')+'" style="animation-delay:'+(KC_MKMS-700-kel)+'ms"><div class="b'+(own?' me':'')+' del gone'+(ga?' ga':'')+'">'+ic('ban')+' '+(kcHid(m)&&!own?'Foto ini Anda hapus':'Foto ini telah hilang otomatis')+'<div class="t">'+tm(m.dikirim_at)+'</div></div></div>'}
 if(m.tipe=='teks')c=kTxt(m);
 else if(m.tipe=='panggilan')c=kcCard(m,own);
 else{var lim=!own&&peran=='lawan'&&m.jumlah_lihat>=5,ik={foto:ic('image')+' Foto',video:ic('film')+' Video',suara:ic('wave')+' Pesan suara '+(m.media_durasi||0)+'d'}[m.tipe];
@@ -21160,7 +21185,7 @@ if(lim)c='<div class="md">Media sudah habis dilihat</div>';
 else if(m.tipe=='foto'&&(pvx=pvOf(m)))c='<div class="md pv" data-o="'+m.id+'"><div class="pw"><img alt="" src="'+pvx+'"></div><div class="cap">'+ic('image')+'<span class="kct">Foto'+sisa+'</span></div></div>';
 else c='<div class="md'+(m.tipe=='foto'?' ph':'')+'" data-o="'+m.id+'"><span class="kct">'+ik+sisa+'</span></div>'}
 var tk=own?'<i class="'+(m.dilihat_at?'r':'')+'">'+ic(m.diterima_at||m.dilihat_at?'check2':'check')+'</i>':'';
-var rx=chips(m);return '<div class="rw2'+(own?' me':'')+(rx?' hr':'')+(kS[m.id]?' sel':'')+(dr0&&!dn[m.id]?' pop':'')+'" data-mid="'+m.id+'"><div class="b'+(own?' me':'')+(kIsStk(m)?' stk':'')+(kGifId(m)?' gf':'')+'">'+(x?'<div class="q">'+E(x.dihapus_at?'Pesan ini sudah dihapus':x.tipe=='teks'?kPlain(x):'['+x.tipe+']')+'</div>':'')+c+'<div class="t">'+tm(m.dikirim_at)+tk+'</div>'+rx+'</div></div>'}
+var rx=chips(m);return '<div class="rw2'+(own?' me':'')+(rx?' hr':'')+(kS[m.id]?' sel':'')+(dr0&&!dn[m.id]?' pop':'')+'" data-mid="'+m.id+'"><div class="b'+(own?' me':'')+(kIsStk(m)?' stk':'')+(kGifId(m)?' gf':'')+'">'+(x?'<div class="q">'+E(x.dihapus_at||(x.ditarik_at&&x.pengirim==me)?'Pesan ini sudah dihapus':x.tipe=='teks'?kPlain(x):'['+x.tipe+']')+'</div>':'')+c+(m.ditarik_at&&!own?'<div class="kdl">'+ic('ban')+' Dihapus oleh '+E(kAlWho())+'</div>':'')+'<div class="t">'+tm(m.dikirim_at)+tk+'</div>'+rx+'</div></div>'}
 var kUnId=null,kUnN=0,kUnSet=false;
 function kDayLabel(d){var n=new Date(),t0=new Date(n.getFullYear(),n.getMonth(),n.getDate()),d0=new Date(d.getFullYear(),d.getMonth(),d.getDate()),dd=Math.round((t0-d0)/864e5);
 if(dd<=0)return 'Hari ini';if(dd==1)return 'Kemarin';
@@ -21332,7 +21357,7 @@ else if(t.closest('#kstx')||t.id=='kst')shut('kst');
 else if(t.closest('#kopx')||t.id=='kop')shut('kop');else if(t.closest('#kopu')){shut('kop');pfOpen();$('kpl').focus()}
 else if(t.closest('#kth'))$('ktm').classList.toggle('on');
 else if(t.dataset.t){th(t.dataset.t);menu();kTS(tema);$('ktm').classList.remove('on')}
-else if(t.dataset.r)rp(t.dataset.r);else if(t.dataset.d){if(confirm('Hapus pesan ini untuk semua?'))sb.rpc('kaone_chat_hapus',{p_id:t.dataset.d}).then(function(){var m=msgs[t.dataset.d];if(m){m.dihapus_at=new Date().toISOString();m.isi=m.media_path=null;draw()}sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}})})}
+else if(t.dataset.r)rp(t.dataset.r);else if(t.dataset.d){if(confirm('Hapus pesan ini?'))kcTarik(t.dataset.d).then(function(){draw();sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}})})}
 else if(t.closest('[data-o]'))buka(t.closest('[data-o]').dataset.o);else if(t.closest('#kvx')){$('kvb').innerHTML='';$('kcv').classList.remove('on')}
 else if(t.closest('#krx'))rp(null);else if(t.closest('#kat'))$('kf').click();
 else if(t.closest('#kcv1'))call(0);else if(t.closest('#kcv2'))call(1);else if(t.closest('#kcy'))jawab();else if(t.closest('#kkt'))kkTolak();else if(t.closest('#kcx'))kkEnd();else if(t.closest('#kcf'))flip();else if(t.closest('#kkm'))kkMute();else if(t.closest('#kkd'))kkCam();else if(t.closest('#kkz'))kkMini(1);else if(t.closest('#kkb'))kkMini(0);else if(t.dataset.cb!==undefined)call(+t.dataset.cb);else if(t.closest('#kav')||t.closest('#kpw'))opOpen();else if(t.closest('#kpd')){delFoto=!!(U[me]&&U[me].u);pend=null;pa()}else if(t.closest('#kpc'))$('kpfile').click();else if(t.closest('#kpx'))shut('kpf');else if(t.closest('#kps'))pfSave();else if(t.closest('#kcb'))shut('kcr');else if(t.closest('#kcp'))crPut()});
@@ -21434,7 +21459,7 @@ if(lo&&lo.on){$('kops').innerHTML='<span class="od on"></span>Online sekarang';$
 else if(lo&&lo.t){$('kops').innerHTML='<span class="od"></span>Terakhir online '+E(lastTxt(lo.t));var d=new Date(lo.t);$('kopd').textContent=isNaN(d)?'':d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+hm(d)}
 else{$('kops').innerHTML='<span class="od"></span>Belum ada info online';$('kopd').textContent=''}}
 function pkClose(){var k=$('kpk');if(k)k.classList.remove('on');if(pkEl){pkEl.classList.remove('lp');pkEl=null}pkId=null}
-function pkOpen(id,bEl){var m=msgs[id];if(!m||m.dihapus_at||!bEl)return;pkId=id;var k=$('kpk'),box=$('kpkb'),mine=(m.reaksi||{})[me],h='',own=m.pengirim==me;
+function pkOpen(id,bEl){var m=msgs[id];if(!m||m.dihapus_at||(m.ditarik_at&&m.pengirim==me)||!bEl)return;pkId=id;var k=$('kpk'),box=$('kpkb'),mine=(m.reaksi||{})[me],h='',own=m.pengirim==me;
 EM.forEach(function(e,i){h+='<button class="pe'+(mine==e?' sel':'')+'" data-e="'+e+'" style="animation-delay:'+(80+i*50)+'ms">'+e+'</button>'});
 $('kpke').innerHTML=h;$('kpksal').style.display=m.tipe=='teks'&&m.isi&&!kIsStk(m)&&!kGifId(m)?'':'none';
 if(pkEl)pkEl.classList.remove('lp');pkEl=bEl;bEl.classList.add('lp');
@@ -21481,14 +21506,18 @@ km.addEventListener('touchend',function(){fin(true)});km.addEventListener('touch
 })();
 /* ---- PILIH PESAN (tekan lama) + REAKSI GESER ---- */
 function selN(){return Object.keys(kS).length}
+async function kcTarik(id){var m=msgs[id];if(!m)return;if(m.pengirim==me){var r=null;try{r=await sb.rpc('kaone_chat_tarik',{p_id:String(id)})}catch(e){}
+if(r&&!r.error){m.ditarik_at=new Date().toISOString();return true}
+r=await sb.rpc('kaone_chat_hapus',{p_id:id});if(r&&r.error)return false;m.dihapus_at=new Date().toISOString();m.isi=m.media_path=null;return true}
+var h=kcHidSet();h[id]=1;try{localStorage.setItem('kcHide_'+me,JSON.stringify(h))}catch(e){}
+try{sb.rpc('kaone_chat_sembunyi',{p_id:String(id)}).then(function(){},function(){})}catch(e){}return true}
 function selUi(){var n=selN();$('kc').classList.toggle('sm',n>0);$('ksn').textContent=n+' dipilih'}
-function selTog(id,force,quiet){var m=msgs[id];if(!m||m.dihapus_at)return;if(m.pengirim!=me){if(!quiet)toast('Hanya pesan sendiri yang bisa dihapus');return}
+function selTog(id,force,quiet){var m=msgs[id];if(!m||m.dihapus_at||(m.ditarik_at&&m.pengirim==me))return;if(m.pengirim!=me&&!(m.tipe=='foto'&&peran!='lawan')){if(!quiet)toast('Hanya pesan sendiri yang bisa dihapus');return}
 var on=force==null?!kS[id]:force;if(on)kS[id]=1;else delete kS[id];var r=$('km').querySelector('[data-mid="'+id+'"]');if(r)r.classList.toggle('sel',on);selUi()}
 function selClear(){kS={};Array.prototype.forEach.call($('km').querySelectorAll('.rw2.sel'),function(r){r.classList.remove('sel')});if($('ksn'))selUi()}
 function kStart(id,b){if(selN()){selTog(id);return}pkOpen(id,b);selTog(id,true,true)}
-async function selDel(){var ids=Object.keys(kS);if(!ids.length)return;if(!confirm('Hapus '+ids.length+' pesan untuk semua?'))return;selClear();
-ids.forEach(function(id){var m=msgs[id];if(m){m.dihapus_at=new Date().toISOString();m.isi=m.media_path=null}});draw();
-var rs=await Promise.all(ids.map(function(id){return sb.rpc('kaone_chat_hapus',{p_id:id})}));if(rs.some(function(x){return x&&x.error}))toast('Sebagian pesan gagal dihapus');sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}})}
+async function selDel(){var ids=Object.keys(kS);if(!ids.length)return;var kOwn=ids.filter(function(i){return msgs[i]&&msgs[i].pengirim==me}).length,kRcv=ids.length-kOwn,kMsg=kRcv&&!kOwn?'Hapus '+(kRcv>1?kRcv+' foto':'foto ini')+' dari chat Anda? Lawan chat tidak terpengaruh.':kOwn&&!kRcv?'Hapus '+(kOwn>1?kOwn+' pesan':'pesan ini')+'? Lawan chat masih melihatnya dengan penanda "dihapus".':'Hapus '+ids.length+' item terpilih? Foto dari lawan chat hanya hilang di tampilan Anda; pesan Anda tetap terlihat lawan chat dengan penanda "dihapus".';if(!confirm(kMsg))return;selClear();
+var rs=await Promise.all(ids.map(function(id){return kcTarik(id)}));draw();if(rs.some(function(x){return !x}))toast('Sebagian pesan gagal dihapus');else if(kRcv&&!kOwn)toast('Foto dihapus dari chat Anda');sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}})}
 function pkPickB(e,el){if(kBusy)return;kBusy=true;el.classList.add('go');try{navigator.vibrate&&navigator.vibrate(10)}catch(x){}setTimeout(function(){kBusy=false;selClear();pkPick(e)},320)}
 (function(){var h=document.querySelector('#kc .h'),d=document.createElement('div');d.id='ksel';
 d.innerHTML='<button id="ksx" aria-label="Batal">'+ic('back')+'</button><b id="ksn"></b><button id="ksd" aria-label="Hapus pesan">'+ic('trash')+'</button>';h.appendChild(d);

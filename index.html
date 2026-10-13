@@ -23171,5 +23171,110 @@ header.topbar .sync-dot:focus-visible{outline-color:#241c06;}
   window.addEventListener('resize',later);
 })();
 </script>
+<style id="kwWeekCss">
+/* ===== Animasi strip "7 hari ke depan" (Beranda + jadwal Admin untuk Tim) =====
+   Satu momen terarah: saat strip pertama kali terlihat, hari-hari naik berurutan mulai dari Hari ini,
+   lencana jumlah job memantul menyusul, lalu kilap emas menyapu hari yang punya job. Setelah itu diam,
+   kecuali cincin lembut di Hari ini yang berdenyut tiga kali. */
+.dash-week .dw-day,#lh .lh-week .lh-day{position:relative;overflow:hidden;isolation:isolate}
+:is(.dash-week,#lh .lh-week)>:nth-child(1){--kw:0}
+:is(.dash-week,#lh .lh-week)>:nth-child(2){--kw:1}
+:is(.dash-week,#lh .lh-week)>:nth-child(3){--kw:2}
+:is(.dash-week,#lh .lh-week)>:nth-child(4){--kw:3}
+:is(.dash-week,#lh .lh-week)>:nth-child(5){--kw:4}
+:is(.dash-week,#lh .lh-week)>:nth-child(6){--kw:5}
+:is(.dash-week,#lh .lh-week)>:nth-child(7){--kw:6}
+
+/* kilap */
+.dash-week .dw-day::before,#lh .lh-week .lh-day::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transform:translateX(-110%);background:linear-gradient(105deg,transparent 30%,rgba(255,196,0,.38) 50%,transparent 70%)}
+
+/* tahan dulu selagi strip belum terlihat */
+.dash-week.kw-hold .dw-day,#lh .lh-week.kw-hold .lh-day{opacity:0}
+
+/* masuk berurutan */
+.dash-week.kw-play .dw-day,#lh .lh-week.kw-play .lh-day{animation:kwRise .64s ease-out calc(var(--kw)*70ms) backwards}
+.dash-week.kw-play .dw-c:not(.none),#lh .lh-week.kw-play .lh-day .c:not(.none){animation:kwPop .52s cubic-bezier(.34,1.56,.64,1) calc(var(--kw)*70ms + 300ms) backwards}
+.dash-week.kw-play .dw-day.kw-has::before,#lh .lh-week.kw-play .lh-day.has::before{animation:kwSweep .95s ease-out calc(var(--kw)*70ms + 480ms) backwards}
+
+/* hari ini */
+.dash-week.kw-play .dw-day.today,#lh .lh-week.kw-play .lh-day.today{animation:kwRise .64s ease-out calc(var(--kw)*70ms) backwards,kwBreath 2.4s ease-in-out 1.3s 3}
+.dash-week:not(.kw-play) .dw-day.today{animation:kwBreath 2.4s ease-in-out 1s 3}
+
+/* sentuhan */
+.dash-week .dw-c,#lh .lh-week .lh-day .c{transition:transform .26s cubic-bezier(.34,1.56,.64,1)}
+.dash-week .dw-day:active,#lh .lh-week .lh-day:active{transform:scale(.9)}
+.dash-week .dw-day:active .dw-c,#lh .lh-week .lh-day:active .c{transform:scale(1.22)}
+
+@keyframes kwRise{
+  0%{opacity:0;transform:translateY(18px) scale(.86)}
+  55%{opacity:1;transform:translateY(-4px) scale(1.04)}
+  100%{opacity:1;transform:none}
+}
+@keyframes kwPop{
+  0%{transform:scale(0);opacity:0}
+  100%{transform:scale(1);opacity:1}
+}
+@keyframes kwSweep{
+  0%{opacity:1;transform:translateX(-110%)}
+  100%{opacity:1;transform:translateX(110%)}
+}
+@keyframes kwBreath{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,196,0,0)}
+  50%{box-shadow:0 0 0 6px rgba(255,196,0,.30)}
+}
+@keyframes kwBreathLh{
+  0%,100%{box-shadow:inset 0 0 0 2px #FFC400,0 0 0 0 rgba(255,196,0,0)}
+  50%{box-shadow:inset 0 0 0 2px #FFC400,0 0 0 6px rgba(255,196,0,.30)}
+}
+#lh .lh-week.kw-play .lh-day.today{animation:kwRise .64s ease-out calc(var(--kw)*70ms) backwards,kwBreathLh 2.4s ease-in-out 1.3s 3}
+#lh .lh-week:not(.kw-play) .lh-day.today{animation:kwBreathLh 2.4s ease-in-out 1s 3}
+
+@media (prefers-reduced-motion:reduce){
+  .dash-week .dw-day,.dash-week .dw-c,#lh .lh-week .lh-day,#lh .lh-week .lh-day .c{animation:none!important;opacity:1!important}
+  .dash-week .dw-day::before,#lh .lh-week .lh-day::before{display:none}
+}
+</style>
+<script id="kwWeekJs">
+/* Memicu animasi strip 7 hari hanya saat strip baru muncul dan benar-benar terlihat.
+   Render ulang yang berdekatan (sinkron data, ganti tab) tidak memutar ulang animasinya. */
+(function(){
+  var SEL='.dash-week,#lh .lh-week', GAP=12000, last=0, io=null;
+  var calm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function inView(el){
+    var r=el.getBoundingClientRect(), h=window.innerHeight||document.documentElement.clientHeight;
+    return r.width>0 && r.bottom>0 && r.top<h-20;
+  }
+  function play(el){
+    if(el.__kwDone) return; el.__kwDone=1; last=Date.now();
+    el.classList.remove('kw-hold'); void el.offsetWidth; el.classList.add('kw-play');
+  }
+  function prep(el){
+    if(el.__kwSeen) return; el.__kwSeen=1;
+    if(calm || Date.now()-last<GAP) return;
+    var ds=el.querySelectorAll('.dw-day');
+    for(var i=0;i<ds.length;i++){ if(ds[i].querySelector('.dw-c:not(.none)')) ds[i].classList.add('kw-has'); }
+    if(el.getClientRects().length && inView(el)){ play(el); return; }
+    if(!('IntersectionObserver' in window)) return;
+    el.classList.add('kw-hold');
+    if(!io) io=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(!e.isIntersecting) return;
+        io.unobserve(e.target);
+        if(Date.now()-last<GAP) e.target.classList.remove('kw-hold'); else play(e.target);
+      });
+    },{threshold:.6});
+    io.observe(el);
+  }
+  function scan(n){
+    if(!n || n.nodeType!==1) return;
+    if(n.matches && n.matches(SEL)) prep(n);
+    else if(n.querySelectorAll){ var l=n.querySelectorAll(SEL); for(var i=0;i<l.length;i++) prep(l[i]); }
+  }
+  new MutationObserver(function(ms){
+    for(var i=0;i<ms.length;i++){ var a=ms[i].addedNodes; for(var j=0;j<a.length;j++) scan(a[j]); }
+  }).observe(document.body,{childList:true,subtree:true});
+  scan(document.body);
+})();
+</script>
 </body>
 </html>

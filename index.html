@@ -3613,6 +3613,17 @@
 .kp-t.kp-berjalan .kp-n::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid #f59e0b;animation:kpPulse 1.8s ease-out infinite}
 @keyframes kpPulse{from{transform:scale(.8);opacity:.9}to{transform:scale(1.4);opacity:0}}
 .kp-t.kp-belum{opacity:.72}
+/* Tahap BERIKUTNYA (menunggu giliran): tidak diredupkan, ada cincin berdenyut halus + titik tiga bergerak */
+.kp-t.kp-next{opacity:1;border-color:#86d9a8;background:#f4fcf7;color:#14532d;animation:kpGlow 2.4s ease-in-out infinite}
+.kp-t.kp-next .kp-n{border-color:#16a34a;color:#15803d;background:#fff}
+.kp-t.kp-next .kp-n::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid #16a34a;animation:kpPulse 2.2s ease-out infinite}
+.kp-t.kp-next small{color:#15803d;font-weight:700}
+@keyframes kpGlow{0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}50%{box-shadow:0 0 0 4px rgba(22,163,74,.14)}}
+.kp-dots{display:inline-flex;gap:2px;margin-left:4px;vertical-align:middle}
+.kp-dots i{width:3.5px;height:3.5px;border-radius:50%;background:currentColor;animation:kpDot 1.2s ease-in-out infinite}
+.kp-dots i:nth-child(2){animation-delay:.18s}.kp-dots i:nth-child(3){animation-delay:.36s}
+@keyframes kpDot{0%,70%,100%{opacity:.25;transform:translateY(0)}35%{opacity:1;transform:translateY(-2px)}}
+.kp-seg i.kp-next{background:linear-gradient(90deg,#86d9a8,#bbf0cf,#86d9a8);background-size:220% 100%;animation:kpShim 2s linear infinite}
 .kp-link{display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.1);font-size:12.5px;cursor:pointer}
 .kp-link span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kp-link svg{flex:none;opacity:.65}
 .kp-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
@@ -3620,7 +3631,7 @@
 .kp-btn:active{transform:scale(.97)}
 .kp-wa{flex:1 1 100%;border-color:transparent;color:#fff;background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 8px 18px -10px rgba(22,163,74,.75)}
 .kp-sk{border-radius:10px;background:linear-gradient(90deg,rgba(127,127,127,.12) 25%,rgba(127,127,127,.24) 50%,rgba(127,127,127,.12) 75%);background-size:200% 100%;animation:kpSk 1.2s linear infinite}@keyframes kpSk{from{background-position:200% 0}to{background-position:-200% 0}}
-@media (prefers-reduced-motion:reduce){.kp-anim .kp-fg,.kp-anim .kp-seg i.kp-selesai,.kp-seg i.kp-berjalan,.kp-more.open .kp-t,.kp-t.kp-berjalan .kp-n::after,.kp-sk{animation:none!important}.kp-anim .kp-fg{stroke-dashoffset:var(--off,226.2)}.kp-more{transition:none}}
+@media (prefers-reduced-motion:reduce){.kp-anim .kp-fg,.kp-anim .kp-seg i.kp-selesai,.kp-seg i.kp-berjalan,.kp-seg i.kp-next,.kp-more.open .kp-t,.kp-t.kp-berjalan .kp-n::after,.kp-t.kp-next,.kp-t.kp-next .kp-n::after,.kp-dots i,.kp-sk{animation:none!important}.kp-anim .kp-fg{stroke-dashoffset:var(--off,226.2)}.kp-more{transition:none}}
 .km-sub{font-size:13px;color:var(--ink-soft,#666);margin:6px 0}
 .km-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .km-chip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;border:1px solid var(--line,#ddd);color:var(--ink-soft,#777);background:transparent}
@@ -5453,13 +5464,15 @@ function kmBoxHtml(j){
     const done=ks.filter(k=>sts(k)==='selesai').length, pct=ks.length?Math.round(done/ks.length*100):0;
     const cur=ks.find(k=>sts(k)==='berjalan')||ks.find(k=>sts(k)==='belum')||null;
     const jalan=ks.filter(k=>sts(k)==='berjalan');
+    const nxt=(!jalan.length&&cur&&sts(cur)==='belum')?cur:null;   // tahap berikutnya yang masih menunggu giliran
+    const dots='<span class="kp-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
     const semua=ks.length>0&&done===ks.length;
     kpAnim=!kpSudah[j.id]&&ks.length>0; if(ks.length) kpSudah[j.id]=1;
     if(kpAnim) setTimeout(()=>kpCount(j.id),40);
     const buka=kpBuka[j.id]!==0, off=(226.2*(1-pct/100)).toFixed(1);
     const stTxt={selesai:'Selesai',berjalan:'Berjalan',belum:'Menunggu'};
-    const tiles=ks.map((k,i)=>`<li class="kp-t kp-${sts(k)}" style="--i:${i}"><span class="kp-n">${sts(k)==='selesai'?KP_CEK:kpSvg(KP_IKON[k]||'<circle cx="12" cy="12" r="3"/>',14,2.2)}</span><span class="kp-tx"><b>${KM_LABEL[k]}</b><small>${stTxt[sts(k)]}</small></span></li>`).join('');
-    const segs=ks.map((k,i)=>`<i class="kp-${sts(k)}" style="--i:${i}" title="${KM_LABEL[k]}"></i>`).join('');
+    const tiles=ks.map((k,i)=>`<li class="kp-t kp-${sts(k)}${k===nxt?' kp-next':''}" style="--i:${i}"><span class="kp-n">${sts(k)==='selesai'?KP_CEK:kpSvg(KP_IKON[k]||'<circle cx="12" cy="12" r="3"/>',14,2.2)}</span><span class="kp-tx"><b>${KM_LABEL[k]}</b><small>${stTxt[sts(k)]}${(k===nxt||sts(k)==='berjalan')?dots:''}</small></span></li>`).join('');
+    const segs=ks.map((k,i)=>`<i class="kp-${sts(k)}${k===nxt?' kp-next':''}" style="--i:${i}" title="${KM_LABEL[k]}"></i>`).join('');
     const label=semua?'Status':(cur?(sts(cur)==='berjalan'?'Sedang dikerjakan':'Berikutnya'):'Status');
     const nama=semua?'Semua tahap selesai':(cur?KM_LABEL[cur]:'-');
     const kepala=!ks.length
@@ -18071,6 +18084,7 @@ const CHANGELOG = [
     version: '1.19.1',
     tanggal: '13 Oktober 2026',
     items: [
+      { kategori: 'Peningkatan', teks: 'Di kotak Progres Foto (Detail Job), tahap berikutnya yang masih menunggu kini diberi penanda bergerak: kotak menyala lembut, ikonnya berdenyut, ada titik tiga yang bergerak di samping tulisan "Menunggu", dan batang tahapnya berkilau pelan. Tahap yang sedang berjalan juga mendapat titik bergerak yang sama, jadi langsung terlihat sampai mana prosesnya.' },
       { kategori: 'Perubahan', teks: 'Kwitansi PDF dan gambar didesain ulang: header berwarna sesuai jenis acara, kartu detail pesanan, daftar isi paket dengan centang, batang progres pembayaran, kotak Sisa Pembayaran yang besar, cap LUNAS otomatis, dan kode QR verifikasi di bagian bawah. Kode kwitansi kini unik dan tetap, tidak berubah walau ada job baru atau tanggal acara diganti. Contohnya KMT-26W-K7M4Q-3: tahun, jenis acara, lima karakter acak, dan satu karakter cek. Huruf yang mudah tertukar seperti 0/O dan 1/I/L tidak dipakai. Kwitansi PDF kini selalu satu halaman. Saat tombol cetak ditekan, tampil animasi proses pembuatan kwitansi, dan untuk gambar muncul pratinjau hasilnya.' },
       { kategori: 'Perubahan', teks: 'Kartu Tagihan hari H didesain ulang: nominal besar yang berhitung naik, penanda waktu, batang progres DP, rincian ala struk, serta tombol Salin pesan dan WhatsApp klien yang lebih jelas. Akun Tim tetap hanya melihat sisa yang ditagih.' },
       { kategori: 'Perubahan', teks: 'Biodata di Detail Job tampil lebih rapi: tiap bagian punya kartu dan ikon sendiri, status berupa label berwarna, link Maps dan Instagram bisa langsung diketuk, nominal keuangan rata kanan, dan Catatan punya kotak tersendiri, lengkap dengan animasi halus saat muncul.' },

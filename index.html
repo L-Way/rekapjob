@@ -1100,87 +1100,225 @@
   .job-poster.jp-compact3 .jp-section-head .jp-ico{width:30px; height:30px;}
   .job-poster.jp-compact3 .jp-section-head .txt{font-size:17px;}
 
-  /* ---------- POSTER UNDUHAN KWITANSI (GAMBAR, 1080x1350) ----------
-     Desain resi/invoice yang proper untuk dikirim ke klien lewat WA/gambar -
-     terpisah dari versi PDF (yang dibuat teks vektor lewat jsPDF). Sengaja HANYA
-     memuat info yang relevan buat klien (sama seperti versi PDF): paket, isi/deskripsi
-     paket, harga paket, diskon, total tagihan, DP, sisa, status bayar - tanpa
-     biaya/keuntungan internal. */
-  .kwitansi-poster{
-    width:1080px; height:1350px; position:relative; overflow:hidden;
-    background:linear-gradient(165deg,#FFFBEA 0%,#fffaeb 55%,#fdf6e0 100%);
-    font-family:'Bricolage Grotesque',system-ui,sans-serif; color:#241c06; box-sizing:border-box;
+  /* ---------- POSTER UNDUHAN KWITANSI (GAMBAR PNG) - desain v3 ----------
+     Lebar tetap 1080 px, tinggi mengikuti isi (minimal 1350). Dirender html2canvas:
+     TANPA animasi, color-mix, clip-path, filter. Warna turunan datang dari variabel
+     --kr-* yang diisi per Jenis Acara. Hanya info relevan untuk klien (tanpa data
+     keuangan internal), sama dengan versi PDF. */
+  .kr-poster{
+    width:1080px; min-height:1350px; position:relative; box-sizing:border-box; padding:48px;
+    background:var(--kr-page,#fff4d1); color:#241c06;
+    font-family:'Bricolage Grotesque',system-ui,sans-serif;
   }
-  .kwitansi-poster .kw-watermark{
-    position:absolute; inset:0; opacity:.05; pointer-events:none;
-    background:
-      radial-gradient(circle at 12% 8%, var(--jp-accent,#FFC400) 0%, transparent 40%),
-      radial-gradient(circle at 92% 96%, var(--jp-accent,#FFC400) 0%, transparent 42%);
+  .kr-sheet{
+    position:relative; background:#fff; border-radius:44px; overflow:hidden;
+    box-shadow:0 18px 50px rgba(36,28,6,.16), 0 2px 6px rgba(36,28,6,.06);
   }
-  .kwitansi-poster .kw-topbar{position:relative; display:flex; align-items:center; gap:26px; padding:64px 72px 0; box-sizing:border-box;}
-  .kwitansi-poster .kw-badge{
-    width:92px; height:92px; border-radius:50%; flex-shrink:0;
-    background:linear-gradient(135deg,var(--jp-hdr2,#332750),var(--jp-hdr1,#1c1530));
-    color:var(--jp-accent,#FFC400);
+  .kr-head{
+    position:relative; overflow:hidden; padding:44px 56px 40px;
+    background:linear-gradient(135deg,var(--kr-d1),var(--kr-d2));
+  }
+  .kr-head::before{
+    content:''; position:absolute; right:-130px; top:-150px; width:480px; height:480px; border-radius:50%;
+    background:radial-gradient(circle at 40% 40%, var(--kr-ac) 0%, transparent 68%); opacity:.28;
+  }
+  .kr-head::after{
+    content:''; position:absolute; left:-110px; bottom:-190px; width:360px; height:360px; border-radius:50%;
+    border:2px solid var(--kr-a35); opacity:.55;
+  }
+  .kr-top{position:relative; display:flex; align-items:center; gap:22px;}
+  .kr-logo{
+    width:84px; height:84px; flex-shrink:0; border-radius:24px; box-sizing:border-box;
+    background:rgba(255,255,255,.08); border:2px solid var(--kr-a35);
     display:flex; align-items:center; justify-content:center;
-    font-family:'Bricolage Grotesque',system-ui,sans-serif; font-weight:700; font-size:34px;
-    box-shadow:inset 0 0 0 3px rgba(255,255,255,.12);
   }
-  .kwitansi-poster .kw-brand-name{font-family:'Bricolage Grotesque',system-ui,sans-serif; font-weight:700; font-size:30px; color:#241f0f; line-height:1.25;}
-  .kwitansi-poster .kw-brand-tag{font-size:14px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-soft); margin-top:4px;}
-  .kwitansi-poster .kw-doc-badge{margin-left:auto; text-align:right;}
-  .kwitansi-poster .kw-doc-title{font-family:'Bricolage Grotesque',system-ui,sans-serif; font-weight:700; font-size:30px; letter-spacing:3px; color:var(--jp-hdr2,#332750);}
-  .kwitansi-poster .kw-doc-no{font-size:15px; color:var(--ink-soft); margin-top:6px; letter-spacing:.5px;}
-  .kwitansi-poster .kw-rule{height:2px; margin:40px 72px 0; background:linear-gradient(90deg,var(--jp-accent,#FFC400),transparent);}
-  .kwitansi-poster .kw-client-block{position:relative; padding:36px 72px 0; box-sizing:border-box;}
-  .kwitansi-poster .kw-kicker{font-size:15px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--jp-accent,#b8860b);}
-  .kwitansi-poster .kw-client-name{font-family:'Bricolage Grotesque',system-ui,sans-serif; font-weight:700; font-size:52px; line-height:1.2; color:#201c0d; margin-top:10px; word-break:break-word;}
-  .kwitansi-poster .kw-meta-row{display:flex; align-items:center; gap:14px; margin-top:14px; font-size:19px; color:var(--ink-soft); flex-wrap:wrap;}
-  .kwitansi-poster .kw-meta-row .sep{width:6px; height:6px; border-radius:50%; background:var(--jp-accent,#FFC400); flex-shrink:0;}
-  .kwitansi-poster .kw-body{position:relative; padding:40px 72px 0; box-sizing:border-box;}
-  .kwitansi-poster .kw-package{
-    margin-bottom:24px; padding:18px 22px; border-radius:14px;
-    background:var(--jp-soft,#f6f1e2); border:1px solid var(--line);
-    border-left:4px solid var(--jp-accent,#FFC400); box-sizing:border-box;
+  .kr-brand{font-weight:800; font-size:36px; line-height:1.1; color:#fff; letter-spacing:-.5px;}
+  .kr-tag{margin-top:7px; font-size:16px; font-weight:600; letter-spacing:4px; text-transform:uppercase; color:var(--kr-ac);}
+  .kr-doc{margin-left:auto; text-align:right;}
+  .kr-doc-t{font-size:23px; font-weight:800; letter-spacing:7px; color:var(--kr-ac);}
+  .kr-doc-n{margin-top:8px; font-size:23px; font-weight:600; letter-spacing:.5px; color:#fff;}
+  .kr-who{position:relative; margin-top:34px;}
+  .kr-kick{font-size:19px; font-weight:700; letter-spacing:5px; text-transform:uppercase; color:var(--kr-ac);}
+  .kr-name{margin-top:10px; font-size:60px; font-weight:800; line-height:1.12; letter-spacing:-1px; color:#fff; word-break:break-word;}
+  .kr-stripe{height:8px; background:linear-gradient(90deg,var(--kr-ac),var(--kr-a35));}
+
+  .kr-body{padding:38px 56px 4px;}
+  .kr-sec{margin-bottom:30px; position:relative;}
+  .kr-sh{display:flex; align-items:center; gap:14px; margin-bottom:18px;}
+  .kr-sh-ic{width:46px; height:46px; flex-shrink:0; border-radius:15px; background:var(--kr-a18); display:flex; align-items:center; justify-content:center;}
+  .kr-sh-t{font-size:21px; font-weight:800; letter-spacing:4px; text-transform:uppercase; color:var(--kr-d2); white-space:nowrap;}
+  .kr-sh-l{flex:1; height:2px; background:var(--kr-a35);}
+
+  .kr-tiles{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  .kr-tile{
+    display:flex; align-items:center; gap:20px; min-width:0; box-sizing:border-box;
+    padding:17px 22px; border-radius:24px; background:var(--kr-a10); border:2px solid var(--kr-a18);
   }
-  .kwitansi-poster .kw-package-label{
-    font-size:12.5px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase;
-    color:var(--jp-hdr2,#332750); margin-bottom:6px;
+  .kr-tile.wide{grid-column:1 / -1;}
+  .kr-tile-ic{width:56px; height:56px; flex-shrink:0; border-radius:50%; background:var(--kr-ac); display:flex; align-items:center; justify-content:center;}
+  .kr-tile-tx{min-width:0;}
+  .kr-tile-l{font-size:17px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--ink-soft);}
+  .kr-tile-v{margin-top:5px; font-size:28px; font-weight:700; line-height:1.25; color:#241c06; word-break:break-word;}
+
+  .kr-items{
+    display:grid; grid-template-columns:1fr; gap:12px 24px; box-sizing:border-box;
+    padding:24px 28px; border-radius:28px; background:var(--kr-a10); border:2px solid var(--kr-a18);
   }
-  .kwitansi-poster .kw-package-text{font-size:17px; line-height:1.55; color:#3a3423; word-break:break-word;}
-  .kwitansi-poster .kw-items{list-style:none; margin:0; padding:0; font-size:18px; line-height:1.4; color:#2f2a18; font-weight:600;}
-  .kwitansi-poster .kw-items li{position:relative; padding:3px 0 3px 22px; word-break:break-word;}
-  .kwitansi-poster .kw-items li::before{content:''; position:absolute; left:2px; top:13px; width:8px; height:8px; border-radius:50%; background:var(--jp-accent,#FFC400);}
-  .kwitansi-poster .kw-row{display:flex; justify-content:space-between; align-items:baseline; gap:20px; padding:16px 0; border-bottom:1px solid var(--line);}
-  .kwitansi-poster .kw-row .kw-label{font-size:19px; color:var(--ink-soft); font-weight:600;}
-  .kwitansi-poster .kw-row .kw-value{font-size:23px; font-weight:600; color:#241f0f; text-align:right;}
-  .kwitansi-poster .kw-row.kw-highlight{border-bottom:2px solid var(--jp-accent,#FFC400); padding:20px 0;}
-  .kwitansi-poster .kw-row.kw-highlight .kw-label,
-  .kwitansi-poster .kw-row.kw-highlight .kw-value{font-size:27px; font-weight:700; color:var(--jp-hdr2,#332750);}
-  .kwitansi-poster .kw-status-row{display:flex; justify-content:space-between; align-items:center; margin-top:26px;}
-  .kwitansi-poster .kw-status-label{font-size:17px; color:var(--ink-soft); font-weight:600;}
-  .kwitansi-poster .kw-status-badge{background:var(--jp-accent,#FFC400); color:#241f0f; font-weight:700; font-size:16px; padding:8px 22px; border-radius:999px; white-space:nowrap;}
-  .kwitansi-poster .kw-note{margin-top:22px; font-size:16px; font-style:italic; color:var(--ink-soft); line-height:1.5; word-break:break-word;}
-  .kwitansi-poster .kw-footer{position:absolute; left:0; right:0; bottom:52px; text-align:center; padding:0 72px; box-sizing:border-box;}
-  .kwitansi-poster .kw-footer-line{height:1px; margin-bottom:16px; background:linear-gradient(90deg,transparent,var(--jp-accent,#FFC400),transparent); opacity:.6;}
-  .kwitansi-poster .kw-footer-brand{font-family:'Bricolage Grotesque',system-ui,sans-serif; font-size:17px; font-weight:600; color:#241f0f; margin-bottom:6px;}
-  .kwitansi-poster .kw-footer-text{font-size:14px; color:var(--ink-soft); letter-spacing:.3px;}
-  .kwitansi-poster .kw-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:14px; background:linear-gradient(90deg,var(--jp-hdr1,#1c1530),var(--jp-accent,#FFC400),var(--jp-hdr2,#332750));}
-  /* QR di kwitansi versi gambar */
-  .kwitansi-poster .kw-package.has-qr{display:flex; align-items:center; gap:28px; padding:14px 16px 14px 22px; margin-bottom:18px;}
-  .kwitansi-poster .kw-package-main{flex:1; min-width:0;}
-  .kwitansi-poster .kw-package-hint{margin-top:12px; font-size:14.5px; font-weight:600; line-height:1.45; color:var(--jp-hdr2,#332750);}
-  .kwitansi-poster .kw-qr{flex-shrink:0;}
-  .kwitansi-poster .kw-qr-box{background:#fff; padding:10px; border-radius:16px; border:1px solid var(--line); box-shadow:0 6px 18px rgba(36,31,15,.08); line-height:0; display:block;}
-  .kwitansi-poster .kw-qr-box img{display:block;}
-  /* Dipasang otomatis (lihat kwFitPoster) kalau isi poster hampir menabrak footer */
-  .kwitansi-poster.kw-compact .kw-body{padding-top:28px;}
-  .kwitansi-poster.kw-compact .kw-row{padding:10px 0;}
-  .kwitansi-poster.kw-compact .kw-row.kw-highlight{padding:13px 0;}
-  .kwitansi-poster.kw-compact .kw-status-row{margin-top:16px;}
-  .kwitansi-poster.kw-compact .kw-note{margin-top:12px;}
-  .kwitansi-poster.kw-compact2 .kw-client-name{font-size:42px;}
-  .kwitansi-poster.kw-compact2 .kw-client-block{padding-top:24px;}
+  .kr-items.two{grid-template-columns:1fr 1fr;}
+  .kr-item{display:flex; align-items:flex-start; gap:14px; min-width:0; font-size:25px; font-weight:600; line-height:1.3; color:#2f2a18; word-break:break-word;}
+  .kr-chk{width:34px; height:34px; flex-shrink:0; margin-top:0; border-radius:50%; background:var(--kr-ac); display:flex; align-items:center; justify-content:center;}
+  .kr-ptext{padding:28px 32px; border-radius:28px; background:var(--kr-a10); border:2px solid var(--kr-a18); font-size:25px; line-height:1.5; color:#3a3423; word-break:break-word;}
+
+  /* garis sobek ala struk: dua lekukan di tepi kiri-kanan */
+  .kr-perf{position:relative; height:0; margin:2px -56px 36px; border-top:3px dashed var(--kr-a35);}
+  .kr-perf::before, .kr-perf::after{content:''; position:absolute; top:-27px; width:54px; height:54px; border-radius:50%; background:var(--kr-page,#fff4d1);}
+  .kr-perf::before{left:-27px;}
+  .kr-perf::after{right:-27px;}
+
+  .kr-pay.lunas .kr-sh{margin-bottom:44px;}
+  .kr-stamp{
+    position:absolute; right:10px; top:-18px; transform:rotate(-9deg);
+    border:6px solid #1f8a4c; border-radius:18px; padding:4px 26px; background:rgba(255,255,255,.7);
+    color:#1f8a4c; font-size:44px; font-weight:800; letter-spacing:8px; opacity:.9;
+  }
+  .kr-prog{margin-bottom:16px;}
+  .kr-prog-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; font-size:21px; font-weight:700; color:var(--ink-soft);}
+  .kr-prog-top b{font-size:27px; font-weight:800; color:var(--kr-d2);}
+  .kr-track{height:22px; border-radius:999px; overflow:hidden; background:var(--kr-a18);}
+  .kr-fill{height:100%; border-radius:999px; background:linear-gradient(90deg,var(--kr-d2),var(--kr-ac));}
+  .kr-row{display:flex; justify-content:space-between; align-items:baseline; gap:20px; padding:13px 0; border-bottom:2px dashed var(--kr-a18);}
+  .kr-row .l{font-size:25px; font-weight:600; color:var(--ink-soft);}
+  .kr-row .v{font-size:29px; font-weight:700; color:#241c06; text-align:right; white-space:nowrap;}
+  .kr-row.disc .v{color:#1f8a4c;}
+  .kr-row.total{border-bottom:2px dashed var(--kr-a18); border-top:3px solid var(--kr-d2);}
+  .kr-row.total .l{font-size:27px; font-weight:800; color:var(--kr-d1);}
+  .kr-row.total .v{font-size:34px; font-weight:800; color:var(--kr-d1);}
+  .kr-row.last{border-bottom:none;}
+  .kr-due{
+    margin-top:20px; display:flex; align-items:center; justify-content:space-between; gap:24px; box-sizing:border-box;
+    padding:26px 34px; border-radius:30px; background:linear-gradient(135deg,var(--kr-d1),var(--kr-d2));
+  }
+  .kr-due.ok{background:linear-gradient(135deg,#0f5a33,#1f8a4c);}
+  .kr-due-l{font-size:19px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--kr-ac);}
+  .kr-due.ok .kr-due-l{color:#b8f0cf;}
+  .kr-due-v{margin-top:8px; font-size:60px; font-weight:800; line-height:1.05; letter-spacing:-1px; color:#fff; white-space:nowrap;}
+  .kr-st{text-align:right; flex-shrink:0;}
+  .kr-st-l{margin-bottom:10px; font-size:15px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,.72);}
+  .kr-pill{display:inline-block; padding:12px 28px; border-radius:999px; background:#fff; color:#7a4a06; font-size:24px; font-weight:800; white-space:nowrap;}
+  .kr-pill.ok{color:#14673b;}
+
+  .kr-note{margin-bottom:18px; padding:20px 26px; border-radius:20px; background:var(--kr-a10); border-left:6px solid var(--kr-ac); font-size:23px; line-height:1.5; color:var(--ink-soft); word-break:break-word;}
+  .kr-note b{color:#241c06; font-size:20px; letter-spacing:2px; text-transform:uppercase;}
+  .kr-link{margin-bottom:18px; display:flex; align-items:center; gap:18px; padding:20px 26px; border-radius:22px; background:var(--kr-a10); border:2px solid var(--kr-a18);}
+  .kr-link-ic{width:54px; height:54px; flex-shrink:0; border-radius:50%; background:var(--kr-ac); display:flex; align-items:center; justify-content:center;}
+  .kr-link-t{font-size:21px; font-weight:800; color:var(--kr-d2);}
+  .kr-link-u{margin-top:4px; font-size:21px; font-weight:600; color:#1d4fa8; word-break:break-all;}
+  .kr-verify{margin-bottom:18px; display:flex; align-items:center; gap:32px; padding:22px 28px; border-radius:30px; background:var(--kr-a10); border:2px solid var(--kr-a18);}
+  .kr-qr{flex-shrink:0; padding:12px; border-radius:22px; background:#fff; border:2px solid var(--kr-a18); line-height:0;}
+  .kr-qr img{display:block;}
+  .kr-vx{min-width:0;}
+  .kr-vt{display:flex; align-items:center; gap:14px; font-size:31px; font-weight:800; line-height:1.15; color:var(--kr-d2);}
+  .kr-vp{margin-top:12px; font-size:23px; font-weight:500; line-height:1.45; color:var(--ink-soft);}
+
+  .kr-foot{padding:20px 56px 32px; text-align:center;}
+  .kr-foot-t{font-size:31px; font-weight:800; color:var(--kr-d2);}
+  .kr-foot-s{margin-top:8px; font-size:20px; letter-spacing:.4px; color:var(--ink-soft);}
+  .kr-bar{height:16px; background:linear-gradient(90deg,var(--kr-d1),var(--kr-ac),var(--kr-d2));}
+
+  /* ---------- ANIMASI PROSES PEMBUATAN KWITANSI (tampil di layar, bukan di file) ---------- */
+  .kg-ov{
+    position:fixed; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center; padding:20px;
+    background:rgba(20,17,5,.62); opacity:0; transition:opacity .22s ease;
+  }
+  .kg-ov.show{opacity:1;}
+  .kg-card{
+    width:100%; max-width:380px; max-height:92vh; overflow:auto; box-sizing:border-box;
+    padding:30px 26px 24px; border-radius:30px; background:#fff; text-align:center;
+    box-shadow:0 30px 80px rgba(0,0,0,.4);
+    opacity:0; transform:translateY(18px) scale(.94);
+    transition:transform .45s cubic-bezier(.2,.9,.25,1.15), opacity .25s ease;
+  }
+  .kg-ov.show .kg-card{opacity:1; transform:none;}
+  .kg-title{font-size:19px; font-weight:800; letter-spacing:-.3px; color:#241c06;}
+  .kg-sub{margin-top:5px; font-size:13px; line-height:1.45; color:var(--ink-soft);}
+  .kg-file{margin-top:6px; font-size:12px; font-weight:600; color:var(--kg-d2); word-break:break-all;}
+
+  /* printer + kertas yang keluar */
+  .kg-stage{position:relative; width:176px; height:150px; margin:0 auto 16px;}
+  .kg-slot{
+    position:relative; z-index:2; height:30px; border-radius:15px;
+    background:linear-gradient(135deg,var(--kg-d1),var(--kg-d2)); box-shadow:0 8px 18px rgba(0,0,0,.25);
+  }
+  .kg-slot::after{content:''; position:absolute; left:14px; right:34px; bottom:7px; height:5px; border-radius:3px; background:rgba(0,0,0,.55);}
+  .kg-led{position:absolute; right:15px; top:11px; width:8px; height:8px; border-radius:50%; background:var(--kg-a); animation:kgLed 1s ease-in-out infinite;}
+  .kg-feed{position:absolute; left:20px; right:20px; top:22px; height:126px; overflow:hidden; z-index:1;}
+  .kg-paper{
+    position:relative; box-sizing:border-box; height:112px; padding:20px 16px 0;
+    background:#fffdf4; border:1px solid #efe6c4; border-top:none; border-radius:0 0 3px 3px;
+    box-shadow:0 6px 14px rgba(36,28,6,.14); text-align:left;
+    animation:kgFeed 1.7s cubic-bezier(.3,.7,.2,1) both;
+  }
+  .kg-paper::after{
+    content:''; position:absolute; left:-1px; right:-1px; bottom:-7px; height:8px;
+    background:linear-gradient(-45deg, transparent 5px, #fffdf4 0), linear-gradient(45deg, transparent 5px, #fffdf4 0);
+    background-size:10px 10px; background-repeat:repeat-x;
+  }
+  .kg-ph{display:flex; align-items:center; gap:8px; margin-bottom:4px;}
+  .kg-pdot{width:14px; height:14px; border-radius:50%; background:var(--kg-a); flex-shrink:0;}
+  .kg-ln{display:block; height:7px; margin-top:9px; border-radius:4px; background:#ece4c6; transform-origin:left center; animation:kgLn .55s calc(.25s + var(--i)*.14s) cubic-bezier(.3,.8,.3,1) both;}
+  .kg-ph .kg-ln{margin-top:0;}
+  .kg-lt{background:var(--kg-a); animation:kgLn .55s calc(.25s + var(--i)*.14s) cubic-bezier(.3,.8,.3,1) both, kgPulse 1.2s 1.2s ease-in-out infinite;}
+
+  /* daftar langkah */
+  .kg-steps{list-style:none; margin:16px 0 0; padding:0; text-align:left;}
+  .kg-st{display:flex; align-items:center; gap:12px; padding:7px 2px; font-size:13.5px; font-weight:600; color:#a9a38c; transition:color .25s ease;}
+  .kg-st.act{color:#241c06;}
+  .kg-st.done{color:#4b4630;}
+  .kg-ic{position:relative; flex-shrink:0; box-sizing:border-box; width:22px; height:22px; border-radius:50%; border:2px solid #e6dfc4; transition:background-color .25s ease, border-color .25s ease;}
+  .kg-st.act .kg-ic{border-color:#efe5b8; border-top-color:var(--kg-d2); animation:kgSpin .8s linear infinite;}
+  .kg-st.done .kg-ic{background:#1f8a4c; border-color:#1f8a4c; animation:kgPop .38s cubic-bezier(.3,1.6,.5,1);}
+  .kg-ic svg{position:absolute; left:2px; top:2px; width:14px; height:14px; opacity:0;}
+  .kg-ic path{stroke-dasharray:22; stroke-dashoffset:22;}
+  .kg-st.done .kg-ic svg{opacity:1;}
+  .kg-st.done .kg-ic path{animation:kgDraw .32s .08s ease forwards;}
+  .kg-bar{height:6px; margin-top:16px; border-radius:99px; overflow:hidden; background:#f1ead0;}
+  .kg-bar i{display:block; width:0; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--kg-d2),var(--kg-a)); transition:width .45s cubic-bezier(.3,.7,.2,1);}
+
+  /* tampilan selesai / gagal */
+  .kg-done{animation:kgRise .4s cubic-bezier(.2,.9,.3,1.1) both;}
+  .kg-ok{position:relative; width:84px; height:84px; margin:2px auto 14px;}
+  .kg-ok svg{position:relative; z-index:1; width:84px; height:84px; overflow:visible;}
+  .kg-oc{fill:#e6f6ec; stroke:#1f8a4c; stroke-width:5; stroke-dasharray:226; stroke-dashoffset:226; transform:rotate(-90deg); transform-origin:center; animation:kgRing .6s ease forwards;}
+  .kg-op{fill:none; stroke:#1f8a4c; stroke-width:6; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:60; stroke-dashoffset:60; animation:kgDraw2 .38s .5s ease forwards;}
+  .kg-bad .kg-oc{fill:#fdeceb; stroke:#c0392b;}
+  .kg-bad .kg-op{stroke:#c0392b; animation:kgDraw2 .32s .45s ease forwards, kgShake .45s .8s ease;}
+  .kg-cf{position:absolute; left:50%; top:50%; width:8px; height:8px; margin:-4px 0 0 -4px; border-radius:50%; background:var(--c); opacity:0; animation:kgBurst .85s calc(.45s + var(--dl)) cubic-bezier(.2,.7,.3,1) forwards;}
+  .kg-thumb{margin:16px auto 0; display:inline-block; max-width:100%; border-radius:14px; overflow:hidden; background:#fff; border:1px solid var(--line); box-shadow:0 14px 30px rgba(36,28,6,.22); animation:kgThumb .6s .2s cubic-bezier(.2,.9,.3,1.15) both; transform-origin:top center;}
+  .kg-thumb img{display:block; width:auto; height:auto; max-width:100%; max-height:270px;}
+  .kg-acts{display:flex; gap:10px; margin-top:20px;}
+  .kg-btn{flex:1; padding:12px 14px; border:none; border-radius:14px; background:var(--gold); color:#241c06; font-size:14px; font-weight:800;}
+  .kg-btn.ghost{background:#fff; border:1.5px solid var(--line); color:#4b4630; font-weight:700;}
+
+  @keyframes kgFeed{from{transform:translateY(-100%);} to{transform:translateY(0);}}
+  @keyframes kgLn{from{transform:scaleX(0); opacity:0;} to{transform:scaleX(1); opacity:1;}}
+  @keyframes kgPulse{0%,100%{opacity:1;} 50%{opacity:.45;}}
+  @keyframes kgLed{0%,100%{opacity:1; box-shadow:0 0 8px var(--kg-a);} 50%{opacity:.35; box-shadow:none;}}
+  @keyframes kgSpin{to{transform:rotate(360deg);}}
+  @keyframes kgPop{0%{transform:scale(.6);} 100%{transform:scale(1);}}
+  @keyframes kgDraw{to{stroke-dashoffset:0;}}
+  @keyframes kgDraw2{to{stroke-dashoffset:0;}}
+  @keyframes kgRing{to{stroke-dashoffset:0;}}
+  @keyframes kgRise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;}}
+  @keyframes kgBurst{0%{opacity:1; transform:translate(0,0) scale(.4);} 100%{opacity:0; transform:translate(var(--dx),var(--dy)) scale(1);}}
+  @keyframes kgShake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);}}
+  @keyframes kgThumb{from{opacity:0; transform:translateY(16px) scale(.9) rotate(-2deg);} to{opacity:1; transform:none;}}
+  @media (prefers-reduced-motion:reduce){
+    .kg-ov, .kg-card, .kg-bar i, .kg-st, .kg-ic{transition:none !important;}
+    .kg-paper, .kg-ln, .kg-lt, .kg-led, .kg-st.act .kg-ic, .kg-st.done .kg-ic, .kg-done, .kg-cf, .kg-thumb, .kg-bad .kg-op{animation:none !important;}
+    .kg-st.act .kg-ic{border-top-color:var(--kg-d2);}
+    .kg-ic path, .kg-oc, .kg-op{stroke-dashoffset:0 !important; animation:none !important;}
+    .kg-cf{display:none;}
+  }
 
   /* ===== Halaman publik "Isi Paket" (tujuan QR di kwitansi) ===== */
   html.paket-view body>*:not(#paketView):not(svg):not(script):not(style){display:none!important}
@@ -13359,7 +13497,7 @@ function kwQrData(j){
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'') : (j.jenisAcara||'');
   const akhir = getJobFinishDate(j) || '';
   const t = (v,n)=>String(v==null?'':v).trim().slice(0,n);
-  const a = [1, Number(getJobNo(j.id))||0, t(j.paket,80), kwDeskripsiQrPas(j,300), t(j.namaKlien,60), t(jenis,40),
+  const a = [1, kwKodePastikan(j), t(j.paket,80), kwDeskripsiQrPas(j,300), t(j.namaKlien,60), t(jenis,40),
              j.tanggalAcara||'', (akhir && akhir!==j.tanggalAcara) ? akhir : '', t(mempelaiTeks(j),60)];
   while(a.length>3 && a[a.length-1]==='') a.pop();
   return a;
@@ -13369,7 +13507,7 @@ function kwTokenBaru(){ const b = new Uint8Array(9); crypto.getRandomValues(b); 
 // Bentuk baku isi kwitansi untuk dihitung sidik jarinya - HARUS sama persis di sisi Admin & sisi pemindai.
 function kwIsiKanon(a){
   const t = i=>String(a[i]==null ? '' : a[i]);
-  return JSON.stringify([Number(a[1])||0, t(2), t(3), t(4), t(5), t(6), t(7), t(8)]);
+  return JSON.stringify([(typeof a[1]==='string' && !/^\d+$/.test(a[1])) ? a[1] : (Number(a[1])||0), t(2), t(3), t(4), t(5), t(6), t(7), t(8)]);
 }
 async function kwRpc(nama, args){
   if(!supabaseClient) throw new Error('Supabase belum aktif');
@@ -13479,12 +13617,6 @@ async function kwQrBuildUrl(j){
 }
 
 // Kalau isi poster hampir menabrak footer, rapatkan jarak antar baris (bertahap) supaya tetap muat.
-function kwFitPoster(el){
-  const muat = ()=>{ const b = el.querySelector('.kw-body'), f = el.querySelector('.kw-footer'); return !b || !f || b.getBoundingClientRect().bottom <= f.getBoundingClientRect().top - 10; };
-  if(muat()) return;
-  el.classList.add('kw-compact'); if(muat()) return;
-  el.classList.add('kw-compact2');
-}
 function kwQrMake(url){ return KaoneQR.make(url, url.length<=330 ? 'M' : 'L'); }
 // Gambar PNG QR (untuk kwitansi versi gambar). Ukuran modul dibulatkan agar tajam.
 function kwQrImage(url, target){
@@ -13512,7 +13644,7 @@ async function kwQrDecode(token){
   const s = (v,n)=>String(v==null?'':v).slice(0,n);
   const iso = v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'') ? v : '';
   const tgl = iso(a[6]), nomor = parseInt(a[1],10);
-  const no = nomor>0 ? `KMT-${String(nomor).padStart(3,'0')}-${tgl.replace(/-/g,'')}` : '';
+  const no = (typeof a[1]==='string' && kwKodeValid(a[1])) ? `KMT-${a[1]}` : (nomor>0 ? `KMT-${String(nomor).padStart(3,'0')}-${tgl.replace(/-/g,'')}` : '');   // kode baru, atau format lama (nomor urut) untuk kwitansi yang sudah beredar
   return {no, paket:s(a[2],120), deskripsi:s(a[3],1200), klien:s(a[4],80), jenis:s(a[5],60),
           tgl, tglAkhir:iso(a[7]), mempelai:s(a[8],100), raw:a};
 }
@@ -13822,226 +13954,250 @@ async function kaonePaketView(){
   if(cp) cp.onclick = ()=>{ kwSalin(teksSalin).then(()=>{ cp.textContent='Tersalin ✓'; setTimeout(()=>cp.textContent='Salin rincian',1800); }).catch(()=>{ cp.textContent='Gagal menyalin'; setTimeout(()=>cp.textContent='Salin rincian',1800); }); };
 }
 
-async function downloadKwitansiPdf(jobId){
-  if(!isAdmin()) return;
-  const j = jobs.find(x=>x.id===jobId);
-  if(!j) return;
-  if(typeof window.jspdf === 'undefined'){
-    alert('Pustaka pembuat PDF belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
-    return;
-  }
-  await kmPastikanTaut(j);
-  const qrUrl = await kwQrBuildUrl(j);
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({unit:'mm', format:'a5'});
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const marginX = 14;
-  let y = 16;
+/* =====================================================================
+   KWITANSI KLIEN - desain v3 (PDF + Gambar PNG + animasi proses pembuatan)
+   Isi kedua versi SENGAJA sama (hanya info yang relevan untuk klien, tanpa data
+   keuangan internal). Urutannya: siapa penerima -> detail pesanan -> isi paket ->
+   rincian pembayaran -> kode QR verifikasi. Warna mengikuti Jenis Acara.
+   ===================================================================== */
 
-  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
-  const hargaPaket = Number(j.penghasilan)||0;
-  const diskon = Number(j.diskon)||0;
-  const totalTagihan = hargaPaket - diskon;
-  const dp = Number(j.dp)||0;
-  const sisa = hitungSisaPembayaran(j);
-  const noKwitansi = `KMT-${String(getJobNo(j.id)).padStart(3,'0')}-${(j.tanggalAcara||'').replace(/-/g,'')}`;
-  const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(20);
-  doc.text('KAONE MOTRET', marginX, y);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110);
-  doc.text('Buku Job Fotografer', marginX, y+5);
-  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(20);
-  doc.text('KWITANSI', pageW-marginX, y, {align:'right'});
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(110);
-  doc.text(noKwitansi, pageW-marginX, y+5, {align:'right'});
-  y += 11;
-  doc.setDrawColor(190); doc.setLineWidth(0.4);
-  doc.line(marginX, y, pageW-marginX, y);
-  y += 8;
-
-  const infoRows = [
-    ['Diterima dari', j.namaKlien||'-'],
-    ['No. WhatsApp', j.noWhatsapp||'-'],
-    ['Tanggal Acara', fmtTglJob(j)],
-    ['Jenis Acara', jenis],
-    ...(mempelaiTeks(j) ? [['Kedua Mempelai', mempelaiTeks(j)]] : []),
-    ['Paket', j.paket||'-'],
-    ...(kwItemsPaket(kwDeskripsiQr(j)).length ? [['Isi Paket', kwItemsPaket(kwDeskripsiQr(j)).map(x=>'- '+x).join('\n')]] : []),
-  ];
-  doc.setFontSize(10);
-  infoRows.forEach(([label,val])=>{
-    doc.setFont('helvetica','normal'); doc.setTextColor(110);
-    doc.text(label, marginX, y);
-    doc.setFont('helvetica','bold'); doc.setTextColor(25);
-    const valLines = doc.splitTextToSize(String(val), pageW-marginX-38-marginX);
-    doc.text(valLines, marginX+38, y);
-    y += 6*valLines.length;
-  });
-  y += 3;
-  doc.setDrawColor(225); doc.line(marginX, y, pageW-marginX, y);
-  y += 8;
-
-  const rincian = [
-    ['Harga Paket', fmtRp(hargaPaket), false],
-    ...(diskon>0 ? [['Diskon', '- ' + fmtRp(diskon), false]] : []),
-    ['Total Tagihan', fmtRp(totalTagihan), true],
-    ['DP / Sudah Dibayar', fmtRp(dp), false],
-    ['Sisa Pembayaran', fmtRp(sisa), true],
-  ];
-  rincian.forEach(([label,val,bold])=>{
-    doc.setFont('helvetica', bold?'bold':'normal');
-    doc.setFontSize(bold?11:10);
-    doc.setTextColor(bold?20:70);
-    doc.text(label, marginX, y);
-    doc.text(String(val), pageW-marginX, y, {align:'right'});
-    y += bold ? 8 : 6.5;
-    if(label==='Total Tagihan'){ doc.setDrawColor(225); doc.line(marginX,y-3,pageW-marginX,y-3); }
-  });
-
-  y += 5;
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(20);
-  doc.text('Status Pembayaran', marginX, y);
-  doc.text(String(j.statusPembayaran||'-'), pageW-marginX, y, {align:'right'});
-  y += 11;
-
-  if((j.catatan||'').trim()){
-    doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(110);
-    const catatanLines = doc.splitTextToSize(`Catatan: ${j.catatan.trim()}`, pageW-marginX*2);
-    doc.text(catatanLines, marginX, y);
-    y += catatanLines.length*4.3 + 6;
-  }
-
-  const kmU = kmLinkProgres(j);
-  if(kmU){
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(20);
-    doc.text('Pantau progres foto Anda:', marginX, y); y += 4.6;
-    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(30,80,200);
-    doc.splitTextToSize(kmU, pageW-marginX*2).forEach(ln=>{ doc.textWithLink(ln, marginX, y, {url:kmU}); y += 4.2; });
-    doc.setTextColor(0); y += 4;
-  }
-  if(!qrUrl){
-    const footY = Math.max(y+10, pageH-22);
-    doc.setDrawColor(225); doc.line(marginX, footY-8, pageW-marginX, footY-8);
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(130);
-    doc.text(`Dicetak ${printedAt} · Kaone Motret`, marginX, footY);
-    doc.setFont('helvetica','italic');
-    doc.text('Terima kasih atas kepercayaannya', pageW-marginX, footY, {align:'right'});
-  } else {
-    // Dengan QR: footer dipadatkan di kiri-bawah, QR di pojok kanan-bawah (A5 sempit, jadi tetap 1 halaman).
-    const q = kwQrMake(qrUrl);
-    const mm = Math.max(0.34, 24/q.size), qrW = q.size*mm;   // modul min. 0,34 mm: masih nyaman dipindai dari kertas A5
-    let top = pageH - 8 - qrW;
-    if(y > top - 1){ doc.addPage(); top = 16; }   // isi kwitansi terlalu panjang: QR pindah ke halaman berikutnya
-    doc.setDrawColor(225); doc.setLineWidth(0.3); doc.line(marginX, top-4, pageW-marginX, top-4);
-    const qx = pageW - marginX - qrW;
-    doc.setFillColor(20,18,10);
-    for(let r=0;r<q.size;r++){
-      let c=0;
-      while(c<q.size){
-        if(!q.isDark(c,r)){ c++; continue; }
-        let e=c; while(e<q.size && q.isDark(e,r)) e++;
-        doc.rect(qx+c*mm, top+r*mm, (e-c)*mm, mm+0.03, 'F');   // satu persegi panjang per deret modul gelap
-        c=e;
-      }
-    }
-    const tw = qx - marginX - 6;
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(20);
-    doc.text('Scan untuk verifikasi kwitansi', marginX, top+4);
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(110);
-    doc.text(doc.splitTextToSize('Pindai QR di samping untuk memastikan kwitansi ini asli dan melihat isi paket. Tanpa login.', tw), marginX, top+9);
-    doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(130);
-    doc.text('Terima kasih atas kepercayaannya', marginX, top+qrW-5);
-    doc.setFont('helvetica','normal');
-    doc.text(`Dicetak ${printedAt} · Kaone Motret`, marginX, top+qrW);
-    doc.setLineWidth(0.2);
-  }
-
-  markKwitansiPrinted(j);
-  doc.save(`Kwitansi-${(j.namaKlien||'kaonemotret').replace(/\s+/g,'_')}-${j.tanggalAcara}.pdf`);
-  if(document.getElementById('jobDetailCard')) openJobDetailModal(j.id);
+/* ---------- Alat kecil: warna & waktu ---------- */
+function kwHex(h){
+  h = String(h||'#000000').replace('#','');
+  if(h.length===3) h = h.split('').map(c=>c+c).join('');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
 }
-/* ---------- KWITANSI (GAMBAR PNG, didesain seperti poster resmi) ----------
-   Isinya sengaja SAMA dengan versi PDF di atas (hanya info relevan buat klien,
-   tanpa data keuangan internal) - cuma bentuk file & tampilannya berbeda, supaya
-   Admin bisa pilih mau kirim sebagai PDF atau sebagai gambar (lebih mudah dibuka
-   & dikirim ulang lewat WhatsApp). */
-function buildKwitansiPosterHtml(j, qr){
-  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
+// Campur dua warna hex: t=0 -> a, t=1 -> b
+function kwMix(a, b, t){
+  const A = kwHex(a), B = kwHex(b);
+  return '#' + A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('');
+}
+function kwRgba(h, a){ const c = kwHex(h); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+const kwTunggu = ms => new Promise(r=>setTimeout(r, ms));
+
+/* ---------- KODE KWITANSI UNIK (dibuat sekali, disimpan di data job, tidak pernah dihitung ulang) ----------
+   Bentuk: KMT-26W-K7M4Q-3  =  tahun dibuat (26) + jenis acara (W) - 5 karakter acak - 1 karakter cek.
+   Tidak bergantung pada tanggal acara maupun urutan job, jadi tetap sama walau ada job masuk/hapus/pindah tanggal.
+   Alfabet tanpa 0, 1, O, I, L supaya mudah dibaca & diketik lewat telepon. Karakter cek menangkap salah ketik. */
+const KW_ABJAD = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';   // 31 karakter
+const KW_JENIS = {'Wedding':'W', 'Mangayun/Aqiqah':'A', 'Margondang 1 Hari':'M', 'Margondang 2 Hari':'N', 'Wisuda':'S', 'Patuaekkon':'P'};
+function kwKarakterCek(teks){
+  let t = 0;
+  for(let i=0;i<teks.length;i++){
+    const k = KW_ABJAD.indexOf(teks[i]);   // pakai urutan di alfabet (bukan kode ASCII) supaya tidak ada selisih kelipatan 31 yang lolos
+    t += (k>=0 ? k : teks.charCodeAt(i)) * (i+1);
+  }
+  return KW_ABJAD[t % KW_ABJAD.length];
+}
+function kwKodeValid(k){
+  const m = /^(\d{2})([A-Z])-([2-9A-HJKMNP-Z]{5})-([2-9A-HJKMNP-Z])$/.exec(String(k||''));
+  return !!m && kwKarakterCek(m[1]+m[2]+m[3]) === m[4];
+}
+function kwKodeBaru(j){
+  const yy = String(new Date().getFullYear()).slice(-2);
+  const jn = KW_JENIS[j.jenisAcara] || 'X';
+  const b = new Uint8Array(5); crypto.getRandomValues(b);
+  const acak = Array.from(b, v=>KW_ABJAD[v % KW_ABJAD.length]).join('');
+  return `${yy}${jn}-${acak}-${kwKarakterCek(yy+jn+acak)}`;
+}
+// Pastikan job punya kode yang sah & tidak dipakai job lain (mis. job hasil salinan). Dibuat & disimpan sekali saja.
+function kwKodePastikan(j){
+  const dipakai = k=>jobs.some(x=>x!==j && x.id!==j.id && x.kodeKwitansi===k);
+  if(kwKodeValid(j.kodeKwitansi) && !dipakai(j.kodeKwitansi)) return j.kodeKwitansi;
+  let k; do{ k = kwKodeBaru(j); }while(dipakai(k));
+  j.kodeKwitansi = k;
+  saveJobs();
+  return k;
+}
+/* ---------- Data bersama untuk PDF & gambar ---------- */
+function kwData(j){
   const col = jenisAcaraColor(j.jenisAcara);
-  const hargaPaket = Number(j.penghasilan)||0;
+  const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
+  const harga = Number(j.penghasilan)||0;
   const diskon = Number(j.diskon)||0;
-  const totalTagihan = hargaPaket - diskon;
+  const total = harga - diskon;
   const dp = Number(j.dp)||0;
   const sisa = hitungSisaPembayaran(j);
-  const noKwitansi = `KMT-${String(getJobNo(j.id)).padStart(3,'0')}-${(j.tanggalAcara||'').replace(/-/g,'')}`;
-  const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
+  const lunas = total>0 && sisa<=0;
+  const terbayar = total>0 ? Math.max(0, Math.min(100, Math.round((total - Math.max(0,sisa)) / total * 100))) : 0;
+  const status = String(j.statusPembayaran||'-');
+  const nama = (j.namaKlien||'').trim();
+  return {
+    col, jenis, harga, diskon, total, dp, sisa, lunas, terbayar, status, nama,
+    noKwitansi: `KMT-${kwKodePastikan(j)}`,
+    printedAt: new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date()),
+    tgl: fmtTglJob(j),
+    mempelai: mempelaiTeks(j) || '',
+    items: kwItemsPaket(kwDeskripsiQr(j)),
+    adaDeskripsi: !!deskripsiGabung(j),
+    catatan: (j.catatan||'').trim(),
+    progres: kmLinkProgres(j) || '',
+    berkas: `${(nama||'kaonemotret').replace(/\s+/g,'_')}-${j.tanggalAcara}`,
+    pageBg: kwMix(col.accent, '#ffffff', .82)
+  };
+}
+// Susun kartu info jadi baris berisi 1-2 kartu: nilai panjang atau kartu tunggal memakai satu baris penuh
+function kwBarisKartu(list){
+  const rows = []; let tunda = null;
+  list.forEach(t=>{
+    if(String(t.v).length>26){ if(tunda){ rows.push([tunda]); tunda = null; } rows.push([t]); }
+    else if(tunda){ rows.push([tunda, t]); tunda = null; }
+    else tunda = t;
+  });
+  if(tunda) rows.push([tunda]);
+  return rows;
+}
 
-  const rows = [
-    ['Harga Paket', fmtRp(hargaPaket), false],
-    ...(diskon>0 ? [['Diskon', '- '+fmtRp(diskon), false]] : []),
-    ['Total Tagihan', fmtRp(totalTagihan), true],
-    ['DP / Sudah Dibayar', fmtRp(dp), false],
-    ['Sisa Pembayaran', fmtRp(sisa), true],
+/* =====================================================================
+   1) GAMBAR PNG (poster lebar 1080 px, tinggi menyesuaikan isi, minimal 1350)
+   Dirender html2canvas: tanpa animasi, tanpa color-mix/clip-path/filter,
+   ikon SVG inline dengan warna eksplisit.
+   ===================================================================== */
+const KW_IKON = {
+  calendar:'<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  camera:'<path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2l1.3-2h6l1.3 2h1.2A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.6"/>',
+  heart:'<path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z"/>',
+  box:'<path d="M3.5 8.5h17v4h-17zM5 12.5V20h14v-7.5M12 8.5V20"/><path d="M12 8.5C10 8.5 7.5 7.8 7.5 6a2 2 0 0 1 3.4-1.4zM12 8.5c2 0 4.5-.7 4.5-2.5a2 2 0 0 0-3.4-1.4z"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  phone:'<path d="M6.5 3.5h3l1.5 4-2 1.3a10 10 0 0 0 5.2 5.2l1.3-2 4 1.5v3a2 2 0 0 1-2 2A15 15 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"/>',
+  link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  note:'<path d="M5 19l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L9 18z"/><path d="M5 19l4-1"/>',
+  shield:'<path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6z"/><path d="M8.8 12l2.4 2.4 4.3-4.6"/>',
+  wallet:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10.5h18M16 14.8h2"/>',
+  list:'<path d="M9 7h11M9 12h11M9 17h11"/><path d="M4.5 7h.01M4.5 12h.01M4.5 17h.01"/>'
+};
+function kwIco(nama, warna, px, tebal){
+  return `<svg viewBox="0 0 24 24" width="${px}" height="${px}" fill="none" stroke="${warna}" stroke-width="${tebal||2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${KW_IKON[nama]||''}</svg>`;
+}
+function kwSecHead(ikon, judul, col){
+  return `<div class="kr-sh"><span class="kr-sh-ic">${kwIco(ikon, col.hdr2, 26, 2)}</span><span class="kr-sh-t">${escapeHtml(judul)}</span><span class="kr-sh-l"></span></div>`;
+}
+
+function buildKwitansiPosterHtml(j, qr){
+  const d = kwData(j), col = d.col;
+  const vars = `--kr-d1:${col.hdr1};--kr-d2:${col.hdr2};--kr-ac:${col.accent};`
+    + `--kr-a10:${kwRgba(col.accent,.10)};--kr-a18:${kwRgba(col.accent,.22)};--kr-a35:${kwRgba(col.accent,.50)};--kr-page:${d.pageBg};`;
+
+  // Kartu detail pesanan
+  const kartu = [
+    {ic:'calendar', l:'Tanggal Acara', v:d.tgl},
+    {ic:'camera',   l:'Jenis Acara',   v:d.jenis},
+    ...(d.mempelai ? [{ic:'heart', l:'Kedua Mempelai', v:d.mempelai}] : []),
+    {ic:'box',      l:'Paket',         v:j.paket||'-'}
   ];
+  const kartuHtml = kwBarisKartu(kartu).map(r=>r.map(t=>`
+    <div class="kr-tile${r.length===1?' wide':''}">
+      <span class="kr-tile-ic">${kwIco(t.ic, col.hdr1, 30, 2)}</span>
+      <div class="kr-tile-tx"><div class="kr-tile-l">${escapeHtml(t.l)}</div><div class="kr-tile-v">${escapeHtml(truncateText(t.v, 90))}</div></div>
+    </div>`).join('')).join('');
+
+  // Isi paket
+  const item = d.items.slice(0,12);
+  const paketHtml = (d.adaDeskripsi || qr) ? `
+    <div class="kr-sec">
+      ${kwSecHead('list','Isi Paket',col)}
+      ${item.length
+        ? `<div class="kr-items${item.length>4?' two':''}">${item.map(x=>`<div class="kr-item"><span class="kr-chk">${kwIco('check', col.hdr1, 20, 3.2)}</span><span>${escapeHtml(truncateText(x,60))}</span></div>`).join('')}</div>`
+        : `<div class="kr-ptext">${escapeHtml(truncateText(j.paket || 'Rincian paket ada di kode QR', 200))}</div>`}
+    </div>` : '';
+
+  // Rincian pembayaran
+  const stOk = d.lunas;
+  const rows = [
+    ['Harga Paket', fmtRp(d.harga), ''],
+    ...(d.diskon>0 ? [['Diskon', '- '+fmtRp(d.diskon), ' disc']] : []),
+    ['Total Tagihan', fmtRp(d.total), ' total'],
+    ['DP / Sudah Dibayar', fmtRp(d.dp), ' last']
+  ];
+  const lebarIsi = d.terbayar>0 ? Math.max(d.terbayar, 4) : 0;
 
   return `
-    <div id="kwitansiPosterExport" class="kwitansi-poster" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
-      <div class="kw-watermark"></div>
-      <div class="kw-topbar">
-        <div class="kw-badge">${posterLogoImg(col.accent, 60)}</div>
-        <div>
-          <div class="kw-brand-name">Kaone Motret</div>
-          <div class="kw-brand-tag">Buku Job Fotografer</div>
-        </div>
-        <div class="kw-doc-badge">
-          <div class="kw-doc-title">KWITANSI</div>
-          <div class="kw-doc-no">${escapeHtml(noKwitansi)}</div>
-        </div>
-      </div>
-      <div class="kw-rule"></div>
-      <div class="kw-client-block">
-        <div class="kw-kicker">Diterima dari</div>
-        <div class="kw-client-name">${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
-        <div class="kw-meta-row">
-          <span>${escapeHtml(fmtTglJob(j))}</span>
-          <span class="sep"></span><span>${escapeHtml(jenis + (mempelaiTeks(j) ? ' - ' + mempelaiTeks(j) : ''))}</span>
-          ${j.paket?`<span class="sep"></span><span>${escapeHtml(j.paket)}</span>`:''}
-        </div>
-      </div>
-      <div class="kw-body">
-        ${(deskripsiGabung(j) || qr) ? `
-        <div class="kw-package${qr?' has-qr':''}">
-          <div class="kw-package-main">
-            <div class="kw-package-label">Isi Paket</div>
-            ${(()=>{ const it = kwItemsPaket(kwDeskripsiQr(j)).slice(0,12); return it.length ? `<ul class="kw-items">${it.map(x=>`<li>${escapeHtml(truncateText(x,60))}</li>`).join('')}</ul>` : `<div class="kw-package-text">${escapeHtml(truncateText(j.paket || 'Rincian paket ada di kode QR', 200))}</div>`; })()}
-            ${qr ? `<div class="kw-package-hint">Scan QR di samping untuk memastikan kwitansi ini asli dan melihat isi paket lengkap.</div>` : ''}
+    <div id="kwitansiPosterExport" class="kr-poster" style="${vars}">
+      <div class="kr-sheet">
+        <div class="kr-head">
+          <div class="kr-top">
+            <div class="kr-logo">${posterLogoImg(col.accent, 56)}</div>
+            <div>
+              <div class="kr-brand">Kaone Motret</div>
+              <div class="kr-tag">Buku Job Fotografer</div>
+            </div>
+            <div class="kr-doc">
+              <div class="kr-doc-t">KWITANSI</div>
+              <div class="kr-doc-n">${escapeHtml(d.noKwitansi)}</div>
+            </div>
           </div>
-          ${qr ? `<div class="kw-qr"><div class="kw-qr-box"><img src="${qr.src}" width="${qr.px}" height="${qr.px}" alt="QR isi paket"></div></div>` : ''}
-        </div>` : ''}
-        ${rows.map(([label,val,highlight])=>`
-          <div class="kw-row${highlight?' kw-highlight':''}">
-            <span class="kw-label">${escapeHtml(label)}</span>
-            <span class="kw-value">${escapeHtml(val)}</span>
+          <div class="kr-who">
+            <div class="kr-kick">Diterima dari</div>
+            <div class="kr-name">${escapeHtml(truncateText(d.nama || 'Tanpa Nama', 70))}</div>
           </div>
-        `).join('')}
-        <div class="kw-status-row">
-          <span class="kw-status-label">Status Pembayaran</span>
-          <span class="kw-status-badge">${escapeHtml(j.statusPembayaran||'-')}</span>
         </div>
-        ${(j.catatan||'').trim() ? `<div class="kw-note">Catatan: ${escapeHtml(truncateText(j.catatan,140))}</div>` : ''}
-        ${kmLinkProgres(j) ? `<div class="kw-note" style="word-break:break-all;">Pantau progres foto Anda: <b>${escapeHtml(kmLinkProgres(j))}</b></div>` : ''}
+        <div class="kr-stripe"></div>
+
+        <div class="kr-body">
+          <div class="kr-sec">
+            ${kwSecHead('calendar','Detail Pesanan',col)}
+            <div class="kr-tiles">${kartuHtml}</div>
+          </div>
+          ${paketHtml}
+
+          <div class="kr-perf"></div>
+
+          <div class="kr-sec kr-pay${stOk?' lunas':''}">
+            ${kwSecHead('wallet','Rincian Pembayaran',col)}
+            ${stOk ? `<div class="kr-stamp"><span>LUNAS</span></div>` : ''}
+            <div class="kr-prog">
+              <div class="kr-prog-top"><span>Sudah terbayar</span><b>${d.terbayar}%</b></div>
+              <div class="kr-track"><div class="kr-fill" style="width:${lebarIsi}%"></div></div>
+            </div>
+            <div class="kr-rows">
+              ${rows.map(([l,v,c])=>`<div class="kr-row${c}"><span class="l">${escapeHtml(l)}</span><span class="v">${escapeHtml(v)}</span></div>`).join('')}
+            </div>
+            <div class="kr-due${stOk?' ok':''}">
+              <div>
+                <div class="kr-due-l">Sisa Pembayaran</div>
+                <div class="kr-due-v">${escapeHtml(fmtRp(d.sisa))}</div>
+              </div>
+              <div class="kr-st">
+                <div class="kr-st-l">Status</div>
+                <div class="kr-pill${stOk?' ok':''}">${escapeHtml(truncateText(d.status, 22))}</div>
+              </div>
+            </div>
+          </div>
+
+          ${d.catatan ? `<div class="kr-note"><b>Catatan</b><br>${escapeHtml(truncateText(d.catatan,140))}</div>` : ''}
+          ${d.progres ? `
+          <div class="kr-link">
+            <span class="kr-link-ic">${kwIco('link', col.hdr1, 28, 2.2)}</span>
+            <div style="min-width:0"><div class="kr-link-t">Pantau progres foto Anda</div><div class="kr-link-u">${escapeHtml(d.progres)}</div></div>
+          </div>` : ''}
+          ${qr ? `
+          <div class="kr-verify">
+            <div class="kr-qr"><img src="${qr.src}" width="${qr.px}" height="${qr.px}" alt="QR verifikasi"></div>
+            <div class="kr-vx">
+              <div class="kr-vt">${kwIco('shield', col.hdr2, 36, 2)}<span>Scan untuk verifikasi</span></div>
+              <div class="kr-vp">Pindai kode QR untuk memastikan kwitansi ini asli dan melihat isi paket lengkap. Tanpa login.</div>
+            </div>
+          </div>` : ''}
+        </div>
+
+        <div class="kr-foot">
+          <div class="kr-foot-t">Terima kasih atas kepercayaannya</div>
+          <div class="kr-foot-s">Kaone Motret &middot; Dicetak ${escapeHtml(d.printedAt)}</div>
+        </div>
+        <div class="kr-bar"></div>
       </div>
-      <div class="kw-footer">
-        <div class="kw-footer-line"></div>
-        <div class="kw-footer-brand">Kaone Motret</div>
-        <div class="kw-footer-text">Dicetak ${printedAt} &middot; Terima kasih atas kepercayaannya</div>
-      </div>
-      <div class="kw-bottom-bar"></div>
-    </div>
-  `;
+    </div>`;
 }
+
+function kwGambarSiap(el){
+  return Promise.all([...el.querySelectorAll('img')].map(im=> im.decode ? im.decode().catch(()=>{}) : Promise.resolve()));
+}
+function kwUnduh(url, nama){
+  const a = document.createElement('a');
+  a.href = url; a.download = nama;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
 async function downloadKwitansiImage(jobId){
   if(!isAdmin()) return;
   if(typeof html2canvas === 'undefined'){
@@ -14050,41 +14206,491 @@ async function downloadKwitansiImage(jobId){
   }
   const j = jobs.find(x=>x.id===jobId);
   if(!j) return;
-  toast('Menyiapkan gambar kwitansi...');
-  await kmPastikanTaut(j);
-  let qr = null;
-  try{ const u = await kwQrBuildUrl(j); if(u) qr = kwQrImage(u, 320); }catch(e){ console.warn('QR kwitansi gagal dibuat', e); }
-
-  // Sama seperti poster Detail Job/Story: dirender di luar tampilan (opacity:0) hanya
-  // untuk keperluan pengambilan gambar, lalu dihapus lagi begitu selesai diunduh.
-  const holder = document.createElement('div');
-  holder.style.cssText = 'position:fixed;top:-10000px;left:-10000px;opacity:0;pointer-events:none;z-index:-1;';
-  holder.innerHTML = buildKwitansiPosterHtml(j, qr);
-  document.body.appendChild(holder);
-  const posterEl = holder.querySelector('#kwitansiPosterExport');
-
-  const capture = ()=>{
-    kwFitPoster(posterEl);
-    html2canvas(posterEl, {width:1080, height:1350, scale:1, backgroundColor:'#FFFBEA'}).then(canvas=>{
-      holder.remove();
-      const a = document.createElement('a');
-      a.href = canvas.toDataURL('image/png');
-      a.download = `Kwitansi-${(j.namaKlien||'kaonemotret').replace(/\s+/g,'_')}-${j.tanggalAcara}.png`;
-      markKwitansiPrinted(j);
-      a.click();
-      if(document.getElementById('jobDetailCard')) openJobDetailModal(j.id);
-    }).catch(()=>{
-      holder.remove();
-      alert('Gagal membuat gambar kwitansi. Coba lagi.');
+  const d = kwData(j);
+  const ui = kwGenUi('png', d.col);
+  let holder = null;
+  try{
+    await kwLangkah(ui, 0, ()=>kmPastikanTaut(j));
+    let qr = null;
+    await kwLangkah(ui, 1, async()=>{
+      try{ const u = await kwQrBuildUrl(j); if(u) qr = kwQrImage(u, 320); }
+      catch(e){ console.warn('QR kwitansi gagal dibuat', e); }
     });
-  };
-  // Tunggu font kustom (Bricolage Grotesque) selesai dimuat dulu, supaya teks di gambar
-  // tidak sempat ter-capture memakai font fallback sistem.
-  if(document.fonts && document.fonts.ready){
-    document.fonts.ready.then(capture).catch(capture);
-  } else {
-    setTimeout(capture, 60);
+    const canvas = await kwLangkah(ui, 2, async()=>{
+      // Dirender di luar layar (opacity:0) hanya untuk pengambilan gambar, lalu dihapus lagi.
+      holder = document.createElement('div');
+      holder.style.cssText = 'position:fixed;top:-10000px;left:-10000px;opacity:0;pointer-events:none;z-index:-1;';
+      holder.innerHTML = buildKwitansiPosterHtml(j, qr);
+      document.body.appendChild(holder);
+      const el = holder.querySelector('#kwitansiPosterExport');
+      // Tunggu font kustom selesai dimuat supaya teks tidak ter-capture memakai font cadangan.
+      try{
+        if(document.fonts){
+          await Promise.all([document.fonts.load('800 40px "Bricolage Grotesque"'), document.fonts.load('600 24px "Bricolage Grotesque"')]);
+          await document.fonts.ready;
+        }
+      }catch(e){}
+      await kwGambarSiap(el);
+      return html2canvas(el, {width:1080, height:Math.max(1350, el.offsetHeight), scale:1, backgroundColor:d.pageBg});
+    });
+    holder.remove(); holder = null;
+    const url = canvas.toDataURL('image/png');
+    const nama = `Kwitansi-${d.berkas}.png`;
+    await kwLangkah(ui, 3, async()=>{ kwUnduh(url, nama); });
+    markKwitansiPrinted(j);
+    ui.sukses({berkas:nama, thumb:url, ulang:()=>kwUnduh(url, nama)});
+    if(document.getElementById('jobDetailCard')) openJobDetailModal(j.id);
+  }catch(e){
+    if(holder) holder.remove();
+    console.warn('Kwitansi gambar gagal', e);
+    ui.gagal('Gagal membuat gambar kwitansi. Coba lagi.');
   }
+}
+
+/* =====================================================================
+   2) PDF (A5, teks & bentuk vektor lewat jsPDF)
+   ===================================================================== */
+// jsPDF (font bawaan) hanya aman untuk karakter Latin-1: ganti tanda baca "cantik" & buang sisanya
+function kwPdfTeks(s){
+  return String(s==null?'':s)
+    .replace(/[\u2013\u2014\u2212]/g,'-').replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"')
+    .replace(/\u2026/g,'...').replace(/\u00D7/g,'x').replace(/[\u00A0\u2009\u202F]/g,' ')
+    .replace(/[^\u0020-\u00FF\n]/g,'');
+}
+// Logo diafragma -> PNG (jsPDF tidak bisa membaca SVG langsung). null kalau gagal; PDF tetap jadi tanpa logo.
+function kwLogoPng(warna, px){
+  return new Promise(res=>{
+    let selesai = false;
+    const fin = v=>{ if(!selesai){ selesai = true; res(v); } };
+    try{
+      const m = /src="([^"]+)"/.exec(posterLogoImg(warna, px));
+      if(!m) return fin(null);
+      const im = new Image();
+      im.onload = ()=>{
+        try{ const s = 4, cv = document.createElement('canvas'); cv.width = cv.height = px*s; cv.getContext('2d').drawImage(im,0,0,px*s,px*s); fin(cv.toDataURL('image/png')); }
+        catch(e){ fin(null); }
+      };
+      im.onerror = ()=>fin(null);
+      im.src = m[1];
+      setTimeout(()=>fin(null), 2500);
+    }catch(e){ fin(null); }
+  });
+}
+
+// Menggambar kwitansi ke dokumen jsPDF. Mengembalikan posisi y terakhir (mm) supaya tinggi halaman bisa diukur.
+// banyak=false: semuanya di satu halaman (tinggi halaman = hasil ukur). banyak=true: A5 dengan pindah halaman otomatis.
+function kwGambarPdf(doc, j, d, qrUrl, logo, banyak){
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const mx = 12, cw = W - mx*2, FOOT = 15;
+  const col = d.col;
+  const D1 = kwHex(col.hdr1), D2 = kwHex(col.hdr2), AC = kwHex(col.accent);
+  const T1 = kwHex(kwMix(col.accent,'#ffffff',.90)), T2 = kwHex(kwMix(col.accent,'#ffffff',.68));
+  const INK = [36,28,6], SOFT = [104,98,82], OK = [31,138,76], OKD = [15,90,51], WARN = [122,74,6], WHITE = [255,255,255];
+  const fill = c=>doc.setFillColor(c[0],c[1],c[2]);
+  const garis = c=>doc.setDrawColor(c[0],c[1],c[2]);
+  const warna = c=>doc.setTextColor(c[0],c[1],c[2]);
+  const font = (gaya, ukuran)=>{ doc.setFont('helvetica', gaya); doc.setFontSize(ukuran); };
+  const alpha = (a, fn)=>{   // transparansi opsional: kalau tidak didukung, dekorasi dilewati
+    let ok = false;
+    try{ doc.setGState(new doc.GState({opacity:a})); ok = true; }catch(e){}
+    if(!ok) return;
+    try{ fn(); } finally{ try{ doc.setGState(new doc.GState({opacity:1})); }catch(e){} }
+  };
+  const bungkus = (teks, lebar, maks)=>{ const r = doc.splitTextToSize(kwPdfTeks(teks), lebar); return maks ? r.slice(0,maks) : r; };
+
+  /* ----- Kepala: pita warna, merek, nomor, nama penerima ----- */
+  font('bold',16.5);
+  const namaBaris = bungkus(d.nama || 'Tanpa Nama', cw, 2);
+  const adaWa = !!(j.noWhatsapp||'').trim();
+  const headH = 33 + namaBaris.length*7 + (adaWa ? 5.2 : 1.6);
+  fill(D1); doc.rect(0, 0, W, headH, 'F');
+  alpha(.16, ()=>{ fill(AC); doc.circle(W-8, 2, 26, 'F'); });
+  alpha(.10, ()=>{ fill(WHITE); doc.circle(W-30, headH-2, 8, 'F'); });
+  fill(AC); doc.rect(0, headH, W, 1.4, 'F');
+
+  fill(kwHex(kwMix(col.hdr1,'#ffffff',.10))); garis(AC); doc.setLineWidth(.25);
+  doc.roundedRect(mx, 7.5, 13, 13, 3.2, 3.2, 'FD');
+  if(logo) doc.addImage(logo, 'PNG', mx+2, 9.5, 9, 9);
+  font('bold',13.5); warna(WHITE); doc.text('KAONE MOTRET', mx+17, 13.4);
+  font('normal',6.2); warna(AC); doc.text('BUKU JOB FOTOGRAFER', mx+17, 17.9, {charSpace:.7});
+  font('bold',11); warna(AC); doc.text('KWITANSI', W-mx, 12.6, {align:'right', charSpace:1.2});
+  font('normal',8); warna(WHITE); doc.text(kwPdfTeks(d.noKwitansi), W-mx, 17.9, {align:'right'});
+  font('bold',6.4); warna(AC); doc.text('DITERIMA DARI', mx, 27.6, {charSpace:1});
+  font('bold',16.5); warna(WHITE);
+  namaBaris.forEach((b,i)=>doc.text(b, mx, 34.6 + i*7));
+  if(adaWa){
+    font('normal',7.6); warna([226,222,210]);
+    doc.text('WhatsApp  ' + kwPdfTeks(j.noWhatsapp), mx, 34.6 + (namaBaris.length-1)*7 + 5);
+  }
+
+  let y = headH + 1.4 + 7;
+
+  /* ----- Alat tata letak ----- */
+  const halamanBaru = ()=>{
+    doc.addPage();
+    fill(D1); doc.rect(0, 0, W, 9, 'F'); fill(AC); doc.rect(0, 9, W, .8, 'F');
+    font('bold',7.4); warna(WHITE); doc.text('KAONE MOTRET', mx, 5.8);
+    font('normal',7); warna(AC); doc.text(kwPdfTeks(d.noKwitansi), W-mx, 5.8, {align:'right'});
+    y = 17;
+  };
+  const pastikan = h=>{ if(banyak && y + h > H - FOOT) halamanBaru(); };
+  const judul = teks=>{
+    pastikan(10);
+    const t = teks.toUpperCase();
+    fill(AC); doc.roundedRect(mx, y-2.7, 1.4, 3.8, .6, .6, 'F');
+    font('bold',7); warna(D2); doc.text(t, mx+3.4, y, {charSpace:.9});
+    const lebarT = doc.getTextWidth(t) + t.length*.9;
+    garis(T2); doc.setLineWidth(.3); doc.line(mx+3.4+lebarT+2.6, y-1.1, W-mx, y-1.1);
+    y += 4.6;
+  };
+
+  /* ----- Detail pesanan: kartu 2 kolom ----- */
+  judul('Detail Pesanan');
+  const kartu = [
+    {l:'Tanggal Acara', v:d.tgl},
+    {l:'Jenis Acara', v:d.jenis},
+    ...(d.mempelai ? [{l:'Kedua Mempelai', v:d.mempelai}] : []),
+    {l:'Paket', v:j.paket||'-'}
+  ];
+  kwBarisKartu(kartu).forEach(baris=>{
+    const lebar = baris.length===1 ? cw : (cw-3)/2;
+    font('bold',9);
+    const isi = baris.map(t=>bungkus(t.v, lebar-8, 3));
+    const tinggi = Math.max(...isi.map(a=>a.length))*3.8 + 7.8;
+    pastikan(tinggi + 2.2);
+    baris.forEach((t,i)=>{
+      const x = mx + i*(lebar+3);
+      fill(T1); garis(T2); doc.setLineWidth(.2);
+      doc.roundedRect(x, y, lebar, tinggi, 2.2, 2.2, 'FD');
+      fill(AC); doc.roundedRect(x+.1, y+2.2, 1.1, tinggi-4.4, .5, .5, 'F');
+      font('normal',6); warna(SOFT); doc.text(kwPdfTeks(t.l).toUpperCase(), x+4, y+3.9, {charSpace:.5});
+      font('bold',9); warna(INK);
+      isi[i].forEach((b,k)=>doc.text(b, x+4, y+7.8 + k*3.8));
+    });
+    y += tinggi + 2.2;
+  });
+  y += 3;
+
+  /* ----- Isi paket: daftar centang ----- */
+  if(d.adaDeskripsi || qrUrl){
+    judul('Isi Paket');
+    const dua = d.items.length > 5;
+    const lebarKol = dua ? (cw-8-4)/2 : cw-8;
+    font('bold',8.6);
+    const butir = d.items.map(x=>bungkus(x, lebarKol-6.4, 3));
+    const baris = [];
+    for(let i=0;i<butir.length;i+=(dua?2:1)){
+      const grup = butir.slice(i, i+(dua?2:1));
+      baris.push({grup, h: Math.max(...grup.map(a=>a.length))*3.6 + 1.8});
+    }
+    const pad = 3.2;
+    if(!baris.length){
+      font('normal',8.6);
+      const teks = bungkus(j.paket || 'Rincian paket ada di kode QR', cw-8, 6);
+      const h = teks.length*3.9 + pad*2;
+      pastikan(h + 3);
+      fill(T1); garis(T2); doc.setLineWidth(.2); doc.roundedRect(mx, y, cw, h, 2.4, 2.4, 'FD');
+      warna(INK); teks.forEach((b,k)=>doc.text(b, mx+4, y+pad+3+k*3.9));
+      y += h + 3;
+    } else {
+      const total = baris.reduce((s,r)=>s+r.h, 0) + pad*2;
+      const utuh = !banyak || total <= H - FOOT - 30;
+      if(utuh){
+        pastikan(total + 3);
+        fill(T1); garis(T2); doc.setLineWidth(.2); doc.roundedRect(mx, y, cw, total, 2.6, 2.6, 'FD');
+        y += pad;
+      }
+      baris.forEach(r=>{
+        if(!utuh) pastikan(r.h + 1);
+        r.grup.forEach((tt,i)=>{
+          const x = mx + 4 + i*(lebarKol+4), ty = y + 3;
+          fill(AC); doc.circle(x+1.5, ty-1.1, 1.5, 'F');
+          garis(D1); doc.setLineWidth(.38); doc.setLineCap('round');
+          doc.line(x+.85, ty-1.1, x+1.35, ty-.55); doc.line(x+1.35, ty-.55, x+2.2, ty-1.7);
+          font('bold',8.6); warna(INK);
+          tt.forEach((b,k)=>doc.text(b, x+4.6, ty + k*3.6));
+        });
+        y += r.h;
+      });
+      y += utuh ? pad + 3 : 3;
+    }
+    y += 1.5;
+  }
+
+  /* ----- Garis sobek ----- */
+  pastikan(12);
+  garis(T2); doc.setLineWidth(.45); doc.setLineDashPattern([1.4,1.2], 0);
+  doc.line(mx, y, W-mx, y); doc.setLineDashPattern([], 0);
+  fill(AC); doc.circle(mx-.6, y, .9, 'F'); doc.circle(W-mx+.6, y, .9, 'F');
+  y += 7;
+
+  /* ----- Rincian pembayaran ----- */
+  const barisBayar = [
+    ['Harga Paket', fmtRp(d.harga), 'n'],
+    ...(d.diskon>0 ? [['Diskon', '- '+fmtRp(d.diskon), 'diskon']] : []),
+    ['Total Tagihan', fmtRp(d.total), 'total'],
+    ['DP / Sudah Dibayar', fmtRp(d.dp), 'n']
+  ];
+  pastikan(5 + 8 + barisBayar.reduce((s,r)=>s+(r[2]==='total'?8:6),0) + 3 + 16);
+  judul('Rincian Pembayaran');
+  font('normal',7.2); warna(SOFT); doc.text('Sudah terbayar', mx, y);
+  font('bold',8.2); warna(D2); doc.text(d.terbayar+'%', W-mx, y, {align:'right'});
+  y += 1.7;
+  fill(T2); doc.roundedRect(mx, y, cw, 2.4, 1.2, 1.2, 'F');
+  if(d.terbayar>0){ fill(AC); doc.roundedRect(mx, y, Math.max(2.4, cw*d.terbayar/100), 2.4, 1.2, 1.2, 'F'); }
+  y += 2.4 + 5;
+
+  const yBarisAwal = y;
+  barisBayar.forEach(([l,v,jenis],i)=>{
+    const total = jenis==='total';
+    const tinggi = total ? 8 : 6;
+    if(total){ garis(D2); doc.setLineWidth(.35); doc.line(mx, y-3.3, W-mx, y-3.3); }
+    font(total?'bold':'normal', total?10.4:9); warna(total?D1:SOFT);
+    doc.text(kwPdfTeks(l), mx, y + (total?.6:0));
+    font('bold', total?10.4:9); warna(jenis==='diskon'?OK:(total?D1:INK));
+    doc.text(kwPdfTeks(v), W-mx, y + (total?.6:0), {align:'right'});
+    y += tinggi;
+    const berikut = barisBayar[i+1];
+    if(berikut && !total && berikut[2]!=='total'){ garis(T2); doc.setLineWidth(.2); doc.setLineDashPattern([.7,.7],0); doc.line(mx, y-3.4, W-mx, y-3.4); doc.setLineDashPattern([],0); }
+  });
+  const yBarisAkhir = y;
+
+  // Cap LUNAS (di ruang kosong antara label dan nominal)
+  if(d.lunas){
+    const cx = mx + cw*.52, cy = (yBarisAwal + yBarisAkhir)/2 - 1.8, sd = 9*Math.PI/180;
+    const sw = 15.6, sh = 5.8, ca = Math.cos(sd), sa = Math.sin(sd);
+    const sudut = [[-sw,-sh],[sw,-sh],[sw,sh],[-sw,sh]].map(([px,py])=>[cx + px*ca + py*sa, cy - px*sa + py*ca]);
+    alpha(.88, ()=>{
+      garis(OK); doc.setLineWidth(.9);
+      doc.lines([[sudut[1][0]-sudut[0][0], sudut[1][1]-sudut[0][1]],[sudut[2][0]-sudut[1][0], sudut[2][1]-sudut[1][1]],[sudut[3][0]-sudut[2][0], sudut[3][1]-sudut[2][1]]], sudut[0][0], sudut[0][1], [1,1], 'S', true);
+      font('bold',15); warna(OK);
+      const tw = doc.getTextWidth('LUNAS') + 4*1.4, cap = 15*.3528*.36;
+      doc.text('LUNAS', cx - (tw/2)*ca + cap*sa, cy + (tw/2)*sa + cap*ca, {angle:9, charSpace:1.4});
+    });
+  }
+  y += .6;
+
+  // Pita sisa pembayaran + status
+  pastikan(16 + 5);
+  fill(d.lunas ? OKD : D1); doc.roundedRect(mx, y, cw, 16, 3.2, 3.2, 'F');
+  font('bold',6.4); warna(d.lunas ? [184,240,207] : AC); doc.text('SISA PEMBAYARAN', mx+5.5, y+5.8, {charSpace:.9});
+  font('bold',16.5); warna(WHITE); doc.text(kwPdfTeks(fmtRp(d.sisa)), mx+5.5, y+12.7);
+  const status = kwPdfTeks(d.status).slice(0,22);
+  font('bold',8); const pw = doc.getTextWidth(status) + 9;
+  font('normal',5.6); warna([226,222,210]); doc.text('STATUS', W-mx-5.5, y+5.4, {align:'right', charSpace:.8});
+  fill(WHITE); doc.roundedRect(W-mx-5.5-pw, y+6.8, pw, 6.4, 3.2, 3.2, 'F');
+  font('bold',8); warna(d.lunas ? OKD : WARN); doc.text(status, W-mx-5.5-pw/2, y+11, {align:'center'});
+  y += 16 + 5;
+
+  /* ----- Catatan & link progres ----- */
+  if(d.catatan){
+    font('italic',8);
+    const teks = bungkus(d.catatan, cw-9, 6);
+    const h = teks.length*3.7 + 9.4;
+    pastikan(h + 3);
+    fill(T1); doc.roundedRect(mx, y, cw, h, 2.2, 2.2, 'F');
+    fill(AC); doc.roundedRect(mx, y, 1.3, h, .6, .6, 'F');
+    font('bold',6.8); warna(D2); doc.text('CATATAN', mx+5, y+4.9, {charSpace:.7});
+    font('italic',8); warna(SOFT); teks.forEach((b,k)=>doc.text(b, mx+5, y+9+k*3.7));
+    y += h + 2.6;
+  }
+  if(d.progres){
+    font('normal',7.8);
+    const baris = bungkus(d.progres, cw-10);
+    const h = baris.length*3.6 + 10;
+    pastikan(h + 3);
+    fill(T1); garis(T2); doc.setLineWidth(.2); doc.roundedRect(mx, y, cw, h, 2.2, 2.2, 'FD');
+    font('bold',8); warna(D2); doc.text('Pantau progres foto Anda', mx+5, y+5.2);
+    font('normal',7.8); warna([29,79,168]);
+    baris.forEach((b,k)=>doc.textWithLink(b, mx+5, y+9.4+k*3.6, {url:d.progres}));
+    y += h + 2.6;
+  }
+
+  /* ----- Kode QR verifikasi ----- */
+  if(qrUrl){
+    const q = kwQrMake(qrUrl);
+    const mm = Math.max(.34, 20/q.size), qw = q.size*mm, kotak = qw + 4, h = kotak + 4.4;
+    pastikan(h + 3);
+    fill(T1); garis(T2); doc.setLineWidth(.2); doc.roundedRect(mx, y, cw, h, 2.8, 2.8, 'FD');
+    fill(WHITE); doc.roundedRect(mx+3.2, y+2.2, kotak, kotak, 2, 2, 'F');
+    fill([20,18,10]);
+    const qx = mx+3.2+2, qy = y+2.2+2;
+    for(let r=0;r<q.size;r++){
+      let c = 0;
+      while(c<q.size){
+        if(!q.isDark(c,r)){ c++; continue; }
+        let e = c; while(e<q.size && q.isDark(e,r)) e++;
+        doc.rect(qx+c*mm, qy+r*mm, (e-c)*mm, mm+.03, 'F');   // satu persegi panjang per deret modul gelap
+        c = e;
+      }
+    }
+    const tx = mx+3.2+kotak+5, tl = W-mx-4-tx;
+    font('bold',10.5); warna(D2); doc.text('Scan untuk verifikasi', tx, y+8);
+    font('normal',7.8); warna(SOFT);
+    doc.text(doc.splitTextToSize('Pindai kode QR di samping untuk memastikan kwitansi ini asli dan melihat isi paket lengkap. Tanpa login.', tl), tx, y+13);
+    font('bold',6.8); warna(INK); doc.text(kwPdfTeks(d.noKwitansi), tx, y+h-3.6);
+    y += h + 3;
+  }
+  const yAkhir = y;
+
+  /* ----- Kaki halaman: terima kasih (halaman terakhir), pita warna & nomor halaman ----- */
+  const n = doc.getNumberOfPages();
+  for(let p=1; p<=n; p++){
+    doc.setPage(p);
+    fill(D1); doc.rect(0, H-2.6, W, 2.6, 'F');
+    fill(AC); doc.rect(0, H-2.6, W*.22, 2.6, 'F');
+    if(p===n){
+      font('italic',9); warna(D2); doc.text('Terima kasih atas kepercayaannya', W/2, H-10.4, {align:'center'});
+      font('normal',6.8); warna(SOFT); doc.text(`Kaone Motret \u00B7 Dicetak ${d.printedAt}`, W/2, H-6.4, {align:'center'});
+    }
+    if(n>1){ font('normal',6.6); warna(SOFT); doc.text(`Hal ${p}/${n}`, W-mx, H-5, {align:'right'}); }
+  }
+  doc.setPage(n);
+  return yAkhir;
+}
+
+async function kwBuatPdf(j, d, qrUrl){
+  const { jsPDF } = window.jspdf;
+  const logo = await kwLogoPng(d.col.accent, 60);
+  // Langkah 1: gambar di kertas tinggi sementara hanya untuk mengukur panjang isi.
+  const ukur = kwGambarPdf(new jsPDF({unit:'mm', format:[148, 1000]}), j, d, qrUrl, logo, false);
+  const tinggi = Math.max(210, Math.ceil(ukur + 15));
+  // Langkah 2: satu halaman (lebar A5, tinggi menyesuaikan isi, minimal A5). Isi luar biasa panjang: A5 beberapa halaman.
+  if(tinggi <= 400){
+    const doc = new jsPDF({unit:'mm', format:[148, tinggi]});
+    kwGambarPdf(doc, j, d, qrUrl, logo, false);
+    return doc;
+  }
+  const doc = new jsPDF({unit:'mm', format:'a5'});
+  kwGambarPdf(doc, j, d, qrUrl, logo, true);
+  return doc;
+}
+
+async function downloadKwitansiPdf(jobId){
+  if(!isAdmin()) return;
+  const j = jobs.find(x=>x.id===jobId);
+  if(!j) return;
+  if(typeof window.jspdf === 'undefined'){
+    alert('Pustaka pembuat PDF belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
+    return;
+  }
+  const d = kwData(j);
+  const ui = kwGenUi('pdf', d.col);
+  try{
+    await kwLangkah(ui, 0, ()=>kmPastikanTaut(j));
+    const qrUrl = await kwLangkah(ui, 1, ()=>kwQrBuildUrl(j));
+    const doc = await kwLangkah(ui, 2, ()=>kwBuatPdf(j, d, qrUrl));
+    const nama = `Kwitansi-${d.berkas}.pdf`;
+    await kwLangkah(ui, 3, async()=>{ doc.save(nama); });
+    markKwitansiPrinted(j);
+    ui.sukses({berkas:nama, ulang:()=>doc.save(nama), tutupOtomatis:2600});
+    if(document.getElementById('jobDetailCard')) openJobDetailModal(j.id);
+  }catch(e){
+    console.warn('Kwitansi PDF gagal', e);
+    ui.gagal('Gagal membuat kwitansi PDF. Coba lagi.');
+  }
+}
+
+/* =====================================================================
+   3) ANIMASI PROSES PEMBUATAN (kartu kecil di tengah layar)
+   Kertas kwitansi "keluar" dari printer sambil 4 langkah dicentang satu per satu,
+   lalu muncul centang besar + percikan. Versi gambar menampilkan pratinjau hasilnya.
+   ===================================================================== */
+function kwGenUi(jenis, col){
+  const png = jenis==='png';
+  const langkah = ['Mengumpulkan data job', 'Menyiapkan kode QR verifikasi', 'Menyusun desain kwitansi', png ? 'Menyimpan gambar PNG' : 'Menyimpan dokumen PDF'];
+  const ov = document.createElement('div');
+  ov.className = 'kg-ov';
+  ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-live','polite');
+  ov.style.cssText = `--kg-d1:${col.hdr1};--kg-d2:${col.hdr2};--kg-a:${col.accent};`;
+  ov.innerHTML = `
+    <div class="kg-card">
+      <div class="kg-body">
+        <div class="kg-stage" aria-hidden="true">
+          <div class="kg-slot"><i class="kg-led"></i></div>
+          <div class="kg-feed"><div class="kg-paper">
+            <div class="kg-ph"><span class="kg-pdot"></span><span class="kg-ln" style="--i:0;width:46%"></span></div>
+            <span class="kg-ln" style="--i:1;width:92%"></span>
+            <span class="kg-ln" style="--i:2;width:78%"></span>
+            <span class="kg-ln" style="--i:3;width:86%"></span>
+            <span class="kg-ln kg-lt" style="--i:4;width:64%"></span>
+          </div></div>
+        </div>
+        <div class="kg-title">Membuat kwitansi ${png?'gambar':'PDF'}</div>
+        <div class="kg-sub">Sebentar ya, kwitansi sedang disiapkan</div>
+        <ul class="kg-steps">${langkah.map(t=>`<li class="kg-st"><span class="kg-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 12.5l4.2 4.2L18.5 8"/></svg></span><span>${t}</span></li>`).join('')}</ul>
+        <div class="kg-bar"><i></i></div>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>ov.classList.add('show')));
+
+  const li = [...ov.querySelectorAll('.kg-st')];
+  const bar = ov.querySelector('.kg-bar i');
+  const body = ov.querySelector('.kg-body');
+  let selesai = false, timer = null;
+  const tutup = ()=>{
+    clearTimeout(timer); document.removeEventListener('keydown', esc);
+    ov.classList.remove('show');
+    setTimeout(()=>ov.remove(), 300);
+  };
+  const esc = e=>{ if(e.key==='Escape' && selesai) tutup(); };
+  document.addEventListener('keydown', esc);
+  ov.addEventListener('click', e=>{ if(e.target===ov && selesai) tutup(); });
+
+  return {
+    aktif(i){ li[i].classList.add('act'); },
+    beres(i){
+      li[i].classList.remove('act'); li[i].classList.add('done');
+      bar.style.width = ((i+1)/li.length*100)+'%';
+    },
+    sukses(opsi){
+      selesai = true;
+      const percik = Array.from({length:12}, (_,k)=>{
+        const sudut = (k/12)*Math.PI*2 + .3, jarak = 58 + (k%3)*14;
+        return `<i class="kg-cf" style="--dx:${Math.round(Math.cos(sudut)*jarak)}px;--dy:${Math.round(Math.sin(sudut)*jarak)}px;--c:${k%2?'var(--kg-a)':'var(--kg-d2)'};--dl:${(k%4)*40}ms"></i>`;
+      }).join('');
+      body.innerHTML = `
+        <div class="kg-done">
+          <div class="kg-ok">
+            ${percik}
+            <svg viewBox="0 0 84 84" aria-hidden="true"><circle class="kg-oc" cx="42" cy="42" r="36"/><path class="kg-op" d="M27 43l10.5 10.5L58 31"/></svg>
+          </div>
+          <div class="kg-title">Kwitansi siap!</div>
+          <div class="kg-file">${escapeHtml(opsi.berkas)}</div>
+          <div class="kg-sub">${png?'Gambar sudah tersimpan di perangkat Anda':'Dokumen sudah tersimpan di perangkat Anda'}</div>
+          ${opsi.thumb ? `<div class="kg-thumb"><img src="${opsi.thumb}" alt="Pratinjau kwitansi"></div>` : ''}
+          <div class="kg-acts">
+            <button type="button" class="kg-btn ghost" data-kg="ulang">Unduh lagi</button>
+            <button type="button" class="kg-btn" data-kg="tutup">Selesai</button>
+          </div>
+        </div>`;
+      body.querySelector('[data-kg="tutup"]').addEventListener('click', tutup);
+      body.querySelector('[data-kg="ulang"]').addEventListener('click', ()=>{ try{ opsi.ulang(); }catch(e){} });
+      if(opsi.tutupOtomatis) timer = setTimeout(tutup, opsi.tutupOtomatis);
+    },
+    gagal(pesan){
+      selesai = true;
+      body.innerHTML = `
+        <div class="kg-done">
+          <div class="kg-ok kg-bad"><svg viewBox="0 0 84 84" aria-hidden="true"><circle class="kg-oc" cx="42" cy="42" r="36"/><path class="kg-op" d="M31 31l22 22M53 31L31 53"/></svg></div>
+          <div class="kg-title">Belum berhasil</div>
+          <div class="kg-sub">${escapeHtml(pesan)}</div>
+          <div class="kg-acts"><button type="button" class="kg-btn" data-kg="tutup">Tutup</button></div>
+        </div>`;
+      body.querySelector('[data-kg="tutup"]').addEventListener('click', tutup);
+    }
+  };
+}
+// Jalankan satu langkah nyata; minimal tampil 360 ms supaya animasinya terasa & tidak berkedip
+async function kwLangkah(ui, i, fn){
+  ui.aktif(i);
+  const t0 = Date.now();
+  const hasil = await fn();
+  const sisa = 360 - (Date.now() - t0);
+  if(sisa>0) await kwTunggu(sisa);
+  ui.beres(i);
+  return hasil;
 }
 function isoDateCompact(iso){ return (iso||'').replace(/-/g,''); }
 // PENTING: jangan pakai toISOString() untuk mengambil tanggal dari objek Date di sini.
@@ -17467,6 +18073,7 @@ const CHANGELOG = [
     version: '1.19.1',
     tanggal: '13 Oktober 2026',
     items: [
+      { kategori: 'Perubahan', teks: 'Kwitansi PDF dan gambar didesain ulang: header berwarna sesuai jenis acara, kartu detail pesanan, daftar isi paket dengan centang, batang progres pembayaran, kotak Sisa Pembayaran yang besar, cap LUNAS otomatis, dan kode QR verifikasi di bagian bawah. Kode kwitansi kini unik dan tetap, tidak berubah walau ada job baru atau tanggal acara diganti. Contohnya KMT-26W-K7M4Q-3: tahun, jenis acara, lima karakter acak, dan satu karakter cek. Huruf yang mudah tertukar seperti 0/O dan 1/I/L tidak dipakai. Kwitansi PDF kini selalu satu halaman. Saat tombol cetak ditekan, tampil animasi proses pembuatan kwitansi, dan untuk gambar muncul pratinjau hasilnya.' },
       { kategori: 'Perubahan', teks: 'Kartu Tagihan hari H didesain ulang: nominal besar yang berhitung naik, penanda waktu, batang progres DP, rincian ala struk, serta tombol Salin pesan dan WhatsApp klien yang lebih jelas. Akun Tim tetap hanya melihat sisa yang ditagih.' },
       { kategori: 'Perubahan', teks: 'Biodata di Detail Job tampil lebih rapi: tiap bagian punya kartu dan ikon sendiri, status berupa label berwarna, link Maps dan Instagram bisa langsung diketuk, nominal keuangan rata kanan, dan Catatan punya kotak tersendiri, lengkap dengan animasi halus saat muncul.' },
       { kategori: 'Perubahan', teks: 'Gambar Detail Job yang diunduh didesain ulang: header gelap dengan nama klien besar, tiap bagian berupa kartu beridentitas ikon, status berupa label berwarna, serta Sisa Pembayaran dan Penghasilan Bersih disorot agar langsung terbaca.' },
@@ -19838,9 +20445,9 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 <div id="kc"><div class="h"><button id="kx" data-i="back"></button><div class="av" id="kav"></div><div id="kpw" style="cursor:pointer;min-width:0"><b id="kn">Chat</b><small id="ks"></small></div>
 <div class="hb"><button id="kcv1" title="Suara" data-i="phone"></button><button id="kcv2" title="Video" data-i="video"></button><button id="kmn" title="Pengaturan chat" data-i="dots"></button></div></div>
 <button type="button" id="kkb" aria-label="Kembali ke panggilan"><span class="dd"></span><span id="kkbt"></span><span class="go">Ketuk untuk kembali</span></button>
-<div class="tm" id="ktm"></div><div class="m" id="km"></div>
+<div class="tm" id="ktm" role="dialog" aria-modal="true" aria-label="Tema chat"></div><div class="m" id="km"></div>
 <div class="rp" id="krp"><span id="krt"></span><button id="krx" data-i="close"></button></div>
-<div class="c"><div class="klk" aria-hidden="true" data-i="lock"></div><div class="kbx"><textarea id="ki" rows="1" placeholder="Ketik pesan" aria-label="Tulis pesan" autocomplete="off"></textarea><button type="button" class="g" id="kat" data-i="clip" aria-label="Lampirkan foto atau video" title="Lampirkan foto atau video"></button><button type="button" class="g" id="kcam" data-i="camera" aria-label="Ambil foto dengan kamera" title="Ambil foto dengan kamera"></button></div><div class="krb" id="krbar"><button type="button" class="g" id="krdel" data-i="trash" aria-label="Batalkan rekaman" title="Batalkan rekaman"></button><span class="kdot"></span><b id="krtime">0:00</b><span id="krhint">&#8249; Geser untuk batal</span></div><button type="button" id="kmic" data-i="mic" aria-label="Rekam pesan suara"></button></div>
+<div class="c"><button type="button" id="kdn" aria-label="Ke pesan terbaru" data-i="chevd"></button><div class="klk" aria-hidden="true" data-i="lock"></div><div class="kbx"><textarea id="ki" rows="1" placeholder="Ketik pesan" aria-label="Tulis pesan" autocomplete="off"></textarea><button type="button" class="g" id="kat" data-i="clip" aria-label="Lampirkan foto atau video" title="Lampirkan foto atau video"></button><button type="button" class="g" id="kcam" data-i="camera" aria-label="Ambil foto dengan kamera" title="Ambil foto dengan kamera"></button></div><div class="krb" id="krbar"><button type="button" class="g" id="krdel" data-i="trash" aria-label="Batalkan rekaman" title="Batalkan rekaman"></button><span class="kdot"></span><b id="krtime">0:00</b><span id="krhint">&#8249; Geser untuk batal</span></div><button type="button" id="kmic" data-i="mic" aria-label="Rekam pesan suara"></button></div>
 <div class="sh" id="kpf"><div class="sc"><b>Profil</b><div class="pf"><div class="pa" id="kpa"></div><button id="kpc" data-i="camera"></button></div><small id="kpz" style="text-align:center"></small><button type="button" id="kpd" class="pdel"><span data-i="trash"></span>Hapus foto</button>
 <label>Nama kamu</label><input id="kpn" maxlength="40" placeholder="Nama"><label>Nama lawan chat <small>(hanya terlihat olehmu)</small></label><input id="kpl" maxlength="40" placeholder="Nama panggilan">
 <div class="rw"><button id="kpx">Batal</button><button id="kps" class="pri">Simpan</button></div></div></div>
@@ -19979,7 +20586,7 @@ I.replyme='<path d="M5 19v-3a7 7 0 0 1 7-7h7"/><path d="M15 5l4 4-4 4"/>';
 /* Balas untuk bubble lawan (tombol di KANAN bubble): panah menghadap ke kiri, ke arah bubble - cermin dari replyme */
 I.replyin='<path d="M19 19v-3a7 7 0 0 0-7-7H5"/><path d="M9 5L5 9l4 4"/>';
 I.copy='<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/>';
-I.user='<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>';
+I.bell='<path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7z"/><path d="M10 20a2 2 0 0 0 4 0"/>';I.user='<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>';
 function ic(n){return '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+I[n]+'</svg>'}
 var M={heart:'<path d="M12 21s-7-4.5-9.3-9A5.3 5.3 0 0 1 12 6a5.3 5.3 0 0 1 9.3 6c-2.3 4.5-9.3 9-9.3 9z"/>',
 star:'<path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17l-6.1 3.6 1.4-6.8L2.2 9.1l6.9-.8z"/>',
@@ -20420,9 +21027,14 @@ return Promise.resolve(sb.rpc('kaone_chat_set_tema',{p_tema:id})).then(function(
 function kTG(k){try{return localStorage.getItem(k+me)}catch(e){return null}}
 function th(id){id=AL2[id]||id;var t=T[id]||T.salju;tema=T[id]?id:'salju';var r=$('kc').style,g=t.d?'0 1px 0 #0006':t.g=='imut'?'0 2px 0 rgba(0,0,0,.09)':'0 1px 1px #1e28391f';$('kc').classList.toggle('imut',t.g=='imut');kAniCls(id,t);
 r.setProperty('--kb',t.bg);r.setProperty('--kh','linear-gradient(135deg,'+t.h[0]+','+t.h[1]+')');r.setProperty('--ko',t.o);r.setProperty('--ki',t.i);r.setProperty('--ka',t.a);r.setProperty('--kt',t.t);
-r.setProperty('--kw',t.w?t.w():(t.g=='imut'?btile(t.m,t.p,.34,t.l%3):dots(t.p)));r.setProperty('--kac',t.c);r.setProperty('--kz',(t.z||360)+'px');r.setProperty('--kdx',t.x==null?1:t.x);r.setProperty('--kdy',t.y==null?1:t.y);r.setProperty('--kr',t.r[0]);r.setProperty('--kro',t.r[1]);r.setProperty('--kf',t.g=='imut'?(t.f||F1):FP);r.setProperty('--ks',g);var kiE=$('ki');if(kiE)kiE.placeholder=t.ph||(t.g=='imut'?'Ketik pesan lucu ✿':'Ketik pesan');try{kFx()}catch(e){}av();try{kkTema(t)}catch(e){}}
-function menu(){var h='';['ani','imut','terang','gelap'].forEach(function(g){h+='<small>Tema '+(g=='ani'?'anime &amp; hero':g)+'</small><div class="gr">';Object.keys(T).filter(function(k){return T[k].g==g}).forEach(function(k){var t=T[k];
-h+='<button data-t="'+k+'" class="'+(k==tema?'sel':'')+'" style="background:'+t.bg+';color:'+t.t+'"><span class="pv" style="background:linear-gradient(135deg,'+t.h[0]+','+t.h[1]+')">'+mo(t.m[0],'#fff')+(t.g=='imut'?mo(t.m[1],'#fff'):'')+'</span><span class="bs"><i style="background:'+t.i+'"></i><i style="background:'+t.o+'"></i></span><b>'+t.n+'</b></button>'});h+='</div>'});$('ktm').innerHTML=h}
+r.setProperty('--kw',t.w?t.w():(t.g=='imut'?btile(t.m,t.p,.34,t.l%3):dots(t.p)));r.setProperty('--kac',t.c);r.setProperty('--kz',(t.z||360)+'px');r.setProperty('--kdx',t.x==null?1:t.x);r.setProperty('--kdy',t.y==null?1:t.y);r.setProperty('--kr',t.r[0]);r.setProperty('--kro',t.r[1]);r.setProperty('--kf',t.g=='imut'?(t.f||F1):FP);r.setProperty('--ks',g);var kiE=$('ki');if(kiE)kiE.placeholder=t.ph||(t.g=='imut'?'Ketik pesan lucu ✿':'Ketik pesan');try{var kk=$('kc'),pv=window.__kcPrev;kk.classList.toggle('dk',!!t.d);r.setProperty('--krb',(String(t.r[0]).match(/\d+px/g)||['16px']).sort(function(a,b){return parseInt(b)-parseInt(a)})[0]);if(pv&&pv!==tema){kk.classList.remove('sw');void kk.offsetWidth;kk.classList.add('sw');clearTimeout(window.__kcsw);window.__kcsw=setTimeout(function(){kk.classList.remove('sw')},850)}window.__kcPrev=tema}catch(e){}try{kFx()}catch(e){}av();try{kkTema(t)}catch(e){}}
+var kCn=0;
+function kCard(k){var t=T[k],mk=t.m||[],sel=k==tema;kCn++;
+return '<button type="button" data-t="'+k+'" class="tc'+(sel?' sel':'')+'" aria-pressed="'+sel+'" aria-label="Tema '+E(t.n)+'" style="--i:'+kCn+';--cb:'+t.bg+';--ch1:'+t.h[0]+';--ch2:'+t.h[1]+';--co:'+t.o+';--ci:'+t.i+';--ca:'+t.a+';--ct:'+t.t+'"><span class="tcp"><span class="tch"></span><span class="tcm">'+(mk[0]&&M[mk[0]]?mo(mk[0],'#fff'):'')+'</span><span class="tcb tin"></span><span class="tcb tout"></span></span><span class="tcn"><b>'+E(t.n)+'</b><i class="tck">'+ic('check')+'</i></span></button>'}
+function menu(){var G=[['ani','Anime & Hero','Karakter, wallpaper & efek khas'],['imut','Imut','Lucu dengan maskot bergerak'],['terang','Terang','Bersih & tenang'],['gelap','Gelap','Nyaman di malam hari']];kCn=0;
+var h='<div class="tmc"><div class="tmh"><span class="tmg"></span><div class="tmt"><b>Tema chat</b><small>Pilih suasana obrolanmu</small></div><button type="button" id="kth" class="tmx" aria-label="Tutup">'+ic('close')+'</button></div><div class="tmtabs" role="tablist"><button type="button" class="on" data-tab="all">Semua</button>'+G.map(function(g){return '<button type="button" data-tab="'+g[0]+'">'+g[1]+'</button>'}).join('')+'</div><div class="tmb">';
+G.forEach(function(g){var ks=Object.keys(T).filter(function(k){return T[k].g==g[0]});if(!ks.length)return;h+='<section data-sec="'+g[0]+'"><div class="tmsh"><b>'+g[1]+'</b><small>'+g[2]+'</small></div><div class="gr">';ks.forEach(function(k){h+=kCard(k)});h+='</div></section>'});
+$('ktm').innerHTML=h+'</div></div>'}
 function tm(d){return new Date(d).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
 function toast(s){$('ks').textContent=s;setTimeout(st,2500)}
 function hm(d){return d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}).replace(':','.')}
@@ -20455,7 +21067,7 @@ var mark=function(){try{localStorage.setItem(K,String(Date.now()))}catch(x){}};
 $('knfx').onclick=function(){mark();e.classList.remove('on')};
 $('knfo').onclick=async function(){mark();e.classList.remove('on');await rtRequestPermission();kNotifPaint()}}
 e.classList.add('on')}catch(x){}}
-function st(){var e=$('ks');if(lo&&lo.k){e.innerHTML='sedang mengetik<span class="dd"><i></i><i></i><i></i></span>'}
+function st(){var e=$('ks');try{$('kc').classList.toggle('onl',!!(lo&&lo.on))}catch(x){}if(lo&&lo.k){e.innerHTML='sedang mengetik<span class="dd"><i></i><i></i><i></i></span>'}
 else e.textContent=lo?(lo.on?'online':(lo.t?'terakhir online '+lastTxt(lo.t):'')):'';
 if($('kop')&&$('kop').classList.contains('on'))opRef()}
 async function open(){if(!kaoneChatBoleh())return;sb=window.supabaseClient||supabaseClient;if(!sb)return;var s=(await sb.auth.getSession()).data.session;if(!s)return;
@@ -20559,8 +21171,9 @@ rgn={};var hh='',lastDay='';a.forEach(function(m){var d=new Date(m.dikirim_at),d
 if(dk&&dk!==lastDay){lastDay=dk;hh+='<div class="kds"><span>'+kDayLabel(d)+'</span></div>'}
 if(kUnId&&m.id===kUnId)hh+='<div class="kud" id="kud"><span>'+kUnN+' pesan belum dibaca</span></div>';
 hh+=bub(m)});
-el.innerHTML=nt()+hh+(lo&&lo.k?TY:'');a.forEach(function(m){dn[m.id]=1});rg=rgn;dr0=true;
+el.innerHTML=nt()+hh+(lo&&lo.k?TY:'');try{kGroup(el)}catch(x){}a.forEach(function(m){dn[m.id]=1});rg=rgn;dr0=true;
 if(b){var rm2=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;if(wasLive&&!rm2&&el.scrollTo)el.scrollTo({top:el.scrollHeight,behavior:'smooth'});else el.scrollTop=el.scrollHeight}}
+function kGroup(el){var p=null,k=el.children,i,c,o;for(i=0;i<k.length;i++){c=k[i];if(!c.classList.contains('rw2')||c.classList.contains('ty')){p=null;continue}o=c.classList.contains('me');if(p&&p.o===o){c.classList.add('gc');p.e.classList.add('gn')}p={e:c,o:o}}}
 var TY='<div class="rw2 ty"><div class="b"><span class="td"></span><span class="td"></span><span class="td"></span></div></div>';
 function chips(m){var r=m.reaksi||{},ks=Object.keys(r).filter(function(k){return typeof r[k]=='string'&&r[k]&&r[k].length<=8});if(!ks.length)return '';
 var c={};ks.forEach(function(k){c[r[k]]=(c[r[k]]||0)+1});var sig=ks.map(function(k){return k+r[k]}).sort().join();rgn[m.id]=sig;
@@ -21279,6 +21892,246 @@ html.kc-open #lh,html.kc-open #app,html.kc-open .topbar,html.kc-open .bottomnav,
 html.kc-open{background:var(--kb)}
 #kc.kbo .c{padding-bottom:8px}
 </style>
+<style id="kcDesign">
+/* =====================================================================
+   DESAIN BARU RUANG CHAT - satu lapisan gaya di atas semua tema
+   Tiap tema tetap membawa warna, wallpaper, maskot & efek khasnya sendiri;
+   lapisan ini hanya merapikan bentuk, jarak, kedalaman, dan gerak.
+   ===================================================================== */
+#kc{--kln:rgba(120,120,130,.2);--ksp:cubic-bezier(.2,1.25,.35,1);--kez:cubic-bezier(.22,.9,.3,1);--krb:16px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+#kc.dk{--kln:rgba(255,255,255,.1)}
+#kc button{-webkit-tap-highlight-color:transparent}
+
+/* ---------- Latar: cahaya lembut dari warna tema ---------- */
+@supports (color:color-mix(in srgb,red,blue)){
+#kc{background:radial-gradient(90% 55% at 100% 0%,color-mix(in srgb,var(--ka) 14%,transparent),transparent 70%),radial-gradient(85% 55% at 0% 100%,color-mix(in srgb,var(--ko) 65%,transparent),transparent 72%),var(--kb)}
+}
+
+/* ---------- Header ---------- */
+#kc .h{position:relative;z-index:4;gap:12px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));box-shadow:0 8px 24px -14px rgba(0,0,0,.55);border-bottom:1px solid rgba(255,255,255,.16)}
+#kc .h::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,0) 60%);pointer-events:none}
+#kc .h>*{position:relative}
+#kc #kn{font-size:17px;font-weight:800;letter-spacing:.1px;line-height:1.2}
+#kc #ks{font-size:12.5px;opacity:.9;margin-top:1px}
+#kc #ks:empty{display:none}
+#kc.onl #ks::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:6px;vertical-align:1px;animation:kdOnl 2.2s ease-out infinite}
+@keyframes kdOnl{0%{box-shadow:0 0 0 0 rgba(74,222,128,.7)}70%,100%{box-shadow:0 0 0 7px rgba(74,222,128,0)}}
+#kc .h .av{box-shadow:0 0 0 2px rgba(255,255,255,.38),0 6px 14px -4px rgba(0,0,0,.35);transition:box-shadow .4s}
+#kc.onl .h .av{box-shadow:0 0 0 2px rgba(255,255,255,.4),0 0 0 4px rgba(74,222,128,.75),0 6px 14px -4px rgba(0,0,0,.35)}
+#kc .h button{width:42px;height:42px;font-size:22px;transition:background .2s,transform .25s var(--ksp)}
+#kc .h button:active{background:rgba(255,255,255,.24);transform:scale(.88)}
+@media(hover:hover){#kc .h button:hover{background:rgba(255,255,255,.14)}}
+#kc .hb{gap:2px}
+#kc.on .h{animation:kdDrop .55s var(--ksp) both}
+@keyframes kdDrop{from{opacity:0;transform:translateY(-100%)}to{opacity:1;transform:none}}
+#kc.imut .h{border-radius:0 0 28px 28px;padding-bottom:13px;border-bottom:0;box-shadow:0 10px 24px -12px rgba(0,0,0,.4),inset 0 -3px 0 rgba(0,0,0,.08)}
+
+/* ---------- Daftar pesan ---------- */
+#kc .m{padding:16px 12px 10px;gap:3px}
+#kc .m:empty::before{content:"Belum ada pesan\A Mulai obrolan rahasiamu di sini";white-space:pre-line;align-self:center;margin:auto;text-align:center;padding:16px 22px;border-radius:22px;background:var(--ki);border:1px solid var(--kln);font-size:13px;line-height:1.7;opacity:.92;animation:kdRise .6s var(--ksp) both}
+#kc .rw2{max-width:min(88%,560px);margin-top:7px}
+#kc .rw2.gc{margin-top:-1px}
+#kc .rw2.ty{margin-top:7px}
+
+/* ---------- Gelembung pesan ---------- */
+#kc .b{max-width:none;padding:8px 12px 5px;font-size:15px;line-height:1.45;letter-spacing:.005em;box-shadow:0 1px 1px rgba(0,0,0,.08),0 6px 16px -8px rgba(0,0,0,.28);border:1px solid var(--kln)}
+#kc .b.me{border-color:transparent}
+#kc:not(.ani) .rw2.gc .b{border-radius:var(--krb)}
+#kc .t{font-size:10.5px;opacity:.62;margin-top:2px;letter-spacing:.02em}
+#kc .t i.r{color:#38bdf8;opacity:1}
+#kc .q{position:relative;border:0;border-radius:10px;padding:6px 10px 6px 13px;margin:0 0 6px;font-size:12.5px;line-height:1.4;background:rgba(127,127,127,.15);opacity:1;overflow:hidden}
+#kc .q::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3.5px;background:var(--ka);border-radius:2px}
+#kc .md{border-radius:12px;background:rgba(127,127,127,.14)}
+#kc .md.pv{border-radius:14px;padding:5px}
+#kc .md.pv .pw{border-radius:10px}
+#kc .nt{border-radius:999px;padding:6px 14px;font-weight:600;border:1px solid var(--kln)}
+#kc .rx{border-radius:999px;padding:1px 7px;box-shadow:0 2px 6px rgba(0,0,0,.22),0 0 0 2px var(--kb)}
+#kc .del{opacity:.7}
+
+/* Tanggal & penanda belum dibaca */
+#kc .kds{margin:14px 0 6px}
+#kc .kds span{padding:5px 15px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:.04em;border:1px solid var(--kln);box-shadow:0 2px 8px -4px rgba(0,0,0,.3)}
+#kc .kud{margin:12px -12px;padding:6px 12px;background:linear-gradient(90deg,transparent,rgba(127,127,127,.24) 18%,rgba(127,127,127,.24) 82%,transparent);color:var(--ka);font-weight:800;letter-spacing:.03em}
+
+/* Mengetik */
+#kc .rw2.ty .b{padding:12px 14px}
+#kc .td{width:7px;height:7px}
+
+@supports (color:color-mix(in srgb,red,blue)){
+#kc .b.me{background:linear-gradient(155deg,color-mix(in srgb,var(--ko) 86%,#fff),var(--ko) 52%,color-mix(in srgb,var(--ko) 90%,var(--ka)))}
+#kc .kds span{background:color-mix(in srgb,var(--ki) 78%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#kc .nt{background:color-mix(in srgb,var(--ki) 82%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#kc.dk .b.me{background:linear-gradient(155deg,color-mix(in srgb,var(--ko) 82%,#fff 6%),var(--ko) 55%,color-mix(in srgb,var(--ko) 88%,var(--ka)))}
+}
+
+/* Karakter tiap kelompok tema */
+#kc.imut .b{border:2px solid rgba(255,255,255,.8);box-shadow:0 3px 0 rgba(0,0,0,.07),0 10px 18px -10px rgba(0,0,0,.2);font-weight:500}
+#kc.imut .b.me{border-color:rgba(255,255,255,.65)}
+#kc.imut .kds span{border:2px solid rgba(255,255,255,.8)}
+#kc:not(.imut):not(.dk):not(.ani) .b{border-color:rgba(30,40,60,.07)}
+#kc.dk:not(.ani) .b{border-color:rgba(255,255,255,.07);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 8px 18px -10px rgba(0,0,0,.7)}
+#kc.dk .b.me{border-color:rgba(255,255,255,.1)}
+
+/* ---------- Balasan ---------- */
+#kc .rp{margin:0 12px;border:0;border-radius:16px 16px 0 0;padding:9px 8px 9px 16px;position:relative;overflow:hidden;box-shadow:0 -8px 20px -12px rgba(0,0,0,.35)}
+#kc .rp::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ka)}
+#kc .rp.on{animation:kdRise .32s var(--ksp) both}
+#kc .rp button{width:30px;height:30px;border-radius:50%;transition:background .2s}
+#kc .rp button:active{background:rgba(127,127,127,.25)}
+
+/* ---------- Kolom ketik ---------- */
+#kc .c{padding:8px 10px;padding-bottom:max(10px,env(safe-area-inset-bottom));gap:8px;background:transparent;box-shadow:none}
+#kc.kbo .c{padding-bottom:8px}
+#kc.on .c{animation:kdRise .55s var(--ksp) .05s both}
+@keyframes kdRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+#kc .kbx{min-height:48px;border-radius:26px;border:1px solid var(--kln);box-shadow:0 1px 2px rgba(0,0,0,.08),0 10px 26px -14px rgba(0,0,0,.4);transition:box-shadow .25s,border-color .25s}
+#kc .kbx:focus-within{border-color:var(--ka);box-shadow:0 0 0 3px rgba(127,127,127,.12),0 10px 26px -14px rgba(0,0,0,.4)}
+#kc .c .kbx textarea{padding-left:10px}
+#kc.imut .kbx,#kc.imut .krb{border:2px solid rgba(255,255,255,.85)}
+#kc .c #kmic{width:48px;height:48px;background:var(--ka);box-shadow:0 8px 18px -6px rgba(0,0,0,.4)}
+@supports (color:color-mix(in srgb,red,blue)){
+#kc .kbx:focus-within{box-shadow:0 0 0 3px color-mix(in srgb,var(--ka) 22%,transparent),0 10px 26px -14px rgba(0,0,0,.4)}
+#kc .c #kmic{background:linear-gradient(145deg,color-mix(in srgb,var(--ka) 84%,#fff),var(--ka) 60%);box-shadow:0 8px 20px -6px color-mix(in srgb,var(--ka) 75%,#000)}
+}
+#kc .c.rec #kmic{background:#e53935}
+#kc .krb{border:1px solid var(--kln)}
+
+/* Tombol ke pesan terbaru */
+#kc .c #kdn{position:absolute;right:16px;bottom:calc(100% + 12px);width:42px;height:42px;border-radius:50%;background:var(--ki);color:var(--kt);border:1px solid var(--kln);box-shadow:0 8px 20px -6px rgba(0,0,0,.45);opacity:0;transform:translateY(12px) scale(.7);pointer-events:none;transition:opacity .25s,transform .35s var(--ksp);z-index:3;font-size:22px}
+#kc .c #kdn.on{opacity:1;transform:none;pointer-events:auto}
+#kc .c #kdn:active{transform:scale(.9)}
+#kc .rp.on~.c #kdn{bottom:calc(100% + 60px)}
+#kc .c.rec #kdn{display:none}
+
+/* ---------- Lembar (profil, pengaturan, sandi, foto) ---------- */
+#kc .sh{background:rgba(8,10,20,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#kc .sc{border-radius:30px 30px 0 0;padding:10px 18px 18px;padding-bottom:max(18px,env(safe-area-inset-bottom));gap:12px;box-shadow:0 -20px 50px -14px rgba(0,0,0,.5)}
+#kc .sc::before{content:"";flex:none;align-self:center;width:44px;height:5px;border-radius:3px;background:rgba(127,127,127,.4);margin:2px 0 4px}
+#kc .sc>b:first-child{font-size:20px;font-weight:800;letter-spacing:.01em}
+#kc .sc label{font-size:12.5px;font-weight:700;opacity:.85;margin-bottom:-4px}
+#kc .sc input:not([type=range]){padding:13px 15px;border-radius:15px;border:1px solid var(--kln);box-shadow:none;transition:box-shadow .2s,border-color .2s}
+#kc .sc input:not([type=range]):focus{border-color:var(--ka);box-shadow:0 0 0 3px rgba(127,127,127,.15)}
+#kc .rw{gap:10px}
+#kc .sc .rw button{padding:12px 22px;border-radius:999px;font-weight:700;border:1px solid var(--kln);transition:transform .2s var(--ksp),filter .2s}
+#kc .sc .rw button:active{transform:scale(.95)}
+#kc .sc .rw .pri{border-color:transparent;background:var(--ka);box-shadow:0 8px 18px -8px rgba(0,0,0,.5)}
+@supports (color:color-mix(in srgb,red,blue)){
+#kc .sc input:not([type=range]):focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--ka) 22%,transparent)}
+#kc .sc .rw .pri{background:linear-gradient(145deg,color-mix(in srgb,var(--ka) 84%,#fff),var(--ka) 65%)}
+}
+#kc .sc .it{padding:11px 14px 11px 12px;border-radius:20px;gap:14px;font-size:15px;font-weight:650;box-shadow:none;border:1px solid var(--kln);transition:transform .2s var(--ksp),background .2s}
+#kc .sc .it:active{transform:scale(.98)}
+#kc .sc .it>span:first-child{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:13px;background:rgba(127,127,127,.16);color:var(--ka)}
+#kc .sc .it>span:first-child svg{width:21px;height:21px}
+@supports (color:color-mix(in srgb,red,blue)){#kc .sc .it>span:first-child{background:color-mix(in srgb,var(--ka) 16%,transparent)}}
+#kc .sc .it .tg{width:50px;height:30px;border-radius:15px;background:rgba(127,127,127,.4);transition:background .25s}
+#kc .sc .it .tg::after{top:3px;left:3px;width:24px;height:24px;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:transform .35s var(--ksp)}
+#kc .sc .it .tg.on::after{transform:translateX(20px)}
+#kc .pf .pa{box-shadow:0 0 0 4px var(--kb),0 0 0 6px var(--ka),0 12px 26px -8px rgba(0,0,0,.45)}
+#kc .pf button{box-shadow:0 0 0 3px var(--kb),0 6px 14px -4px rgba(0,0,0,.45)}
+#kc .od.on{animation:kdOnl 2.2s ease-out infinite}
+
+/* ---------- Pemilih tema (lembar bawah) ---------- */
+#kc .tm{position:absolute;inset:0;left:0;right:0;top:0;z-index:8;max-width:none;margin:0;padding:0;border-radius:0;max-height:none;overflow:hidden;background:rgba(8,10,20,.52);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:none;align-items:flex-end;justify-content:center}
+#kc .tm.on{display:flex;animation:kFade .22s both}
+#kc .tm .tmc{width:100%;max-width:620px;max-height:92dvh;display:flex;flex-direction:column;background:var(--kb);color:var(--kt);border-radius:30px 30px 0 0;box-shadow:0 -24px 60px -16px rgba(0,0,0,.6);animation:kUp .45s var(--ksp) both;overflow:hidden}
+#kc .tm .tmh{position:relative;display:flex;align-items:center;gap:12px;padding:20px 18px 6px}
+#kc .tm .tmg{position:absolute;left:50%;top:8px;width:44px;height:5px;margin-left:-22px;border-radius:3px;background:rgba(127,127,127,.4)}
+#kc .tm .tmt{flex:1;min-width:0}
+#kc .tm .tmt b{display:block;font-size:20px;font-weight:800;line-height:1.2}
+#kc .tm .tmt small{display:block;padding:2px 0 0;font-size:12.5px;font-weight:500;text-transform:none;opacity:.7}
+#kc .tm .tmx{display:grid;place-items:center;width:40px;height:40px;padding:0;border-radius:50%;background:rgba(127,127,127,.16);font-size:20px;transition:transform .2s var(--ksp),background .2s}
+#kc .tm .tmx:active{transform:scale(.88)}
+#kc .tm .tmtabs{display:flex;gap:8px;padding:10px 18px 8px;overflow-x:auto;scrollbar-width:none;flex:none}
+#kc .tm .tmtabs::-webkit-scrollbar{display:none}
+#kc .tm .tmtabs button{display:block;width:auto;flex:none;padding:8px 15px;border-radius:999px;font-size:13px;font-weight:700;border:1px solid var(--kln);background:transparent;color:var(--kt);opacity:.8;transition:background .25s,color .25s,transform .2s var(--ksp),opacity .2s}
+#kc .tm .tmtabs button:active{transform:scale(.94)}
+#kc .tm .tmtabs button.on{background:var(--ka);color:var(--kac,#fff);border-color:transparent;opacity:1}
+#kc .tm .tmb{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 18px max(22px,env(safe-area-inset-bottom));scrollbar-width:none}
+#kc .tm .tmb::-webkit-scrollbar{display:none}
+#kc .tm [hidden]{display:none}
+#kc .tm section{margin-bottom:6px;animation:kdRise .4s var(--ksp) both}
+#kc .tm .tmsh{display:flex;align-items:baseline;gap:10px;padding:12px 2px 10px}
+#kc .tm .tmsh b{font-size:15px;font-weight:800}
+#kc .tm .tmsh small{padding:0;font-size:12px;font-weight:500;text-transform:none;opacity:.6}
+#kc .tm .gr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 8px}
+@media(min-width:460px){#kc .tm .gr{grid-template-columns:repeat(3,minmax(0,1fr))}}
+#kc .tm .gr button.tc{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:9px;width:100%;padding:8px;border-radius:22px;background:var(--cb);color:var(--ct);text-align:left;border:2px solid transparent;box-shadow:0 1px 2px rgba(0,0,0,.08),0 12px 24px -14px rgba(0,0,0,.45);transition:transform .3s var(--ksp),box-shadow .3s,border-color .25s;animation:kdCard .5s var(--ksp) both;animation-delay:calc(var(--i,0)*30ms)}
+@keyframes kdCard{from{opacity:0;transform:translateY(14px) scale(.94)}to{opacity:1;transform:none}}
+#kc .tm .gr button.tc:active{transform:scale(.96)}
+@media(hover:hover){#kc .tm .gr button.tc:hover{transform:translateY(-3px)}}
+#kc .tm .gr button.tc.sel{border-color:var(--ca);box-shadow:0 0 0 4px rgba(127,127,127,.18),0 14px 28px -14px rgba(0,0,0,.5)}
+#kc .tm .tcp{position:relative;display:block;width:100%;box-sizing:border-box;aspect-ratio:5/4;border-radius:15px;overflow:hidden;background:var(--cb);border:1px solid rgba(127,127,127,.22)}
+#kc .tm .tch{position:absolute;left:0;right:0;top:0;height:27%;background:linear-gradient(135deg,var(--ch1),var(--ch2))}
+#kc .tm .tcm{position:absolute;left:7px;top:calc(13.5% - 9px);width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center;padding:2px;box-sizing:border-box}
+#kc .tm .tcm svg{width:100%;height:100%}
+#kc .tm .tcb{position:absolute;height:14%;border-radius:8px}
+#kc .tm .tcb.tin{left:8%;top:38%;width:54%;background:var(--ci);box-shadow:0 1px 2px rgba(0,0,0,.18)}
+#kc .tm .tcb.tout{right:8%;top:58%;width:46%;background:var(--co);box-shadow:0 1px 2px rgba(0,0,0,.14)}
+#kc .tm .tcp::after{content:"";position:absolute;left:8%;right:8%;bottom:7%;height:11%;border-radius:999px;background:var(--ci);border:1px solid rgba(127,127,127,.25)}
+#kc .tm .tcp::before{content:"";position:absolute;right:11%;bottom:9.5%;width:6%;aspect-ratio:1;border-radius:50%;background:var(--ca);z-index:1}
+#kc .tm .tcn{min-height:22px;display:flex;width:100%;box-sizing:border-box;align-items:center;gap:6px;padding:0 4px 3px}
+#kc .tm .tcn b{flex:1;min-width:0;font-size:12.5px;font-weight:750;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#kc .tm .tck{display:none;flex:none;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ca);color:var(--cb);font-size:13px}
+#kc .tm .gr button.tc.sel .tck{display:grid;animation:kBoing .45s var(--ksp) both}
+
+/* ---------- Menu tekan-lama & pratinjau ---------- */
+#kpk{background:rgba(8,10,20,.3);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#kpke{border-radius:32px;padding:7px 9px;box-shadow:0 14px 34px -8px rgba(0,0,0,.5),0 0 0 1px rgba(127,127,127,.15)}
+#kpksal{border-radius:18px;padding:9px 15px;box-shadow:0 12px 26px -8px rgba(0,0,0,.45),0 0 0 1px rgba(127,127,127,.15)}
+#kcv{-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#kcv button{padding:10px 20px;font-weight:700;background:rgba(255,255,255,.18)}
+
+/* ---------- Layar panggilan ---------- */
+#kcc .who b{font-size:24px;font-weight:800;letter-spacing:.01em}
+#kcc .ava{box-shadow:0 18px 44px -10px rgba(0,0,0,.6),0 0 0 5px rgba(255,255,255,.22)}
+#kcc .k button{width:66px;height:66px;box-shadow:0 12px 26px -8px rgba(0,0,0,.55);transition:transform .25s var(--ksp),background .2s,color .2s}
+#kcc .k span{font-weight:600}
+#kcc .top button{transition:transform .2s var(--ksp),background .2s}
+#kcc .top button:active{transform:scale(.88)}
+#kc #kkb{background:linear-gradient(90deg,#1faa59,#2fb461);box-shadow:0 8px 18px -10px rgba(0,0,0,.5)}
+#kc .kcl{border-radius:14px}
+
+/* ---------- Ganti tema: riak warna ---------- */
+#kc.sw::after{content:"";position:absolute;inset:0;z-index:9;pointer-events:none;background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.55),transparent 62%);mix-blend-mode:soft-light;animation:kdSwap .8s ease-out both}
+@supports (color:color-mix(in srgb,red,blue)){#kc.sw::after{mix-blend-mode:normal;background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--ka) 38%,transparent),transparent 62%)}}
+@keyframes kdSwap{from{opacity:1;transform:scale(.55)}to{opacity:0;transform:scale(1.7)}}
+#kc.sw .b,#kc.sw .h,#kc.sw .kbx,#kc.sw .kds span{transition:background-color .6s ease,color .6s ease,border-color .6s ease}
+
+/* ---------- Layar lebar: kolom obrolan di tengah ---------- */
+@media(min-width:820px){
+#kc .m{padding-left:calc((100% - 780px)/2);padding-right:calc((100% - 780px)/2)}
+#kc .c{padding-left:calc((100% - 780px)/2 + 10px);padding-right:calc((100% - 780px)/2 + 10px)}
+#kc .rp{margin-left:calc((100% - 780px)/2 + 12px);margin-right:calc((100% - 780px)/2 + 12px)}
+#kc .h{padding-left:max(14px,calc((100% - 780px)/2));padding-right:max(14px,calc((100% - 780px)/2))}
+#kc .rw2{max-width:min(78%,560px)}
+}
+
+/* ---------- Hormati pengaturan "kurangi gerak" ---------- */
+@media(prefers-reduced-motion:reduce){
+#kc.on .h,#kc.on .c,#kc .rp.on,#kc .m:empty::before,#kc .tm section,#kc .tm .gr button.tc,#kc .tm .tmc,#kc.sw::after{animation:none}
+#kc.onl #ks::before,#kc .od.on{animation:none}
+#kc .tm .gr button.tc.sel .tck{animation:none}
+}
+</style>
+<script id="kcDesignJs">
+(function(){
+  var m=document.getElementById('km'),b=document.getElementById('kdn'),t=document.getElementById('ktm');
+  if(!m||!b||!t)return;
+  function chk(){b.classList.toggle('on',m.scrollHeight-m.scrollTop-m.clientHeight>240)}
+  m.addEventListener('scroll',chk,{passive:true});
+  try{new MutationObserver(chk).observe(m,{childList:true})}catch(e){}
+  b.addEventListener('click',function(){try{m.scrollTo({top:m.scrollHeight,behavior:'smooth'})}catch(e){m.scrollTop=m.scrollHeight}});
+  document.addEventListener('click',function(e){
+    var x=e.target;if(!x||!x.closest)return;
+    var tab=x.closest('#ktm [data-tab]');
+    if(tab){var v=tab.getAttribute('data-tab');
+      [].forEach.call(t.querySelectorAll('[data-tab]'),function(q){q.classList.toggle('on',q===tab)});
+      [].forEach.call(t.querySelectorAll('[data-sec]'),function(sc){sc.hidden=!(v==='all'||sc.getAttribute('data-sec')===v)});
+      var bd=t.querySelector('.tmb');if(bd)bd.scrollTop=0;return}
+    if(x===t)t.classList.remove('on')});
+})();
+</script>
 <script id="kcWaFixJs">
 (function(){
   var kc=document.getElementById('kc'),vv=window.visualViewport;

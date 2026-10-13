@@ -593,25 +593,82 @@
   .bb-total b{color:var(--ink); font-size:13px; white-space:nowrap;}
   .bb-total + .bb-hours{margin-top:2px;}
 
-  /* Tagihan hari H */
-  .tagih-box{margin:0 0 14px; padding:14px; border-radius:14px; background:#fff8dc; border:1.5px solid var(--gold-light);}
-  .tagih-box.now{background:#fff1b8; border-color:#FFC400;}
-  .tagih-box.ok{background:#eef8ee; border-color:#bfe0c1;}
-  .tagih-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
-  .tagih-label{display:flex; align-items:center; gap:6px; font-size:13px; font-weight:700; color:var(--ink);}
-  .tagih-when{padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; background:#fff; border:1px solid var(--gold-light); color:var(--ink); white-space:nowrap;}
-  .tagih-when.now{background:#FFC400; border-color:#FFC400; color:#241c06;}
-  .tagih-amt{font-family:'Bricolage Grotesque',system-ui,sans-serif; font-weight:700; font-size:30px; line-height:1.15; margin-top:8px; color:var(--ink);}
-  .tagih-sub{font-size:12px; color:var(--ink-soft); margin-top:2px; line-height:1.45;}
-  .tagih-rows{display:grid; gap:5px; margin-top:12px; padding-top:12px; border-top:1px dashed var(--gold-light);}
-  .tagih-rows div{display:flex; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--ink-soft);}
-  .tagih-rows b{color:var(--ink); white-space:nowrap;}
-  .tagih-rows div:last-child{padding-top:5px; border-top:1px solid var(--gold-light);}
-  .tagih-rows div:last-child span, .tagih-rows div:last-child b{color:var(--ink); font-weight:700;}
-  .tagih-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
-  .tagih-actions .btn{flex:1 1 140px; display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; text-decoration:none; text-align:center;}
-  .tagih-ok{display:flex; align-items:center; gap:8px; margin-top:6px; font-size:13px; font-weight:600; color:var(--ok);}
-  .tagih-ok .ic{width:18px; height:18px;}
+  /* Tagihan hari H (desain v2) */
+  .th-card{position:relative; margin:0 0 16px; padding:16px; border-radius:20px; overflow:hidden;
+    background:linear-gradient(160deg,#fffbe6 0%,#fff2bd 100%); border:1.5px solid #f3df8a;
+    box-shadow:0 10px 24px -14px rgba(184,134,11,.55), inset 0 1px 0 rgba(255,255,255,.8);
+    animation:thRise .55s cubic-bezier(.2,.8,.2,1) both;}
+  .th-card::before{content:''; position:absolute; right:-52px; top:-52px; width:170px; height:170px; border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, rgba(255,196,0,.32), rgba(255,196,0,0) 70%); pointer-events:none;}
+  .th-card::after{content:''; position:absolute; left:0; top:0; right:0; height:4px;
+    background:linear-gradient(90deg,#FFC400,#FFD42E,#FFC400); background-size:200% 100%; animation:thBar 4s linear infinite;}
+  .th-card.now{background:linear-gradient(160deg,#fff4bf 0%,#ffe27a 100%); border-color:#FFC400;}
+  .th-card.ok{background:linear-gradient(160deg,#f2fbf1 0%,#dcf2da 100%); border-color:#b5dcb8; box-shadow:0 10px 24px -14px rgba(46,125,50,.45);}
+  .th-card.ok::before{background:radial-gradient(circle at 35% 35%, rgba(76,175,80,.25), rgba(76,175,80,0) 70%);}
+  .th-card.ok::after{background:linear-gradient(90deg,#43a047,#81c784,#43a047); background-size:200% 100%;}
+  .th-card > *{position:relative; animation:thRise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--d,0)*70ms + 80ms);}
+  .th-head{display:flex; align-items:center; gap:10px;}
+  .th-ico{width:36px; height:36px; border-radius:12px; flex-shrink:0; display:grid; place-items:center;
+    background:#241c06; color:#FFD42E; box-shadow:0 4px 10px -4px rgba(36,28,6,.6);}
+  .th-card.ok .th-ico{background:#1f5d24; color:#b9efbc;}
+  .th-ico .ic{width:18px; height:18px;}
+  .th-ttl{font-size:14px; font-weight:700; color:var(--ink); line-height:1.2; min-width:0;}
+  .th-ttl small{display:block; margin-top:3px; font-size:11px; font-weight:500; color:var(--ink-soft);}
+  .th-chip{margin-left:auto; flex-shrink:0; display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px;
+    font-size:11.5px; font-weight:700; color:var(--ink); background:rgba(255,255,255,.85); border:1px solid #efd98a; white-space:nowrap;}
+  .th-chip .ic{width:13px; height:13px;}
+  .th-chip.now{background:#241c06; border-color:#241c06; color:#FFD42E;}
+  .th-chip.now::before{content:''; width:7px; height:7px; border-radius:50%; background:#FFC400; animation:thPulse 1.4s ease-out infinite;}
+  .th-amt{display:flex; align-items:baseline; gap:6px; margin-top:16px; font-family:'Bricolage Grotesque',system-ui,sans-serif; color:var(--ink);}
+  .th-cur{font-size:18px; font-weight:700; opacity:.7;}
+  .th-num{font-size:40px; font-weight:800; line-height:1; letter-spacing:-.8px; font-variant-numeric:tabular-nums;}
+  .th-sub{display:flex; align-items:flex-start; gap:6px; margin-top:8px; font-size:12px; line-height:1.45; color:var(--ink-soft);}
+  .th-sub .ic{width:14px; height:14px; margin-top:1px; flex-shrink:0;}
+  .th-prog{margin-top:16px;}
+  .th-prog-top{display:flex; justify-content:space-between; align-items:baseline; font-size:11.5px; font-weight:600; color:var(--ink-soft); margin-bottom:7px;}
+  .th-prog-top b{color:var(--ink); font-size:12px;}
+  .th-track{height:9px; border-radius:999px; background:rgba(36,28,6,.1); overflow:hidden;}
+  .th-fill{display:block; height:100%; width:var(--w,0%); border-radius:999px; background:linear-gradient(90deg,#43a047,#7cc67f);
+    transform-origin:left; animation:thFill 1.1s cubic-bezier(.2,.8,.2,1) .35s both; position:relative; overflow:hidden;}
+  .th-fill::after{content:''; position:absolute; inset:0; background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);
+    transform:translateX(-120%); animation:thSheen 2.6s ease-in-out 1.5s infinite;}
+  .th-rcpt{position:relative; margin-top:16px; padding:4px 14px; border-radius:14px; background:rgba(255,255,255,.78); border:1px dashed #e5cf7c;}
+  .th-rcpt::before,.th-rcpt::after{content:''; position:absolute; top:50%; width:14px; height:14px; margin-top:-7px; border-radius:50%; background:#fff3c4; border:1px dashed #e5cf7c;}
+  .th-rcpt::before{left:-8px; clip-path:inset(0 0 0 50%);}
+  .th-rcpt::after{right:-8px; clip-path:inset(0 50% 0 0);}
+  .th-row{display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:10px 0; font-size:12.5px; color:var(--ink-soft);}
+  .th-row + .th-row{border-top:1px dashed #ecdca0;}
+  .th-row b{color:var(--ink); font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .th-row.minus b{color:var(--ok);}
+  .th-row.total{padding:12px 0; color:var(--ink); font-weight:700; font-size:13.5px;}
+  .th-row.total b{font-family:'Bricolage Grotesque',system-ui,sans-serif; font-size:16px; font-weight:800;}
+  .th-actions{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:16px;}
+  .th-actions.single{grid-template-columns:minmax(0,1fr);}
+  .th-btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:46px; padding:0 12px; border-radius:14px;
+    font:inherit; font-size:13px; font-weight:700; text-decoration:none; cursor:pointer; position:relative; overflow:hidden;
+    transition:transform .18s ease, box-shadow .18s ease, background-color .18s ease; -webkit-tap-highlight-color:transparent;}
+  .th-btn .ic{width:17px; height:17px; flex-shrink:0;}
+  .th-btn:active{transform:scale(.96);}
+  .th-copy{background:#fff; color:var(--ink); border:1.5px solid #eed98c;}
+  .th-copy:hover{background:#fffdf0; box-shadow:0 6px 14px -8px rgba(184,134,11,.6); transform:translateY(-1px);}
+  .th-wa{background:linear-gradient(135deg,#2fb457,#1d8f3d); color:#fff; border:1.5px solid #1d8f3d; box-shadow:0 8px 16px -8px rgba(29,143,61,.8);}
+  .th-wa:hover{box-shadow:0 10px 20px -8px rgba(29,143,61,.9); transform:translateY(-1px);}
+  .th-wa::after{content:''; position:absolute; inset:0; background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%);
+    transform:translateX(-120%); animation:thSheen 3.2s ease-in-out 1.2s infinite;}
+  .th-okrow{display:flex; align-items:center; gap:14px; margin-top:14px;}
+  .th-okmark{width:54px; height:54px; flex-shrink:0;}
+  .th-okmark circle{fill:#43a047; opacity:0; transform-origin:center; animation:thPop .5s cubic-bezier(.2,1.4,.4,1) .15s both;}
+  .th-okmark path{fill:none; stroke:#fff; stroke-width:3.4; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:30; stroke-dashoffset:30; animation:thDraw .5s ease .55s forwards;}
+  .th-oktxt b{display:block; font-family:'Bricolage Grotesque',system-ui,sans-serif; font-size:19px; color:#1f5d24;}
+  .th-oktxt span{display:block; margin-top:3px; font-size:12.5px; color:#3c6a40; line-height:1.4;}
+  @keyframes thRise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;}}
+  @keyframes thFill{from{transform:scaleX(0);} to{transform:scaleX(1);}}
+  @keyframes thSheen{0%{transform:translateX(-120%);} 55%,100%{transform:translateX(120%);}}
+  @keyframes thBar{from{background-position:0 0;} to{background-position:200% 0;}}
+  @keyframes thPulse{0%{box-shadow:0 0 0 0 rgba(255,196,0,.7);} 100%{box-shadow:0 0 0 8px rgba(255,196,0,0);}}
+  @keyframes thPop{from{opacity:0; transform:scale(.4);} to{opacity:1; transform:scale(1);}}
+  @keyframes thDraw{to{stroke-dashoffset:0;}}
+  @media(max-width:340px){ .th-actions{grid-template-columns:minmax(0,1fr);} .th-num{font-size:34px;} }
   .dash-row .amt{font-weight:700; font-size:13.5px; color:var(--dash-ink); white-space:nowrap; text-align:right;}
   .dash-row.tagih-now{border-color:#FFC400; background:#fffaf0;}
   .dash-mini.now{background:var(--dash-gold); color:#241c06;}
@@ -825,105 +882,223 @@
     margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,.16);
     font-family:'Bricolage Grotesque',system-ui,sans-serif; font-weight:600; font-size:15px; color:var(--jd-soft);
   }
-  .jd-body{padding:16px 20px 6px;}
-  .jd-section-title{
-    font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--jd-accent);
-    margin:16px 0 7px; padding-left:9px; border-left:3px solid var(--jd-accent);
-  }
-  .jd-section-title:first-child{margin-top:0;}
-  .job-detail-card .mj-row{display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:5px 0; border-bottom:1px dashed #eee;}
-  .job-detail-card .mj-row span:first-child{color:var(--ink-soft); flex-shrink:0;}
-  .job-detail-card .mj-row span:last-child{font-weight:600; text-align:right;}
-  .job-detail-card .mj-row:last-child{border-bottom:none;}
+  .jd-body{padding:14px 14px 6px; display:grid; gap:12px;}
+  .jd-sec{background:#fff; border:1px solid var(--line); border-radius:16px; overflow:hidden;
+    box-shadow:0 6px 16px -12px rgba(36,28,6,.4);
+    animation:jdSecIn .55s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i,0)*80ms + 160ms);}
+  .jd-sec-h{display:flex; align-items:center; gap:10px; padding:11px 14px; border-bottom:1px solid var(--line);
+    background:#fff9e0; background:linear-gradient(90deg,color-mix(in srgb,var(--jd-accent) 18%,#fff),#fff 85%);}
+  .jd-sec-ico{width:28px; height:28px; border-radius:9px; flex-shrink:0; display:grid; place-items:center; background:var(--jd-hdr1); color:var(--jd-soft);}
+  .jd-sec-ico .ic{width:15px; height:15px;}
+  .jd-sec-t{font-size:12px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink);}
+  .jd-sec-n{margin-left:auto; font-size:10.5px; font-weight:700; color:var(--ink-soft); background:rgba(36,28,6,.06); padding:2px 8px; border-radius:999px;}
+  .jd-r{display:grid; grid-template-columns:minmax(0,40%) minmax(0,1fr); gap:3px 14px; align-items:start; padding:10px 14px; transition:background-color .2s ease;}
+  .jd-r + .jd-r{border-top:1px dashed #f1e6b5;}
+  @media(hover:hover){ .jd-r:hover{background:#fffcee;} }
+  .jd-k{font-size:11.5px; line-height:1.45; color:var(--ink-soft); padding-top:2px;}
+  .jd-v{font-size:13px; font-weight:600; line-height:1.5; color:var(--ink); min-width:0; overflow-wrap:anywhere;}
+  .jd-v.empty{color:#bdb59c; font-weight:500;}
+  .jd-r.hl{background:linear-gradient(90deg,rgba(255,196,0,.16),rgba(255,196,0,0) 70%); box-shadow:inset 3px 0 0 var(--jd-accent);}
+  .jd-r.hl .jd-v{font-family:'Bricolage Grotesque',system-ui,sans-serif; font-size:14.5px; font-weight:700;}
+  .jd-r.long{grid-template-columns:minmax(0,1fr);}
+  .jd-chip{display:inline-flex; align-items:center; gap:7px; padding:4px 11px; border-radius:999px; font-size:12px; font-weight:700; line-height:1.3;}
+  .jd-chip::before{content:''; width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0;}
+  .jd-chip.warn{background:#fff1c9; color:#8a5d00;}
+  .jd-chip.ok{background:#e3f5e4; color:#216526;}
+  .jd-chip.info{background:#e4efff; color:#1b4d8c;}
+  .jd-chip.info::before{animation:jdDot 1.6s ease-in-out infinite;}
+  .jd-chip.neutral{background:#f1ede0; color:#5b5646;}
+  .jd-link{display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:700;
+    text-decoration:none; color:#1b4d8c; background:#e9f2ff; border:1px solid #cfe1fb; transition:transform .18s ease, background-color .18s ease;}
+  .jd-link .ic{width:14px; height:14px;}
+  .jd-link:hover{background:#dbeaff; transform:translateY(-1px);}
+  .jd-link:active{transform:scale(.96);}
+  .jd-link.ig{color:#a02a63; background:#fdeef6; border-color:#f6cfe3;}
+  .jd-link.ig:hover{background:#fbe0ee;}
+  .jd-sec.money .jd-r{grid-template-columns:minmax(0,1fr) auto; align-items:baseline;}
+  .jd-sec.money .jd-v{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .jd-r.due{background:#fff6d6;}
+  .jd-r.due .jd-v{color:#8a5d00; font-weight:800;}
+  .jd-r.net{background:#e8f6e9;}
+  .jd-r.net .jd-k{color:#2c6b30; font-weight:700;}
+  .jd-r.net .jd-v{color:#216526; font-family:'Bricolage Grotesque',system-ui,sans-serif; font-size:15px; font-weight:800;}
+  .jd-note{margin:12px 14px; padding:12px 14px; border-radius:0 12px 12px 0; border-left:3px solid var(--jd-accent); background:#fffdf3;
+    font-size:13px; line-height:1.6; color:var(--ink); white-space:pre-wrap; overflow-wrap:anywhere;}
+  .jd-note.empty{color:#bdb59c; font-style:italic;}
+  @keyframes jdSecIn{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+  @keyframes jdDot{0%,100%{opacity:1; transform:scale(1);} 50%{opacity:.35; transform:scale(.7);}}
+  @media(max-width:340px){ .jd-r{grid-template-columns:minmax(0,1fr);} .jd-sec.money .jd-r{grid-template-columns:minmax(0,1fr) auto;} }
   .jd-footer{padding:8px 20px 4px; text-align:center;}
   .jd-footer-line{height:1px; background:linear-gradient(90deg,transparent,var(--jd-accent),transparent); margin-bottom:10px; opacity:.55;}
   .jd-footer-text{font-size:10.5px; color:var(--ink-soft); letter-spacing:.3px;}
   .jd-bottom-bar{height:7px; background:linear-gradient(90deg,var(--jd-hdr1),var(--jd-accent),var(--jd-hdr2));}
 
-  /* ---------- POSTER UNDUHAN DETAIL JOB (1080x1920) ----------
-     Ini adalah desain KHUSUS untuk file gambar yang diunduh - sengaja dibuat
-     terpisah dari .job-detail-card (preview di layar) supaya hasil unduhan
-     terlihat seperti dokumen/poster resmi, bukan sekadar cuplikan popup. */
+  /* ---------- Tombol aksi Detail Job (desain v2) ----------
+     Dikelompokkan: Bagikan & unduh, Kwitansi (Admin), Kalender, lalu Edit Job. HP: baris penuh
+     yang mudah disentuh; layar lebar: dua kolom. */
+  .da-wrap{margin-top:18px; display:grid; gap:16px;}
+  .da-group{animation:thRise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i,0)*80ms + 200ms);}
+  .da-glabel{display:flex; align-items:center; gap:10px; margin:0 2px 9px; font-size:11px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; color:var(--ink-soft);}
+  .da-glabel::after{content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--line),rgba(240,225,160,0));}
+  .da-grid{display:grid; grid-template-columns:minmax(0,1fr); gap:9px;}
+  .da-btn{position:relative; display:flex; align-items:center; gap:13px; width:100%; min-height:64px; padding:10px 16px 10px 12px; box-sizing:border-box;
+    text-align:left; font:inherit; color:var(--ink); cursor:pointer; background:#fff; border:1.5px solid #efe2ac; border-radius:18px;
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 6px 14px -12px rgba(36,28,6,.5);
+    transition:transform .2s cubic-bezier(.34,1.4,.64,1), box-shadow .2s ease, border-color .2s ease, background-color .2s ease; -webkit-tap-highlight-color:transparent;}
+  .da-ico{width:42px; height:42px; border-radius:13px; flex-shrink:0; display:grid; place-items:center; background:#fff3c4; color:#6b5200; transition:background-color .2s ease, color .2s ease, transform .25s cubic-bezier(.34,1.56,.64,1);}
+  .da-ico .ic{width:21px; height:21px;}
+  .da-tx{min-width:0; flex:1;}
+  .da-tt{display:block; font-size:13.5px; font-weight:700; line-height:1.28; color:var(--ink);}
+  .da-sub{display:block; margin-top:3px; font-size:11.5px; font-weight:500; line-height:1.35; color:var(--ink-soft);}
+  .da-go{width:8px; height:8px; flex-shrink:0; border-top:2px solid #cdb95f; border-right:2px solid #cdb95f; transform:rotate(45deg); transition:transform .2s ease, border-color .2s ease;}
+  @media(hover:hover){
+    .da-btn:hover{transform:translateY(-2px); border-color:#f0cf4d; background:#fffdf2; box-shadow:0 12px 22px -14px rgba(184,134,11,.65);}
+    .da-btn:hover .da-ico{background:#241c06; color:#FFD42E; transform:scale(1.06) rotate(-4deg);}
+    .da-btn:hover .da-go{transform:translateX(3px) rotate(45deg); border-color:#b88a00;}
+  }
+  .da-btn:active{transform:scale(.97); transition-duration:.08s;}
+  .da-btn:focus-visible{outline:3px solid #FFC400; outline-offset:2px;}
+  .da-btn.warn{background:#fff8ea; border-color:#f2c98a;}
+  .da-btn.warn .da-ico{background:#fde3b8; color:#95560c;}
+  .da-btn.warn .da-sub{color:#95560c;}
+  @media(hover:hover){ .da-btn.warn:hover{background:#fff3dc; border-color:#e9b25f;} }
+  .da-edit{display:flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:54px; box-sizing:border-box; padding:0 20px;
+    font:inherit; font-size:15px; font-weight:800; color:#231f0f; cursor:pointer; border:none; border-radius:18px;
+    background:linear-gradient(135deg,var(--gold-light),var(--gold)); box-shadow:0 4px 0 var(--btn-edge,#b88a00), 0 14px 22px -14px rgba(190,155,0,.9);
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease, filter .15s ease; animation:thRise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay:.55s; -webkit-tap-highlight-color:transparent;}
+  .da-edit .ic{width:19px; height:19px;}
+  @media(hover:hover){ .da-edit:hover{transform:translateY(-2px); filter:brightness(1.04); box-shadow:0 6px 0 var(--btn-edge,#b88a00), 0 18px 26px -14px rgba(190,155,0,.95);} }
+  .da-edit:active{transform:translateY(3px); box-shadow:0 1px 0 var(--btn-edge,#b88a00);}
+  .da-edit:focus-visible{outline:3px solid #241c06; outline-offset:3px;}
+  @media(min-width:480px){
+    .da-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .da-grid > .da-wide{grid-column:1 / -1;}
+  }
+
+  /* ---------- POSTER UNDUHAN DETAIL JOB (1080x1920) - desain v2 ----------
+     Desain KHUSUS untuk file gambar yang diunduh (terpisah dari .job-detail-card di layar).
+     Dirender html2canvas: tanpa animasi, tanpa color-mix/clip-path/filter, ikon SVG inline. */
   .job-poster{
     width:1080px; height:1920px; position:relative; overflow:hidden;
-    background:linear-gradient(165deg,#FFFBEA 0%,#fffaeb 55%,#fdf6e0 100%);
+    background:linear-gradient(170deg,#FFFBEA 0%,#fff8e1 55%,#fbf1d2 100%);
     font-family:'Bricolage Grotesque',system-ui,sans-serif; color:var(--jp-ink,#241c06);
     box-sizing:border-box;
   }
   .job-poster .jp-watermark{
-    position:absolute; inset:0; opacity:.05; pointer-events:none;
-    background:
-      radial-gradient(circle at 12% 8%, var(--jp-accent,#FFC400) 0%, transparent 40%),
-      radial-gradient(circle at 92% 96%, var(--jp-accent,#FFC400) 0%, transparent 42%);
+    position:absolute; inset:0; opacity:.06; pointer-events:none;
+    background:radial-gradient(circle at 92% 96%, var(--jp-accent,#FFC400) 0%, transparent 42%);
   }
-  .job-poster .jp-topbar{
-    position:relative; display:flex; align-items:center; gap:26px;
-    padding:64px 72px 0; box-sizing:border-box;
+  .job-poster .jp-hero{
+    position:relative; padding:56px 72px 46px; box-sizing:border-box; overflow:hidden;
+    background:linear-gradient(135deg,var(--jp-hdr1,#241c06),var(--jp-hdr2,#2c2712));
+    border-radius:0 0 56px 56px;
   }
+  .job-poster .jp-hero::before{
+    content:''; position:absolute; right:-120px; top:-140px; width:460px; height:460px; border-radius:50%;
+    background:radial-gradient(circle at 40% 40%, var(--jp-accent,#FFC400) 0%, transparent 68%); opacity:.22;
+  }
+  .job-poster .jp-hero::after{
+    content:''; position:absolute; left:0; right:0; bottom:0; height:8px;
+    background:linear-gradient(90deg,var(--jp-accent,#FFC400),var(--jp-soft,#FFD42E),var(--jp-accent,#FFC400));
+  }
+  .job-poster .jp-topbar{position:relative; display:flex; align-items:center; gap:24px;}
   .job-poster .jp-badge{
-    width:92px; height:92px; border-radius:50%; flex-shrink:0;
-    background:linear-gradient(135deg,var(--jp-hdr2,#332750),var(--jp-hdr1,#1c1530));
-    color:var(--jp-accent,#FFC400);
-    display:flex; align-items:center; justify-content:center;
-    font-family:'Bricolage Grotesque',system-ui,sans-serif; font-weight:700; font-size:34px;
-    box-shadow:inset 0 0 0 3px rgba(255,255,255,.12);
+    width:88px; height:88px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,var(--jp-soft,#FFD42E),var(--jp-accent,#FFC400));
+    color:var(--jp-hdr1,#241c06); display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 6px rgba(255,255,255,.1);
   }
-  .job-poster .jp-brand-name{font-family:'Bricolage Grotesque',system-ui,sans-serif; font-weight:700; font-size:30px; color:#241f0f; line-height:1.25;}
-  .job-poster .jp-brand-tag{font-size:14px; letter-spacing:3px; text-transform:uppercase; color:var(--ink-soft); margin-top:4px;}
+  .job-poster .jp-badge img{display:block; width:60px; height:60px;}
+  .job-poster .jp-brand-name{font-weight:800; font-size:32px; color:#fff; line-height:1.2;}
+  .job-poster .jp-brand-tag{font-size:14px; letter-spacing:4px; text-transform:uppercase; color:var(--jp-soft,#FFD42E); opacity:.85; margin-top:5px;}
   .job-poster .jp-type-badge{
-    margin-left:auto; align-self:flex-start;
-    background:var(--jp-accent,#FFC400); color:#241f0f;
-    font-weight:700; font-size:15px; letter-spacing:.5px;
-    padding:10px 22px; border-radius:999px; white-space:nowrap;
+    margin-left:auto; align-self:flex-start; white-space:nowrap;
+    background:var(--jp-accent,#FFC400); color:var(--jp-hdr1,#241c06);
+    font-weight:800; font-size:17px; letter-spacing:.5px; padding:11px 26px; border-radius:999px;
   }
-  .job-poster .jp-title-block{position:relative; padding:44px 72px 0; box-sizing:border-box;}
-  .job-poster .jp-kicker{font-size:15px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--jp-accent,#b8860b);}
-  .job-poster .jp-client-name{
-    font-family:'Bricolage Grotesque',system-ui,sans-serif; font-weight:700; font-size:56px; line-height:1.18;
-    color:#201c0d; margin-top:10px; word-break:break-word;
+  .job-poster .jp-title-block{position:relative; margin-top:44px;}
+  .job-poster .jp-kicker{font-size:16px; font-weight:700; letter-spacing:5px; text-transform:uppercase; color:var(--jp-soft,#FFD42E);}
+  .job-poster .jp-client-name{font-weight:800; font-size:62px; line-height:1.12; letter-spacing:-1px; color:#fff; margin-top:12px; word-break:break-word;}
+  .job-poster .jp-date-row{display:flex; flex-wrap:wrap; gap:12px; margin-top:22px;}
+  .job-poster .jp-chip{
+    padding:9px 22px; border-radius:999px; font-size:21px; font-weight:600; color:#fff;
+    background:rgba(255,255,255,.14); border:2px solid rgba(255,255,255,.28);
   }
-  .job-poster .jp-date-row{display:flex; align-items:center; gap:14px; margin-top:16px; font-size:20px; color:var(--ink-soft);}
-  .job-poster .jp-date-row .sep{width:6px;height:6px;border-radius:50%;background:var(--jp-accent,#FFC400);}
-  .job-poster .jp-rule{
-    height:2px; margin:34px 72px 0;
-    background:linear-gradient(90deg,var(--jp-accent,#FFC400),transparent);
+  .job-poster .jp-body{position:relative; padding:14px 56px 0; box-sizing:border-box;}
+  .job-poster .jp-section{
+    margin-top:22px; background:#fff; border:2px solid #f2e4a6; border-radius:28px;
   }
-  .job-poster .jp-body{position:relative; padding:36px 72px 0; box-sizing:border-box;}
-  .job-poster .jp-section{margin-top:34px;}
-  .job-poster .jp-section:first-child{margin-top:0;}
-  .job-poster .jp-section-head{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
-  .job-poster .jp-section-head .dot{width:10px; height:10px; border-radius:50%; background:var(--jp-accent,#FFC400); flex-shrink:0;}
-  .job-poster .jp-section-head .txt{font-size:19px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--jp-hdr2,#332750);}
-  .job-poster .jp-row{padding:14px 0; border-bottom:1px solid var(--line); display:flex; gap:30px; align-items:baseline;}
-  .job-poster .jp-row:last-child{border-bottom:none;}
-  .job-poster .jp-row .jp-label{
-    flex:0 0 250px; font-size:15px; font-weight:600; letter-spacing:.3px; color:var(--ink-soft);
+  .job-poster .jp-section > .jp-section-head{border-radius:26px 26px 0 0;}
+  .job-poster .jp-section > .jp-row:last-child{border-radius:0 0 26px 26px;}
+  .job-poster .jp-section-head{
+    display:flex; align-items:center; gap:16px; padding:15px 30px 15px 26px; background:#fff8dc;
+    border-bottom:2px solid #f2e4a6; border-left:10px solid var(--jp-accent,#FFC400);
   }
-  .job-poster .jp-row .jp-value{
-    flex:1; font-size:22px; font-weight:500; color:#241f0f; line-height:1.45; word-break:break-word;
+  .job-poster .jp-section-head .jp-ico{
+    width:42px; height:42px; border-radius:13px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:var(--jp-hdr1,#241c06);
   }
-  .job-poster .jp-row.jp-highlight .jp-value{font-weight:700; color:var(--jp-hdr2,#332750);}
-  .job-poster .jp-footer{position:absolute; left:0; right:0; bottom:52px; text-align:center; padding:0 72px; box-sizing:border-box;}
-  .job-poster .jp-footer-line{height:1px; margin-bottom:18px; background:linear-gradient(90deg,transparent,var(--jp-accent,#FFC400),transparent); opacity:.6;}
+  .job-poster .jp-section-head .jp-ico svg{width:24px; height:24px;}
+  .job-poster .jp-section-head .txt{font-size:20px; font-weight:800; letter-spacing:3px; text-transform:uppercase; color:var(--jp-hdr1,#241c06);}
+  .job-poster .jp-row{padding:11px 30px; border-top:1px dashed #efe2ac; display:flex; gap:28px; align-items:center;}
+  .job-poster .jp-section-head + .jp-row{border-top:none;}
+  .job-poster .jp-row .jp-label{flex:0 0 280px; font-size:17px; font-weight:600; letter-spacing:.2px; color:var(--ink-soft);}
+  .job-poster .jp-row .jp-value{flex:1; min-width:0; font-size:22px; font-weight:600; color:#241f0f; line-height:1.38; word-break:break-word;}
+  .job-poster .jp-row.jp-hl{background:#fff6d3; border-left:8px solid var(--jp-accent,#FFC400); padding-left:22px;}
+  .job-poster .jp-row.jp-hl .jp-value{font-weight:800; font-size:24px; color:var(--jp-hdr1,#241c06);}
+  .job-poster[class*="jp-compact"] .jp-row.jp-hl{padding-left:22px;}
+  .job-poster .jp-pill{display:inline-block; padding:5px 20px; border-radius:999px; font-size:19px; font-weight:800; line-height:1.3;}
+  .job-poster .jp-pill.warn{background:#fff1c9; color:#8a5d00;}
+  .job-poster .jp-pill.ok{background:#e3f5e4; color:#216526;}
+  .job-poster .jp-pill.info{background:#e4efff; color:#1b4d8c;}
+  .job-poster .jp-pill.neutral{background:#f1ede0; color:#5b5646;}
+  .job-poster .jp-pill.ig{background:#fdeef6; color:#a02a63;}
+  .job-poster .jp-pill.link{background:#e9f2ff; color:#1b4d8c; font-size:16px; font-weight:600; max-width:100%; word-break:break-all;}
+  .job-poster .jp-money .jp-value{text-align:right; font-variant-numeric:tabular-nums;}
+  .job-poster .jp-row.jp-due{background:#fff6d6;}
+  .job-poster .jp-row.jp-due .jp-label{color:#8a5d00; font-weight:700;}
+  .job-poster .jp-row.jp-due .jp-value{color:#8a5d00; font-weight:800; font-size:25px;}
+  .job-poster .jp-row.jp-net{background:#e6f5e7;}
+  .job-poster .jp-row.jp-net .jp-label{color:#2c6b30; font-weight:700;}
+  .job-poster .jp-row.jp-net .jp-value{color:#216526; font-weight:800; font-size:28px;}
+  .job-poster .jp-note{margin:16px 30px 18px; padding:16px 22px; border-left:8px solid var(--jp-accent,#FFC400); border-radius:0 18px 18px 0; background:#fffdf3; font-size:21px; line-height:1.5; color:#241f0f; word-break:break-word; white-space:pre-wrap;}
+  .job-poster .jp-footer{position:absolute; left:0; right:0; bottom:46px; text-align:center; padding:0 72px; box-sizing:border-box;}
+  .job-poster .jp-footer-line{height:2px; margin-bottom:16px; background:linear-gradient(90deg,transparent,var(--jp-accent,#FFC400),transparent); opacity:.7;}
   .job-poster .jp-footer-text{font-size:15px; color:var(--ink-soft); letter-spacing:.4px;}
-  .job-poster .jp-footer-brand{font-family:'Bricolage Grotesque',system-ui,sans-serif; font-size:17px; font-weight:600; color:#241f0f; margin-bottom:6px;}
-  .job-poster .jp-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:14px; background:linear-gradient(90deg,var(--jp-hdr1,#1c1530),var(--jp-accent,#FFC400),var(--jp-hdr2,#332750));}
+  .job-poster .jp-footer-brand{font-size:18px; font-weight:700; color:#241f0f; margin-bottom:5px;}
+  .job-poster .jp-bottom-bar{position:absolute; left:0; right:0; bottom:0; height:14px; background:linear-gradient(90deg,var(--jp-hdr1,#241c06),var(--jp-accent,#FFC400),var(--jp-hdr2,#2c2712));}
 
-  /* Jaring pengaman otomatis: dipasang lewat JS bila konten job sangat panjang
-     (nama klien / deskripsi paket / catatan yang panjang), supaya isi tidak pernah
-     menabrak footer di bagian bawah poster. Dua tingkat kerapatan, diterapkan bertahap. */
-  .job-poster.jp-compact .jp-title-block{padding-top:32px;}
-  .job-poster.jp-compact .jp-client-name{font-size:44px;}
-  .job-poster.jp-compact .jp-rule{margin-top:24px;}
-  .job-poster.jp-compact .jp-body{padding-top:26px;}
-  .job-poster.jp-compact .jp-section{margin-top:22px;}
-  .job-poster.jp-compact .jp-row{padding:9px 0;}
-  .job-poster.jp-compact .jp-row .jp-value{font-size:19px; line-height:1.35;}
-  .job-poster.jp-compact2 .jp-client-name{font-size:38px;}
-  .job-poster.jp-compact2 .jp-section{margin-top:14px;}
-  .job-poster.jp-compact2 .jp-row{padding:6px 0;}
-  .job-poster.jp-compact2 .jp-row .jp-label{font-size:13px;}
-  .job-poster.jp-compact2 .jp-row .jp-value{font-size:16px; line-height:1.3;}
+  /* Jaring pengaman otomatis: dipasang lewat JS bila konten job sangat panjang, supaya isi
+     tidak pernah menabrak footer. Tiga tingkat kerapatan, diterapkan bertahap. */
+  .job-poster.jp-compact .jp-hero{padding:40px 72px 34px;}
+  .job-poster.jp-compact .jp-title-block{margin-top:30px;}
+  .job-poster.jp-compact .jp-client-name{font-size:52px;}
+  .job-poster.jp-compact .jp-date-row{margin-top:16px;}
+  .job-poster.jp-compact .jp-section{margin-top:16px;}
+  .job-poster.jp-compact .jp-section-head{padding:10px 30px 10px 26px;}
+  .job-poster.jp-compact .jp-row{padding:8px 30px;}
+  .job-poster.jp-compact .jp-row .jp-value{font-size:20px; line-height:1.33;}
+  .job-poster.jp-compact .jp-row .jp-label{font-size:16px;}
+  .job-poster.jp-compact2 .jp-hero{padding:34px 72px 28px;}
+  .job-poster.jp-compact2 .jp-title-block{margin-top:22px;}
+  .job-poster.jp-compact2 .jp-client-name{font-size:44px;}
+  .job-poster.jp-compact2 .jp-chip{font-size:18px; padding:6px 18px;}
+  .job-poster.jp-compact2 .jp-section{margin-top:11px;}
+  .job-poster.jp-compact2 .jp-section-head{padding:7px 30px 7px 26px;}
+  .job-poster.jp-compact2 .jp-section-head .jp-ico{width:34px; height:34px;}
+  .job-poster.jp-compact2 .jp-row{padding:5px 30px;}
+  .job-poster.jp-compact2 .jp-row .jp-value{font-size:18px; line-height:1.28;}
+  .job-poster.jp-compact2 .jp-row .jp-label{font-size:15px;}
+  .job-poster.jp-compact2 .jp-pill{font-size:16px; padding:3px 16px;}
+  .job-poster.jp-compact2 .jp-note{font-size:18px; margin:10px 30px 12px; padding:10px 18px;}
+  .job-poster.jp-compact3 .jp-body{padding-top:6px;}
+  .job-poster.jp-compact3 .jp-section{margin-top:8px;}
+  .job-poster.jp-compact3 .jp-row{padding:3px 30px;}
+  .job-poster.jp-compact3 .jp-row .jp-value{font-size:16.5px; line-height:1.22;}
+  .job-poster.jp-compact3 .jp-row .jp-label{font-size:14px;}
+  .job-poster.jp-compact3 .jp-section-head{padding:5px 30px 5px 26px;}
+  .job-poster.jp-compact3 .jp-section-head .jp-ico{width:30px; height:30px;}
+  .job-poster.jp-compact3 .jp-section-head .txt{font-size:17px;}
 
   /* ---------- POSTER UNDUHAN KWITANSI (GAMBAR, 1080x1350) ----------
      Desain resi/invoice yang proper untuk dikirim ke klien lewat WA/gambar -
@@ -1077,6 +1252,100 @@
   .pv-retry{margin-top:10px; border:1.5px solid rgba(0,0,0,.25); background:#fff; color:#2b2616; border-radius:999px; padding:7px 16px; font:600 12.5px 'Bricolage Grotesque',system-ui,sans-serif; cursor:pointer;}
   .pv-card.pv-unver .pv-list{opacity:.5; filter:grayscale(1);}
   .pv-card.pv-unver .pv-sec::after{content:' · TIDAK TERVERIFIKASI'; color:#b3261e;}
+  /* ===== Progres foto di halaman hasil pindai QR ===== */
+  .pg-slot{margin-top:18px}
+  .pg-slot:empty{display:none}
+  .pg-card{position:relative; border-radius:22px; padding:16px 16px 14px; background:linear-gradient(160deg,#fffefa 0%,var(--pv-soft,#f6f1e2) 260%); border:1px solid rgba(0,0,0,.07); box-shadow:0 16px 36px -24px rgba(60,48,10,.5); overflow:hidden; animation:pgIn .6s cubic-bezier(.2,.8,.2,1) both;}
+  .pg-card::before{content:''; position:absolute; right:-46px; top:-46px; width:150px; height:150px; border-radius:50%; background:radial-gradient(circle,var(--pv-accent,#FFC400) 0%,transparent 70%); opacity:.2; pointer-events:none;}
+  @keyframes pgIn{from{opacity:0; transform:translateY(16px)}to{opacity:1; transform:none}}
+  .pg-top{position:relative; display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .pg-kick{font-size:11.5px; font-weight:700; letter-spacing:2.2px; text-transform:uppercase; color:#8a8061;}
+  .pg-rf{width:30px; height:30px; border-radius:50%; border:0; cursor:pointer; display:grid; place-items:center; color:#5c543b; background:rgba(0,0,0,.06); transition:transform .12s, background .2s;}
+  .pg-rf:active{transform:scale(.9); background:rgba(0,0,0,.12);}
+  .pg-rf.spin svg{animation:pvSpin .8s linear infinite;}
+  .pg-hero{position:relative; display:flex; align-items:center; gap:16px; margin-top:12px;}
+  .pg-ring{position:relative; flex:0 0 88px; width:88px; height:88px;}
+  .pg-ring svg{display:block; width:88px; height:88px; transform:rotate(-90deg);}
+  .pg-ring .pg-tr{fill:none; stroke:rgba(0,0,0,.08); stroke-width:8;}
+  .pg-ring .pg-fg{fill:none; stroke:var(--pv-accent,#FFC400); stroke-width:8; stroke-linecap:round; stroke-dasharray:226.2; stroke-dashoffset:226.2; animation:pgRing 1.3s .25s cubic-bezier(.3,.7,.2,1) forwards;}
+  @keyframes pgRing{to{stroke-dashoffset:var(--off,226.2)}}
+  .pg-pct{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:25px; letter-spacing:-.5px; color:#241c06;}
+  .pg-pct small{font-size:12px; font-weight:700; margin:6px 0 0 1px; opacity:.6;}
+  .pg-done .pg-ring .pg-fg{stroke:#1a9a5b;}
+  .pg-done .pg-pct{color:#0d6a39;}
+  .pg-card[data-pct="100"] .pg-pct{font-size:20px;}
+  .pg-now{min-width:0; flex:1;}
+  .pg-now small{display:block; font-size:11.5px; font-weight:700; letter-spacing:1.6px; text-transform:uppercase; color:var(--pv-h2,#332750);}
+  .pg-now b{display:block; margin-top:3px; font-family:'Bricolage Grotesque',system-ui,sans-serif; font-size:21px; line-height:1.2; color:#201c0d; word-break:break-word;}
+  .pg-now p{margin:5px 0 0; font-size:13px; line-height:1.5; color:#6b6347;}
+  .pg-now>*{animation:pgIn .5s .35s cubic-bezier(.2,.8,.2,1) both;}
+  .pg-done .pg-now small{color:#0d6a39;}
+  .pg-seg{position:relative; display:flex; gap:4px; margin-top:16px;}
+  .pg-seg i{position:relative; flex:1; height:7px; border-radius:99px; background:rgba(0,0,0,.08); overflow:hidden;}
+  .pg-seg i::after{content:''; position:absolute; inset:0; border-radius:inherit; background:var(--pv-accent,#FFC400); transform:scaleX(0); transform-origin:left;}
+  .pg-seg i.d::after{animation:pgFill .5s calc(var(--i)*90ms + 350ms) ease-out forwards;}
+  .pg-done .pg-seg i.d::after{background:#1a9a5b;}
+  .pg-seg i.r::after{transform:none; opacity:0; background:linear-gradient(90deg,var(--pv-accent,#FFC400) 0%,rgba(255,255,255,.85) 50%,var(--pv-accent,#FFC400) 100%); background-size:220% 100%; animation:pgShow .3s calc(var(--i)*90ms + 350ms) ease forwards, pgShim 1.5s linear infinite;}
+  @keyframes pgFill{to{transform:scaleX(1)}}
+  @keyframes pgShow{to{opacity:1}}
+  @keyframes pgShim{from{background-position:120% 0}to{background-position:-120% 0}}
+  .pg-meta{position:relative; display:flex; justify-content:space-between; gap:10px; margin-top:8px; font-size:12px; line-height:1.4; color:#6b6347;}
+  .pg-meta span:last-child{text-align:right; opacity:.85;}
+  .pg-q{position:relative; display:flex; align-items:center; gap:9px; margin-top:12px; padding:10px 12px; border-radius:13px; background:rgba(255,255,255,.75); border:1px dashed rgba(0,0,0,.14); font-size:13px; font-weight:600; color:#3a3423;}
+  .pg-q b{display:inline-grid; place-items:center; min-width:26px; height:26px; padding:0 7px; border-radius:99px; font-size:13px; color:#241f0f; background:var(--pv-accent,#FFC400);}
+  .pg-tg{position:relative; width:100%; margin-top:12px; display:flex; align-items:center; justify-content:center; gap:7px; padding:11px; border-radius:13px; border:1.5px solid rgba(0,0,0,.12); background:rgba(255,255,255,.65); font:600 13.5px 'Bricolage Grotesque',system-ui,sans-serif; color:var(--pv-h2,#332750); cursor:pointer; transition:transform .12s;}
+  .pg-tg:active{transform:scale(.98);}
+  .pg-tg svg{transition:transform .35s cubic-bezier(.2,.8,.2,1);}
+  .pg-tg[aria-expanded="true"] svg{transform:rotate(180deg);}
+  .pg-more{display:grid; grid-template-rows:0fr; transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1);}
+  .pg-more.open{grid-template-rows:1fr;}
+  .pg-more>div{overflow:hidden; min-height:0;}
+  .pg-tl{list-style:none; margin:16px 0 4px; padding:0;}
+  .pg-st{position:relative; display:flex; gap:14px; padding-bottom:18px;}
+  .pg-st:last-child{padding-bottom:0;}
+  .pg-st::before{content:''; position:absolute; left:14px; top:30px; bottom:-2px; width:2px; margin-left:-1px; border-radius:2px; background:rgba(0,0,0,.1);}
+  .pg-st:last-child::before{display:none;}
+  .pg-st.d::before{background:var(--pv-accent,#FFC400);}
+  .pg-done .pg-st.d::before{background:#1a9a5b;}
+  .pg-node{position:relative; z-index:1; flex:0 0 28px; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; background:#fffefa; border:2px solid rgba(0,0,0,.14); color:#b0a782;}
+  .pg-st.d .pg-node{background:var(--pv-accent,#FFC400); border-color:var(--pv-accent,#FFC400); color:#241f0f;}
+  .pg-done .pg-st.d .pg-node{background:#1a9a5b; border-color:#1a9a5b; color:#fff;}
+  .pg-st.r .pg-node{background:#fff; border-color:var(--pv-accent,#FFC400); color:#241f0f;}
+  .pg-st.r .pg-node::after{content:''; position:absolute; inset:-5px; border-radius:50%; border:2px solid var(--pv-accent,#FFC400); animation:pgPulse 1.8s ease-out infinite;}
+  @keyframes pgPulse{from{transform:scale(.8); opacity:.9}to{transform:scale(1.4); opacity:0}}
+  .pg-chk{stroke-dasharray:30; stroke-dashoffset:30;}
+  .pg-more.open .pg-chk{animation:pvDraw .5s calc(var(--i)*55ms + 260ms) ease-out forwards;}
+  .pg-more.open .pg-st{animation:pvItem .45s ease both; animation-delay:calc(var(--i)*55ms + 120ms);}
+  .pg-tx{flex:1; min-width:0; padding-top:3px;}
+  .pg-tt{display:flex; align-items:center; justify-content:space-between; gap:8px; font-weight:700; font-size:14.5px; color:#2b2616;}
+  .pg-pill{flex:none; font-size:10.5px; font-weight:700; letter-spacing:.3px; padding:2px 9px; border-radius:99px;}
+  .pg-st.d .pg-pill{background:rgba(26,154,91,.13); color:#0d6a39;}
+  .pg-st.r .pg-pill{background:var(--pv-accent,#FFC400); color:#241f0f;}
+  .pg-st.p .pg-pill{background:rgba(0,0,0,.06); color:#8a8061;}
+  .pg-st.p .pg-tt{color:#9a9174; font-weight:600;}
+  .pg-ds{margin-top:2px; font-size:12.5px; line-height:1.45; color:#6b6347;}
+  .pg-st.p .pg-ds{color:#aaa28a;}
+  .pg-lnk{position:relative; display:block; margin-top:12px; text-align:center; font-size:12.5px; font-weight:600; color:var(--pv-h2,#332750); text-decoration:none;}
+  .pg-wt{position:relative; display:flex; align-items:center; gap:12px; margin-top:12px; font-size:13.5px; line-height:1.55; color:#6b6347;}
+  .pg-wt .pg-wi{flex:0 0 44px; width:44px; height:44px; border-radius:50%; display:grid; place-items:center; color:#8a6d00; background:rgba(0,0,0,.05); animation:pgBreath 2.4s ease-in-out infinite;}
+  @keyframes pgBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  .pg-sk{border-radius:10px; background:linear-gradient(90deg,rgba(0,0,0,.06) 25%,rgba(0,0,0,.12) 50%,rgba(0,0,0,.06) 75%); background-size:200% 100%; animation:pgSk 1.2s linear infinite;}
+  @keyframes pgSk{from{background-position:200% 0}to{background-position:-200% 0}}
+  .pg-spark{position:absolute; right:14px; top:44px; width:60px; height:60px; pointer-events:none;}
+  .pg-spark s{position:absolute; width:7px; height:7px; border-radius:50%; background:#ffd54a; animation:pgTw 1.8s ease-in-out infinite;}
+  .pg-spark s:nth-child(1){left:6px; top:10px;}
+  .pg-spark s:nth-child(2){left:38px; top:2px; animation-delay:.4s; background:#1a9a5b;}
+  .pg-spark s:nth-child(3){left:50px; top:30px; animation-delay:.8s;}
+  .pg-spark s:nth-child(4){left:14px; top:44px; animation-delay:1.2s; background:#ff8fd0;}
+  @keyframes pgTw{0%,100%{transform:scale(0); opacity:0}50%{transform:scale(1.2); opacity:1}}
+  @media (prefers-reduced-motion:reduce){
+    .pg-card,.pg-now>*,.pg-more .pg-st,.pg-st.r .pg-node::after,.pg-wt .pg-wi,.pg-sk,.pg-spark s,.pg-seg i.r::after,.pg-rf.spin svg{animation:none!important}
+    .pg-ring .pg-fg{animation:none!important; stroke-dashoffset:var(--off,226.2)}
+    .pg-seg i.d::after{animation:none!important; transform:scaleX(1)}
+    .pg-seg i.r::after{opacity:1}
+    .pg-more{transition:none} .pg-chk{stroke-dashoffset:0; animation:none!important}
+  }
+
   @media (prefers-reduced-motion:reduce){.pv-card,.pv-item,.pv-s-ok .pv-seal-ic::after,.pv-draw{animation:none!important} .pv-draw{stroke-dashoffset:0}}
 
   /* ---------- Gambar Story Instagram (ringkas & nama disensor, untuk diunggah publik) ---------- */
@@ -3161,8 +3430,59 @@
     .jf input[type=text],.jf input[type=number],.jf input[type=tel],.jf input[type=date],.jf input[type=time],
     .jf input[type=email],.jf input[type=url],.jf input:not([type]),.jf select,.jf textarea{font-size:16px;}
   }
-.km-box{margin:14px 0;padding:14px;border:1px solid var(--line,#e4e4e4);border-radius:14px;background:var(--card,#fff)}
-.km-title{font-weight:800;margin-bottom:8px;display:flex;gap:6px;align-items:center}
+.km-box{position:relative;overflow:hidden;margin:14px 0;padding:16px;border:1px solid var(--line,#e4e4e4);border-radius:22px;background:var(--card,#fff);box-shadow:0 14px 32px -24px rgba(60,48,10,.5)}
+.km-title{font-weight:800;margin-bottom:12px;display:flex;gap:11px;align-items:center;font-size:15.5px;line-height:1.2}
+.km-title small{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft,#777);margin-top:2px}
+.kp-ti{flex:none;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:#e8f5e9;color:#16a34a}.kp-ti svg{width:20px;height:20px}
+/* ===== Kotak Progres Foto (Detail Job) ===== */
+.kp-hero{display:flex;align-items:center;gap:16px}
+.kp-ring{position:relative;flex:0 0 88px;width:88px;height:88px}
+.kp-ring svg{display:block;width:88px;height:88px;transform:rotate(-90deg)}
+.kp-tr{fill:none;stroke:rgba(127,127,127,.18);stroke-width:8}
+.kp-fg{fill:none;stroke:#16a34a;stroke-width:8;stroke-linecap:round;stroke-dasharray:226.2;stroke-dashoffset:var(--off,226.2)}
+.kp-anim .kp-fg{stroke-dashoffset:226.2;animation:kpRing 1.2s .15s cubic-bezier(.3,.7,.2,1) forwards}
+@keyframes kpRing{to{stroke-dashoffset:var(--off,226.2)}}
+.kp-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:25px;letter-spacing:-.5px;color:#15803d}
+.kp-pct small{font-size:12px;font-weight:800;margin:6px 0 0 1px;opacity:.7}
+.kp-box100 .kp-pct{font-size:20px}
+.kp-now{min-width:0;flex:1}
+.kp-now small{display:block;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft,#777)}
+.kp-now b{display:block;margin-top:3px;font-size:22px;line-height:1.2;word-break:break-word}
+.kp-multi{display:inline-block;margin-top:7px;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:700;color:#b45309;background:#fff7e6;border:1px solid #f3c77a}
+.kp-seg{display:flex;gap:4px;margin-top:16px}
+.kp-seg i{flex:1;height:8px;border-radius:99px;background:rgba(127,127,127,.2);transform-origin:left}
+.kp-seg i.kp-selesai{background:linear-gradient(90deg,#16a34a,#22c55e)}
+.kp-seg i.kp-berjalan{background:linear-gradient(90deg,#f59e0b,#fde68a,#f59e0b);background-size:220% 100%;animation:kpShim 1.5s linear infinite}
+.kp-anim .kp-seg i.kp-selesai{animation:kpPop .45s calc(var(--i)*80ms + 250ms) ease-out both}
+@keyframes kpPop{from{transform:scaleX(0);opacity:0}to{transform:none;opacity:1}}
+@keyframes kpShim{from{background-position:120% 0}to{background-position:-120% 0}}
+.kp-meta{margin-top:8px;font-size:12.5px;color:var(--ink-soft,#666)}
+.kp-q{display:flex;align-items:center;gap:9px;margin-top:12px;padding:9px 12px;border-radius:13px;border:1px dashed var(--line,#ccc);font-size:13px;font-weight:700}
+.kp-q b{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 7px;border-radius:99px;color:#fff;background:#16a34a;font-size:13px}
+.kp-note{display:flex;gap:9px;margin-top:10px;padding:10px 12px;border-radius:13px;font-size:13px;line-height:1.5;background:rgba(127,127,127,.1)}
+.kp-note.warn{background:#fff3cd;color:#7a5200}
+.kp-tg{width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;border-radius:13px;border:1.5px solid var(--line,#ddd);background:transparent;color:inherit;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.kp-tg svg{transition:transform .35s cubic-bezier(.2,.8,.2,1)}.kp-tg[aria-expanded="true"] svg{transform:rotate(180deg)}
+.kp-more{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1)}.kp-more.open{grid-template-rows:1fr}.kp-more>div{overflow:hidden;min-height:0}
+.kp-grid{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kp-t{display:flex;align-items:center;gap:9px;min-width:0;padding:9px 10px;border-radius:14px;border:1px solid var(--line,#e2e2e2)}
+.kp-more.open .kp-t{animation:kpIn .4s calc(var(--i)*45ms + 80ms) ease both}
+@keyframes kpIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.kp-n{position:relative;flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:2px solid rgba(127,127,127,.3);color:rgba(127,127,127,.8)}
+.kp-tx{min-width:0;display:flex;flex-direction:column}.kp-tx b{font-size:13px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kp-tx small{font-size:11px;margin-top:2px;color:var(--ink-soft,#777)}
+.kp-t.kp-selesai{background:#ecfdf3;border-color:#bbf0cf;color:#14532d}.kp-t.kp-selesai .kp-n{background:#16a34a;border-color:#16a34a;color:#fff}.kp-t.kp-selesai small{color:#15803d}
+.kp-t.kp-berjalan{background:#fff7e6;border-color:#f3c77a;color:#7a4300}.kp-t.kp-berjalan .kp-n{background:#fff;border-color:#f59e0b;color:#b45309}.kp-t.kp-berjalan small{color:#b45309;font-weight:700}
+.kp-t.kp-berjalan .kp-n::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid #f59e0b;animation:kpPulse 1.8s ease-out infinite}
+@keyframes kpPulse{from{transform:scale(.8);opacity:.9}to{transform:scale(1.4);opacity:0}}
+.kp-t.kp-belum{opacity:.72}
+.kp-link{display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.1);font-size:12.5px;cursor:pointer}
+.kp-link span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kp-link svg{flex:none;opacity:.65}
+.kp-act{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.kp-btn{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 14px;border-radius:13px;border:1.5px solid var(--line,#ddd);background:var(--card,#fff);color:inherit;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:transform .12s}
+.kp-btn:active{transform:scale(.97)}
+.kp-wa{flex:1 1 100%;border-color:transparent;color:#fff;background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 8px 18px -10px rgba(22,163,74,.75)}
+.kp-sk{border-radius:10px;background:linear-gradient(90deg,rgba(127,127,127,.12) 25%,rgba(127,127,127,.24) 50%,rgba(127,127,127,.12) 75%);background-size:200% 100%;animation:kpSk 1.2s linear infinite}@keyframes kpSk{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.kp-anim .kp-fg,.kp-anim .kp-seg i.kp-selesai,.kp-seg i.kp-berjalan,.kp-more.open .kp-t,.kp-t.kp-berjalan .kp-n::after,.kp-sk{animation:none!important}.kp-anim .kp-fg{stroke-dashoffset:var(--off,226.2)}.kp-more{transition:none}}
 .km-sub{font-size:13px;color:var(--ink-soft,#666);margin:6px 0}
 .km-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .km-chip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;border:1px solid var(--line,#ddd);color:var(--ink-soft,#777);background:transparent}
@@ -4507,6 +4827,11 @@ const SYNC_ROW_ID = WS_ID==='default' ? 'main' : 'ws-' + WS_ID;
    halaman hasil pindai akan menyatakan "belum bisa diverifikasi / tidak terdaftar" - BUKAN
    "valid". Pendaftaran yang tertunda otomatis dikirim ulang begitu skripnya aktif. */
 
+/* PROGRES FOTO DI HALAMAN HASIL PINDAI QR - butuh dijalankan SEKALI di Supabase (SQL Editor):
+   isi lengkapnya ada di file "kwitansi_progres.sql" (tabel tertutup kaone_progres_publik + fungsi
+   kaone_progres_simpan / kaone_progres_cek). Sebelum skrip itu dijalankan, halaman hasil pindai tetap
+   normal, hanya bagian "Progres Foto" tidak muncul. */
+
 /* Tabel kecil TERPISAH dari kaone_motret_data di atas - isinya BUKAN data job/klien,
    cuma pengaturan yang memang sengaja dibuat bisa dibaca publik: tarif Ongkos Antar
    (dan pengaturan publik lain di masa depan, satu baris per "kunci"). Dipisah dari
@@ -4904,6 +5229,7 @@ async function kmTarik(paksa){
     }
   }catch(e){ console.warn('Tarik status Meja Kaone gagal:',e.message); }
   if(ch) kmSimpanSemua();
+  try{ kwProgresSapu(); }catch(e){}   // kirim progres terbaru ke halaman hasil pindai QR
   if(nyala) kmJadwal();
 }
 function kmRefreshUI(){
@@ -4933,7 +5259,40 @@ function kmTambahLink(j,teks){
   return String(teks).replace(/\s+$/,'')+'\n\n📷 Pantau progres foto Kakak di sini:\n'+u;
 }
 /* ---- Kotak "Progres Foto" di Detail Job ---- */
+const KP_IKON={
+  booking:'<rect x="3.5" y="5" width="17" height="16" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/>',
+  dp:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/>',
+  sesi:'<path d="M4 8h3l1.6-2.5h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.6"/>',
+  pelunasan:'<circle cx="12" cy="12" r="8.5"/><polyline points="8.5,12.5 11,15 15.5,9.5"/>',
+  unggah:'<path d="M12 16V5"/><path d="m7.5 9.5 4.5-4.5 4.5 4.5"/><path d="M4.5 16v3.5h15V16"/>',
+  pemilihan:'<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.5 2.4C19.5 15.4 12 20 12 20Z"/>',
+  antrian:'<circle cx="12" cy="12" r="8.5"/><polyline points="12,7 12,12 15.5,14"/>',
+  edit:'<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.3"/><circle cx="15" cy="17" r="2.3"/>',
+  cetak:'<path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="2"/><rect x="7" y="14" width="10" height="6" rx="1"/>',
+  antar:'<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5Z"/><path d="m3 7.5 9 4.5 9-4.5"/><line x1="12" y1="12" x2="12" y2="21"/>',
+  selesai:'<path d="M6 21V4"/><path d="M6 5h11l-2.5 4 2.5 4H6"/>'
+};
+const kpSvg=(isi,w,sw)=>`<svg viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="${sw||2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${isi}</svg>`;
+const KP_CEK=kpSvg('<polyline points="4.5,12.5 9.5,17.5 19.5,6.5"/>',14,3.4);
+const kpBuka={}, kpSudah={};   // ingat: daftar tahap terbuka/tertutup & animasi sudah diputar (per job, selama aplikasi terbuka)
+function kpToggle(btn){
+  const box=btn.closest('[data-km-box]'); if(!box) return;
+  const more=box.querySelector('.kp-more'); if(!more) return;
+  const o=!more.classList.contains('open');
+  more.classList.toggle('open',o); btn.setAttribute('aria-expanded',o?'true':'false');
+  btn.querySelector('span').textContent=o?'Sembunyikan tahap':'Lihat semua tahap';
+  kpBuka[box.dataset.kmBox]=o?1:0;
+}
+function kpCount(id){
+  const el=document.querySelector('[data-km-box="'+id+'"] .kp-num'); if(!el) return;
+  const ke=parseInt(el.dataset.to,10)||0;
+  if(!window.matchMedia||matchMedia('(prefers-reduced-motion:reduce)').matches){ el.textContent=ke; return; }
+  const t0=performance.now();
+  const step=t=>{ const k=Math.min(1,(t-t0-150)/1200), e=k<=0?0:1-Math.pow(1-k,3); el.textContent=Math.round(ke*e); if(k<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
 function kmBoxHtml(j){
+  let kpAnim=false;
   if(!isAdmin()||!kmKey()) return '';
   if(!kmAktif()) return '';
   setTimeout(()=>kmTarik(),0);
@@ -4952,26 +5311,41 @@ function kmBoxHtml(j){
       <div class="km-btns"><button type="button" class="btn btn-outline" onclick="kmAksi('cek','${j.id}')">Cek lagi</button></div>`;
   }else{
     const ks=Object.keys(KM_LABEL).filter(k=>s&&s[k]&&s[k]!=='lewati');
-    const done=ks.filter(k=>s[k]==='selesai').length, pct=ks.length?Math.round(done/ks.length*100):0;
-    const cur=ks.find(k=>s[k]==='berjalan')||ks.find(k=>s[k]==='belum')||null;
-    const jalan=ks.filter(k=>s[k]==='berjalan');
-    const ikon={selesai:'✓',berjalan:'●',belum:'○'};
-    const steps=ks.map(k=>`<li class="km-st km-${s[k]}"><i>${ikon[s[k]]||'○'}</i><span>${KM_LABEL[k]}</span></li>`).join('');
-    const kepala=!ks.length?'<span class="km-sub">Memuat tahap…</span>':
-      `<div class="km-ph"><div class="km-now"><small>${cur?(s[cur]==='berjalan'?'Sedang dikerjakan':'Berikutnya'):'Status'}</small><b>${cur?KM_LABEL[cur]:'Semua tahap selesai ✓'}</b></div><div class="km-pct" aria-label="${pct} persen">${pct}<small>%</small></div></div>
-      <div class="km-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
-      <div class="km-cnt">${done} dari ${ks.length} tahap selesai</div>
-      <ol class="km-steps">${steps}</ol>`;
+    const sts=k=>{ const v=s&&s[k]; return v==='selesai'||v==='berjalan'?v:'belum'; };
+    const done=ks.filter(k=>sts(k)==='selesai').length, pct=ks.length?Math.round(done/ks.length*100):0;
+    const cur=ks.find(k=>sts(k)==='berjalan')||ks.find(k=>sts(k)==='belum')||null;
+    const jalan=ks.filter(k=>sts(k)==='berjalan');
+    const semua=ks.length>0&&done===ks.length;
+    kpAnim=!kpSudah[j.id]&&ks.length>0; if(ks.length) kpSudah[j.id]=1;
+    if(kpAnim) setTimeout(()=>kpCount(j.id),40);
+    const buka=kpBuka[j.id]!==0, off=(226.2*(1-pct/100)).toFixed(1);
+    const stTxt={selesai:'Selesai',berjalan:'Berjalan',belum:'Menunggu'};
+    const tiles=ks.map((k,i)=>`<li class="kp-t kp-${sts(k)}" style="--i:${i}"><span class="kp-n">${sts(k)==='selesai'?KP_CEK:kpSvg(KP_IKON[k]||'<circle cx="12" cy="12" r="3"/>',14,2.2)}</span><span class="kp-tx"><b>${KM_LABEL[k]}</b><small>${stTxt[sts(k)]}</small></span></li>`).join('');
+    const segs=ks.map((k,i)=>`<i class="kp-${sts(k)}" style="--i:${i}" title="${KM_LABEL[k]}"></i>`).join('');
+    const label=semua?'Status':(cur?(sts(cur)==='berjalan'?'Sedang dikerjakan':'Berikutnya'):'Status');
+    const nama=semua?'Semua tahap selesai':(cur?KM_LABEL[cur]:'-');
+    const kepala=!ks.length
+      ? `<div class="kp-hero"><div class="kp-sk" style="width:88px;height:88px;border-radius:50%;flex:none"></div><div style="flex:1"><div class="kp-sk" style="height:11px;width:45%"></div><div class="kp-sk" style="height:20px;width:70%;margin-top:9px"></div></div></div><div class="km-sub" style="margin-top:12px">Memuat tahap…</div>`
+      : `<div class="kp-hero${pct===100?' kp-box100':''}">
+          <div class="kp-ring" role="img" aria-label="${pct} persen"><svg viewBox="0 0 88 88" aria-hidden="true"><circle class="kp-tr" cx="44" cy="44" r="36"/><circle class="kp-fg" cx="44" cy="44" r="36" style="--off:${off}"/></svg><div class="kp-pct"><span class="kp-num" data-to="${pct}">${kpAnim?0:pct}</span><small>%</small></div></div>
+          <div class="kp-now"><small>${label}</small><b>${nama}</b>${jalan.length>1?`<span class="kp-multi">+${jalan.length-1} tahap lain berjalan</span>`:''}</div>
+        </div>
+        <div class="kp-seg" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progres foto">${segs}</div>
+        <div class="kp-meta">${done} dari ${ks.length} tahap selesai</div>`;
     isi=`${kepala}
-      ${s&&s.antrian==='berjalan'&&q!=null?`<div class="km-note">🕑 Antrian edit: urutan ke-${q+1}</div>`:''}
-      ${jalan.length>1?`<div class="km-note warn">Ada ${jalan.length} tahap berjalan bersamaan (${jalan.map(k=>KM_LABEL[k]).join(', ')}). Bila keliru, kembalikan salah satunya ke "Belum" di Meja Kaone, tab Lacak.</div>`:''}
-      ${j.kmErr?`<div class="km-note warn">⚠️ ${escapeHtml(j.kmErr)}</div>`:''}
-      <div class="km-link">${escapeHtml(u)}</div>
-      <div class="km-btns">${waDigits(j.noWhatsapp)?`<button type="button" class="btn btn-wa-quick" onclick="kmAksi('wa','${j.id}')">Kirim link ke klien</button>`:''}
-      <button type="button" class="btn btn-outline" onclick="kmAksi('salin','${j.id}')">Salin link</button>
-      <button type="button" class="btn btn-outline" onclick="kmAksi('sinkron','${j.id}')">Sinkronkan</button></div>`;
+      ${s&&s.antrian==='berjalan'&&q!=null?`<div class="kp-q"><b>${q+1}</b><span>Urutan antrian edit</span></div>`:''}
+      ${jalan.length>1?`<div class="kp-note warn"><span>⚠️</span><span>Ada ${jalan.length} tahap berjalan bersamaan (${jalan.map(k=>KM_LABEL[k]).join(', ')}). Bila keliru, kembalikan salah satunya ke "Belum" di Meja Kaone, tab Lacak.</span></div>`:''}
+      ${j.kmErr?`<div class="kp-note warn"><span>⚠️</span><span>${escapeHtml(j.kmErr)}</span></div>`:''}
+      ${ks.length?`<button type="button" class="kp-tg" aria-expanded="${buka?'true':'false'}" onclick="kpToggle(this)"><span>${buka?'Sembunyikan tahap':'Lihat semua tahap'}</span>${kpSvg('<polyline points="6,9 12,15 18,9"/>',16,2.4)}</button>
+      <div class="kp-more${buka?' open':''}"><div><ol class="kp-grid">${tiles}</ol></div></div>`:''}
+      ${u?`<div class="kp-link" onclick="kmAksi('salin','${j.id}')" title="Ketuk untuk menyalin">${kpSvg('<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>',16,2)}<span>${escapeHtml(u)}</span></div>`:''}
+      <div class="kp-act">
+        ${waDigits(j.noWhatsapp)?`<button type="button" class="kp-btn kp-wa" onclick="kmAksi('wa','${j.id}')">${kpSvg('<path d="M21 12a8.5 8.5 0 0 1-12.4 7.5L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12Z"/>',17,2)}Kirim link ke klien</button>`:''}
+        <button type="button" class="kp-btn" onclick="kmAksi('salin','${j.id}')">${kpSvg('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',16,2)}Salin link</button>
+        <button type="button" class="kp-btn" onclick="kmAksi('sinkron','${j.id}')">${kpSvg('<path d="M20 11a8 8 0 1 0-2.3 5.7"/><polyline points="20,4 20,11 13,11"/>',16,2.2)}Sinkronkan</button>
+      </div>`;
   }
-  return `<div class="km-box" data-km-box="${j.id}"><div class="km-title">${ic('check-circle')} Progres Foto (Meja Kaone)</div>${isi}</div>`;
+  return `<div class="km-box${kpAnim?' kp-anim':''}" data-km-box="${j.id}"><div class="km-title"><span class="kp-ti">${ic('check-circle')}</span><span>Progres Foto<small>Meja Kaone</small></span></div>${isi}</div>`;
 }
 async function kmAksi(a,id,v){
   const j=jobs.find(x=>x.id===id); if(!j) return;
@@ -8277,29 +8651,72 @@ function salinPesanTagihan(jobId){
   copyToClipboard(pesanTagihanKlien(j), 'Pesan tagihan disalin');
 }
 // Kartu "Tagihan hari H" di atas Detail Job - terlihat untuk Admin dan Tim.
+// Privasi: akun Tim HANYA melihat sisa yang ditagih (tanpa total, DP, maupun persen pembayaran).
 function tagihanBoxHtml(j){
   const t = tagihanHariH(j);
   if(t.lunas){
-    return `<div class="tagih-box ok"><div class="tagih-top"><span class="tagih-label">${ic('money')} Tagihan hari H</span></div>
-      <div class="tagih-ok">${ic('check-circle')} Sudah lunas. Tidak ada yang perlu ditagih.</div></div>`;
+    return `<div class="th-card ok">
+      <div class="th-head" style="--d:0"><span class="th-ico">${ic('money')}</span><span class="th-ttl">Tagihan hari H<small>Status pelunasan</small></span></div>
+      <div class="th-okrow" style="--d:1">
+        <svg class="th-okmark" viewBox="0 0 54 54" aria-hidden="true"><circle cx="27" cy="27" r="25"/><path d="M16 28.5l8 8 15-17"/></svg>
+        <div class="th-oktxt"><b>Sudah lunas</b><span>Tidak ada yang perlu ditagih.</span></div>
+      </div>
+    </div>`;
   }
   const w = tagihanWaktu(j);
+  const admin = isAdmin();
   const adaWa = !!waDigits(j.noWhatsapp);
-  return `<div class="tagih-box ${w.now?'now':''}">
-    <div class="tagih-top"><span class="tagih-label">${ic('money')} Tagihan hari H</span><span class="tagih-when ${w.now?'now':''}">${escapeHtml(w.t)}</span></div>
-    <div class="tagih-amt">${fmtRp(t.sisa)}</div>
-    <div class="tagih-sub">Ditagih ke klien saat hari H, ${escapeHtml(fmtTglJob(j))}</div>
-    ${isAdmin() ? `<div class="tagih-rows">
-      <div><span>Total tagihan klien</span><b>${fmtRp(t.harga)}</b></div>
-      <div><span>Sudah dibayar (DP)</span><b>− ${fmtRp(t.dp)}</b></div>
-      <div><span>Sisa yang ditagih</span><b>${fmtRp(t.sisa)}</b></div>
+  const angka = fmtRp(t.sisa).replace(/^Rp\s*/,'');
+  const persen = (admin && t.harga>0) ? Math.max(0, Math.min(100, Math.round(t.dp/t.harga*100))) : null;
+  return `<div class="th-card ${w.now?'now':''}">
+    <div class="th-head" style="--d:0">
+      <span class="th-ico">${ic('money')}</span>
+      <span class="th-ttl">Tagihan hari H<small>Sisa pembayaran klien</small></span>
+      <span class="th-chip ${w.now?'now':''}">${w.now?'':ic('clock')}${escapeHtml(w.t)}</span>
+    </div>
+    <div class="th-amt" style="--d:1"><span class="th-cur">Rp</span><span class="th-num" data-count="${t.sisa}">${angka}</span></div>
+    <div class="th-sub" style="--d:2">${ic('calendar')}<span>Ditagih ke klien saat hari H, ${escapeHtml(fmtTglJob(j))}</span></div>
+    ${persen!==null ? `<div class="th-prog" style="--d:3">
+      <div class="th-prog-top"><span>Pembayaran masuk (DP)</span><b>${persen}%</b></div>
+      <div class="th-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${persen}"><i class="th-fill" style="--w:${persen}%"></i></div>
     </div>` : ''}
-    ${isAdmin() ? `<div class="tagih-actions">
-      <button type="button" class="btn btn-outline" onclick="salinPesanTagihan('${j.id}')">${ic('clipboard')} Salin pesan</button>
-      ${adaWa ? `<a class="btn btn-wa-quick" target="_blank" rel="noopener" href="${waLinkKlien(j.noWhatsapp, pesanTagihanKlien(j))}">${ic('phone')} WhatsApp klien</a>` : ''}
+    ${admin ? `<div class="th-rcpt" style="--d:4">
+      <div class="th-row"><span>Total tagihan klien</span><b>${fmtRp(t.harga)}</b></div>
+      <div class="th-row minus"><span>Sudah dibayar (DP)</span><b>− ${fmtRp(t.dp)}</b></div>
+      <div class="th-row total"><span>Sisa yang ditagih</span><b>${fmtRp(t.sisa)}</b></div>
+    </div>` : ''}
+    ${admin ? `<div class="th-actions ${adaWa?'':'single'}" style="--d:5">
+      <button type="button" class="th-btn th-copy" onclick="salinPesanTagihan('${j.id}')">${ic('clipboard')} Salin pesan</button>
+      ${adaWa ? `<a class="th-btn th-wa" target="_blank" rel="noopener" href="${waLinkKlien(j.noWhatsapp, pesanTagihanKlien(j))}">${ic('phone')} WhatsApp klien</a>` : ''}
     </div>` : ''}
   </div>`;
 }
+// Angka tagihan "menghitung naik" saat kartu muncul. Dipicu otomatis begitu kartu masuk ke halaman.
+function animateTagihNumbers(){
+  document.querySelectorAll('.th-num[data-count]:not([data-done])').forEach(el=>{
+    el.dataset.done = '1';
+    const to = Number(el.dataset.count)||0, finalTxt = el.textContent;
+    if(!to || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    const fmt = n=>Math.round(n).toLocaleString('id-ID');
+    const t0 = performance.now()+200, dur = 950;
+    el.textContent = fmt(0);
+    const step = now=>{
+      const p = Math.min(1, Math.max(0,(now-t0)/dur));
+      el.textContent = p<1 ? fmt(to*(1-Math.pow(1-p,4))) : finalTxt;
+      if(p<1 && el.isConnected) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
+}
+(function(){
+  if(window.__thObs || typeof MutationObserver==='undefined') return;
+  window.__thObs = true;
+  new MutationObserver(ms=>{
+    for(const m of ms) for(const n of m.addedNodes){
+      if(n.nodeType===1 && ((n.matches && n.matches('.th-card')) || (n.querySelector && n.querySelector('.th-num[data-count]')))){ animateTagihNumbers(); return; }
+    }
+  }).observe(document.documentElement,{childList:true,subtree:true});
+})();
 
 /* Honor Tim per anggota: sejak fitur "pilih anggota tim & honor masing-masing" di
    form Input/Edit Job, satu job bisa membagi Honor Tim ke lebih dari satu akun Tim
@@ -12156,6 +12573,55 @@ function openEditJobModal(jobId){
   });
 }
 
+/* ---------- Tampilan biodata di Detail Job (layar) ----------
+   Hanya mengubah cara baris ditampilkan: status jadi chip berwarna, link Maps/Instagram bisa
+   diketuk, nominal rata kanan, catatan jadi blok tersendiri. Data & urutan baris tidak berubah. */
+const JD_SEC_ICON = {'Data Acara':'calendar','Detail Acara':'clipboard','Status & Proses':'settings','Keuangan':'money','Catatan':'note'};
+const JD_HL = new Set(['Nama Klien','Tanggal Acara','Paket']);
+const JD_STATUS = new Set(['Proses Edit','Proses Cetak','Pengiriman','Status Pembayaran']);
+function jdStatusTone(v){
+  v = String(v||'');
+  if(/^(belum|menunggu|tertunda)/i.test(v)) return 'warn';
+  if(/(selesai|sudah|lunas|terkirim|diantar|dijemput)/i.test(v)) return 'ok';
+  if(/(proses|sedang|berjalan|dikerjakan|^dp)/i.test(v)) return 'info';
+  return 'neutral';
+}
+function jdValueHtml(label, raw, id){
+  const val = String(raw==null?'':raw);
+  const kosong = (val.trim()==='' || val.trim()==='-');
+  if(id) return `<div class="jd-v${kosong?' empty':''}" id="${id}">${escapeHtml(val)}</div>`;   // diisi ulang lewat id (jarak/biaya/durasi)
+  if(kosong) return `<div class="jd-v empty">-</div>`;
+  if(/^Link Maps/i.test(label) && /^https?:\/\//i.test(val.trim()))
+    return `<div class="jd-v"><a class="jd-link" href="${escapeHtml(val.trim())}" target="_blank" rel="noopener">${ic('pin')} Buka di Maps</a></div>`;
+  if(/^Instagram/i.test(label) && /^@[\w.]+$/.test(val.trim()))
+    return `<div class="jd-v"><a class="jd-link ig" href="https://instagram.com/${encodeURIComponent(val.trim().slice(1))}" target="_blank" rel="noopener">${ic('instagram')} ${escapeHtml(val.trim())}</a></div>`;
+  if(JD_STATUS.has(label)) return `<div class="jd-v"><span class="jd-chip ${jdStatusTone(val)}">${escapeHtml(val)}</span></div>`;
+  return `<div class="jd-v">${escapeHtml(val)}</div>`;
+}
+function jdRowHtml(sec, label, raw, id){
+  const val = String(raw==null?'':raw);
+  const cls = ['jd-r'];
+  if(JD_HL.has(label) && sec.title==='Data Acara') cls.push('hl');
+  if(sec.title==='Keuangan'){
+    if(label==='Sisa Pembayaran') cls.push('due');
+    if(label==='Penghasilan Bersih') cls.push('net');
+  } else if(val.length>46 && !id) cls.push('long');
+  return `<div class="${cls.join(' ')}"><div class="jd-k">${escapeHtml(label)}</div>${jdValueHtml(label, val, id)}</div>`;
+}
+function jdSectionHtml(sec, i){
+  const ikon = JD_SEC_ICON[sec.title] || 'clipboard';
+  let isi;
+  if(sec.title==='Catatan'){
+    const c = String((sec.rows[0]||[])[1]||'').trim();
+    isi = (c && c!=='-') ? `<div class="jd-note">${escapeHtml(c)}</div>` : `<div class="jd-note empty">Tidak ada catatan</div>`;
+  } else {
+    isi = sec.rows.map(([label,val,id])=>jdRowHtml(sec,label,val,id)).join('');
+  }
+  return `<section class="jd-sec${sec.title==='Keuangan'?' money':''}" style="--i:${i}">
+    <div class="jd-sec-h"><span class="jd-sec-ico">${ic(ikon)}</span><span class="jd-sec-t">${escapeHtml(sec.title)}</span></div>
+    ${isi}
+  </section>`;
+}
 /* ---------- Modal Detail Job (lihat, unduh gambar, salin, ics, google calendar) ---------- */
 function openJobDetailModal(jobId){
   const j = jobs.find(x=>x.id===jobId);
@@ -12231,10 +12697,7 @@ function openJobDetailModal(jobId){
         <div class="jd-header-job">#${getJobNo(j.id)} - ${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
       </div>
       <div class="jd-body">
-        ${sections.map(sec=>`
-          <div class="jd-section-title">${escapeHtml(sec.title)}</div>
-          ${sec.rows.map(([label,val,id])=>`<div class="mj-row"><span>${escapeHtml(label)}</span><span${id?` id="${id}"`:''}>${escapeHtml(String(val))}</span></div>`).join('')}
-        `).join('')}
+        ${sections.map((sec,si)=>jdSectionHtml(sec,si)).join('')}
       </div>
       <div class="jd-footer">
         <div class="jd-footer-line"></div>
@@ -12246,15 +12709,30 @@ function openJobDetailModal(jobId){
     ${waSelesaiBoxHtml(j)}
     ${waQuickSendHtml(j)}
     ${kmBoxHtml(j)}
-    <div class="modal-actions">
-      <button type="button" class="btn btn-outline" data-detail-download="${j.id}">${ic('image')} Unduh Gambar</button>
-      <button type="button" class="btn btn-outline" data-detail-story="${j.id}">${ic('phone')} Unduh Gambar Story</button>
-      <button type="button" class="btn btn-outline" data-detail-copy="${j.id}">${ic('clipboard')} Salin Detail</button>
-      <button type="button" class="btn admin-only ${isKwitansiOutdated(j)?'btn-warning':'btn-outline'}" data-kwitansi="${j.id}">${ic('receipt')} ${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (PDF)':'Cetak Kwitansi (PDF)'}</button>
-      <button type="button" class="btn admin-only ${isKwitansiOutdated(j)?'btn-warning':'btn-outline'}" data-kwitansi-img="${j.id}">${ic('image')} ${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (Gambar)':'Cetak Kwitansi (Gambar)'}</button>
-      <button type="button" class="btn btn-outline" data-ics="${j.id}">${ic('download')} Unduh .ics</button>
-      <button type="button" class="btn btn-outline" data-gcal="${j.id}">${ic('calendar')} Tambah ke Google Calendar</button>
-      <button type="button" class="btn btn-primary admin-only" data-edit="${j.id}">${ic('edit')} Edit Job</button>
+    <div class="da-wrap">
+      <div class="da-group" style="--i:0">
+        <div class="da-glabel">Bagikan &amp; unduh</div>
+        <div class="da-grid">
+          <button type="button" class="da-btn" data-detail-download="${j.id}"><span class="da-ico">${ic('image')}</span><span class="da-tx"><span class="da-tt">Unduh Gambar</span><span class="da-sub">Poster detail job (PNG)</span></span><i class="da-go"></i></button>
+          <button type="button" class="da-btn" data-detail-story="${j.id}"><span class="da-ico">${ic('phone')}</span><span class="da-tx"><span class="da-tt">Unduh Gambar Story</span><span class="da-sub">Ukuran Story, nama klien disensor</span></span><i class="da-go"></i></button>
+          <button type="button" class="da-btn da-wide" data-detail-copy="${j.id}"><span class="da-ico">${ic('clipboard')}</span><span class="da-tx"><span class="da-tt">Salin Detail</span><span class="da-sub">Teks rapi, siap ditempel ke chat</span></span><i class="da-go"></i></button>
+        </div>
+      </div>
+      <div class="da-group admin-only" style="--i:1">
+        <div class="da-glabel">Kwitansi klien</div>
+        <div class="da-grid">
+          <button type="button" class="da-btn ${isKwitansiOutdated(j)?'warn':''}" data-kwitansi="${j.id}"><span class="da-ico">${ic('receipt')}</span><span class="da-tx"><span class="da-tt">${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (PDF)':'Cetak Kwitansi (PDF)'}</span><span class="da-sub">${isKwitansiOutdated(j)?'Harga/Diskon/DP berubah sejak dicetak':'Dokumen PDF untuk klien'}</span></span><i class="da-go"></i></button>
+          <button type="button" class="da-btn ${isKwitansiOutdated(j)?'warn':''}" data-kwitansi-img="${j.id}"><span class="da-ico">${ic('image')}</span><span class="da-tx"><span class="da-tt">${isKwitansiOutdated(j)?'Cetak Ulang Kwitansi (Gambar)':'Cetak Kwitansi (Gambar)'}</span><span class="da-sub">${isKwitansiOutdated(j)?'Harga/Diskon/DP berubah sejak dicetak':'Gambar siap kirim lewat WhatsApp'}</span></span><i class="da-go"></i></button>
+        </div>
+      </div>
+      <div class="da-group" style="--i:2">
+        <div class="da-glabel">Kalender</div>
+        <div class="da-grid">
+          <button type="button" class="da-btn" data-ics="${j.id}"><span class="da-ico">${ic('download')}</span><span class="da-tx"><span class="da-tt">Unduh .ics</span><span class="da-sub">Simpan ke aplikasi kalender</span></span><i class="da-go"></i></button>
+          <button type="button" class="da-btn" data-gcal="${j.id}"><span class="da-ico">${ic('calendar')}</span><span class="da-tx"><span class="da-tt">Tambah ke Google Calendar</span><span class="da-sub">Buka lalu simpan acaranya</span></span><i class="da-go"></i></button>
+        </div>
+      </div>
+      <button type="button" class="da-edit admin-only" data-edit="${j.id}">${ic('edit')} Edit Job</button>
     </div>
   `);
 
@@ -12291,6 +12769,46 @@ function truncateText(s, max){
    modal), supaya file gambar yang diunduh terasa seperti dokumen resmi yang rapi -
    bukan sekadar screenshot dari tampilan popup di layar. Baris yang kosong ('-')
    otomatis disembunyikan supaya poster tidak penuh sesak oleh data kosong. */
+/* Helper tampilan poster (hanya cara baris digambar; data & urutan tidak berubah).
+   Ikon digambar sebagai SVG inline dengan warna eksplisit (bukan <use>) supaya ikut terekam html2canvas. */
+/* Logo diafragma untuk poster: dirender sebagai <img> data-URL dengan ukuran & warna eksplisit,
+   karena <svg> inline yang bergantung CSS (ukuran/currentColor) sering bergeser atau terpotong di html2canvas. */
+function posterLogoImg(color, px){
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-33 -33 66 66" width="'+px+'" height="'+px+'"><circle r="30.4" fill="none" stroke="'+color+'" stroke-width="2.4"/><path fill="'+color+'" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg>';
+  return '<img alt="" width="'+px+'" height="'+px+'" style="display:block;width:'+px+'px;height:'+px+'px;" src="data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)+'">';
+}
+function posterIcon(name, color){
+  const sym = document.getElementById('ic-'+name);
+  if(!sym) return '';
+  return `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${sym.innerHTML}</svg>`;
+}
+const JP_HL_LABELS = new Set(['Nama Kedua Mempelai','Paket']);
+function posterValueHtml(label, val){
+  const v = String(val).trim();
+  if(/^Link Maps/i.test(label) && /^https?:\/\//i.test(v)) return `<span class="jp-pill link">${escapeHtml(truncateText(v, 64))}</span>`;
+  if(/^Instagram/i.test(label) && /^@[\w.]+$/.test(v)) return `<span class="jp-pill ig">${escapeHtml(v)}</span>`;
+  if(JD_STATUS.has(label)) return `<span class="jp-pill ${jdStatusTone(v)}">${escapeHtml(v)}</span>`;
+  return escapeHtml(String(val));
+}
+function posterRowHtml(sec, label, val){
+  const cls = ['jp-row'];
+  if(sec.title==='Data Acara' && JP_HL_LABELS.has(label)) cls.push('jp-hl');
+  if(sec.title==='Keuangan'){
+    if(label==='Sisa Pembayaran') cls.push('jp-due');
+    if(label==='Penghasilan Bersih') cls.push('jp-net');
+  }
+  return `<div class="${cls.join(' ')}"><span class="jp-label">${escapeHtml(label)}</span><span class="jp-value">${posterValueHtml(label,val)}</span></div>`;
+}
+function posterSectionHtml(sec, warna){
+  const ikon = posterIcon(JD_SEC_ICON[sec.title]||'clipboard', warna);
+  const isi = sec.title==='Catatan'
+    ? `<div class="jp-note">${escapeHtml(String((sec.rows[0]||[])[1]||''))}</div>`
+    : sec.rows.map(([label,val])=>posterRowHtml(sec,label,val)).join('');
+  return `<div class="jp-section${sec.title==='Keuangan'?' jp-money':''}">
+    <div class="jp-section-head"><span class="jp-ico">${ikon}</span><span class="txt">${escapeHtml(sec.title)}</span></div>
+    ${isi}
+  </div>`;
+}
 function buildJobPosterHtml(j){
   const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'-') : (j.jenisAcara||'-');
   const lokasiFull = [desaDisplay(j),j.kecamatan,j.kabupaten,j.provinsi].filter(Boolean).join(', ') || '-';
@@ -12331,35 +12849,27 @@ function buildJobPosterHtml(j){
   .map(sec=>({...sec, rows:sec.rows.filter(([,val])=> val && val!=='-')}))
   .filter(sec=>sec.rows.length>0);
 
+  const lokasiSingkat = (j.kecamatan||j.kabupaten||'').trim();
   return `
     <div id="jobPosterExport" class="job-poster" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
       <div class="jp-watermark"></div>
-      <div class="jp-topbar">
-        <div class="jp-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div>
-        <div>
-          <div class="jp-brand-name">Kaone Motret</div>
-          <div class="jp-brand-tag">Buku Job Fotografer</div>
-        </div>
-        <div class="jp-type-badge">${escapeHtml(jenis)}</div>
-      </div>
-      <div class="jp-title-block">
-        <div class="jp-kicker">Detail Job &middot; #${getJobNo(j.id)}</div>
-        <div class="jp-client-name">${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
-        <div class="jp-date-row"><span>${fmtTglJob(j)}</span><span class="sep"></span><span>${escapeHtml(jenis)}</span></div>
-      </div>
-      <div class="jp-rule"></div>
-      <div class="jp-body">
-        ${sections.map(sec=>`
-          <div class="jp-section">
-            <div class="jp-section-head"><span class="dot"></span><span class="txt">${escapeHtml(sec.title)}</span></div>
-            ${sec.rows.map(([label,val],i)=>`
-              <div class="jp-row${sec.highlightLast && i===sec.rows.length-1 ? ' jp-highlight':''}">
-                <span class="jp-label">${escapeHtml(label)}</span>
-                <span class="jp-value">${escapeHtml(String(val))}</span>
-              </div>
-            `).join('')}
+      <div class="jp-hero">
+        <div class="jp-topbar">
+          <div class="jp-badge">${posterLogoImg(col.hdr1, 60)}</div>
+          <div>
+            <div class="jp-brand-name">Kaone Motret</div>
+            <div class="jp-brand-tag">Buku Job Fotografer</div>
           </div>
-        `).join('')}
+          <div class="jp-type-badge">${escapeHtml(jenis)}</div>
+        </div>
+        <div class="jp-title-block">
+          <div class="jp-kicker">Detail Job &middot; #${getJobNo(j.id)}</div>
+          <div class="jp-client-name">${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
+          <div class="jp-date-row"><span class="jp-chip">${fmtTglJob(j)}</span>${lokasiSingkat?`<span class="jp-chip">${escapeHtml(lokasiSingkat)}</span>`:''}</div>
+        </div>
+      </div>
+      <div class="jp-body">
+        ${sections.map(sec=>posterSectionHtml(sec, col.soft)).join('')}
       </div>
       <div class="jp-footer">
         <div class="jp-footer-line"></div>
@@ -12398,6 +12908,7 @@ function downloadJobDetailImage(jobId){
     };
     if(!fits()) posterEl.classList.add('jp-compact');
     if(!fits()) posterEl.classList.add('jp-compact2');
+    if(!fits()) posterEl.classList.add('jp-compact3');
 
     html2canvas(posterEl, {width:1080, height:1920, scale:1, backgroundColor:'#FFFBEA'}).then(canvas=>{
       holder.remove();
@@ -12445,7 +12956,7 @@ function buildJobStoryHtml(j){
     <div id="jobStoryExport" class="job-story" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
       <div class="js-watermark"></div>
       <div class="js-frame"></div>
-      <div class="js-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div>
+      <div class="js-badge">${posterLogoImg(col.accent, 72)}</div>
       <div class="js-brand">Kaone Motret</div>
       <div class="js-brand-tag">Wedding Photography</div>
       <div class="js-kicker">Job #${getJobNo(j.id)} &middot; ${escapeHtml(jenis)}</div>
@@ -12906,6 +13417,41 @@ async function kwPendingFlush(){
 }
 window.addEventListener('online', ()=>setTimeout(kwPendingFlush, 1500));
 
+/* ---------- Progres foto di halaman hasil pindai QR (sisi Admin) ----------
+   Ringkasan tahap dari Meja Kaone (j.kmStat) dikirim ke Supabase (kaone_progres_simpan) berdasarkan token QR
+   kwitansi, supaya halaman hasil pindai bisa menampilkannya tanpa login. Hanya dikirim bila isinya berubah. */
+const KWP_KUNCI = ['booking','sesi','unggah','pemilihan','antrian','edit','cetak','antar','selesai'];   // DP & Pelunasan tidak ikut
+const KWP_SIG_KEY = 'kaoneMotret_kwpSig_v1';
+let kwpBusy = false, kwpGagalAt = 0;
+function kwpSigGet(){ try{ return JSON.parse(localStorage.getItem(KWP_SIG_KEY)||'{}') || {}; }catch(e){ return {}; } }
+function kwpSigSet(o){ try{ const k = Object.keys(o); if(k.length>400) k.slice(0,k.length-400).forEach(x=>{ delete o[x]; }); localStorage.setItem(KWP_SIG_KEY, JSON.stringify(o)); }catch(e){} }
+function kwProgresSnap(j){
+  if(j.kmOff) return {v:1, off:1};
+  const st = j.kmStat, s = st && st.s;
+  if(!s || !Object.keys(s).length) return null;
+  const o = {}; KWP_KUNCI.forEach(k=>{ if(s[k]) o[k] = s[k]; });
+  const snap = {v:1, s:o};
+  if(s.antrian==='berjalan' && st.q!=null) snap.q = Number(st.q)||0;
+  const u = kmLinkProgres(j); if(u) snap.u = u;
+  return snap;
+}
+async function kwProgresPush(j, paksa){
+  const tok = j && j.kwitansiQr && j.kwitansiQr.token; if(!tok) return false;
+  const snap = kwProgresSnap(j); if(!snap) return false;
+  const sig = JSON.stringify(snap), mp = kwpSigGet();
+  if(!paksa && mp[tok]===sig) return false;
+  try{ await kwRpc('kaone_progres_simpan', {p_token:tok, p_data:snap}); }
+  catch(e){ kwpGagalAt = Date.now(); console.warn('Progres QR belum terkirim (jalankan kwitansi_progres.sql di Supabase?)', e); return false; }
+  mp[tok] = sig; kwpSigSet(mp); return true;
+}
+async function kwProgresSapu(){
+  if(kwpBusy || !supabaseClient || typeof isAdmin!=='function' || !isAdmin()) return;
+  if(Date.now()-kwpGagalAt < 600000) return;
+  kwpBusy = true;
+  try{ let n = 0; for(const j of jobs){ if(n>=12 || Date.now()-kwpGagalAt<600000) break; if(await kwProgresPush(j)) n++; } }
+  finally{ kwpBusy = false; }
+}
+
 // Hasilnya alamat lengkap untuk dijadikan QR, atau '' kalau aplikasi dibuka bukan dari alamat web.
 async function kwQrBuildUrl(j){
   const base = kwQrBaseUrl();
@@ -12918,6 +13464,7 @@ async function kwQrBuildUrl(j){
   let rec = j.kwitansiQr;
   if(!rec || !rec.token || rec.ch!==ch) rec = j.kwitansiQr = {token:kwTokenBaru(), ch, reg:false};
   a[9] = rec.token;
+  try{ kwProgresPush(j).catch(()=>{}); }catch(e){}   // progres foto untuk halaman hasil pindai
   if(!rec.reg){
     if(await kwDaftar(rec.token, j.id, kwSha256(rec.token+'|'+isi))) rec.reg = true;
     else toast('Kwitansi dibuat. Keaslian QR baru aktif setelah perangkat ini tersambung internet.');
@@ -12965,7 +13512,7 @@ async function kwQrDecode(token){
   const s = (v,n)=>String(v==null?'':v).slice(0,n);
   const iso = v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'') ? v : '';
   const tgl = iso(a[6]), nomor = parseInt(a[1],10);
-  const no = nomor>0 ? `KWT-${String(nomor).padStart(3,'0')}-${tgl.replace(/-/g,'')}` : '';
+  const no = nomor>0 ? `KMT-${String(nomor).padStart(3,'0')}-${tgl.replace(/-/g,'')}` : '';
   return {no, paket:s(a[2],120), deskripsi:s(a[3],1200), klien:s(a[4],80), jenis:s(a[5],60),
           tgl, tglAkhir:iso(a[7]), mempelai:s(a[8],100), raw:a};
 }
@@ -13073,6 +13620,100 @@ function kwSealHtml(st, r){
       ${st==='gagal' ? '<button type="button" class="pv-retry">Coba lagi</button>' : ''}</div>
     </div>`;
 }
+/* ---------- Progres foto di halaman hasil pindai QR ----------
+   Data diambil lewat fungsi Supabase kaone_progres_cek (lihat kwitansi_progres.sql). Isinya cuma
+   status tahap + nomor antrian + link progres; tidak ada harga/pembayaran. DP & Pelunasan sengaja
+   tidak ditampilkan di sini. */
+const KWP_BUKA_AWAL = false;   // true = daftar lengkap tahap langsung terbuka saat halaman dibuka
+const KWP_TAHAP = [
+  {k:'booking',   t:'Booking',        d:'Jadwal Anda sudah kami catat.'},
+  {k:'sesi',      t:'Sesi Foto',      d:'Hari pemotretan Anda.'},
+  {k:'unggah',    t:'Unggah Foto',    d:'Foto diunggah ke galeri pilihan Anda.'},
+  {k:'pemilihan', t:'Pilih Foto',     d:'Saatnya memilih foto favorit Anda.'},
+  {k:'antrian',   t:'Antrian Edit',   d:'Menunggu giliran untuk diedit.'},
+  {k:'edit',      t:'Proses Edit',    d:'Foto pilihan Anda sedang disempurnakan.'},
+  {k:'cetak',     t:'Cetak',          d:'Foto dan album Anda sedang dicetak.'},
+  {k:'antar',     t:'Antar / Jemput', d:'Hasil Anda dalam perjalanan ke tangan Anda.'},
+  {k:'selesai',   t:'Selesai',        d:'Semua beres. Terima kasih!'}
+];
+const KWP_IKON = {
+  booking:'<rect x="3.5" y="5" width="17" height="16" rx="2"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/>',
+  sesi:'<path d="M4 8h3l1.6-2.5h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13" r="3.6"/>',
+  unggah:'<path d="M12 16V5"/><path d="m7.5 9.5 4.5-4.5 4.5 4.5"/><path d="M4.5 16v3.5h15V16"/>',
+  pemilihan:'<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.5 2.4C19.5 15.4 12 20 12 20Z"/>',
+  antrian:'<circle cx="12" cy="12" r="8.5"/><polyline points="12,7 12,12 15.5,14"/>',
+  edit:'<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.3"/><circle cx="15" cy="17" r="2.3"/>',
+  cetak:'<path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="2"/><rect x="7" y="14" width="10" height="6" rx="1"/>',
+  antar:'<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5Z"/><path d="m3 7.5 9 4.5 9-4.5"/><line x1="12" y1="12" x2="12" y2="21"/>',
+  selesai:'<path d="M6 21V4"/><path d="M6 5h11l-2.5 4 2.5 4H6"/>'
+};
+const kwpSvg = (isi, w, sw)=>`<svg viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="${sw||2}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${isi}</svg>`;
+const KWP_RF = kwpSvg('<path d="M20 11a8 8 0 1 0-2.3 5.7"/><polyline points="20,4 20,11 13,11"/>', 15, 2.2);
+function kwpHitung(p){
+  const s = (p && p.s) || {};
+  const ks = KWP_TAHAP.filter(t=>s[t.k] && s[t.k]!=='lewati');
+  const done = ks.filter(t=>s[t.k]==='selesai').length;
+  const cur = ks.find(t=>s[t.k]==='berjalan') || ks.find(t=>s[t.k]!=='selesai') || null;
+  return {s, ks, done, n:ks.length, pct: ks.length ? Math.round(done/ks.length*100) : 0, cur,
+          semua: ks.length>0 && done===ks.length, jalan: !!cur && s[cur.k]==='berjalan'};
+}
+function kwpAgo(iso){
+  const t = Date.parse(iso); if(!t) return '';
+  const m = Math.max(0, Math.round((Date.now()-t)/60000));
+  if(m<1) return 'baru saja';
+  if(m<60) return m+' menit lalu';
+  const h = Math.round(m/60); if(h<24) return h+' jam lalu';
+  return Math.round(h/24)+' hari lalu';
+}
+function kwpHead(){ return `<div class="pg-top"><span class="pg-kick">Progres Foto</span><button type="button" class="pg-rf" aria-label="Segarkan progres">${KWP_RF}</button></div>`; }
+function kwpSkeleton(){
+  return `<div class="pg-card" aria-busy="true"><div class="pg-top"><span class="pg-kick">Progres Foto</span></div>
+    <div class="pg-hero"><div class="pg-sk" style="width:88px;height:88px;border-radius:50%;flex:none"></div>
+    <div style="flex:1"><div class="pg-sk" style="height:11px;width:42%"></div><div class="pg-sk" style="height:20px;width:75%;margin-top:9px"></div><div class="pg-sk" style="height:11px;width:92%;margin-top:9px"></div></div></div></div>`;
+}
+function kwpHtml(p, buka){
+  const h = kwpHitung(p);
+  if(!h.n){
+    return `<div class="pg-card">${kwpHead()}<div class="pg-wt"><div class="pg-wi">${kwpSvg(KWP_IKON.sesi, 22)}</div>
+      <div>Belum ada kabar progres. Begitu proses foto Anda berjalan, tahapannya akan muncul di sini.</div></div></div>`;
+  }
+  const s = h.s, cur = h.cur, off = (226.2*(1-h.pct/100)).toFixed(1);
+  const label = h.semua ? 'Kabar gembira' : (h.jalan ? 'Sedang dikerjakan' : 'Berikutnya');
+  const nama  = h.semua ? 'Semua tahap selesai' : (cur ? cur.t : '');
+  const ket   = h.semua ? 'Terima kasih sudah mempercayakan momen Anda kepada Kaone Motret.' : (cur ? cur.d : '');
+  const seg = h.ks.map((t,i)=>`<i class="${s[t.k]==='selesai'?'d':s[t.k]==='berjalan'?'r':''}" style="--i:${i}"></i>`).join('');
+  const tl = h.ks.map((t,i)=>{
+    const c = s[t.k]==='selesai' ? 'd' : s[t.k]==='berjalan' ? 'r' : 'p';
+    const ic = c==='d' ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline class="pg-chk" points="4.5,12.5 9.5,17.5 19.5,6.5"/></svg>` : kwpSvg(KWP_IKON[t.k], 14, 2.2);
+    return `<li class="pg-st ${c}" style="--i:${i}"><span class="pg-node">${ic}</span><div class="pg-tx"><div class="pg-tt"><span>${escapeHtml(t.t)}</span><span class="pg-pill">${c==='d'?'Selesai':c==='r'?'Berjalan':'Menunggu'}</span></div><div class="pg-ds">${escapeHtml(t.d)}</div></div></li>`;
+  }).join('');
+  const q = (s.antrian==='berjalan' && p.q!=null && isFinite(p.q)) ? Math.max(0, parseInt(p.q,10)||0) : null;
+  const ago = p.at ? kwpAgo(p.at) : '';
+  const link = (typeof p.u==='string' && /^https:\/\//i.test(p.u)) ? p.u : '';
+  return `<div class="pg-card${h.semua?' pg-done':''}" data-pct="${h.pct}">${kwpHead()}
+    ${h.semua ? '<div class="pg-spark" aria-hidden="true"><s></s><s></s><s></s><s></s></div>' : ''}
+    <div class="pg-hero">
+      <div class="pg-ring" role="img" aria-label="${h.pct} persen selesai"><svg viewBox="0 0 88 88" aria-hidden="true"><circle class="pg-tr" cx="44" cy="44" r="36"/><circle class="pg-fg" cx="44" cy="44" r="36" style="--off:${off}"/></svg>
+        <div class="pg-pct"><span class="pg-n" data-to="${h.pct}">0</span><small>%</small></div></div>
+      <div class="pg-now"><small>${label}</small><b>${escapeHtml(nama)}</b><p>${escapeHtml(ket)}</p></div>
+    </div>
+    <div class="pg-seg" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${h.pct}" aria-label="Progres foto">${seg}</div>
+    <div class="pg-meta"><span>${h.done} dari ${h.n} tahap selesai</span>${ago?`<span>Diperbarui ${ago}</span>`:''}</div>
+    ${q!=null ? `<div class="pg-q"><b>${q+1}</b><span>Urutan antrian edit Anda</span></div>` : ''}
+    <button type="button" class="pg-tg" aria-expanded="${buka?'true':'false'}"><span class="pg-tgt">${buka?'Sembunyikan tahap':'Lihat semua tahap'}</span>${kwpSvg('<polyline points="6,9 12,15 18,9"/>', 16, 2.4)}</button>
+    <div class="pg-more${buka?' open':''}"><div><ol class="pg-tl">${tl}</ol></div></div>
+    ${link ? `<a class="pg-lnk" href="${escapeHtml(link)}" target="_blank" rel="noopener">Buka halaman progres lengkap ›</a>` : ''}
+  </div>`;
+}
+function kwpCount(root){
+  const el = root.querySelector('.pg-n'); if(!el) return;
+  const ke = parseInt(el.dataset.to,10)||0;
+  if(!window.matchMedia || matchMedia('(prefers-reduced-motion:reduce)').matches){ el.textContent = ke; return; }
+  const t0 = performance.now();
+  const step = t=>{ const k = Math.min(1,(t-t0-250)/1300); const e = k<=0 ? 0 : 1-Math.pow(1-k,3); el.textContent = Math.round(ke*e); if(k<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
 async function kaonePaketView(){
   document.getElementById('authGate')?.remove();
   const host = document.createElement('div'); host.id = 'paketView'; host.className = 'pv-root';
@@ -13111,6 +13752,7 @@ async function kaonePaketView(){
         <div class="pv-kicker">Isi Paket</div>
         <h1 class="pv-title" id="pvTitle">${escapeHtml(judul)}</h1>
         ${(acara||tgl) ? `<div class="pv-chips">${acara?`<span class="pv-chip">${escapeHtml(acara)}</span>`:''}${tgl?`<span class="pv-chip">${PV_CAL}${escapeHtml(tgl)}</span>`:''}</div>` : ''}
+        <div class="pg-slot"></div>
         <div class="pv-sec">Yang Anda dapatkan</div>
         ${items.length ? `<ul class="pv-list">${items.map((x,i)=>`<li class="pv-item" style="--i:${i}"><span class="pv-tick">${PV_CHECK}</span><span>${escapeHtml(x)}</span></li>`).join('')}</ul>`
           : `<p class="pv-note">Rincian isi paket belum dicantumkan di kwitansi ini. Silakan tanyakan langsung kepada kami ya.</p>`}
@@ -13138,6 +13780,34 @@ async function kaonePaketView(){
   host.querySelector('#pvReopen').onclick = ()=>{ after.hidden = true; card.hidden = false; card.classList.remove('pv-out'); card.style.animation='none'; void card.offsetHeight; card.style.animation=''; };
   const slot = host.querySelector('.pv-seal-slot'), waBtn = host.querySelector('.pv-actions .pv-primary');
   const LABEL = {diganti:'sudah diganti', batal:'dibatalkan', palsu:'data tidak cocok', tidak:'tidak terdaftar', gagal:'belum bisa diverifikasi'};
+  const pgSlot = host.querySelector('.pg-slot'), pgToken = String(d.raw[9]||'');
+  let pgSig = null, pgOpen = KWP_BUKA_AWAL, pgAuto = false;
+  const pgMuat = async ()=>{
+    if(!pgToken || !pgSlot) return;
+    if(pgSig===null) pgSlot.innerHTML = kwpSkeleton();
+    const rf0 = pgSlot.querySelector('.pg-rf'); if(rf0) rf0.classList.add('spin');
+    let p, ok = true;
+    try{ p = await kwRpc('kaone_progres_cek', {p_token:pgToken}); }catch(e){ ok = false; }
+    if(!ok){   // belum bisa dimuat: kalau belum pernah tampil, sembunyikan saja (tidak mengganggu isi paket)
+      if(pgSig===null){ pgSlot.innerHTML = ''; } else { const r1 = pgSlot.querySelector('.pg-rf'); if(r1) r1.classList.remove('spin'); }
+      return;
+    }
+    if(p && p.off){ pgSlot.innerHTML = ''; pgSig = 'off'; return; }
+    const sig = JSON.stringify(p||null);
+    if(sig===pgSig){ const r2 = pgSlot.querySelector('.pg-rf'); if(r2) r2.classList.remove('spin'); return; }
+    pgSig = sig;
+    pgSlot.innerHTML = kwpHtml(p, pgOpen);
+    const tg = pgSlot.querySelector('.pg-tg'), more = pgSlot.querySelector('.pg-more'), rf = pgSlot.querySelector('.pg-rf');
+    if(tg && more) tg.onclick = ()=>{ pgOpen = !pgOpen; more.classList.toggle('open', pgOpen); tg.setAttribute('aria-expanded', pgOpen ? 'true' : 'false'); tg.querySelector('.pg-tgt').textContent = pgOpen ? 'Sembunyikan tahap' : 'Lihat semua tahap'; };
+    if(rf) rf.onclick = ()=>{ pgSig = pgSig; pgMuat(); };
+    kwpCount(pgSlot);
+  };
+  const pgNyalakan = ()=>{
+    pgMuat();
+    if(pgAuto) return; pgAuto = true;
+    setInterval(()=>{ if(!document.hidden && !card.hidden) pgMuat(); }, 45000);
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && !card.hidden) pgMuat(); });
+  };
   const periksa = async ()=>{
     slot.innerHTML = kwSealHtml('load');
     const r = await kwVerifikasi(d.raw);
@@ -13145,6 +13815,7 @@ async function kaonePaketView(){
     card.classList.toggle('pv-unver', r.s==='palsu' || r.s==='tidak' || r.s==='batal');
     if(r.s!=='valid' && waBtn) waBtn.href = waUrl(`Halo Kaone Motret, saya ingin memverifikasi kwitansi${d.no ? ' ' + d.no : ''}. Hasil pemeriksaan QR: ${LABEL[r.s]||r.s}.`);
     const rt = slot.querySelector('.pv-retry'); if(rt) rt.onclick = periksa;
+    if(r.s==='valid' || r.s==='diganti') pgNyalakan(); else if(pgSlot){ pgSlot.innerHTML = ''; pgSig = null; }
   };
   periksa();
   const cp = host.querySelector('#pvCopy');
@@ -13174,7 +13845,7 @@ async function downloadKwitansiPdf(jobId){
   const totalTagihan = hargaPaket - diskon;
   const dp = Number(j.dp)||0;
   const sisa = hitungSisaPembayaran(j);
-  const noKwitansi = `KWT-${String(getJobNo(j.id)).padStart(3,'0')}-${(j.tanggalAcara||'').replace(/-/g,'')}`;
+  const noKwitansi = `KMT-${String(getJobNo(j.id)).padStart(3,'0')}-${(j.tanggalAcara||'').replace(/-/g,'')}`;
   const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
 
   doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(20);
@@ -13304,7 +13975,7 @@ function buildKwitansiPosterHtml(j, qr){
   const totalTagihan = hargaPaket - diskon;
   const dp = Number(j.dp)||0;
   const sisa = hitungSisaPembayaran(j);
-  const noKwitansi = `KWT-${String(getJobNo(j.id)).padStart(3,'0')}-${(j.tanggalAcara||'').replace(/-/g,'')}`;
+  const noKwitansi = `KMT-${String(getJobNo(j.id)).padStart(3,'0')}-${(j.tanggalAcara||'').replace(/-/g,'')}`;
   const printedAt = new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date());
 
   const rows = [
@@ -13319,7 +13990,7 @@ function buildKwitansiPosterHtml(j, qr){
     <div id="kwitansiPosterExport" class="kwitansi-poster" style="--jp-hdr1:${col.hdr1};--jp-hdr2:${col.hdr2};--jp-accent:${col.accent};--jp-soft:${col.soft};">
       <div class="kw-watermark"></div>
       <div class="kw-topbar">
-        <div class="kw-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div>
+        <div class="kw-badge">${posterLogoImg(col.accent, 60)}</div>
         <div>
           <div class="kw-brand-name">Kaone Motret</div>
           <div class="kw-brand-tag">Buku Job Fotografer</div>
@@ -15920,7 +16591,7 @@ function buildUlasanPosterHtml(u){
       <div class="up-corner tl"></div><div class="up-corner tr"></div>
       <div class="up-corner bl"></div><div class="up-corner br"></div>
       <div class="up-top">
-        <div class="up-badge"><svg class="kmlogo" viewBox="-33 -33 66 66" aria-hidden="true"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><path fill="currentColor" d="M8.5 -3.0L25.1 6.6L24.2 9.6L22.9 12.5L21.2 15.2L19.2 17.7L16.9 19.9L14.3 21.8L11.5 23.3L8.5 24.4L8.5 5.3ZM6.9 5.8L6.9 25.0L3.8 25.7L0.6 26.1L-2.6 26.0L-5.7 25.5L-8.8 24.5L-11.7 23.2L-14.4 21.6L-16.9 19.6L-0.3 10.0ZM-1.6 8.9L-18.2 18.4L-20.4 16.1L-22.3 13.5L-23.8 10.7L-24.9 7.8L-25.7 4.6L-26.0 1.5L-25.9 -1.7L-25.4 -4.9L-8.8 4.7ZM-8.5 3.0L-25.1 -6.6L-24.2 -9.6L-22.9 -12.5L-21.2 -15.2L-19.2 -17.7L-16.9 -19.9L-14.3 -21.8L-11.5 -23.3L-8.5 -24.4L-8.5 -5.3ZM-6.9 -5.8L-6.9 -25.0L-3.8 -25.7L-0.6 -26.1L2.6 -26.0L5.7 -25.5L8.8 -24.5L11.7 -23.2L14.4 -21.6L16.9 -19.6L0.3 -10.0ZM1.6 -8.9L18.2 -18.4L20.4 -16.1L22.3 -13.5L23.8 -10.7L24.9 -7.8L25.7 -4.6L26.0 -1.5L25.9 1.7L25.4 4.9L8.8 -4.7Z"/></svg></div>
+        <div class="up-badge">${posterLogoImg('#231f0f', 68)}</div>
         <div class="up-brand">KAONE MOTRET</div>
         <div class="up-tag">Wedding &amp; Event Photography</div>
       </div>
@@ -16786,12 +17457,32 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.18.1'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.19.1'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.19.1',
+    tanggal: '13 Oktober 2026',
+    items: [
+      { kategori: 'Perubahan', teks: 'Kartu Tagihan hari H didesain ulang: nominal besar yang berhitung naik, penanda waktu, batang progres DP, rincian ala struk, serta tombol Salin pesan dan WhatsApp klien yang lebih jelas. Akun Tim tetap hanya melihat sisa yang ditagih.' },
+      { kategori: 'Perubahan', teks: 'Biodata di Detail Job tampil lebih rapi: tiap bagian punya kartu dan ikon sendiri, status berupa label berwarna, link Maps dan Instagram bisa langsung diketuk, nominal keuangan rata kanan, dan Catatan punya kotak tersendiri, lengkap dengan animasi halus saat muncul.' },
+      { kategori: 'Perubahan', teks: 'Gambar Detail Job yang diunduh didesain ulang: header gelap dengan nama klien besar, tiap bagian berupa kartu beridentitas ikon, status berupa label berwarna, serta Sisa Pembayaran dan Penghasilan Bersih disorot agar langsung terbaca.' },
+      { kategori: 'Perubahan', teks: 'Tombol di bagian bawah Detail Job didesain ulang: dikelompokkan menjadi Bagikan & unduh, Kwitansi klien, dan Kalender, masing-masing dengan ikon dan keterangan singkat. Di HP tampil berupa baris penuh yang mudah disentuh, di layar lebar menjadi dua kolom. Tombol Edit Job tampil menonjol di paling bawah, dan kwitansi yang usang diberi warna peringatan.' },
+      { kategori: 'Perubahan', teks: 'Kode kwitansi kini diawali KMT (contoh KMT-204-20261018), tidak lagi KWT. Berlaku di kwitansi PDF, kwitansi gambar, dan halaman hasil pindai QR.' }
+    ]
+  },
+  {
+    version: '1.19.0',
+    tanggal: '12 Oktober 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Saat QR di kwitansi dipindai, halaman hasilnya kini menampilkan progres foto klien: persentase, tahap yang sedang dikerjakan, nomor antrian edit, dan daftar semua tahap dari Booking sampai Selesai. Daftar lengkapnya bisa dibuka dengan satu ketukan, dan ada animasi yang halus.' },
+      { kategori: 'Perubahan', teks: 'Kotak Progres Foto di Detail Job didesain ulang: ada lingkaran persen beranimasi, batang tahap berwarna, kartu per tahap (hijau selesai, kuning berjalan), dan tombol Kirim link, Salin, serta Sinkronkan yang lebih rapi. Daftar tahap bisa dibuka atau ditutup.' },
+      { kategori: 'Peningkatan', teks: 'Progres di halaman QR ikut diperbarui otomatis saat statusnya berubah di Meja Kaone dan aplikasi ini terbuka. Tahap DP dan Pelunasan sengaja tidak ditampilkan agar urusan pembayaran tidak terlihat di halaman itu.' }
+    ]
+  },
   {
     version: '1.18.1',
     tanggal: '11 Oktober 2026',

@@ -21198,19 +21198,22 @@ async function kNmPost(a,b){try{var r=await sb.from('kaone_chat_pesan').insert({
 var KAL='kc:alias:';
 function kAlDec(m){try{if(!m||m.tipe!='teks'||typeof m.isi!='string'||m.isi.indexOf(KAL)!==0)return null;var o=JSON.parse(m.isi.slice(KAL.length));return(o&&typeof o.b=='string')?o:null}catch(e){return null}}
 async function kAlPost(a,b){try{var r=await sb.from('kaone_chat_pesan').insert({tipe:'teks',isi:KAL+JSON.stringify({a:a,b:b}),pengirim:me}).select().single();if(r&&r.data){msgs[r.data.id]=r.data;draw();return true}}catch(e){}return false}
-function kAlWho(){return AL||(other&&P[other]&&P[other].nama)||'Lawan chat'}
+/* Akun hanya-chat (liaww): nama Admin selalu diawali "Abang" */
+function kAbg(n){n=String(n==null?'':n).trim();if(!window.__kaoneChatOnly)return n;if(!n)return 'Abang';return /^abang/i.test(n)?n:'Abang '+n.charAt(0).toUpperCase()+n.slice(1)}
+function kPeerNm(x){return kAbg(AL||x||(other&&P[other]&&P[other].nama))}
+function kAlWho(){return kPeerNm()||'Lawan chat'}
 function kLNget(){if(!me)return[];if(kLNu!==me){try{kLNc=JSON.parse(localStorage.getItem('kcLN_'+me)||'[]')}catch(e){kLNc=[]}if(!Array.isArray(kLNc))kLNc=[];kLNu=me}return kLNc}
 function kLNadd(nm){var l=kLNget();l.push({id:'ln_'+Date.now(),tipe:'lokal',dikirim_at:new Date().toISOString(),isi:nm||''});if(l.length>40)l.splice(0,l.length-40);try{localStorage.setItem('kcLN_'+me,JSON.stringify(l))}catch(e){}draw()}
-function kNmToast(m){var d=kNmDec(m);if(d){toast((AL||d.a||(other&&P[other]&&P[other].nama)||'Lawan chat')+' mengubah nama panggilannya');return}var q=kAlDec(m);if(q)toast(kAlWho()+(q.b?' mengubah nama panggilan Anda jadi '+q.b:' menghapus nama panggilan Anda'))}
+function kNmToast(m){var d=kNmDec(m);if(d){toast((kPeerNm(d.a)||'Lawan chat')+' mengubah nama panggilannya');return}var q=kAlDec(m);if(q)toast(kAlWho()+(q.b?' mengubah nama panggilan Anda jadi '+q.b:' menghapus nama panggilan Anda'))}
 function kNmNote(m){var h,sub,t=tm(m.dikirim_at);
 var q=kAlDec(m);
 if(q){sub=q.a?'Sebelumnya &ldquo;'+E(q.a)+'&rdquo;':'';
-if(m.pengirim==me){var nm=(other&&P[other]&&P[other].nama)||'lawan chat';h=q.b?'Anda mengubah nama panggilan <b>'+E(nm)+'</b> jadi <b>&ldquo;'+E(q.b)+'&rdquo;</b>':'Anda menghapus nama panggilan <b>'+E(nm)+'</b>'}
+if(m.pengirim==me){var nm=kAbg(other&&P[other]&&P[other].nama)||'lawan chat';h=q.b?'Anda mengubah nama panggilan <b>'+E(nm)+'</b> jadi <b>&ldquo;'+E(q.b)+'&rdquo;</b>':'Anda menghapus nama panggilan <b>'+E(nm)+'</b>'}
 else{h='<b>'+E(kAlWho())+'</b> '+(q.b?'mengubah nama panggilan Anda jadi <b>&ldquo;'+E(q.b)+'&rdquo;</b>':'menghapus nama panggilan Anda')}}
 else if(m.tipe=='lokal'){h=m.isi?'Kamu mengubah nama lawan chat menjadi <b>&ldquo;'+E(m.isi)+'&rdquo;</b>':'Kamu menghapus nama panggilan lawan chat';sub='Hanya terlihat olehmu'}
 else{var d=kNmDec(m);if(!d)return '';
 if(m.pengirim==me){h='Kamu mengubah nama panggilan menjadi <b>&ldquo;'+E(d.b)+'&rdquo;</b>';sub=d.a?'Sebelumnya &ldquo;'+E(d.a)+'&rdquo;':''}
-else{h='<b>'+E(AL||d.a||(other&&P[other]&&P[other].nama)||'Lawan chat')+'</b> mengubah nama panggilannya menjadi <b>&ldquo;'+E(d.b)+'&rdquo;</b>';sub=''}}
+else{h='<b>'+E(kPeerNm(d.a)||'Lawan chat')+'</b> mengubah nama panggilannya menjadi <b>&ldquo;'+E(d.b)+'&rdquo;</b>';sub=''}}
 return '<div class="kcn'+(dr0&&!dn[m.id]?' in':'')+'" role="status"><div class="kcp"><span class="kci">'+ic('kedit')+'</span><span class="kcx">'+h+'</span></div><div class="kcs">'+(sub?sub+' &middot; ':'')+t+'</div></div>'}
 function bub(m){var nn=kNmNote(m);if(nn)return nn;var pvx,own=m.pengirim==me,c='',x=m.balas_ke&&msgs[m.balas_ke];if(m.dihapus_at)return '<div class="b'+(own?' me':'')+' del">'+ic('ban')+' Pesan ini sudah dihapus<div class="t">'+tm(m.dikirim_at)+'</div></div>';
 if(m.ditarik_at&&own)return '<div class="b me del">'+ic('ban')+' Anda menghapus pesan ini<div class="t">'+tm(m.dikirim_at)+'</div></div>';
@@ -21271,7 +21274,7 @@ function send(o){rm&&rm.send({type:'broadcast',event:'sinyal',payload:o})}
 var kk={st:'idle',v:0,role:'',conn:0,ans:0,t0:0,tm:0,tout:0,et:0,rt:0,mute:0,cam:1,mini:0,rm:0,rc:1,txt:'',ctx:null,nt:null};
 function mmss(s){s=Math.max(0,s|0);var h=Math.floor(s/3600),m=Math.floor(s%3600/60),c=s%60,p=function(n){return(n<10?'0':'')+n};return(h?h+':'+p(m):p(m))+':'+p(c)}
 function kkDur(){return kk.t0?Math.round((Date.now()-kk.t0)/1000):0}
-function kkNm(){return AL||(other&&P[other]&&P[other].nama)||'Lawan chat'}
+function kkNm(){return kPeerNm()||'Lawan chat'}
 function kkIdent(){var u=other&&U[other]&&U[other].u;$('kka').innerHTML=u?'<img alt="" src="'+E(u)+'">':mo(T[tema].m[0],'#fff');$('kkn').textContent=kkNm()}
 function kkTema(t){var c=$('kcc');if(!c)return;c.style.setProperty('--kh','linear-gradient(160deg,'+t.h[0]+','+t.h[1]+')');c.style.setProperty('--ka',t.a);c.style.setProperty('--kf',t.g=='imut'?(t.f||F1):FP);if(kk.st!='idle')kkIdent()}
 function kkS(x){kk.txt=x;$('kcs').textContent=x;kkBn()}
@@ -21351,7 +21354,7 @@ return '<button type="button" class="kcl'+(bad?' bad':'')+'" data-cb="'+i.v+'"><
 var P={},AL=null,U={},other=null,pend=null,delFoto=false,cim=null,cz=1,ox=0,oy=0,dr=null;
 function shut(i){$(i).classList.remove('on')}
 function av(){var u=other&&U[other]&&U[other].u;$('kav').innerHTML=u?'<img src="'+u+'">':mo(T[tema].m[0],'#fff')}
-function hdr(){$('kn').textContent=AL||(other&&P[other]&&P[other].nama)||'Chat';av()}
+function hdr(){$('kn').textContent=kPeerNm()||'Chat';av()}
 async function pfLoad(){var r=(await sb.from('kaone_chat_profil').select('*')).data||[],a=(await sb.from('kaone_chat_alias').select('*')).data||[];P={};
 r.forEach(function(x){P[x.user_id]=x;if(x.user_id!=me)other=x.user_id});AL=a[0]&&a[0].nama_lawan||null;
 for(var i=0;i<r.length;i++){var x=r[i];if(!x.foto_at)delete U[x.user_id];if(x.foto_at&&!(U[x.user_id]&&U[x.user_id].v==x.foto_at)){var g=await sb.storage.from('kaone-chat').createSignedUrl('profil/'+x.user_id+'.jpg',3600);if(g.data&&g.data.signedUrl)U[x.user_id]={u:g.data.signedUrl,v:x.foto_at};else delete U[x.user_id]}}hdr()}
@@ -21493,7 +21496,7 @@ function snd(){try{return localStorage.getItem('kcSnd')!=='0'}catch(e){return tr
 function opOpen(){opRef();$('kop').classList.add('on')}
 function opRef(){var u=other&&U[other]&&U[other].u,real=other&&P[other]&&P[other].nama;
 $('kopa').innerHTML=u?'<img src="'+u+'">':mo(T[tema].m[0],'#fff');
-$('kopn').textContent=AL||real||'Lawan chat';$('kopp').textContent=AL&&real&&real!=AL?'Nama profil: '+real:'';
+$('kopn').textContent=kAbg(AL||real)||'Lawan chat';$('kopp').textContent=AL&&real&&real!=AL?'Nama profil: '+kAbg(real):'';
 if(lo&&lo.on){$('kops').innerHTML='<span class="od on"></span>Online sekarang';$('kopd').textContent=''}
 else if(lo&&lo.t){$('kops').innerHTML='<span class="od"></span>Terakhir online '+E(lastTxt(lo.t));var d=new Date(lo.t);$('kopd').textContent=isNaN(d)?'':d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+hm(d)}
 else{$('kops').innerHTML='<span class="od"></span>Belum ada info online';$('kopd').textContent=''}}
@@ -23561,7 +23564,7 @@ window.jepiAfterRender=function(){
   var NMK='kaone_jepi_nama_v1';
   function nmMuat(){if(S.nm)return;try{var o=JSON.parse(localStorage.getItem(NMK)||'null');if(o&&(o.aku||o.liaww))S.nm=o}catch(e){}}
   function nmSimpan(x){try{localStorage.setItem(NMK,JSON.stringify({aku:x.aku||'',liaww:x.liaww||''}))}catch(e){}}
-  function adm(){nmMuat();var a=S.nm&&S.nm.aku;if(!a)return '';a=String(a).trim();return /mu$/i.test(a)?a:a+'mu'}
+  function adm(){nmMuat();var a=String((S.nm&&S.nm.aku)||'').trim();if(!a)return 'Abang';if(/^abang/i.test(a))return 'Abang'+a.slice(5);return 'Abang '+a.charAt(0).toUpperCase()+a.slice(1)}
   function cap1(s){return s.charAt(0).toUpperCase()+s.slice(1)}
   function nmFix(t){
     var a=adm();t=String(t||'');
@@ -23608,13 +23611,51 @@ window.jepiAfterRender=function(){
     }
     return{m:'santai',t:'Admin lagi tidak ada job. Waktunya santai dan ngobrol!'};
   }
-  var JK=['Hehe, kacamatanya kupinjam dulu ya \uD83D\uDE0E','Eh, tadi ada yang colek Jepi!','Jepi cuma iseng, jangan bilang Admin ya.','Halo! Jepi jagain jadwal Admin nih.','Keren kan? \uD83D\uDE0E'];
+  /* Godaan Jepi untuk Liaw: pura-pura takut ketahuan {a}. Tiap item = [godaan, reaksi panik (opsional)] */
+  var JG=[
+    ['Psst, {n}... sini deketan. Jepi mau bisikin sesuatu.','Eh, ada {a} lewat? Nggak jadi deh, Jepi nggak bilang apa-apa! \uD83D\uDE48'],
+    ['{n}, kamu cantik banget hari ini. Tapi jangan bilang {a} ya, nanti Jepi dicubit.','Hush, hush... anggap Jepi nggak pernah ngomong ya \uD83D\uDE48'],
+    ['Tadi Jepi lihat kamu senyum sendiri lho, {n}. Hayo, lagi mikirin siapa? \uD83D\uDE0F','Jangan lapor {a} ya, Jepi cuma nanya. Hehe.'],
+    ['Rahasia kecil ya, {n}: kadang Jepi lebih suka ngobrol sama kamu daripada sama {a}.','Eh! {A} baca ya? Bercanda, bercanda! Jepi sayang {a} juga kok \uD83D\uDE05'],
+    ['Jepi mau colek pipi kamu, {n}. Boleh? Sebentar aja, mumpung {a} nggak lihat.','Aduh, ada langkah kaki. Jepi pura-pura jadi patung dulu.'],
+    ['{n}, kalau {a} nanya, bilang aja Jepi nggak pernah godain kamu ya \uD83D\uDE07','Jepi tadi nggak ngomong apa-apa kok. Sumpah, telinga kelinci jadi saksinya.'],
+    ['Eh {n}, tahu nggak? Pipi kamu kalau lagi malu mirip bakpao. Lucu banget.','Stop, stop! Jepi mau sembunyi sebelum {a} sadar.'],
+    ['Jepi lagi ngintip dari balik layar nih. Kamu lagi ngapain, {n}? \uD83D\uDC40','Eh, kamu lihat Jepi ya? Jepi nggak ngintip kok, cuma lewat \uD83D\uDC30'],
+    ['Kalau {a} lama balas chat, tenang. Jepi siap gantiin. Tapi gantinya cuma bisa kedip-kedip \uD83D\uDE0E','Waduh, {a} bakal manyun kalau tahu. Jepi menghilang dulu ya.'],
+    ['{n}, Jepi diam-diam ngefans sama kamu lho. Jangan bilang siapa-siapa, apalagi {a}.','Terlambat ya kalau {a} sudah dengar? Jepi kabur aaa! \uD83C\uDFC3'],
+    ['Ssst, jangan keras-keras. Jepi lagi godain kamu nih, {n}. Kalau ketahuan {a} bisa gawat.','Jepi pasang muka polos dulu... sudah polos belum? \uD83E\uDD7A'],
+    ['{n}, kamu bikin Jepi salah tingkah. Telinga Jepi sampai merah. Lihat nih!','Cepat, tutup mata kamu! Ada {a} mau lewat! \uD83D\uDE48'],
+    ['Jepi tadi nyaris kirim cium ke kamu, {n}. Untung ingat ada {a}.','Ya ampun, hampir banget. Jantung kelinci deg-degan \uD83D\uDCA6'],
+    ['Kamu tahu nggak, {n}? Jepi hafal jam kamu biasa online. Jangan bilang {a}, nanti Jepi dibilang kepo.','Eh, tadi {a} ngelirik layar ya? Jepi pura-pura sibuk dulu \uD83E\uDD2D'],
+    ['Satu kecupan jarak jauh dari Jepi buat {n}. Mmuah! Diam-diam aja ya, {a} jangan sampai tahu.','Hmm, kok sepi? Jangan-jangan {a} lagi ngintai. Jepi tiarap dulu.'],
+    ['{n}, tadi Jepi dengar {a} muji kamu. Katanya kamu manis. Eh, keceplosan...','Aduh, mulut Jepi! Anggap kamu nggak dengar apa-apa ya \uD83D\uDE33'],
+    ['Hehe, kacamatanya kupinjam dulu ya \uD83D\uDE0E'],
+    ['Eh, tadi ada yang colek Jepi! Bukan kamu kan, {n}? \uD83D\uDC40'],
+    ['Jepi cuma iseng godain kamu, {n}. Jangan bilang {a} ya.'],
+    ['Jangan senyum-senyum gitu dong, {n}. Jepi jadi ikut salah tingkah.']
+  ];
+  function jepiGoda(bsay,host){
+    try{
+      var k,n=JG.length;
+      do{k=Math.floor(Math.random()*n)}while(n>1&&k===S.jgl);
+      S.jgl=k;
+      var it=JG[k],r=Math.random();
+      bsay(nmFix(jumlahTok(it[0])),'jahil',r<.4?'wink':r<.7?'bleh':'cool');
+      if(it[1]){
+        clearTimeout(S.jgt);
+        S.jgt=setTimeout(function(){
+          if(!host.isConnected)return;
+          bsay(nmFix(jumlahTok(it[1])),'kaget',Math.random()<.5?'hop':'dance');
+        },4200+Math.min(2200,it[0].length*15));
+      }
+    }catch(e){console.warn('Jepi goda',e)}
+  }
   function jepiMount(root){
     try{
       if(!window.Jepi)return;
       var host=root.querySelector('[data-jepi-host]');if(!host)return;
       var inst0=Jepi._inst,lhGo=function(tg,t,m){return window.JepiGo&&JepiGo.go(tg,t,m,{home:function(){return root.querySelector('.lh-jepi')},remount:function(){var rt=$('lh');if(rt)jepiMount(rt)}})},
-      bsay=function(txt,mood,act,tg,auto){txt=txt?nmFix(txt):txt;var b=root.querySelector('.lh-say span');
+      bsay=function(txt,mood,act,tg,auto){clearTimeout(S.jgt);txt=txt?nmFix(txt):txt;var b=root.querySelector('.lh-say span');
         var sy=root.querySelector('.lh-say'),ob=sy&&sy.querySelector('.lh-go');if(ob)ob.remove();S.jcur=tg?{tg:tg,t:txt,m:mood}:null;
         if(sy&&tg){var gb=document.createElement('button');gb.type='button';gb.className='lh-go';gb.textContent='Tunjukkan di mana';gb.addEventListener('click',function(){lhGo(tg,txt,mood)});sy.appendChild(gb)}
         if(tg&&auto&&window.JepiGo&&!JepiGo.active()){var ak='jepi_auto_lh_'+tg+'|'+String(txt).slice(0,24);try{if(!sessionStorage.getItem(ak)){sessionStorage.setItem(ak,'1');setTimeout(function(){lhGo(tg,txt,mood)},1500)}}catch(e){}}if(b&&txt){b.textContent=txt;b.style.animation='none';void b.offsetWidth;b.style.animation=''}
@@ -23637,13 +23678,13 @@ window.jepiAfterRender=function(){
         if(document.visibilityState!=='visible'||!host.isConnected)return;
         var tip=root.querySelector('.lh-say span');if(!tip)return;
         var r=Math.random();
-        if(r<.65){
+        if(r<.4){
           if(Math.random()<.3){var kt=nmFix(jumlahTok('Kangen {a}? Ketuk ikon chat ini ya, {n}. Dia pasti senang.'));bsay(kt,'sayang','wave','#lhFab');if(window.JepiGo&&!JepiGo.active()&&JepiGo.since()>90000&&Math.random()<.5)setTimeout(function(){lhGo('#lhFab',kt,'sayang')},1200)}
           else bsay(lvLine(),'sayang',['hop','wave','ears'][Math.floor(Math.random()*3)]);
         }
-        else if(r<.85){var st0=S.jtext||'',tg0='.lh-card:not(.past),.lh-day';bsay(st0,null,'ears',tg0);if(window.JepiGo&&!JepiGo.active()&&JepiGo.since()>90000&&Math.random()<.5)setTimeout(function(){lhGo(tg0,nmFix(st0),null)},1200)}
-        else bsay(JK[Math.floor(Math.random()*JK.length)],'jahil','wink');
-      },22000);
+        else if(r<.55){var st0=S.jtext||'',tg0='.lh-card:not(.past),.lh-day';bsay(st0,null,'ears',tg0);if(window.JepiGo&&!JepiGo.active()&&JepiGo.since()>90000&&Math.random()<.5)setTimeout(function(){lhGo(tg0,nmFix(st0),null)},1200)}
+        else jepiGoda(bsay,host);
+      },18000);
       if(!host.__hug){host.__hug=1;var ht=null;
         host.addEventListener('pointerdown',function(){clearTimeout(ht);ht=setTimeout(function(){S.jhugAt=Date.now();bsay(nmFix(jumlahTok('Peluuuk! Pelukan hangat dari {a} lewat Jepi, {n}.')),'sayang','hop');setTimeout(function(){if(Jepi._inst)Jepi._inst.act('wave')},900)},700)});
         ['pointerup','pointerleave','pointercancel'].forEach(function(ev){host.addEventListener(ev,function(){clearTimeout(ht)})});}
@@ -23654,7 +23695,7 @@ window.jepiAfterRender=function(){
         if(S.jtaps.length>=5){S.jtaps=[];bsay('Aduuh, pusing! Jangan dikocok dong.','kaget','dance');return}
         S.jn=(S.jn||0)+1;
         if(S.jn%4===1){var st1=S.jtext||'Halo!',tg1='.lh-card:not(.past),.lh-day';bsay(st1,host.getAttribute('data-mood')||null,'wave',tg1);if(Math.random()<.6)setTimeout(function(){lhGo(tg1,nmFix(st1),host.getAttribute('data-mood')||null)},800)}
-        else if(S.jn%4===3){var r=Math.random();bsay(JK[Math.floor(Math.random()*JK.length)],r<.5?'jahil':'keren',r<.35?'bleh':r<.65?'cool':'wink')}
+        else if(S.jn%4===3||S.jn%4===2){jepiGoda(bsay,host)}
         else{var ll=lvLine();var fab=Math.random()<.25;if(fab)ll=nmFix(jumlahTok('Kangen {a}? Ketuk ikon chat ini ya, {n}.'));bsay(ll,'sayang',S.jn%2?'hop':'wave',fab?'#lhFab':'');if(fab)setTimeout(function(){lhGo('#lhFab',ll,'sayang')},800)}
         if(Math.random()<.3)inst.flip();
       }});
@@ -23684,7 +23725,7 @@ window.jepiAfterRender=function(){
     }
     var jp=jepiState(now,nxt,t);
     S.jmood=jp.m;S.jtext=jp.t;
-    return '<section class="lh-hero '+cls+'"><div class="row"><div class="lh-jepi" data-jepi-host data-mood="'+jp.m+'" role="img" aria-label="Jepi"></div><div class="tx"><span class="lh-chip">'+chip+'</span><h2>'+esc(judul)+'</h2><p class="sub">'+esc(sub)+'</p></div></div>'+'<div class="lh-say"><span>'+esc(nmFix(jp.t))+'</span></div>'+(meta?'<div class="meta">'+meta+'</div>':'')+'</section>';
+    return '<section class="lh-hero '+cls+'"><div class="row"><div class="lh-jepi" data-jepi-host data-mood="'+jp.m+'" role="img" aria-label="Jepi"></div><div class="tx"><span class="lh-chip">'+chip+'</span><h2>'+esc(judul)+'</h2><p class="sub">'+esc(nmFix(sub))+'</p></div></div>'+'<div class="lh-say"><span>'+esc(nmFix(jp.t))+'</span></div>'+(meta?'<div class="meta">'+meta+'</div>':'')+'</section>';
   }
   function weekHtml(up){
     var t=todayStart(),cells='',tot=0,k;
@@ -23710,8 +23751,8 @@ window.jepiAfterRender=function(){
   }
   function listHtml(list,past){
     if(!list.length){
-      return past?'<div class="lh-empty"><div class="e">\uD83C\uDF31</div><h3>Belum ada job yang lewat</h3><p>Riwayat job Admin akan muncul di sini.</p></div>'
-        :'<div class="lh-empty"><div class="e">\uD83E\uDEE7</div><h3>Belum ada jadwal</h3><p>Job yang akan datang muncul di sini begitu Admin menambahkannya.</p></div>';
+      return past?'<div class="lh-empty"><div class="e">\uD83C\uDF31</div><h3>Belum ada job yang lewat</h3><p>'+nmFix('Riwayat job Admin akan muncul di sini.')+'</p></div>'
+        :'<div class="lh-empty"><div class="e">\uD83E\uDEE7</div><h3>Belum ada jadwal</h3><p>'+nmFix('Job yang akan datang muncul di sini begitu Admin menambahkannya.')+'</p></div>';
     }
     var h='',cur='',i=0,grp={},order=[];
     list.forEach(function(j){var k=j.a.getFullYear()+'-'+p2(j.a.getMonth()+1);if(!grp[k]){grp[k]=[];order.push(k)}grp[k].push(j)});
@@ -23752,7 +23793,7 @@ window.jepiAfterRender=function(){
         +(S.stamp?'<p class="lh-foot">Diperbarui '+p2(S.stamp.getHours())+'.'+p2(S.stamp.getMinutes())+(S.error?' \u00B7 sedang offline':'')+'</p>':'');
     }
     root.innerHTML='<div class="lh-wrap"><header class="lh-top"><div class="lh-ava" aria-hidden="true">'+esc(nama.charAt(0))+'</div>'
-      +'<div class="lh-hi"><h1>Halo, '+esc(nama)+' \uD83C\uDF37</h1><p>'+sapaan()+' \u00B7 jadwal Admin</p></div>'
+      +'<div class="lh-hi"><h1>Halo, '+esc(nama)+' \uD83C\uDF37</h1><p>'+sapaan()+' \u00B7 jadwal '+esc(adm())+'</p></div>'
       +'<button type="button" class="lh-ib'+(S.loading||S.hr?' spin':'')+'" data-act="hard" aria-label="Muat ulang total">'+IC.refresh+'</button>'
       +'<button type="button" class="lh-ib" data-act="menu" aria-label="Menu">'+IC.dots+'</button></header>'+body
       +'</div><div class="lh-menu" id="lhMenu"><div class="box"><button type="button" data-act="keluar">'+IC.out+'Keluar akun</button></div></div>';

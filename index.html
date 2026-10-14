@@ -9628,6 +9628,7 @@ function render(){
   else if(currentView==='pesanan') app.innerHTML = viewPesanan();
   else if(currentView==='pengaturan') app.innerHTML = viewPengaturan();
   attachHandlers();
+  if(window.jepiAfterRender) window.jepiAfterRender();
 }
 
 /* Re-render tampilan yang sedang aktif TANPA memindahkan posisi scroll ke atas.
@@ -9922,12 +9923,26 @@ function viewBeranda(){
       </button>`;}).join('')}</div>`
     : `<div class="dash-empty">${ic('check-circle')}<div>Semua pekerjaan sudah beres.</div></div>`;
 
+  // ----- Jepi: ekspresi & pesan menyesuaikan keadaan (waktu, job, tugas) dan peran -----
+  let jepiMood='senang', jepiMsg='';
+  const tim = !isAdmin();
+  if(jamWib>=23 || jamWib<4){ jepiMood='ngantuk'; jepiMsg = tim ? 'Sudah larut. Istirahat dulu ya, besok lanjut lagi.' : 'Sudah larut, jangan lupa istirahat ya. Sisanya besok.'; }
+  else if(taskTelat>0){ jepiMood='cemas'; jepiMsg = `Ada ${taskTelat} tugas yang lewat jadwal. Yuk dikejar pelan-pelan.`; }
+  else if(jobHariIni>0){ jepiMood='semangat'; jepiMsg = jobHariIni>1 ? `Ada ${jobHariIni} job hari ini. Semangat, pasti keren hasilnya!` : (tim ? 'Ada job hari ini. Semangat, kamu pasti bisa!' : 'Ada job hari ini. Semangat, kameranya siap!'); }
+  else if(homeTaskPending>0){ jepiMood='fokus'; jepiMsg = tim ? `${homeTaskPending} tugas menunggumu. Satu-satu ya, pasti beres.` : `${homeTaskPending} tugas tim masih berjalan. Pantau pelan-pelan ya.`; }
+  else if(todos.length===0){ jepiMood='bangga'; jepiMsg='Semua pekerjaan sudah beres. Keren banget!'; }
+  else if(totalTodo>0){ jepiMood='fokus'; jepiMsg = `Masih ${totalTodo} hal yang perlu dikerjakan. Yuk dicicil.`; }
+  else { jepiMood='santai'; jepiMsg='Lagi santai. Aman terkendali!'; }
+  const jepiCard = `<div class="jepi-card" data-jepi-card><div class="jepi-host" data-jepi-host data-mood="${jepiMood}" data-jobs="${jobs.length}" data-pending="${homeTaskPending}" data-telat="${taskTelat}" data-todo="${totalTodo}" data-next="${escapeHtml(nextJob ? `Job berikutnya: ${jobTitle(nextJob)}, ${nextJob.tanggalAcara}.` : '')}" data-hi="${escapeHtml(`${sapaan}${namaDepan ? ', ' + namaDepan : ''}! Selamat datang kembali.`)}" role="img" aria-label="Jepi, maskot Kaone"></div><div class="jepi-say"><b>Jepi</b><span>${escapeHtml(jepiMsg)}</span></div></div>`;
+
   return `
   <div class="dash">
     <header class="dash-head">
       <h1>${sapaan}${namaDepan ? ', ' + escapeHtml(namaDepan) : ''}</h1>
       <p>${escapeHtml(ringkasLengkap)}</p>
     </header>
+
+    ${jepiCard}
 
     ${pesananBannerHtml()}
 
@@ -18074,12 +18089,22 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.19.1'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.20.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.20.0',
+    tanggal: '14 Oktober 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Kenalan dengan Jepi, maskot baru Kaone: kelinci bertelinga runcing dengan ikat kepala ulos dan kacamata hitam di atas kepala. Jepi tampil di Beranda untuk Admin maupun Akun Tim dan bergerak lembut seperti makhluk hidup: bernapas, berkedip, melirik, melompat kecil, dan mengikuti ketukan jari.' },
+      { kategori: 'Fitur', teks: 'Ekspresi dan pesan Jepi selalu menyesuaikan keadaan: semangat saat ada job hari ini, fokus saat tugas menunggu, cemas saat ada tugas lewat jadwal, bangga saat semua beres, dan mengantuk saat sudah larut. Pesannya dibedakan antara Admin dan Akun Tim.' },
+      { kategori: 'Fitur', teks: 'Warna Jepi ada dua, krem dan kuning, dan berganti sendiri secara acak. Ketuk Jepi untuk melihat aksi iseng: menjulurkan lidah, memakai kacamata, atau mengedip.' },
+      { kategori: 'Fitur', teks: 'Jepi kini lebih interaktif di Beranda: menyapa saat aplikasi dibuka, memberi tahu kalau ada job baru, tugas bertambah atau selesai, dan semua pekerjaan beres. Ketuk Jepi untuk info job berikutnya dan tugas yang menunggu, ketuk beruntun untuk kejutan kecil. Sesekali dia juga berceletuk sendiri.' }
+    ]
+  },
   {
     version: '1.19.1',
     tanggal: '13 Oktober 2026',
@@ -22266,6 +22291,941 @@ document.addEventListener('click',function(e){
   try{if(typeof t.showPicker==='function')t.showPicker()}catch(x){}
 },true);
 </script>
+<style id="jepiStyle">
+.jepi-card{display:flex;align-items:center;gap:6px;margin:6px 0 4px}
+.jepi-host{width:104px;height:104px;flex:none;position:relative;margin-left:-6px}
+.jepi-say{position:relative;flex:1;min-width:0;background:var(--dash-card,#fff);color:var(--dash-ink,#2a2230);border-radius:18px;padding:11px 14px;font-size:13.5px;line-height:1.4;box-shadow:0 2px 10px rgba(80,60,10,.10),inset 0 0 0 1px rgba(0,0,0,.05)}
+.jepi-say::before{content:"";position:absolute;left:-7px;top:50%;width:14px;height:14px;margin-top:-7px;background:inherit;transform:rotate(45deg);border-radius:3px;box-shadow:-1px 1px 0 rgba(0,0,0,.05)}
+.jepi-say b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.55;margin-bottom:2px}
+.jepi-say span{display:block;animation:jepiPop .35s ease}
+@keyframes jepiPop{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@media(max-width:640px){.jepi-host{width:92px;height:92px}.jepi-say{font-size:13px;padding:9px 12px}}
+@media(prefers-reduced-motion:reduce){.jepi-say span{animation:none}}
+</style>
+<script id="jepiJs">
+/* =====================================================================
+   JEPI - maskot Kaone (3D, Three.js r128). Modul bersama, satu berkas.
+   Pemakaian:
+     var j = Jepi.mount(elemenWadah, {mood:'netral', palette:'acak', onTap:fn, shadow:'90,70,30'});
+     j.setMood('semangat');   // ekspresi mengikuti keadaan
+     j.act('hop');            // gerakan sesaat: hop, wave, ears, bleh, dance, cool, wink
+     j.talk(3);               // mulut ikut bergerak selama 3 detik (saat pesan tampil)
+     j.setPalette('krem');    // 'krem' | 'kuning' | 'acak'
+   Dipakai ulang di banyak halaman: satu kanvas saja yang dipindah-pindah ke wadah yang
+   sedang tampil. Kalau 3D tidak bisa dimuat (offline / WebGL mati), otomatis memakai
+   gambar 2D cadangan (Jepi.svg, dibuat dari berkas jepi-fallback.js).
+===================================================================== */
+(function(){
+'use strict';
+if(window.Jepi&&window.Jepi.__v)return;
+
+var THREE_SRC='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+
+/* ---------- palet: dua warna, bisa berganti acak ---------- */
+var PAL={
+  kuning:{body:'#FFD43B',foot:'#FFBE2E',ear:'#FFB52E',cheek:'#FF9E8A'},
+  krem:  {body:'#FFF1DF',foot:'#FFE3C3',ear:'#FFC0AA',cheek:'#FFC2C8'}
+};
+
+/* ---------- ekspresi (mood). Semua angka dihaluskan, tidak pernah loncat ---------- */
+var DEF={
+  eye:'round',eo:1,          // bentuk mata & bukaannya
+  bA:[-0.12,-0.12],bY:[0.02,0.02], // alis: sudut (+ marah, - cemas) dan tinggi
+  mouth:'w',mo:0,            // mulut & bukaan
+  cheek:1,                   // kekuatan pipi merah
+  aL:0.22,aR:0.22,           // sudut tangan
+  ear:0.3,                   // buka telinga (negatif = terkulai)
+  look:1,biasX:0,biasY:0,    // seberapa ikut kursor & arah pandang bawaan
+  sway:0,shake:0,nod:0,      // goyang badan, gemetar, mengangguk
+  pitch:0,roll:0,            // kemiringan kepala bawaan
+  bounce:1,                  // napas
+  hop:0,                     // seberapa sering melompat sendiri
+  extra:'',                  // sweat | zzz | hearts | sparks
+  yawn:0,glasses:0,
+  auto:[['hop',3],['wave',2],['ears',2],['bleh',1],['cool',1],['dance',1]]
+};
+function mk(o){var r={},k;for(k in DEF)r[k]=DEF[k];for(k in o)r[k]=o[k];return r}
+var MOODS={
+  netral:  mk({}),
+  senang:  mk({eye:'arc',bA:[-0.05,-0.05],bY:[0.05,0.05],mouth:'open',mo:0.55,cheek:1.15,aL:0.7,aR:0.7,ear:0.45,hop:0.4,auto:[['hop',3],['wave',2],['ears',2]]}),
+  semangat:mk({eo:1.12,bA:[0.12,0.12],bY:[0.09,0.09],mouth:'open',mo:0.95,cheek:1.1,aL:1.6,aR:1.6,ear:0.6,hop:1,extra:'sparks',auto:[['hop',3],['dance',2],['wave',1]]}),
+  fokus:   mk({eo:0.8,bA:[0.5,0.5],bY:[-0.02,-0.02],mouth:'flat',cheek:0.8,aL:0.5,aR:0.5,ear:0.12,look:0.15,biasX:-0.25,biasY:-0.3,pitch:0.1,roll:0.04,extra:'sweat',nod:0.5,auto:[['ears',1]]}),
+  santai:  mk({eye:'line',bA:[-0.1,-0.1],bY:[0.04,0.04],mouth:'w',cheek:1.15,aL:0.3,aR:0.3,ear:-0.2,look:0,sway:1,bounce:1.6,auto:[['ears',2]]}),
+  ngantuk: mk({eo:0.3,bA:[-0.2,-0.2],bY:[0,0],mouth:'flat',mo:0,cheek:0.9,aL:0.15,aR:0.15,ear:-0.4,look:0,biasY:-0.3,pitch:0.12,sway:0.6,nod:1,extra:'zzz',yawn:1,auto:[]}),
+  sayang:  mk({eye:'heart',bA:[-0.15,-0.15],bY:[0.06,0.06],mouth:'w',cheek:1.6,aL:0.55,aR:0.55,ear:0.45,hop:0.3,extra:'hearts',auto:[['hop',2],['ears',2],['wave',1]]}),
+  cemas:   mk({eo:1.05,bA:[-0.5,-0.5],bY:[0.06,0.06],mouth:'frown',cheek:0.7,aL:0.4,aR:0.4,ear:-0.1,look:0.3,biasY:-0.15,shake:1,extra:'sweat',auto:[]}),
+  bangga:  mk({eye:'arc',bA:[0,0],bY:[0.08,0.08],mouth:'open',mo:1,cheek:1.2,aL:1.9,aR:1.9,ear:0.7,hop:1,extra:'sparks',auto:[['hop',3],['dance',2]]}),
+  kaget:   mk({eo:1.3,bA:[-0.1,-0.1],bY:[0.14,0.14],mouth:'o',mo:1,cheek:0.8,aL:1.2,aR:1.2,ear:0.8,auto:[]}),
+  jahil:   mk({eo:0.62,bA:[0.2,0.5],bY:[0.07,-0.03],mouth:'smirk',look:0,biasX:0.95,roll:-0.1,auto:[['bleh',3],['wave',1],['dance',1]]}),
+  keren:   mk({mouth:'smirk',glasses:1,bA:[0,0],pitch:-0.1,roll:0.1,auto:[['dance',2],['ears',1]]})
+};
+/* gambar cadangan 2D: ekspresi -> jenis wajah */
+var KIND={netral:'cute',senang:'happy',semangat:'star',fokus:'smirk',santai:'cute',ngantuk:'sleepy',sayang:'love',cemas:'cute',bangga:'happy',kaget:'cute',jahil:'smirk',keren:'cool'};
+var NUMS=['eo','cheek','ear','look','biasX','biasY','sway','shake','nod','pitch','roll','bounce','mo'];
+
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function Sp(x,k,d){this.x=x;this.v=0;this.t=x;this.k=k;this.d=d}
+Sp.prototype.step=function(dt){
+  var n=Math.max(1,Math.ceil(dt/0.008)),h=dt/n;
+  for(var i=0;i<n;i++){this.v+=((this.t-this.x)*this.k-this.v*this.d)*h;this.x+=this.v*h}
+  return this.x;
+};
+function reduced(){try{return window.matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}}
+
+/* ---------- muat Three.js sekali saja (malas) ---------- */
+var threeP=null;
+function loadThree(){
+  if(window.THREE)return Promise.resolve(window.THREE);
+  if(threeP)return threeP;
+  threeP=new Promise(function(res,rej){
+    var done=false;
+    var s=document.createElement('script');s.src=THREE_SRC;s.async=true;
+    var to=setTimeout(function(){if(!done){done=true;threeP=null;rej(new Error('waktu habis'))}},9000);
+    s.onload=function(){if(done)return;done=true;clearTimeout(to);window.THREE?res(window.THREE):(threeP=null,rej(new Error('THREE kosong')))};
+    s.onerror=function(){if(done)return;done=true;clearTimeout(to);threeP=null;rej(new Error('gagal memuat'))};
+    document.head.appendChild(s);
+  });
+  return threeP;
+}
+function webglOk(){
+  try{var c=document.createElement('canvas');return !!(c.getContext('webgl')||c.getContext('experimental-webgl'))}catch(e){return false}
+}
+
+/* ---------- gaya ---------- */
+function css(){
+  if(document.getElementById('jepiCss'))return;
+  var s=document.createElement('style');s.id='jepiCss';
+  s.textContent='.jepi-box{position:relative;width:100%;height:100%;display:block;-webkit-tap-highlight-color:transparent}'
+   +'.jepi-cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:manipulation;cursor:pointer}'
+   +'.jepi-fb{position:absolute;inset:0;display:grid;place-items:center;cursor:pointer}'
+   +'.jepi-fb svg{width:100%;height:100%;display:block;animation:jepiBob 3.4s ease-in-out infinite;transform-origin:50% 90%}'
+   +'.jepi-box.is3d .jepi-fb{display:none}'
+   +'@keyframes jepiBob{0%,100%{transform:translateY(0) rotate(-2deg) scale(1,1)}50%{transform:translateY(-3%) rotate(2deg) scale(.985,1.02)}}'
+   +'@media (prefers-reduced-motion:reduce){.jepi-fb svg{animation:none}}';
+  document.head.appendChild(s);
+}
+
+/* =====================================================================
+   Wadah (satu per halaman, dipindah-pindah)
+===================================================================== */
+function Inst(){
+  css();
+  this.opts={};
+  this.mood='netral';this.palName='acak';
+  this.state='new';              // new | loading | 3d | 2d
+  this.el=document.createElement('div');this.el.className='jepi-box';
+  this.fb=document.createElement('div');this.fb.className='jepi-fb';this.el.appendChild(this.fb);
+  this.rt=null;                  // runtime 3D
+  this.pending=[];               // aksi yang diminta sebelum 3D siap
+  this.pal=(Math.random()<0.5)?'kuning':'krem';
+  var self=this;
+  this.fb.addEventListener('click',function(){self.react()});
+  this.drawFallback();
+}
+Inst.prototype.drawFallback=function(){
+  var f=Jepi.svg&&Jepi.svg(this.mood,this.pal);
+  this.fb.innerHTML=f||'';
+};
+Inst.prototype.setHost=function(host,o){
+  o=o||{};
+  for(var k in o)this.opts[k]=o[k];
+  if(host&&this.el.parentNode!==host)host.appendChild(this.el);
+  if(o.mood&&!o.__keep)this.setMood(o.mood);
+  if(o.palette)this.setPalette(o.palette);
+  if(this.rt){this.rt.opts=this.opts;this.rt.resize();this.rt.wake();if(o.shadow)this.rt.shadowTint(o.shadow)}
+  this.start();
+};
+Inst.prototype.start=function(){
+  if(this.state!=='new')return;
+  var self=this;
+  if(window.__jepi2d||!webglOk()){this.state='2d';return}
+  this.state='loading';
+  loadThree().then(function(THREE){
+    try{
+      self.rt=build(self,THREE);
+      self.state='3d';self.el.classList.add('is3d');
+      self.rt.resize();
+      self.pending.splice(0).forEach(function(a){self.act(a)});
+    }catch(e){
+      console.warn('Jepi: 3D gagal, memakai gambar 2D',e);self.state='2d';
+    }
+  }).catch(function(e){console.warn('Jepi: Three.js tidak termuat, memakai gambar 2D',e);self.state='2d'});
+};
+Inst.prototype.to2D=function(){
+  this.state='2d';this.el.classList.remove('is3d');
+  if(this.rt){this.rt.stop();this.rt=null}
+  this.drawFallback();
+};
+Inst.prototype.setMood=function(m){
+  if(!MOODS[m])m='netral';
+  var changed=m!==this.mood;
+  this.mood=m;
+  if(this.rt)this.rt.moodChanged(changed);
+  else this.drawFallback();
+};
+Inst.prototype.setPalette=function(p){
+  this.palName=p;
+  if(p==='krem'||p==='kuning')this.pal=p;   // 'acak': biarkan warna sekarang, berganti sendiri nanti
+  if(this.rt)this.rt.paletteChanged();else this.drawFallback();
+};
+Inst.prototype.act=function(a){
+  if(this.rt)this.rt.act(a);
+  else if(this.state==='loading'||this.state==='new')this.pending.push(a);
+};
+Inst.prototype.talk=function(sec){if(this.rt)this.rt.talk(sec)};
+Inst.prototype.react=function(){
+  if(this.opts.onTap){try{this.opts.onTap(this)}catch(e){console.warn(e)}return}
+  this.act('hop');
+  if(this.palName==='acak'&&Math.random()<0.45)this.flip();
+};
+/* ganti warna ke yang satunya (dengan kilau) */
+Inst.prototype.flip=function(){
+  this.pal=this.pal==='kuning'?'krem':'kuning';
+  if(this.rt)this.rt.paletteChanged(true);else this.drawFallback();
+};
+Inst.prototype.destroy=function(){
+  if(this.rt){this.rt.dispose();this.rt=null}
+  if(this.el.parentNode)this.el.parentNode.removeChild(this.el);
+  if(Jepi._inst===this)Jepi._inst=null;
+};
+
+/* =====================================================================
+   Runtime 3D
+===================================================================== */
+function build(inst,THREE){
+  var cv=document.createElement('canvas');cv.className='jepi-cv';cv.setAttribute('aria-hidden','true');
+  var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true,powerPreference:'low-power'});
+  renderer.outputEncoding=THREE.sRGBEncoding;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  inst.el.appendChild(cv);
+  var rt={opts:inst.opts};
+  var scene=new THREE.Scene();
+  var camera=new THREE.PerspectiveCamera(32,1,0.1,60);
+  function C(h){return new THREE.Color(h).convertSRGBToLinear()}
+  var calm=reduced();
+
+  /* lingkungan pantulan lembut */
+  (function(){
+    var ec=document.createElement('canvas');ec.width=512;ec.height=256;
+    var g=ec.getContext('2d');
+    var gr=g.createLinearGradient(0,0,0,256);
+    gr.addColorStop(0,'#fffaf2');gr.addColorStop(0.5,'#f1e6fb');gr.addColorStop(1,'#a893c9');
+    g.fillStyle=gr;g.fillRect(0,0,512,256);
+    g.fillStyle='#ffffff';
+    g.fillRect(70,46,96,54);g.fillRect(340,30,120,44);g.fillRect(230,20,50,26);
+    var et=new THREE.CanvasTexture(ec);
+    et.mapping=THREE.EquirectangularReflectionMapping;
+    et.encoding=THREE.sRGBEncoding;
+    try{
+      var pm=new THREE.PMREMGenerator(renderer);
+      scene.environment=pm.fromEquirectangular(et).texture;
+      pm.dispose();
+    }catch(e){}
+  })();
+
+  scene.add(new THREE.HemisphereLight(0xffffff,0xe3d3f5,0.8));
+  var key=new THREE.DirectionalLight(0xffffff,0.85);key.position.set(3,5,5);scene.add(key);
+  var rimL=new THREE.DirectionalLight(0xffe6f0,0.5);rimL.position.set(-4,3,-4);scene.add(rimL);
+
+  /* ---------- bahan ---------- */
+  function phys(hex,o){
+    o=o||{};
+    return new THREE.MeshPhysicalMaterial({
+      color:C(hex),roughness:o.r!==undefined?o.r:0.5,metalness:0,
+      clearcoat:o.cc!==undefined?o.cc:0.45,clearcoatRoughness:o.ccr!==undefined?o.ccr:0.3,
+      envMapIntensity:o.env!==undefined?o.env:0.5
+    });
+  }
+  function basic(hex,o){
+    o=o||{};
+    var p={color:C(hex)};
+    if(o.op!==undefined){p.transparent=true;p.opacity=o.op;p.depthWrite=false;p.polygonOffset=true;p.polygonOffsetFactor=-2;p.polygonOffsetUnits=-2}
+    return new THREE.MeshBasicMaterial(p);
+  }
+  var PC={};
+  Object.keys(PAL).forEach(function(n){PC[n]={};Object.keys(PAL[n]).forEach(function(k){PC[n][k]=C(PAL[n][k])})});
+  var mBody=phys('#FFD43B',{r:0.5,cc:0.55,ccr:0.3});
+  var mFoot=phys('#FFBE2E',{r:0.55,cc:0.3});
+  var mEye=phys('#2A2230',{r:0.2,cc:1,ccr:0.05,env:1});
+  var mEarOut=phys('#FFB52E',{r:0.55});
+  var mGlass=phys('#15101d',{r:0.12,cc:1,ccr:0.03,env:1.2});
+  var mEarIn=phys('#FF9DB0',{r:0.6,cc:0.15});
+  var mPom=phys('#FF9DB0',{r:0.5,cc:0.6});
+  var mCheek=basic('#FF9E8A',{op:0.9});
+  var mLine=basic('#8A5A4A');
+
+  function ell(rx,ry,rz,mat,seg){
+    var m=new THREE.Mesh(new THREE.SphereGeometry(1,seg||32,seg?Math.round(seg*0.75):24),mat);
+    m.scale.set(rx,ry,rz);return m;
+  }
+  function tube(pts,r,mat){
+    return new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),32,r,8,false),mat);
+  }
+  function V(x,y,z){return new THREE.Vector3(x,y,z||0)}
+
+  /* ---------- hierarki ---------- */
+  var rig=new THREE.Group();scene.add(rig);
+  var root=new THREE.Group();rig.add(root);
+  var sq=new THREE.Group();root.add(sq);
+  var tilt=new THREE.Group();sq.add(tilt);
+  var faceG=new THREE.Group();tilt.add(faceG);
+
+  var bg=new THREE.SphereGeometry(1,64,48);
+  var pos=bg.attributes.position;
+  for(var i=0;i<pos.count;i++){
+    var x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+    var ny=y<0?y*0.88:y*1.04;
+    var pw=1+0.05*(-y);
+    pos.setXYZ(i,x*1.0*pw,ny,z*0.96*pw);
+  }
+  bg.computeVertexNormals();
+  var body=new THREE.Mesh(bg,mBody);tilt.add(body);
+
+  var rc=new THREE.Raycaster();
+  function surf(az,el,off){
+    var d=new THREE.Vector3(Math.sin(az)*Math.cos(el),Math.sin(el),Math.cos(az)*Math.cos(el));
+    rc.set(d.clone().multiplyScalar(4),d.clone().negate());
+    var h=rc.intersectObject(body,false)[0];
+    var n=h.face.normal.clone();
+    return {p:h.point.clone().addScaledVector(n,off||0),n:n};
+  }
+  function place(o,s){o.position.copy(s.p);o.lookAt(s.p.clone().add(s.n))}
+
+  /* sorotan kilap */
+  var hl=new THREE.Mesh(new THREE.CircleGeometry(0.2,32),basic('#ffffff',{op:0.8}));
+  hl.scale.set(1.3,0.8,1);faceG.add(hl);
+  place(hl,surf(-0.62,0.62,0.006));hl.rotateZ(0.6);
+  var hl2=new THREE.Mesh(new THREE.CircleGeometry(0.045,20),basic('#ffffff',{op:0.7}));
+  hl2.scale.set(0.8,1.2,1);faceG.add(hl2);place(hl2,surf(-1.0,0.12,0.006));
+
+  /* mata: bulat, busur (senang), garis (santai), hati (sayang) */
+  var eyes=[];
+  var heartShape=new THREE.Shape();
+  heartShape.moveTo(0,-0.5);heartShape.bezierCurveTo(-0.95,0.1,-0.5,0.85,0,0.32);heartShape.bezierCurveTo(0.5,0.85,0.95,0.1,0,-0.5);
+  var heartGeo=new THREE.ExtrudeGeometry(heartShape,{depth:0.05,bevelEnabled:true,bevelThickness:0.02,bevelSize:0.02,bevelSegments:2,curveSegments:10});
+  var mHeart=phys('#E8264F',{r:0.3,cc:0.8,ccr:0.1,env:0.8});
+  [-1,1].forEach(function(sgn){
+    var s=surf(sgn*0.38,0.04,-0.025);
+    var g=new THREE.Group();faceG.add(g);place(g,s);
+    var rd=new THREE.Group();g.add(rd);
+    rd.add(ell(0.115,0.15,0.07,mEye,28));
+    var h1=ell(0.04,0.04,0.02,basic('#ffffff'),14);h1.position.set(-0.035,0.06,0.062);rd.add(h1);
+    var h2=ell(0.02,0.02,0.015,basic('#ffffff'),10);h2.position.set(0.04,-0.05,0.06);rd.add(h2);
+    var arc=tube([V(-0.115,-0.03,0.05),V(-0.07,0.05,0.06),V(0,0.085,0.065),V(0.07,0.05,0.06),V(0.115,-0.03,0.05)],0.022,mEye);
+    arc.visible=false;g.add(arc);
+    var hg=new THREE.Group();hg.visible=false;g.add(hg);
+    var hm=new THREE.Mesh(heartGeo,mHeart);hm.scale.set(0.24,0.24,0.5);hm.position.z=0.06;hg.add(hm);
+    var hs=ell(0.025,0.018,0.01,basic('#ffffff'),10);hs.position.set(-0.05,0.07,0.095);hg.add(hs);
+    eyes.push({g:g,rd:rd,arc:arc,hg:hg});
+  });
+
+  /* alis */
+  var brows=[];
+  [-1,1].forEach(function(sgn){
+    var g=new THREE.Group();faceG.add(g);place(g,surf(sgn*0.38,0.27,0.004));
+    var b=ell(0.095,0.02,0.02,mEye,16);g.add(b);
+    brows.push({m:b,sgn:sgn,rz:new Sp(-sgn*0.12,130,13),py:new Sp(0.02,130,13)});
+  });
+
+  /* pipi */
+  [-1,1].forEach(function(sgn){
+    var c=new THREE.Mesh(new THREE.CircleGeometry(0.15,28),mCheek);
+    c.scale.y=0.62;faceG.add(c);place(c,surf(sgn*0.72,-0.14,0.004));
+  });
+
+  /* mulut: w, terbuka, miring, cemberut, datar, "o" */
+  var mouthG=new THREE.Group();faceG.add(mouthG);place(mouthG,surf(0,-0.1,0.01));
+  var wMouth=tube([V(-0.075,0.02),V(-0.04,-0.02),V(0,0.012),V(0.04,-0.02),V(0.075,0.02)],0.009,mLine);mouthG.add(wMouth);
+  var smirk=tube([V(-0.085,-0.004),V(-0.03,-0.022),V(0.03,-0.02),V(0.09,0.035)],0.009,mLine);smirk.visible=false;mouthG.add(smirk);
+  var frown=tube([V(-0.07,-0.02),V(-0.035,0.008),V(0.035,0.008),V(0.07,-0.02)],0.009,mLine);frown.visible=false;mouthG.add(frown);
+  var flat=tube([V(-0.05,0),V(0,-0.004),V(0.05,0)],0.009,mLine);flat.visible=false;mouthG.add(flat);
+  var mouthOpen=new THREE.Mesh(new THREE.CircleGeometry(0.06,24,Math.PI,Math.PI),basic('#B8505C'));
+  mouthOpen.position.set(0,0,-0.002);mouthOpen.scale.y=0.01;mouthG.add(mouthOpen);
+  var oMouth=new THREE.Mesh(new THREE.CircleGeometry(0.045,24),basic('#B8505C'));
+  oMouth.position.set(0,-0.015,-0.002);oMouth.visible=false;mouthG.add(oMouth);
+  var tongue=new THREE.Mesh(new THREE.CircleGeometry(0.052,20,Math.PI,Math.PI),basic('#FF6F8E'));
+  tongue.position.set(0.03,-0.02,0.001);tongue.scale.y=0.01;mouthG.add(tongue);
+
+  /* telinga runcing */
+  function earGeo(){
+    var g=new THREE.SphereGeometry(1,32,24),p=g.attributes.position;
+    for(var i=0;i<p.count;i++){var x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+      if(y>0){var k=1-0.82*y*y;x*=k;z*=(1-0.4*y);y*=1.12}
+      p.setXYZ(i,x,y,z)}
+    g.computeVertexNormals();return g;
+  }
+  var ears=[];
+  [-1,1].forEach(function(sgn){
+    var piv=new THREE.Group();piv.position.set(sgn*0.48,0.9,-0.05);tilt.add(piv);
+    var e=new THREE.Mesh(earGeo(),mEarOut);e.scale.set(0.24,0.5,0.1);e.position.y=0.46;piv.add(e);
+    var ei=new THREE.Mesh(earGeo(),mEarIn);ei.scale.set(0.14,0.36,0.06);ei.position.set(0,0.42,0.07);piv.add(ei);
+    ears.push({piv:piv,sgn:sgn,sp:new Sp(0,70,5),spx:new Sp(0,60,5)});
+  });
+
+  /* ekor pompom */
+  var tailP=new THREE.Group();tailP.position.set(0.92,-0.55,-0.3);tilt.add(tailP);
+  tailP.add(ell(0.23,0.23,0.23,mPom,28));
+  var tHi=new THREE.Mesh(new THREE.CircleGeometry(0.05,16),basic('#ffc2cf',{op:0.9}));
+  tHi.position.set(0.1,0.1,0.2);tHi.lookAt(new THREE.Vector3(1,1,1.5));tailP.add(tHi);
+
+  /* tangan & kaki */
+  var arms=[];
+  [-1,1].forEach(function(sgn){
+    var piv=new THREE.Group();piv.position.set(sgn*0.97,-0.22,0.1);tilt.add(piv);
+    var a=ell(0.15,0.3,0.14,mBody,24);a.position.y=-0.22;piv.add(a);
+    arms.push({piv:piv,sgn:sgn,sp:new Sp(sgn*0.22,90,7)});
+  });
+  [-1,1].forEach(function(sgn){
+    var f=ell(0.32,0.16,0.4,mFoot,24);f.position.set(sgn*0.45,0.15,0.22);sq.add(f);
+  });
+
+  /* ikat kepala ulos */
+  function ulosTex(rep){
+    var c=document.createElement('canvas');c.width=128;c.height=64;
+    var g=c.getContext('2d');
+    g.fillStyle='#b3201b';g.fillRect(0,0,128,64);
+    g.fillStyle='#1d1206';g.fillRect(0,0,128,12);g.fillRect(0,52,128,12);
+    g.fillStyle='#f4d27a';g.fillRect(0,12,128,3);g.fillRect(0,49,128,3);
+    g.fillStyle='#f6efe0';g.fillRect(0,17,128,2);g.fillRect(0,45,128,2);
+    g.fillStyle='#f4d27a';
+    for(var k=0;k<4;k++){var x=k*32+8;g.beginPath();g.moveTo(x,32);g.lineTo(x+8,22);g.lineTo(x+16,32);g.lineTo(x+8,42);g.closePath();g.fill()}
+    g.fillStyle='#1d1206';
+    for(var k2=0;k2<4;k2++){var x2=k2*32+8;g.beginPath();g.moveTo(x2+8,28);g.lineTo(x2+12,32);g.lineTo(x2+8,36);g.lineTo(x2+4,32);g.closePath();g.fill()}
+    var t=new THREE.CanvasTexture(c);
+    t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep[0],rep[1]);
+    t.encoding=THREE.sRGBEncoding;t.anisotropy=4;
+    return t;
+  }
+  var bandY=0.52;
+  rc.set(new THREE.Vector3(4,bandY,0),new THREE.Vector3(-1,0,0));
+  var hitX=rc.intersectObject(body,false)[0];
+  var bandRx=(hitX?hitX.point.x:0.92)-0.005;
+  rc.set(new THREE.Vector3(0,bandY,4),new THREE.Vector3(0,0,-1));
+  var hitZ=rc.intersectObject(body,false)[0];
+  var bandRz=(hitZ?hitZ.point.z:0.84)-0.005;
+  var band=new THREE.Mesh(new THREE.TorusGeometry(1,0.085,24,96),new THREE.MeshStandardMaterial({map:ulosTex([9,1]),roughness:0.75,envMapIntensity:0.3}));
+  band.rotation.x=Math.PI/2;band.scale.set(bandRx,bandRz,1);band.position.y=bandY;tilt.add(band);
+  var ka=2.15;
+  var knotP=new THREE.Group();
+  knotP.position.set(bandRx*Math.sin(ka)*1.02,bandY,bandRz*Math.cos(ka)*1.02);
+  knotP.rotation.y=ka;tilt.add(knotP);
+  knotP.add(ell(0.12,0.1,0.1,new THREE.MeshStandardMaterial({color:C('#b3201b'),roughness:0.7}),20));
+  var bandTails=[];
+  [-1,1].forEach(function(sgn){
+    var tp=new THREE.Group();tp.position.set(0.02,-0.04,0);tp.rotation.z=sgn*0.3;knotP.add(tp);
+    var tb=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.42,0.03),new THREE.MeshStandardMaterial({map:ulosTex([1,1]),roughness:0.75,envMapIntensity:0.3}));
+    tb.position.y=-0.21;tp.add(tb);
+    var fr=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.05,0.028),phys('#f4d27a',{r:0.7,cc:0}));fr.position.y=-0.44;tp.add(fr);
+    bandTails.push({g:tp,sgn:sgn,sp:new Sp(0,60,4)});
+  });
+
+  /* bayangan */
+  var shc=document.createElement('canvas');shc.width=shc.height=128;
+  var shTex=new THREE.CanvasTexture(shc);
+  function shadowTint(rgb){
+    var sg=shc.getContext('2d');sg.clearRect(0,0,128,128);
+    var rg=sg.createRadialGradient(64,64,4,64,64,62);
+    rg.addColorStop(0,'rgba('+rgb+',0.45)');rg.addColorStop(1,'rgba('+rgb+',0)');
+    sg.fillStyle=rg;sg.fillRect(0,0,128,128);shTex.needsUpdate=true;
+  }
+  rt.shadowTint=shadowTint;
+  shadowTint(inst.opts.shadow||'110,80,160');
+  var shadow=new THREE.Mesh(new THREE.PlaneGeometry(3.4,3.4),new THREE.MeshBasicMaterial({map:shTex,transparent:true,depthWrite:false}));
+  shadow.rotation.x=-Math.PI/2;shadow.position.y=0.01;rig.add(shadow);
+
+  /* kacamata hitam: di atas kepala, bisa turun menutupi mata */
+  var glasses=[];
+  [-1,1].forEach(function(sgn){
+    var g=new THREE.Group();tilt.add(g);
+    g.add(ell(0.215,0.135,0.05,mGlass,28));
+    var hi=new THREE.Mesh(new THREE.CircleGeometry(0.03,16),basic('#ffffff',{op:0.55}));
+    hi.scale.set(2.2,0.5,1);hi.position.set(-0.07,0.05,0.052);hi.rotation.z=0.15;g.add(hi);
+    var dummy=new THREE.Object3D();
+    var su=surf(sgn*0.25,1.0,0.03);dummy.position.copy(su.p);dummy.lookAt(su.p.clone().add(su.n));dummy.rotateZ(-sgn*0.16);
+    var pU=dummy.position.clone(),qU=dummy.quaternion.clone();
+    var sd=surf(sgn*0.4,0.05,0.075);dummy.position.copy(sd.p);dummy.rotation.set(0,0,0);dummy.quaternion.identity();
+    dummy.lookAt(sd.p.clone().add(sd.n));dummy.rotateZ(sgn*0.04);
+    var pD=dummy.position.clone(),qD=dummy.quaternion.clone();
+    g.position.copy(pU);g.quaternion.copy(qU);
+    glasses.push({g:g,pU:pU,qU:qU,pD:pD,qD:qD});
+  });
+  var bridge=new THREE.Mesh(new THREE.BoxGeometry(1,0.035,0.035),mGlass);tilt.add(bridge);
+  var glassS=new Sp(0,120,10);
+  var xAxis=new THREE.Vector3(1,0,0),bdir=new THREE.Vector3();
+  function updateGlasses(v){
+    glasses.forEach(function(G){
+      G.g.position.lerpVectors(G.pU,G.pD,v);
+      G.g.quaternion.copy(G.qU).slerp(G.qD,clamp(v,0,1));
+    });
+    var A=glasses[0].g.position,B=glasses[1].g.position;
+    bdir.subVectors(B,A);var len=bdir.length();
+    bridge.position.addVectors(A,B).multiplyScalar(0.5);
+    bridge.quaternion.setFromUnitVectors(xAxis,bdir.normalize());
+    bridge.scale.set(Math.max(0.02,len-0.43),1,1);
+  }
+  updateGlasses(0);
+
+  /* ---------- pernik kecil: keringat, zzz, hati, kilau ---------- */
+  function spriteTex(draw){
+    var c=document.createElement('canvas');c.width=c.height=64;
+    draw(c.getContext('2d'));
+    var t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;
+  }
+  function mkSprite(tex,size){
+    var s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,opacity:0}));
+    s.scale.set(size,size,1);tilt.add(s);return s;
+  }
+  var texDrop=spriteTex(function(g){
+    g.fillStyle='#7CC7FF';g.strokeStyle='#4A9BE0';g.lineWidth=3;
+    g.beginPath();g.moveTo(32,6);g.bezierCurveTo(52,32,52,52,32,56);g.bezierCurveTo(12,52,12,32,32,6);g.closePath();g.fill();g.stroke();
+    g.fillStyle='rgba(255,255,255,.85)';g.beginPath();g.ellipse(24,40,4,7,0.3,0,6.3);g.fill();
+  });
+  var texZ=spriteTex(function(g){
+    g.font='900 46px Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';
+    g.lineWidth=7;g.strokeStyle='#ffffff';g.strokeText('Z',32,34);g.fillStyle='#8F7BD0';g.fillText('Z',32,34);
+  });
+  var texHeart=spriteTex(function(g){
+    g.fillStyle='#FF4F7A';g.strokeStyle='#ffffff';g.lineWidth=4;
+    g.beginPath();g.moveTo(32,56);g.bezierCurveTo(2,34,10,6,32,22);g.bezierCurveTo(54,6,62,34,32,56);g.closePath();g.stroke();g.fill();
+  });
+  var texStar=spriteTex(function(g){
+    g.fillStyle='#FFE066';g.strokeStyle='#E8A800';g.lineWidth=3;
+    g.beginPath();g.moveTo(32,4);g.quadraticCurveTo(35,29,60,32);g.quadraticCurveTo(35,35,32,60);g.quadraticCurveTo(29,35,4,32);g.quadraticCurveTo(29,29,32,4);g.closePath();g.fill();g.stroke();
+  });
+  var EX={
+    sweat:{list:[mkSprite(texDrop,0.3)],a:new Sp(0,40,8)},
+    zzz:{list:[mkSprite(texZ,0.3),mkSprite(texZ,0.3),mkSprite(texZ,0.3)],a:new Sp(0,40,8)},
+    hearts:{list:[mkSprite(texHeart,0.28),mkSprite(texHeart,0.28),mkSprite(texHeart,0.28),mkSprite(texHeart,0.28)],a:new Sp(0,40,8)},
+    sparks:{list:[mkSprite(texStar,0.26),mkSprite(texStar,0.26),mkSprite(texStar,0.26),mkSprite(texStar,0.26)],a:new Sp(0,40,8)}
+  };
+  var burst=0;           // kilau saat warna berganti
+
+  tilt.position.y=0.95;  // setelah semua penempatan permukaan selesai
+
+  /* ---------- keadaan ---------- */
+  var sqS=new Sp(0,170,11);
+  var yawS=new Sp(0,38,9),pitchS=new Sp(0,38,9),rollS=new Sp(0,30,7);
+  var eyeX=new Sp(0,110,13),eyeY=new Sp(0,110,13);
+  var tailX=new Sp(0,55,4),tailZ=new Sp(0,55,4);
+  var mouthS=new Sp(0,120,12);
+  var eyeWink=new Sp(1,200,16),tongueS=new Sp(0,160,12);
+  var hop={phase:'idle',t:0,y:0,vy:0};
+  var waveT=0,earT=0,blehT=0,danceT=0,coolT=0,talkT=0,yawnT=0,winkT=0;
+  var blink={next:2,t:-1,dbl:false};
+  var cur={};NUMS.forEach(function(n){cur[n]=MOODS.netral[n]});
+  var eyeMode='round',pendMode=null,mouthKind='w';
+  var lookT={x:0,y:0},pointerAt=-100,t=0,nextAuto=5,nextHop=3,nextYawn=4,nextColor=25+Math.random()*30;
+  var pm=inst.pal==='krem'?1:0,pmT=pm;
+
+  /* ---------- palet ---------- */
+  function applyPalette(){
+    var a=PC.kuning,b=PC.krem;
+    mBody.color.copy(a.body).lerp(b.body,pm);
+    mFoot.color.copy(a.foot).lerp(b.foot,pm);
+    mEarOut.color.copy(a.ear).lerp(b.ear,pm);
+    mCheek.color.copy(a.cheek).lerp(b.cheek,pm);
+  }
+  applyPalette();
+  rt.paletteChanged=function(withBurst){
+    pmT=inst.pal==='krem'?1:0;
+    if(withBurst){burst=1.4;sqS.v+=1.6}
+  };
+
+  /* ---------- aksi ---------- */
+  function startHop(){if(hop.phase!=='idle')return;hop.phase='antic';hop.t=0}
+  rt.act=function(a){
+    if(a==='hop')startHop();
+    else if(a==='wave')waveT=2.4;
+    else if(a==='ears')earT=1.6;
+    else if(a==='bleh')blehT=2.6;
+    else if(a==='dance')danceT=3.4;
+    else if(a==='cool')coolT=3.2;
+    else if(a==='wink')winkT=0.9;
+    nextAuto=Math.max(nextAuto,t+6);
+  };
+  rt.talk=function(sec){talkT=Math.max(talkT,sec||2)};
+  rt.moodChanged=function(changed){
+    if(!changed)return;
+    var m=MOODS[inst.mood]||MOODS.netral;
+    if(m.eye!==eyeMode&&blink.t<0){pendMode=m.eye;blink.t=0;blink.dbl=false}
+    else if(m.eye!==eyeMode)pendMode=m.eye;
+    if(m.hop>=1&&!calm)startHop();
+    nextAuto=t+4;
+  };
+  rt.wake=function(){suspendAt=0;if(!rt.raf)loop()};
+
+  /* ---------- gambar ---------- */
+  rt.resize=function(){
+    var w=inst.el.clientWidth,h=inst.el.clientHeight;
+    if(!w||!h)return;
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h;
+    var d=Math.max(7.6,4.5/(0.5734*camera.aspect));
+    var fit=inst.opts.fit;
+    if(fit==='wide')d=Math.max(8.4,4.6/(0.5734*camera.aspect));
+    camera.position.set(0,2.0,d);
+    camera.lookAt(0,1.7,0);
+    camera.updateProjectionMatrix();
+  };
+  var ro=null;
+  if(window.ResizeObserver){ro=new ResizeObserver(function(){rt.resize()});ro.observe(inst.el)}
+
+  /* pandangan mengikuti penunjuk (seluruh halaman) */
+  function onMove(e){
+    var r=inst.el.getBoundingClientRect();
+    if(!r.width)return;
+    var cx=r.left+r.width/2,cy=r.top+r.height*0.45;
+    lookT.x=clamp((e.clientX-cx)/(Math.max(r.width,300)*1.4),-1,1);
+    lookT.y=clamp(-(e.clientY-cy)/(Math.max(r.height,300)*1.4),-1,1);
+    pointerAt=t;
+  }
+  window.addEventListener('pointermove',onMove,{passive:true});
+  cv.addEventListener('click',function(){inst.react()});
+  cv.addEventListener('webglcontextlost',function(e){e.preventDefault();inst.to2D()});
+
+  /* ---------- putaran animasi ---------- */
+  var clock=new THREE.Clock();
+  var suspendAt=0;
+  rt.raf=0;
+  function loop(){rt.raf=requestAnimationFrame(frame)}
+  rt.stop=function(){if(rt.raf)cancelAnimationFrame(rt.raf);rt.raf=0};
+  rt.dispose=function(){
+    rt.stop();window.removeEventListener('pointermove',onMove);if(ro)ro.disconnect();
+    try{renderer.dispose()}catch(e){}
+    if(cv.parentNode)cv.parentNode.removeChild(cv);
+  };
+
+  function setVis(o,v){if(o.visible!==v)o.visible=v}
+
+  function frame(){
+    rt.raf=requestAnimationFrame(frame);
+    if(!cv.isConnected||document.hidden){
+      clock.getDelta();
+      if(!cv.isConnected){
+        if(!suspendAt)suspendAt=performance.now();
+        else if(performance.now()-suspendAt>20000){rt.stop()}  // lama tidak tampil: hemat baterai
+      }
+      return;
+    }
+    suspendAt=0;
+    var dt=Math.min(clock.getDelta(),0.05);
+    t+=dt;
+    var m=MOODS[inst.mood]||MOODS.netral;
+    var kk=1-Math.exp(-dt*9);
+    NUMS.forEach(function(n){cur[n]+=(m[n]-cur[n])*kk});
+
+    /* warna berganti acak */
+    if(inst.palName==='acak'&&t>nextColor&&!calm){inst.flip();nextColor=t+30+Math.random()*45}
+    if(Math.abs(pm-pmT)>0.001){pm+=(pmT-pm)*(1-Math.exp(-dt*4));applyPalette()}else if(pm!==pmT){pm=pmT;applyPalette()}
+
+    /* aksi otomatis sesuai ekspresi */
+    if(t>nextAuto&&hop.phase==='idle'&&!calm){
+      var lst=m.auto||[],tot=0,i2;
+      for(i2=0;i2<lst.length;i2++)tot+=lst[i2][1];
+      if(tot){
+        var r0=Math.random()*tot,pick=lst[0][0];
+        for(i2=0;i2<lst.length;i2++){r0-=lst[i2][1];if(r0<=0){pick=lst[i2][0];break}}
+        rt.act(pick);
+      }
+      nextAuto=t+7+Math.random()*5;
+    }
+    if(m.hop>0&&!calm&&t>nextHop&&hop.phase==='idle'){startHop();nextHop=t+(m.hop>=1?3.6:7.5)+Math.random()*2}
+    if(m.yawn&&t>nextYawn&&yawnT<=0){yawnT=1.9;nextYawn=t+6+Math.random()*3}
+
+    /* lompat */
+    var sqT=Math.sin(t*1.7)*0.018*cur.bounce+(danceT>0?Math.sin(t*14)*0.05:0);
+    var armUp=0,mouthT=cur.mo;
+    if(hop.phase==='antic'){
+      hop.t+=dt;sqT=-0.22;armUp=-0.5;
+      if(hop.t>0.17){hop.phase='air';hop.vy=5.2;sqS.v+=2.4}
+    }else if(hop.phase==='air'){
+      hop.vy-=15*dt;hop.y+=hop.vy*dt;
+      sqT=clamp(Math.abs(hop.vy)*0.03,0,0.16);armUp=1.7;mouthT=Math.max(mouthT,1);
+      if(hop.y<=0&&hop.vy<0){hop.y=0;hop.phase='land';hop.t=0;sqS.x=-0.24;sqS.v=0}
+    }else if(hop.phase==='land'){
+      hop.t+=dt;armUp=0.4;mouthT=Math.max(mouthT,0.6);
+      if(hop.t>0.4)hop.phase='idle';
+    }
+    sqS.t=sqT;
+    var sv=sqS.step(dt);
+    var sxz=1/Math.sqrt(1+sv);
+    sq.scale.set(sxz,1+sv,sxz);
+    root.position.y=hop.y;
+
+    /* pandangan */
+    if(t-pointerAt>4){
+      var a0=calm?0.25:0.55;
+      lookT.x=Math.sin(t*0.4)*a0;lookT.y=Math.sin(t*0.31)*a0*0.5;
+    }
+    if(waveT>0)waveT-=dt;
+    if(earT>0)earT-=dt;
+    if(blehT>0)blehT-=dt;
+    if(danceT>0)danceT-=dt;
+    if(coolT>0)coolT-=dt;
+    if(talkT>0)talkT-=dt;
+    if(winkT>0)winkT-=dt;
+    if(yawnT>0)yawnT-=dt;
+    var dance=danceT>0,cool=(coolT>0)||m.glasses===1,bleh=blehT>0,yawn=yawnT>0;
+    var lx=lookT.x*cur.look+cur.biasX,ly=lookT.y*cur.look+cur.biasY;
+    if(bleh){lx=0.95;ly=0.05}
+    var nod=Math.sin(t*0.9)*0.06*cur.nod;
+    yawS.t=lx*0.5+(dance?Math.sin(t*3.5)*0.3:0);
+    pitchS.t=-ly*0.28+cur.pitch+nod+(yawn?-0.28:0)+(cool?-0.1:0);
+    rollS.t=Math.sin(t*0.9)*0.04-lx*0.06+cur.roll+Math.sin(t*0.7)*0.07*cur.sway+Math.sin(t*31)*0.012*cur.shake+(bleh?0.22:0)+(cool?0.1:0)+(dance?Math.sin(t*7)*0.2:0);
+    var yaw=yawS.step(dt),pitch=pitchS.step(dt),roll=rollS.step(dt);
+    tilt.rotation.set(pitch,yaw,roll);
+    eyeX.t=lx;eyeY.t=ly;
+    var ex=eyeX.step(dt),ey=eyeY.step(dt);
+    faceG.rotation.set(-ey*0.1,ex*0.14,0);
+
+    /* kedip dan pergantian bentuk mata */
+    blink.next-=dt;
+    var bs=1;
+    if(blink.t<0&&blink.next<=0){blink.t=0;blink.dbl=Math.random()<0.25}
+    if(blink.t>=0){
+      blink.t+=dt;var p=blink.t/0.15;
+      bs=1-0.92*Math.sin(Math.min(p,1)*Math.PI);
+      if(p>=0.5&&pendMode){eyeMode=pendMode;pendMode=null}
+      if(p>=1){blink.t=-1;blink.next=blink.dbl?0.12:2+Math.random()*3.2;blink.dbl=false}
+    }else if(pendMode){eyeMode=pendMode;pendMode=null}
+    eyeWink.t=(bleh||winkT>0)?0.08:1;
+    var wk=eyeWink.step(dt);
+    var em=eyeMode;
+    var yawnShut=yawn?0.12:1;
+    eyes.forEach(function(E,idx){
+      setVis(E.rd,em==='round');
+      setVis(E.arc,em==='arc'||em==='line');
+      setVis(E.hg,em==='heart');
+      E.rd.scale.y=Math.max(0.05,bs*cur.eo*yawnShut*(idx===1?wk:1));
+      E.arc.scale.y=(em==='line')?-0.8:1;
+      var hb=1+0.1*Math.sin(t*7);E.hg.scale.set(hb,hb,1);
+    });
+
+    /* alis */
+    brows.forEach(function(B,idx){
+      setVis(B.m,!cool);
+      B.rz.t=B.sgn*m.bA[idx];
+      B.py.t=m.bY[idx];
+      if(bleh){if(B.sgn===1){B.rz.t=0.5;B.py.t=-0.03}else{B.rz.t=-0.2;B.py.t=0.07}}
+      B.m.rotation.z=B.rz.step(dt);B.m.position.y=B.py.step(dt);
+    });
+
+    /* tangan */
+    arms.forEach(function(A){
+      var base=A.sgn===-1?m.aL:m.aR;
+      var tgt=A.sgn*(base+armUp*0.55);
+      if(A.sgn===1&&waveT>0){tgt=2.35+Math.sin(t*9)*0.32;mouthT=Math.max(mouthT,0.5)}
+      if(dance){tgt=A.sgn*(1.5+Math.sin(t*7+(A.sgn>0?0:Math.PI))*0.8);mouthT=Math.max(mouthT,0.6)}
+      if(bleh&&A.sgn===-1){tgt=A.sgn*1.1}
+      tgt+=Math.sin(t*1.7+A.sgn)*0.03;
+      A.sp.t=tgt;A.piv.rotation.z=A.sp.step(dt);
+    });
+
+    /* telinga */
+    if(earT>0)mouthT=Math.max(mouthT,0.5);
+    var wig=(earT>0||bleh||dance)?Math.sin(t*14)*0.26:0;
+    ears.forEach(function(E){
+      E.sp.t=E.sgn*(cur.ear+(-sv)*1.6+Math.sin(t*1.3+E.sgn)*0.03)+wig*E.sgn;
+      E.spx.t=-hop.vy*0.07+sqS.v*0.04;
+      E.piv.rotation.set(E.spx.step(dt),0,-E.sp.step(dt));
+    });
+
+    /* kacamata */
+    glassS.t=cool?1:0;
+    updateGlasses(glassS.step(dt));
+
+    /* ekor pompom & ikat kepala */
+    tailX.t=-hop.vy*0.05;
+    tailZ.t=Math.sin(t*1.4)*0.05-yawS.v*0.05;
+    tailP.rotation.set(tailX.step(dt),0,tailZ.step(dt));
+    tailP.position.y=-0.55+Math.max(0,-sv)*(-0.1);
+    bandTails.forEach(function(B){
+      B.sp.t=B.sgn*(0.3+(-sv)*1.2)+Math.sin(t*1.6+B.sgn)*0.05-yawS.v*0.05;
+      B.g.rotation.z=B.sp.step(dt);
+    });
+
+    /* mulut */
+    var mkd=m.mouth;
+    if(bleh||cool&&mkd==='w')mkd='smirk';
+    if(yawn){mkd='o';mouthT=1}
+    if(talkT>0)mouthT=Math.max(mouthT,0.3+0.55*Math.abs(Math.sin(t*12.5)));
+    mouthS.t=mouthT;
+    var mo=clamp(mouthS.step(dt),0.01,1.15);
+    var kind=mkd;
+    if(mo>=0.5&&(mkd==='w'||mkd==='flat'||mkd==='smirk'||mkd==='frown'))kind='open';
+    setVis(wMouth,kind==='w');setVis(smirk,kind==='smirk');setVis(frown,kind==='frown');setVis(flat,kind==='flat');
+    setVis(mouthOpen,kind==='open');setVis(oMouth,kind==='o');
+    mouthOpen.scale.y=Math.max(0.2,mo);
+    oMouth.scale.set(0.7+0.5*mo,0.7+0.9*mo,1);
+    tongueS.t=bleh?1:0;
+    tongue.scale.y=clamp(tongueS.step(dt),0.01,1.1);
+    setVis(tongue,tongue.scale.y>0.03);
+    mCheek.opacity=clamp(0.9*cur.cheek,0.15,1);
+
+    /* pernik kecil */
+    var exName=m.extra,eyk;
+    for(eyk in EX){
+      var X=EX[eyk];
+      X.a.t=(eyk===exName||(eyk==='sparks'&&burst>0))?1:0;
+      var av=clamp(X.a.step(dt),0,1.2);
+      var n=X.list.length;
+      for(var si=0;si<n;si++){
+        var S=X.list[si],ph=(t*(eyk==='sweat'?0.45:0.42)+si/n)%1,op=0,px=0,py=0,sc=0.3,pz=0.3;
+        if(eyk==='sweat'){
+          px=0.66;py=0.55-ph*0.6;op=Math.sin(Math.min(1,ph*1.15)*Math.PI);sc=0.2+0.1*ph;
+          pz=0.96*Math.sqrt(Math.max(0,1-px*px-Math.pow(py/1.04,2)))+0.1;
+        }else if(eyk==='zzz'){
+          px=0.7+ph*0.6;py=1.05+ph*0.9;op=Math.sin(ph*Math.PI);sc=0.18+0.22*ph;pz=0.2;
+        }else if(eyk==='hearts'){
+          var sd2=(si%2?-1:1);px=sd2*(0.7+0.2*Math.sin(ph*6+si));py=0.95+ph*0.95;op=Math.sin(ph*Math.PI);sc=0.16+0.16*Math.sin(ph*Math.PI);pz=0.5;
+        }else{
+          var AX=[[-1.25,1.0],[1.3,0.85],[-0.8,1.75],[0.85,1.8]];
+          px=AX[si%4][0];py=AX[si%4][1];op=0.55+0.45*Math.sin(t*5+si*2);sc=0.16+0.1*Math.sin(t*5+si*2);pz=0.25;
+        }
+        S.position.set(px,py,pz);
+        S.material.opacity=clamp(op*av,0,1);S.scale.set(sc,sc,1);S.visible=S.material.opacity>0.01;
+      }
+    }
+    if(burst>0)burst-=dt;
+
+    /* bayangan */
+    var sh=1-Math.min(hop.y,1.3)*0.28;
+    var sw=sh*(1+Math.max(-sv,0)*0.5);
+    shadow.scale.set(sw,sw,1);
+    shadow.material.opacity=1-Math.min(hop.y,1.3)*0.4;
+
+    renderer.render(scene,camera);
+  }
+  loop();
+  return rt;
+}
+
+/* =====================================================================
+   Antarmuka publik
+===================================================================== */
+var Jepi=window.Jepi={
+  __v:'1.0.0',
+  moods:Object.keys(MOODS),
+  PAL:PAL,
+  mount:function(host,opts){
+    opts=opts||{};
+    var inst=Jepi._inst;
+    if(!inst)inst=Jepi._inst=new Inst();
+    var keep=!opts.mood;
+    var o={};for(var k in opts)o[k]=opts[k];
+    if(keep)o.__keep=1;
+    if(!('onTap' in o))o.onTap=null;
+    inst.setHost(host,o);
+    return inst;
+  },
+  /* gambar cadangan 2D: diisi oleh jepi-fallback.js (kalau ada) */
+  svg:function(mood,pal){
+    var S=Jepi._svgs;if(!S)return '';
+    var kind=KIND[mood]||'cute';
+    var s=S[kind]||S.cute||'';
+    if(pal==='krem'){
+      s=s.replace(/#FFD43B/g,'#FFF1DF').replace(/#FFE98A/g,'#FFFBF2').replace(/#F4B400/g,'#F3D9B8').replace(/#F0B400/g,'#EBCDA9')
+         .replace(/#FFBE2E/g,'#FFE3C3').replace(/#FFB52E/g,'#FFC0AA').replace(/#E89A10/g,'#EFA78E').replace(/#FF9E8A/g,'#FFC2C8');
+    }
+    return s;
+  }
+};
+})();
+
+(function(){var J=window.Jepi=window.Jepi||{};J._svgs={"cute": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"64 0 384 400\" role=\"img\" aria-label=\"Jepi\">\n<defs>\n  <radialGradient id=\"jepi-bg\" cx=\"38%\" cy=\"28%\" r=\"80%\">\n    <stop offset=\"0\" stop-color=\"#FFE98A\"/><stop offset=\".45\" stop-color=\"#FFD43B\"/><stop offset=\"1\" stop-color=\"#F4B400\"/>\n  </radialGradient>\n  <clipPath id=\"jepi-bodyclip\"><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <clipPath id=\"jepi-bodyclip2\"><path transform=\"translate(0,30)\" d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <filter id=\"outline-unused\" x=\"-10%\" y=\"-10%\" width=\"120%\" height=\"120%\">\n    <feMorphology in=\"SourceAlpha\" operator=\"dilate\" radius=\"7\" result=\"d\"/>\n    <feFlood flood-color=\"#ffffff\" result=\"w\"/>\n    <feComposite in=\"w\" in2=\"d\" operator=\"in\" result=\"o\"/>\n    <feMerge><feMergeNode in=\"o\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n  </filter>\n</defs><g transform=\"translate(256,222) scale(.88) translate(-256,-222)\"><g transform=\"translate(0,0) translate(256,388) rotate(0) scale(1.0,1.0) translate(-256,-388)\"><circle cx=\"420\" cy=\"352\" r=\"38\" fill=\"#FF9DB0\" stroke=\"#E87C96\" stroke-width=\"4\"/><circle cx=\"432\" cy=\"340\" r=\"9\" fill=\"#FFC2CF\"/><g transform=\"translate(178,162) rotate(-18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><g transform=\"translate(334,162) rotate(18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><ellipse cx=\"200\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 200 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><ellipse cx=\"312\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 312 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\" fill=\"url(#jepi-bg)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"186\" cy=\"172\" rx=\"44\" ry=\"24\" fill=\"#ffffff\" transform=\"rotate(-35 186 172)\" opacity=\".75\"/><ellipse cx=\"124\" cy=\"238\" rx=\"7\" ry=\"14\" fill=\"#ffffff\" transform=\"rotate(-8 124 238)\" opacity=\".6\"/><g transform=\"translate(0,-30)\"><g clip-path=\"url(#jepi-bodyclip2)\"><path d=\"M90,206 Q256,246 422,206\" stroke=\"#B3201B\" stroke-width=\"34\" fill=\"none\"/><path d=\"M90,192 Q256,232 422,192\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,220 Q256,260 422,220\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,197 Q256,237 422,197\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M90,215 Q256,255 422,215\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M101.1,199.6 L108.1,208.6 L101.1,217.6 L94.1,208.6Z\" fill=\"#F4D27A\"/><path d=\"M101.1,205.1 L104.1,208.6 L101.1,212.1 L98.1,208.6Z\" fill=\"#1d1206\"/><path d=\"M123.2,204.2 L130.2,213.2 L123.2,222.2 L116.2,213.2Z\" fill=\"#F4D27A\"/><path d=\"M123.2,209.7 L126.2,213.2 L123.2,216.7 L120.2,213.2Z\" fill=\"#1d1206\"/><path d=\"M145.3,208.1 L152.3,217.1 L145.3,226.1 L138.3,217.1Z\" fill=\"#F4D27A\"/><path d=\"M145.3,213.6 L148.3,217.1 L145.3,220.6 L142.3,217.1Z\" fill=\"#1d1206\"/><path d=\"M167.5,211.3 L174.5,220.3 L167.5,229.3 L160.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M167.5,216.8 L170.5,220.3 L167.5,223.8 L164.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M189.6,213.8 L196.6,222.8 L189.6,231.8 L182.6,222.8Z\" fill=\"#F4D27A\"/><path d=\"M189.6,219.3 L192.6,222.8 L189.6,226.3 L186.6,222.8Z\" fill=\"#1d1206\"/><path d=\"M211.7,215.6 L218.7,224.6 L211.7,233.6 L204.7,224.6Z\" fill=\"#F4D27A\"/><path d=\"M211.7,221.1 L214.7,224.6 L211.7,228.1 L208.7,224.6Z\" fill=\"#1d1206\"/><path d=\"M233.9,216.6 L240.9,225.6 L233.9,234.6 L226.9,225.6Z\" fill=\"#F4D27A\"/><path d=\"M233.9,222.1 L236.9,225.6 L233.9,229.1 L230.9,225.6Z\" fill=\"#1d1206\"/><path d=\"M256.0,217.0 L263.0,226.0 L256.0,235.0 L249.0,226.0Z\" fill=\"#F4D27A\"/><path d=\"M256.0,222.5 L259.0,226.0 L256.0,229.5 L253.0,226.0Z\" fill=\"#1d1206\"/><path d=\"M278.1,216.6 L285.1,225.6 L278.1,234.6 L271.1,225.6Z\" fill=\"#F4D27A\"/><path d=\"M278.1,222.1 L281.1,225.6 L278.1,229.1 L275.1,225.6Z\" fill=\"#1d1206\"/><path d=\"M300.3,215.6 L307.3,224.6 L300.3,233.6 L293.3,224.6Z\" fill=\"#F4D27A\"/><path d=\"M300.3,221.1 L303.3,224.6 L300.3,228.1 L297.3,224.6Z\" fill=\"#1d1206\"/><path d=\"M322.4,213.8 L329.4,222.8 L322.4,231.8 L315.4,222.8Z\" fill=\"#F4D27A\"/><path d=\"M322.4,219.3 L325.4,222.8 L322.4,226.3 L319.4,222.8Z\" fill=\"#1d1206\"/><path d=\"M344.5,211.3 L351.5,220.3 L344.5,229.3 L337.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M344.5,216.8 L347.5,220.3 L344.5,223.8 L341.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M366.7,208.1 L373.7,217.1 L366.7,226.1 L359.7,217.1Z\" fill=\"#F4D27A\"/><path d=\"M366.7,213.6 L369.7,217.1 L366.7,220.6 L363.7,217.1Z\" fill=\"#1d1206\"/><path d=\"M388.8,204.2 L395.8,213.2 L388.8,222.2 L381.8,213.2Z\" fill=\"#F4D27A\"/><path d=\"M388.8,209.7 L391.8,213.2 L388.8,216.7 L385.8,213.2Z\" fill=\"#1d1206\"/><path d=\"M410.9,199.6 L417.9,208.6 L410.9,217.6 L403.9,208.6Z\" fill=\"#F4D27A\"/><path d=\"M410.9,205.1 L413.9,208.6 L410.9,212.1 L407.9,208.6Z\" fill=\"#1d1206\"/></g></g><ellipse cx=\"148\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 148 308)\" opacity=\"0.9\"/><ellipse cx=\"364\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 364 308)\" opacity=\"0.9\"/><path d=\"M179,220 L229,210\" stroke=\"#2A2230\" stroke-width=\"8\" stroke-linecap=\"round\"/><path d=\"M333,220 L283,210\" stroke=\"#2A2230\" stroke-width=\"8\" stroke-linecap=\"round\"/><ellipse cx=\"205\" cy=\"262\" rx=\"24\" ry=\"31\" fill=\"#2A2230\" transform=\"rotate(0 205 262)\" /><circle cx=\"197\" cy=\"251\" r=\"8.5\" fill=\"#fff\"/><circle cx=\"214\" cy=\"272\" r=\"4.2\" fill=\"#fff\"/><ellipse cx=\"307\" cy=\"262\" rx=\"24\" ry=\"31\" fill=\"#2A2230\" transform=\"rotate(0 307 262)\" /><circle cx=\"299\" cy=\"251\" r=\"8.5\" fill=\"#fff\"/><circle cx=\"316\" cy=\"272\" r=\"4.2\" fill=\"#fff\"/><path d=\"M230,304 Q243,324 256,306 Q269,324 282,304\" stroke=\"#8A5A4A\" stroke-width=\"6\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"100\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(18 100 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"412\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(-18 412 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><g transform=\"translate(0,-24)\"><path d=\"M398,206 L420,262 L438,256 L420,204Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M402,210 L424,262\" stroke=\"#F4D27A\" stroke-width=\"3\"/><path d=\"M392,208 L398,268 L416,266 L412,208Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M398,214 L402,266\" stroke=\"#F4D27A\" stroke-width=\"3\"/><ellipse cx=\"398\" cy=\"204\" rx=\"17\" ry=\"15\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\"/><path d=\"M390,200 L406,208 M390,208 L406,200\" stroke=\"#F4D27A\" stroke-width=\"3\"/></g><g transform=\"rotate(-8 258 140)\"><ellipse cx=\"224\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"214\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 214 133)\"/><ellipse cx=\"292\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"282\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 282 133)\"/><path d=\"M254,138 Q258,134 262,138\" stroke=\"#2A2230\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/></g></g></g></svg>", "happy": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"64 0 384 400\" role=\"img\" aria-label=\"Jepi\">\n<defs>\n  <radialGradient id=\"jepi-bg\" cx=\"38%\" cy=\"28%\" r=\"80%\">\n    <stop offset=\"0\" stop-color=\"#FFE98A\"/><stop offset=\".45\" stop-color=\"#FFD43B\"/><stop offset=\"1\" stop-color=\"#F4B400\"/>\n  </radialGradient>\n  <clipPath id=\"jepi-bodyclip\"><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <clipPath id=\"jepi-bodyclip2\"><path transform=\"translate(0,30)\" d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <filter id=\"outline-unused\" x=\"-10%\" y=\"-10%\" width=\"120%\" height=\"120%\">\n    <feMorphology in=\"SourceAlpha\" operator=\"dilate\" radius=\"7\" result=\"d\"/>\n    <feFlood flood-color=\"#ffffff\" result=\"w\"/>\n    <feComposite in=\"w\" in2=\"d\" operator=\"in\" result=\"o\"/>\n    <feMerge><feMergeNode in=\"o\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n  </filter>\n</defs><g transform=\"translate(256,222) scale(.88) translate(-256,-222)\"><g transform=\"translate(0,0) translate(256,388) rotate(0) scale(1.0,1.0) translate(-256,-388)\"><circle cx=\"420\" cy=\"352\" r=\"38\" fill=\"#FF9DB0\" stroke=\"#E87C96\" stroke-width=\"4\"/><circle cx=\"432\" cy=\"340\" r=\"9\" fill=\"#FFC2CF\"/><g transform=\"translate(178,162) rotate(-18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><g transform=\"translate(334,162) rotate(18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><ellipse cx=\"200\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 200 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><ellipse cx=\"312\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 312 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\" fill=\"url(#jepi-bg)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"186\" cy=\"172\" rx=\"44\" ry=\"24\" fill=\"#ffffff\" transform=\"rotate(-35 186 172)\" opacity=\".75\"/><ellipse cx=\"124\" cy=\"238\" rx=\"7\" ry=\"14\" fill=\"#ffffff\" transform=\"rotate(-8 124 238)\" opacity=\".6\"/><g transform=\"translate(0,-30)\"><g clip-path=\"url(#jepi-bodyclip2)\"><path d=\"M90,206 Q256,246 422,206\" stroke=\"#B3201B\" stroke-width=\"34\" fill=\"none\"/><path d=\"M90,192 Q256,232 422,192\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,220 Q256,260 422,220\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,197 Q256,237 422,197\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M90,215 Q256,255 422,215\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M101.1,199.6 L108.1,208.6 L101.1,217.6 L94.1,208.6Z\" fill=\"#F4D27A\"/><path d=\"M101.1,205.1 L104.1,208.6 L101.1,212.1 L98.1,208.6Z\" fill=\"#1d1206\"/><path d=\"M123.2,204.2 L130.2,213.2 L123.2,222.2 L116.2,213.2Z\" fill=\"#F4D27A\"/><path d=\"M123.2,209.7 L126.2,213.2 L123.2,216.7 L120.2,213.2Z\" fill=\"#1d1206\"/><path d=\"M145.3,208.1 L152.3,217.1 L145.3,226.1 L138.3,217.1Z\" fill=\"#F4D27A\"/><path d=\"M145.3,213.6 L148.3,217.1 L145.3,220.6 L142.3,217.1Z\" fill=\"#1d1206\"/><path d=\"M167.5,211.3 L174.5,220.3 L167.5,229.3 L160.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M167.5,216.8 L170.5,220.3 L167.5,223.8 L164.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M189.6,213.8 L196.6,222.8 L189.6,231.8 L182.6,222.8Z\" fill=\"#F4D27A\"/><path d=\"M189.6,219.3 L192.6,222.8 L189.6,226.3 L186.6,222.8Z\" fill=\"#1d1206\"/><path d=\"M211.7,215.6 L218.7,224.6 L211.7,233.6 L204.7,224.6Z\" fill=\"#F4D27A\"/><path d=\"M211.7,221.1 L214.7,224.6 L211.7,228.1 L208.7,224.6Z\" fill=\"#1d1206\"/><path d=\"M233.9,216.6 L240.9,225.6 L233.9,234.6 L226.9,225.6Z\" fill=\"#F4D27A\"/><path d=\"M233.9,222.1 L236.9,225.6 L233.9,229.1 L230.9,225.6Z\" fill=\"#1d1206\"/><path d=\"M256.0,217.0 L263.0,226.0 L256.0,235.0 L249.0,226.0Z\" fill=\"#F4D27A\"/><path d=\"M256.0,222.5 L259.0,226.0 L256.0,229.5 L253.0,226.0Z\" fill=\"#1d1206\"/><path d=\"M278.1,216.6 L285.1,225.6 L278.1,234.6 L271.1,225.6Z\" fill=\"#F4D27A\"/><path d=\"M278.1,222.1 L281.1,225.6 L278.1,229.1 L275.1,225.6Z\" fill=\"#1d1206\"/><path d=\"M300.3,215.6 L307.3,224.6 L300.3,233.6 L293.3,224.6Z\" fill=\"#F4D27A\"/><path d=\"M300.3,221.1 L303.3,224.6 L300.3,228.1 L297.3,224.6Z\" fill=\"#1d1206\"/><path d=\"M322.4,213.8 L329.4,222.8 L322.4,231.8 L315.4,222.8Z\" fill=\"#F4D27A\"/><path d=\"M322.4,219.3 L325.4,222.8 L322.4,226.3 L319.4,222.8Z\" fill=\"#1d1206\"/><path d=\"M344.5,211.3 L351.5,220.3 L344.5,229.3 L337.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M344.5,216.8 L347.5,220.3 L344.5,223.8 L341.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M366.7,208.1 L373.7,217.1 L366.7,226.1 L359.7,217.1Z\" fill=\"#F4D27A\"/><path d=\"M366.7,213.6 L369.7,217.1 L366.7,220.6 L363.7,217.1Z\" fill=\"#1d1206\"/><path d=\"M388.8,204.2 L395.8,213.2 L388.8,222.2 L381.8,213.2Z\" fill=\"#F4D27A\"/><path d=\"M388.8,209.7 L391.8,213.2 L388.8,216.7 L385.8,213.2Z\" fill=\"#1d1206\"/><path d=\"M410.9,199.6 L417.9,208.6 L410.9,217.6 L403.9,208.6Z\" fill=\"#F4D27A\"/><path d=\"M410.9,205.1 L413.9,208.6 L410.9,212.1 L407.9,208.6Z\" fill=\"#1d1206\"/></g></g><ellipse cx=\"148\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 148 308)\" opacity=\"0.9\"/><ellipse cx=\"364\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 364 308)\" opacity=\"0.9\"/><path d=\"M181,272 Q205,234 229,272\" stroke=\"#2A2230\" stroke-width=\"9\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M283,272 Q307,234 331,272\" stroke=\"#2A2230\" stroke-width=\"9\" fill=\"none\" stroke-linecap=\"round\"/><clipPath id=\"jepi-mh\"><path d=\"M230,296 Q256,356 282,296 Z\"/></clipPath><path d=\"M230,296 Q256,356 282,296 Z\" fill=\"#7A2230\" stroke=\"#8A5A4A\" stroke-width=\"5\" stroke-linejoin=\"round\"/><g clip-path=\"url(#jepi-mh)\"><ellipse cx=\"256\" cy=\"324.5\" rx=\"14.3\" ry=\"9.6\" fill=\"#FF6F8E\"/></g><ellipse cx=\"100\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(18 100 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"412\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(-18 412 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><g transform=\"translate(0,-24)\"><path d=\"M398,206 L420,262 L438,256 L420,204Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M402,210 L424,262\" stroke=\"#F4D27A\" stroke-width=\"3\"/><path d=\"M392,208 L398,268 L416,266 L412,208Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M398,214 L402,266\" stroke=\"#F4D27A\" stroke-width=\"3\"/><ellipse cx=\"398\" cy=\"204\" rx=\"17\" ry=\"15\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\"/><path d=\"M390,200 L406,208 M390,208 L406,200\" stroke=\"#F4D27A\" stroke-width=\"3\"/></g><g transform=\"rotate(-8 258 140)\"><ellipse cx=\"224\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"214\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 214 133)\"/><ellipse cx=\"292\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"282\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 282 133)\"/><path d=\"M254,138 Q258,134 262,138\" stroke=\"#2A2230\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/></g></g></g></svg>", "star": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"64 0 384 400\" role=\"img\" aria-label=\"Jepi\">\n<defs>\n  <radialGradient id=\"jepi-bg\" cx=\"38%\" cy=\"28%\" r=\"80%\">\n    <stop offset=\"0\" stop-color=\"#FFE98A\"/><stop offset=\".45\" stop-color=\"#FFD43B\"/><stop offset=\"1\" stop-color=\"#F4B400\"/>\n  </radialGradient>\n  <clipPath id=\"jepi-bodyclip\"><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <clipPath id=\"jepi-bodyclip2\"><path transform=\"translate(0,30)\" d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <filter id=\"outline-unused\" x=\"-10%\" y=\"-10%\" width=\"120%\" height=\"120%\">\n    <feMorphology in=\"SourceAlpha\" operator=\"dilate\" radius=\"7\" result=\"d\"/>\n    <feFlood flood-color=\"#ffffff\" result=\"w\"/>\n    <feComposite in=\"w\" in2=\"d\" operator=\"in\" result=\"o\"/>\n    <feMerge><feMergeNode in=\"o\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n  </filter>\n</defs><g transform=\"translate(256,222) scale(.88) translate(-256,-222)\"><g transform=\"translate(0,0) translate(256,388) rotate(0) scale(1.0,1.0) translate(-256,-388)\"><circle cx=\"420\" cy=\"352\" r=\"38\" fill=\"#FF9DB0\" stroke=\"#E87C96\" stroke-width=\"4\"/><circle cx=\"432\" cy=\"340\" r=\"9\" fill=\"#FFC2CF\"/><g transform=\"translate(178,162) rotate(-18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><g transform=\"translate(334,162) rotate(18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><ellipse cx=\"200\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 200 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><ellipse cx=\"312\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 312 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\" fill=\"url(#jepi-bg)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"186\" cy=\"172\" rx=\"44\" ry=\"24\" fill=\"#ffffff\" transform=\"rotate(-35 186 172)\" opacity=\".75\"/><ellipse cx=\"124\" cy=\"238\" rx=\"7\" ry=\"14\" fill=\"#ffffff\" transform=\"rotate(-8 124 238)\" opacity=\".6\"/><g transform=\"translate(0,-30)\"><g clip-path=\"url(#jepi-bodyclip2)\"><path d=\"M90,206 Q256,246 422,206\" stroke=\"#B3201B\" stroke-width=\"34\" fill=\"none\"/><path d=\"M90,192 Q256,232 422,192\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,220 Q256,260 422,220\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,197 Q256,237 422,197\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M90,215 Q256,255 422,215\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M101.1,199.6 L108.1,208.6 L101.1,217.6 L94.1,208.6Z\" fill=\"#F4D27A\"/><path d=\"M101.1,205.1 L104.1,208.6 L101.1,212.1 L98.1,208.6Z\" fill=\"#1d1206\"/><path d=\"M123.2,204.2 L130.2,213.2 L123.2,222.2 L116.2,213.2Z\" fill=\"#F4D27A\"/><path d=\"M123.2,209.7 L126.2,213.2 L123.2,216.7 L120.2,213.2Z\" fill=\"#1d1206\"/><path d=\"M145.3,208.1 L152.3,217.1 L145.3,226.1 L138.3,217.1Z\" fill=\"#F4D27A\"/><path d=\"M145.3,213.6 L148.3,217.1 L145.3,220.6 L142.3,217.1Z\" fill=\"#1d1206\"/><path d=\"M167.5,211.3 L174.5,220.3 L167.5,229.3 L160.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M167.5,216.8 L170.5,220.3 L167.5,223.8 L164.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M189.6,213.8 L196.6,222.8 L189.6,231.8 L182.6,222.8Z\" fill=\"#F4D27A\"/><path d=\"M189.6,219.3 L192.6,222.8 L189.6,226.3 L186.6,222.8Z\" fill=\"#1d1206\"/><path d=\"M211.7,215.6 L218.7,224.6 L211.7,233.6 L204.7,224.6Z\" fill=\"#F4D27A\"/><path d=\"M211.7,221.1 L214.7,224.6 L211.7,228.1 L208.7,224.6Z\" fill=\"#1d1206\"/><path d=\"M233.9,216.6 L240.9,225.6 L233.9,234.6 L226.9,225.6Z\" fill=\"#F4D27A\"/><path d=\"M233.9,222.1 L236.9,225.6 L233.9,229.1 L230.9,225.6Z\" fill=\"#1d1206\"/><path d=\"M256.0,217.0 L263.0,226.0 L256.0,235.0 L249.0,226.0Z\" fill=\"#F4D27A\"/><path d=\"M256.0,222.5 L259.0,226.0 L256.0,229.5 L253.0,226.0Z\" fill=\"#1d1206\"/><path d=\"M278.1,216.6 L285.1,225.6 L278.1,234.6 L271.1,225.6Z\" fill=\"#F4D27A\"/><path d=\"M278.1,222.1 L281.1,225.6 L278.1,229.1 L275.1,225.6Z\" fill=\"#1d1206\"/><path d=\"M300.3,215.6 L307.3,224.6 L300.3,233.6 L293.3,224.6Z\" fill=\"#F4D27A\"/><path d=\"M300.3,221.1 L303.3,224.6 L300.3,228.1 L297.3,224.6Z\" fill=\"#1d1206\"/><path d=\"M322.4,213.8 L329.4,222.8 L322.4,231.8 L315.4,222.8Z\" fill=\"#F4D27A\"/><path d=\"M322.4,219.3 L325.4,222.8 L322.4,226.3 L319.4,222.8Z\" fill=\"#1d1206\"/><path d=\"M344.5,211.3 L351.5,220.3 L344.5,229.3 L337.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M344.5,216.8 L347.5,220.3 L344.5,223.8 L341.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M366.7,208.1 L373.7,217.1 L366.7,226.1 L359.7,217.1Z\" fill=\"#F4D27A\"/><path d=\"M366.7,213.6 L369.7,217.1 L366.7,220.6 L363.7,217.1Z\" fill=\"#1d1206\"/><path d=\"M388.8,204.2 L395.8,213.2 L388.8,222.2 L381.8,213.2Z\" fill=\"#F4D27A\"/><path d=\"M388.8,209.7 L391.8,213.2 L388.8,216.7 L385.8,213.2Z\" fill=\"#1d1206\"/><path d=\"M410.9,199.6 L417.9,208.6 L410.9,217.6 L403.9,208.6Z\" fill=\"#F4D27A\"/><path d=\"M410.9,205.1 L413.9,208.6 L410.9,212.1 L407.9,208.6Z\" fill=\"#1d1206\"/></g></g><ellipse cx=\"148\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 148 308)\" opacity=\"0.9\"/><ellipse cx=\"364\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 364 308)\" opacity=\"0.9\"/><ellipse cx=\"205\" cy=\"262\" rx=\"26\" ry=\"33\" fill=\"#2A2230\" transform=\"rotate(0 205 262)\" /><ellipse cx=\"307\" cy=\"262\" rx=\"26\" ry=\"33\" fill=\"#2A2230\" transform=\"rotate(0 307 262)\" /><path transform=\"translate(205,262) scale(1.5)\" fill=\"#FFE066\" stroke=\"#E8A800\" stroke-width=\"2\" d=\"M0,-18 L5,-6 L18,-5 L8,3 L11,16 L0,9 L-11,16 L-8,3 L-18,-5 L-5,-6Z\"/><path transform=\"translate(307,262) scale(1.5)\" fill=\"#FFE066\" stroke=\"#E8A800\" stroke-width=\"2\" d=\"M0,-18 L5,-6 L18,-5 L8,3 L11,16 L0,9 L-11,16 L-8,3 L-18,-5 L-5,-6Z\"/><clipPath id=\"jepi-ms\"><path d=\"M232,296 Q256,352 280,296 Z\"/></clipPath><path d=\"M232,296 Q256,352 280,296 Z\" fill=\"#7A2230\" stroke=\"#8A5A4A\" stroke-width=\"5\" stroke-linejoin=\"round\"/><g clip-path=\"url(#jepi-ms)\"><ellipse cx=\"256\" cy=\"322.6\" rx=\"13.200000000000001\" ry=\"8.96\" fill=\"#FF6F8E\"/></g><ellipse cx=\"100\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(18 100 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"412\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(-18 412 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><g transform=\"translate(0,-24)\"><path d=\"M398,206 L420,262 L438,256 L420,204Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M402,210 L424,262\" stroke=\"#F4D27A\" stroke-width=\"3\"/><path d=\"M392,208 L398,268 L416,266 L412,208Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M398,214 L402,266\" stroke=\"#F4D27A\" stroke-width=\"3\"/><ellipse cx=\"398\" cy=\"204\" rx=\"17\" ry=\"15\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\"/><path d=\"M390,200 L406,208 M390,208 L406,200\" stroke=\"#F4D27A\" stroke-width=\"3\"/></g><g transform=\"rotate(-8 258 140)\"><ellipse cx=\"224\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"214\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 214 133)\"/><ellipse cx=\"292\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"282\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 282 133)\"/><path d=\"M254,138 Q258,134 262,138\" stroke=\"#2A2230\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/></g></g></g></svg>", "love": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"64 0 384 400\" role=\"img\" aria-label=\"Jepi\">\n<defs>\n  <radialGradient id=\"jepi-bg\" cx=\"38%\" cy=\"28%\" r=\"80%\">\n    <stop offset=\"0\" stop-color=\"#FFE98A\"/><stop offset=\".45\" stop-color=\"#FFD43B\"/><stop offset=\"1\" stop-color=\"#F4B400\"/>\n  </radialGradient>\n  <clipPath id=\"jepi-bodyclip\"><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <clipPath id=\"jepi-bodyclip2\"><path transform=\"translate(0,30)\" d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <filter id=\"outline-unused\" x=\"-10%\" y=\"-10%\" width=\"120%\" height=\"120%\">\n    <feMorphology in=\"SourceAlpha\" operator=\"dilate\" radius=\"7\" result=\"d\"/>\n    <feFlood flood-color=\"#ffffff\" result=\"w\"/>\n    <feComposite in=\"w\" in2=\"d\" operator=\"in\" result=\"o\"/>\n    <feMerge><feMergeNode in=\"o\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n  </filter>\n</defs><g transform=\"translate(256,222) scale(.88) translate(-256,-222)\"><g transform=\"translate(0,0) translate(256,388) rotate(0) scale(1.0,1.0) translate(-256,-388)\"><circle cx=\"420\" cy=\"352\" r=\"38\" fill=\"#FF9DB0\" stroke=\"#E87C96\" stroke-width=\"4\"/><circle cx=\"432\" cy=\"340\" r=\"9\" fill=\"#FFC2CF\"/><g transform=\"translate(178,162) rotate(-18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><g transform=\"translate(334,162) rotate(18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><ellipse cx=\"200\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 200 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><ellipse cx=\"312\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 312 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\" fill=\"url(#jepi-bg)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"186\" cy=\"172\" rx=\"44\" ry=\"24\" fill=\"#ffffff\" transform=\"rotate(-35 186 172)\" opacity=\".75\"/><ellipse cx=\"124\" cy=\"238\" rx=\"7\" ry=\"14\" fill=\"#ffffff\" transform=\"rotate(-8 124 238)\" opacity=\".6\"/><g transform=\"translate(0,-30)\"><g clip-path=\"url(#jepi-bodyclip2)\"><path d=\"M90,206 Q256,246 422,206\" stroke=\"#B3201B\" stroke-width=\"34\" fill=\"none\"/><path d=\"M90,192 Q256,232 422,192\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,220 Q256,260 422,220\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,197 Q256,237 422,197\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M90,215 Q256,255 422,215\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M101.1,199.6 L108.1,208.6 L101.1,217.6 L94.1,208.6Z\" fill=\"#F4D27A\"/><path d=\"M101.1,205.1 L104.1,208.6 L101.1,212.1 L98.1,208.6Z\" fill=\"#1d1206\"/><path d=\"M123.2,204.2 L130.2,213.2 L123.2,222.2 L116.2,213.2Z\" fill=\"#F4D27A\"/><path d=\"M123.2,209.7 L126.2,213.2 L123.2,216.7 L120.2,213.2Z\" fill=\"#1d1206\"/><path d=\"M145.3,208.1 L152.3,217.1 L145.3,226.1 L138.3,217.1Z\" fill=\"#F4D27A\"/><path d=\"M145.3,213.6 L148.3,217.1 L145.3,220.6 L142.3,217.1Z\" fill=\"#1d1206\"/><path d=\"M167.5,211.3 L174.5,220.3 L167.5,229.3 L160.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M167.5,216.8 L170.5,220.3 L167.5,223.8 L164.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M189.6,213.8 L196.6,222.8 L189.6,231.8 L182.6,222.8Z\" fill=\"#F4D27A\"/><path d=\"M189.6,219.3 L192.6,222.8 L189.6,226.3 L186.6,222.8Z\" fill=\"#1d1206\"/><path d=\"M211.7,215.6 L218.7,224.6 L211.7,233.6 L204.7,224.6Z\" fill=\"#F4D27A\"/><path d=\"M211.7,221.1 L214.7,224.6 L211.7,228.1 L208.7,224.6Z\" fill=\"#1d1206\"/><path d=\"M233.9,216.6 L240.9,225.6 L233.9,234.6 L226.9,225.6Z\" fill=\"#F4D27A\"/><path d=\"M233.9,222.1 L236.9,225.6 L233.9,229.1 L230.9,225.6Z\" fill=\"#1d1206\"/><path d=\"M256.0,217.0 L263.0,226.0 L256.0,235.0 L249.0,226.0Z\" fill=\"#F4D27A\"/><path d=\"M256.0,222.5 L259.0,226.0 L256.0,229.5 L253.0,226.0Z\" fill=\"#1d1206\"/><path d=\"M278.1,216.6 L285.1,225.6 L278.1,234.6 L271.1,225.6Z\" fill=\"#F4D27A\"/><path d=\"M278.1,222.1 L281.1,225.6 L278.1,229.1 L275.1,225.6Z\" fill=\"#1d1206\"/><path d=\"M300.3,215.6 L307.3,224.6 L300.3,233.6 L293.3,224.6Z\" fill=\"#F4D27A\"/><path d=\"M300.3,221.1 L303.3,224.6 L300.3,228.1 L297.3,224.6Z\" fill=\"#1d1206\"/><path d=\"M322.4,213.8 L329.4,222.8 L322.4,231.8 L315.4,222.8Z\" fill=\"#F4D27A\"/><path d=\"M322.4,219.3 L325.4,222.8 L322.4,226.3 L319.4,222.8Z\" fill=\"#1d1206\"/><path d=\"M344.5,211.3 L351.5,220.3 L344.5,229.3 L337.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M344.5,216.8 L347.5,220.3 L344.5,223.8 L341.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M366.7,208.1 L373.7,217.1 L366.7,226.1 L359.7,217.1Z\" fill=\"#F4D27A\"/><path d=\"M366.7,213.6 L369.7,217.1 L366.7,220.6 L363.7,217.1Z\" fill=\"#1d1206\"/><path d=\"M388.8,204.2 L395.8,213.2 L388.8,222.2 L381.8,213.2Z\" fill=\"#F4D27A\"/><path d=\"M388.8,209.7 L391.8,213.2 L388.8,216.7 L385.8,213.2Z\" fill=\"#1d1206\"/><path d=\"M410.9,199.6 L417.9,208.6 L410.9,217.6 L403.9,208.6Z\" fill=\"#F4D27A\"/><path d=\"M410.9,205.1 L413.9,208.6 L410.9,212.1 L407.9,208.6Z\" fill=\"#1d1206\"/></g></g><ellipse cx=\"148\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 148 308)\" opacity=\"0.9\"/><ellipse cx=\"364\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 364 308)\" opacity=\"0.9\"/><path transform=\"translate(205,264) scale(1.35)\" fill=\"#E8264F\" d=\"M0,14 C-26,-4 -20,-30 0,-14 C20,-30 26,-4 0,14Z\"/><circle cx=\"196\" cy=\"250\" r=\"5\" fill=\"#fff\"/><path transform=\"translate(307,264) scale(1.35)\" fill=\"#E8264F\" d=\"M0,14 C-26,-4 -20,-30 0,-14 C20,-30 26,-4 0,14Z\"/><circle cx=\"298\" cy=\"250\" r=\"5\" fill=\"#fff\"/><path d=\"M230,304 Q243,324 256,306 Q269,324 282,304\" stroke=\"#8A5A4A\" stroke-width=\"6\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><ellipse cx=\"100\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(18 100 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"412\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(-18 412 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><g transform=\"translate(0,-24)\"><path d=\"M398,206 L420,262 L438,256 L420,204Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M402,210 L424,262\" stroke=\"#F4D27A\" stroke-width=\"3\"/><path d=\"M392,208 L398,268 L416,266 L412,208Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M398,214 L402,266\" stroke=\"#F4D27A\" stroke-width=\"3\"/><ellipse cx=\"398\" cy=\"204\" rx=\"17\" ry=\"15\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\"/><path d=\"M390,200 L406,208 M390,208 L406,200\" stroke=\"#F4D27A\" stroke-width=\"3\"/></g><g transform=\"rotate(-8 258 140)\"><ellipse cx=\"224\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"214\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 214 133)\"/><ellipse cx=\"292\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"282\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 282 133)\"/><path d=\"M254,138 Q258,134 262,138\" stroke=\"#2A2230\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/></g></g></g></svg>", "sleepy": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"64 0 384 400\" role=\"img\" aria-label=\"Jepi\">\n<defs>\n  <radialGradient id=\"jepi-bg\" cx=\"38%\" cy=\"28%\" r=\"80%\">\n    <stop offset=\"0\" stop-color=\"#FFE98A\"/><stop offset=\".45\" stop-color=\"#FFD43B\"/><stop offset=\"1\" stop-color=\"#F4B400\"/>\n  </radialGradient>\n  <clipPath id=\"jepi-bodyclip\"><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <clipPath id=\"jepi-bodyclip2\"><path transform=\"translate(0,30)\" d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <filter id=\"outline-unused\" x=\"-10%\" y=\"-10%\" width=\"120%\" height=\"120%\">\n    <feMorphology in=\"SourceAlpha\" operator=\"dilate\" radius=\"7\" result=\"d\"/>\n    <feFlood flood-color=\"#ffffff\" result=\"w\"/>\n    <feComposite in=\"w\" in2=\"d\" operator=\"in\" result=\"o\"/>\n    <feMerge><feMergeNode in=\"o\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n  </filter>\n</defs><g transform=\"translate(256,222) scale(.88) translate(-256,-222)\"><g transform=\"translate(0,0) translate(256,388) rotate(0) scale(1.0,1.0) translate(-256,-388)\"><circle cx=\"420\" cy=\"352\" r=\"38\" fill=\"#FF9DB0\" stroke=\"#E87C96\" stroke-width=\"4\"/><circle cx=\"432\" cy=\"340\" r=\"9\" fill=\"#FFC2CF\"/><g transform=\"translate(178,162) rotate(-18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><g transform=\"translate(334,162) rotate(18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><ellipse cx=\"200\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 200 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><ellipse cx=\"312\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 312 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\" fill=\"url(#jepi-bg)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"186\" cy=\"172\" rx=\"44\" ry=\"24\" fill=\"#ffffff\" transform=\"rotate(-35 186 172)\" opacity=\".75\"/><ellipse cx=\"124\" cy=\"238\" rx=\"7\" ry=\"14\" fill=\"#ffffff\" transform=\"rotate(-8 124 238)\" opacity=\".6\"/><g transform=\"translate(0,-30)\"><g clip-path=\"url(#jepi-bodyclip2)\"><path d=\"M90,206 Q256,246 422,206\" stroke=\"#B3201B\" stroke-width=\"34\" fill=\"none\"/><path d=\"M90,192 Q256,232 422,192\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,220 Q256,260 422,220\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,197 Q256,237 422,197\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M90,215 Q256,255 422,215\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M101.1,199.6 L108.1,208.6 L101.1,217.6 L94.1,208.6Z\" fill=\"#F4D27A\"/><path d=\"M101.1,205.1 L104.1,208.6 L101.1,212.1 L98.1,208.6Z\" fill=\"#1d1206\"/><path d=\"M123.2,204.2 L130.2,213.2 L123.2,222.2 L116.2,213.2Z\" fill=\"#F4D27A\"/><path d=\"M123.2,209.7 L126.2,213.2 L123.2,216.7 L120.2,213.2Z\" fill=\"#1d1206\"/><path d=\"M145.3,208.1 L152.3,217.1 L145.3,226.1 L138.3,217.1Z\" fill=\"#F4D27A\"/><path d=\"M145.3,213.6 L148.3,217.1 L145.3,220.6 L142.3,217.1Z\" fill=\"#1d1206\"/><path d=\"M167.5,211.3 L174.5,220.3 L167.5,229.3 L160.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M167.5,216.8 L170.5,220.3 L167.5,223.8 L164.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M189.6,213.8 L196.6,222.8 L189.6,231.8 L182.6,222.8Z\" fill=\"#F4D27A\"/><path d=\"M189.6,219.3 L192.6,222.8 L189.6,226.3 L186.6,222.8Z\" fill=\"#1d1206\"/><path d=\"M211.7,215.6 L218.7,224.6 L211.7,233.6 L204.7,224.6Z\" fill=\"#F4D27A\"/><path d=\"M211.7,221.1 L214.7,224.6 L211.7,228.1 L208.7,224.6Z\" fill=\"#1d1206\"/><path d=\"M233.9,216.6 L240.9,225.6 L233.9,234.6 L226.9,225.6Z\" fill=\"#F4D27A\"/><path d=\"M233.9,222.1 L236.9,225.6 L233.9,229.1 L230.9,225.6Z\" fill=\"#1d1206\"/><path d=\"M256.0,217.0 L263.0,226.0 L256.0,235.0 L249.0,226.0Z\" fill=\"#F4D27A\"/><path d=\"M256.0,222.5 L259.0,226.0 L256.0,229.5 L253.0,226.0Z\" fill=\"#1d1206\"/><path d=\"M278.1,216.6 L285.1,225.6 L278.1,234.6 L271.1,225.6Z\" fill=\"#F4D27A\"/><path d=\"M278.1,222.1 L281.1,225.6 L278.1,229.1 L275.1,225.6Z\" fill=\"#1d1206\"/><path d=\"M300.3,215.6 L307.3,224.6 L300.3,233.6 L293.3,224.6Z\" fill=\"#F4D27A\"/><path d=\"M300.3,221.1 L303.3,224.6 L300.3,228.1 L297.3,224.6Z\" fill=\"#1d1206\"/><path d=\"M322.4,213.8 L329.4,222.8 L322.4,231.8 L315.4,222.8Z\" fill=\"#F4D27A\"/><path d=\"M322.4,219.3 L325.4,222.8 L322.4,226.3 L319.4,222.8Z\" fill=\"#1d1206\"/><path d=\"M344.5,211.3 L351.5,220.3 L344.5,229.3 L337.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M344.5,216.8 L347.5,220.3 L344.5,223.8 L341.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M366.7,208.1 L373.7,217.1 L366.7,226.1 L359.7,217.1Z\" fill=\"#F4D27A\"/><path d=\"M366.7,213.6 L369.7,217.1 L366.7,220.6 L363.7,217.1Z\" fill=\"#1d1206\"/><path d=\"M388.8,204.2 L395.8,213.2 L388.8,222.2 L381.8,213.2Z\" fill=\"#F4D27A\"/><path d=\"M388.8,209.7 L391.8,213.2 L388.8,216.7 L385.8,213.2Z\" fill=\"#1d1206\"/><path d=\"M410.9,199.6 L417.9,208.6 L410.9,217.6 L403.9,208.6Z\" fill=\"#F4D27A\"/><path d=\"M410.9,205.1 L413.9,208.6 L410.9,212.1 L407.9,208.6Z\" fill=\"#1d1206\"/></g></g><ellipse cx=\"148\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 148 308)\" opacity=\"0.9\"/><ellipse cx=\"364\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 364 308)\" opacity=\"0.9\"/><ellipse cx=\"205\" cy=\"262\" rx=\"24\" ry=\"31\" fill=\"#2A2230\" transform=\"rotate(0 205 262)\" /><circle cx=\"197\" cy=\"254.5\" r=\"8.5\" fill=\"#fff\"/><circle cx=\"214\" cy=\"275.5\" r=\"4.2\" fill=\"#fff\"/><path d=\"M177,222 L233,222 L233,258 L177,258Z\" fill=\"#FFD43B\"/><path d=\"M179,258 L231,258\" stroke=\"#2A2230\" stroke-width=\"6\" stroke-linecap=\"round\"/><ellipse cx=\"307\" cy=\"262\" rx=\"24\" ry=\"31\" fill=\"#2A2230\" transform=\"rotate(0 307 262)\" /><circle cx=\"299\" cy=\"254.5\" r=\"8.5\" fill=\"#fff\"/><circle cx=\"316\" cy=\"275.5\" r=\"4.2\" fill=\"#fff\"/><path d=\"M279,222 L335,222 L335,258 L279,258Z\" fill=\"#FFD43B\"/><path d=\"M281,258 L333,258\" stroke=\"#2A2230\" stroke-width=\"6\" stroke-linecap=\"round\"/><path d=\"M179,220 L229,210\" stroke=\"#2A2230\" stroke-width=\"8\" stroke-linecap=\"round\"/><path d=\"M333,220 L283,210\" stroke=\"#2A2230\" stroke-width=\"8\" stroke-linecap=\"round\"/><path d=\"M238,312 Q256,304 274,312\" stroke=\"#8A5A4A\" stroke-width=\"6\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"100\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(18 100 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"412\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(-18 412 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><g transform=\"translate(0,-24)\"><path d=\"M398,206 L420,262 L438,256 L420,204Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M402,210 L424,262\" stroke=\"#F4D27A\" stroke-width=\"3\"/><path d=\"M392,208 L398,268 L416,266 L412,208Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M398,214 L402,266\" stroke=\"#F4D27A\" stroke-width=\"3\"/><ellipse cx=\"398\" cy=\"204\" rx=\"17\" ry=\"15\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\"/><path d=\"M390,200 L406,208 M390,208 L406,200\" stroke=\"#F4D27A\" stroke-width=\"3\"/></g><g transform=\"rotate(-8 258 140)\"><ellipse cx=\"224\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"214\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 214 133)\"/><ellipse cx=\"292\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"282\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 282 133)\"/><path d=\"M254,138 Q258,134 262,138\" stroke=\"#2A2230\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/></g></g></g></svg>", "smirk": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"64 0 384 400\" role=\"img\" aria-label=\"Jepi\">\n<defs>\n  <radialGradient id=\"jepi-bg\" cx=\"38%\" cy=\"28%\" r=\"80%\">\n    <stop offset=\"0\" stop-color=\"#FFE98A\"/><stop offset=\".45\" stop-color=\"#FFD43B\"/><stop offset=\"1\" stop-color=\"#F4B400\"/>\n  </radialGradient>\n  <clipPath id=\"jepi-bodyclip\"><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <clipPath id=\"jepi-bodyclip2\"><path transform=\"translate(0,30)\" d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <filter id=\"outline-unused\" x=\"-10%\" y=\"-10%\" width=\"120%\" height=\"120%\">\n    <feMorphology in=\"SourceAlpha\" operator=\"dilate\" radius=\"7\" result=\"d\"/>\n    <feFlood flood-color=\"#ffffff\" result=\"w\"/>\n    <feComposite in=\"w\" in2=\"d\" operator=\"in\" result=\"o\"/>\n    <feMerge><feMergeNode in=\"o\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n  </filter>\n</defs><g transform=\"translate(256,222) scale(.88) translate(-256,-222)\"><g transform=\"translate(0,0) translate(256,388) rotate(0) scale(1.0,1.0) translate(-256,-388)\"><circle cx=\"420\" cy=\"352\" r=\"38\" fill=\"#FF9DB0\" stroke=\"#E87C96\" stroke-width=\"4\"/><circle cx=\"432\" cy=\"340\" r=\"9\" fill=\"#FFC2CF\"/><g transform=\"translate(178,162) rotate(-18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><g transform=\"translate(334,162) rotate(18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><ellipse cx=\"200\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 200 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><ellipse cx=\"312\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 312 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\" fill=\"url(#jepi-bg)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"186\" cy=\"172\" rx=\"44\" ry=\"24\" fill=\"#ffffff\" transform=\"rotate(-35 186 172)\" opacity=\".75\"/><ellipse cx=\"124\" cy=\"238\" rx=\"7\" ry=\"14\" fill=\"#ffffff\" transform=\"rotate(-8 124 238)\" opacity=\".6\"/><g transform=\"translate(0,-30)\"><g clip-path=\"url(#jepi-bodyclip2)\"><path d=\"M90,206 Q256,246 422,206\" stroke=\"#B3201B\" stroke-width=\"34\" fill=\"none\"/><path d=\"M90,192 Q256,232 422,192\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,220 Q256,260 422,220\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,197 Q256,237 422,197\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M90,215 Q256,255 422,215\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M101.1,199.6 L108.1,208.6 L101.1,217.6 L94.1,208.6Z\" fill=\"#F4D27A\"/><path d=\"M101.1,205.1 L104.1,208.6 L101.1,212.1 L98.1,208.6Z\" fill=\"#1d1206\"/><path d=\"M123.2,204.2 L130.2,213.2 L123.2,222.2 L116.2,213.2Z\" fill=\"#F4D27A\"/><path d=\"M123.2,209.7 L126.2,213.2 L123.2,216.7 L120.2,213.2Z\" fill=\"#1d1206\"/><path d=\"M145.3,208.1 L152.3,217.1 L145.3,226.1 L138.3,217.1Z\" fill=\"#F4D27A\"/><path d=\"M145.3,213.6 L148.3,217.1 L145.3,220.6 L142.3,217.1Z\" fill=\"#1d1206\"/><path d=\"M167.5,211.3 L174.5,220.3 L167.5,229.3 L160.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M167.5,216.8 L170.5,220.3 L167.5,223.8 L164.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M189.6,213.8 L196.6,222.8 L189.6,231.8 L182.6,222.8Z\" fill=\"#F4D27A\"/><path d=\"M189.6,219.3 L192.6,222.8 L189.6,226.3 L186.6,222.8Z\" fill=\"#1d1206\"/><path d=\"M211.7,215.6 L218.7,224.6 L211.7,233.6 L204.7,224.6Z\" fill=\"#F4D27A\"/><path d=\"M211.7,221.1 L214.7,224.6 L211.7,228.1 L208.7,224.6Z\" fill=\"#1d1206\"/><path d=\"M233.9,216.6 L240.9,225.6 L233.9,234.6 L226.9,225.6Z\" fill=\"#F4D27A\"/><path d=\"M233.9,222.1 L236.9,225.6 L233.9,229.1 L230.9,225.6Z\" fill=\"#1d1206\"/><path d=\"M256.0,217.0 L263.0,226.0 L256.0,235.0 L249.0,226.0Z\" fill=\"#F4D27A\"/><path d=\"M256.0,222.5 L259.0,226.0 L256.0,229.5 L253.0,226.0Z\" fill=\"#1d1206\"/><path d=\"M278.1,216.6 L285.1,225.6 L278.1,234.6 L271.1,225.6Z\" fill=\"#F4D27A\"/><path d=\"M278.1,222.1 L281.1,225.6 L278.1,229.1 L275.1,225.6Z\" fill=\"#1d1206\"/><path d=\"M300.3,215.6 L307.3,224.6 L300.3,233.6 L293.3,224.6Z\" fill=\"#F4D27A\"/><path d=\"M300.3,221.1 L303.3,224.6 L300.3,228.1 L297.3,224.6Z\" fill=\"#1d1206\"/><path d=\"M322.4,213.8 L329.4,222.8 L322.4,231.8 L315.4,222.8Z\" fill=\"#F4D27A\"/><path d=\"M322.4,219.3 L325.4,222.8 L322.4,226.3 L319.4,222.8Z\" fill=\"#1d1206\"/><path d=\"M344.5,211.3 L351.5,220.3 L344.5,229.3 L337.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M344.5,216.8 L347.5,220.3 L344.5,223.8 L341.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M366.7,208.1 L373.7,217.1 L366.7,226.1 L359.7,217.1Z\" fill=\"#F4D27A\"/><path d=\"M366.7,213.6 L369.7,217.1 L366.7,220.6 L363.7,217.1Z\" fill=\"#1d1206\"/><path d=\"M388.8,204.2 L395.8,213.2 L388.8,222.2 L381.8,213.2Z\" fill=\"#F4D27A\"/><path d=\"M388.8,209.7 L391.8,213.2 L388.8,216.7 L385.8,213.2Z\" fill=\"#1d1206\"/><path d=\"M410.9,199.6 L417.9,208.6 L410.9,217.6 L403.9,208.6Z\" fill=\"#F4D27A\"/><path d=\"M410.9,205.1 L413.9,208.6 L410.9,212.1 L407.9,208.6Z\" fill=\"#1d1206\"/></g></g><ellipse cx=\"148\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 148 308)\" opacity=\"0.9\"/><ellipse cx=\"364\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 364 308)\" opacity=\"0.9\"/><path d=\"M179,222 Q205,200 231,220\" stroke=\"#2A2230\" stroke-width=\"9\" fill=\"none\" stroke-linecap=\"round\"/><path d=\"M335,212 L283,232\" stroke=\"#2A2230\" stroke-width=\"9\" stroke-linecap=\"round\"/><ellipse cx=\"205\" cy=\"262\" rx=\"24\" ry=\"31\" fill=\"#2A2230\" transform=\"rotate(0 205 262)\" /><circle cx=\"204\" cy=\"251.7\" r=\"8.5\" fill=\"#fff\"/><circle cx=\"221\" cy=\"272.7\" r=\"4.2\" fill=\"#fff\"/><path d=\"M177,222 L233,222 L233,264 L177,248Z\" fill=\"#FFD43B\"/><path d=\"M177,248 L233,264\" stroke=\"#2A2230\" stroke-width=\"6\" stroke-linecap=\"round\"/><ellipse cx=\"307\" cy=\"262\" rx=\"24\" ry=\"31\" fill=\"#2A2230\" transform=\"rotate(0 307 262)\" /><circle cx=\"306\" cy=\"251.7\" r=\"8.5\" fill=\"#fff\"/><circle cx=\"323\" cy=\"272.7\" r=\"4.2\" fill=\"#fff\"/><path d=\"M335,222 L279,222 L279,264 L335,248Z\" fill=\"#FFD43B\"/><path d=\"M335,248 L279,264\" stroke=\"#2A2230\" stroke-width=\"6\" stroke-linecap=\"round\"/><path d=\"M226,312 Q250,328 276,316 Q294,308 300,290\" stroke=\"#8A5A4A\" stroke-width=\"7\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"100\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(18 100 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"412\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(-18 412 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><g transform=\"translate(0,-24)\"><path d=\"M398,206 L420,262 L438,256 L420,204Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M402,210 L424,262\" stroke=\"#F4D27A\" stroke-width=\"3\"/><path d=\"M392,208 L398,268 L416,266 L412,208Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M398,214 L402,266\" stroke=\"#F4D27A\" stroke-width=\"3\"/><ellipse cx=\"398\" cy=\"204\" rx=\"17\" ry=\"15\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\"/><path d=\"M390,200 L406,208 M390,208 L406,200\" stroke=\"#F4D27A\" stroke-width=\"3\"/></g><g transform=\"rotate(-8 258 140)\"><ellipse cx=\"224\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"214\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 214 133)\"/><ellipse cx=\"292\" cy=\"140\" rx=\"31\" ry=\"19\" fill=\"#2A2230\" stroke=\"#5a5070\" stroke-width=\"3\"/><ellipse cx=\"282\" cy=\"133\" rx=\"12\" ry=\"3.2\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-12 282 133)\"/><path d=\"M254,138 Q258,134 262,138\" stroke=\"#2A2230\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/></g></g></g></svg>", "cool": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"64 0 384 400\" role=\"img\" aria-label=\"Jepi\">\n<defs>\n  <radialGradient id=\"jepi-bg\" cx=\"38%\" cy=\"28%\" r=\"80%\">\n    <stop offset=\"0\" stop-color=\"#FFE98A\"/><stop offset=\".45\" stop-color=\"#FFD43B\"/><stop offset=\"1\" stop-color=\"#F4B400\"/>\n  </radialGradient>\n  <clipPath id=\"jepi-bodyclip\"><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <clipPath id=\"jepi-bodyclip2\"><path transform=\"translate(0,30)\" d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\"/></clipPath>\n  <filter id=\"outline-unused\" x=\"-10%\" y=\"-10%\" width=\"120%\" height=\"120%\">\n    <feMorphology in=\"SourceAlpha\" operator=\"dilate\" radius=\"7\" result=\"d\"/>\n    <feFlood flood-color=\"#ffffff\" result=\"w\"/>\n    <feComposite in=\"w\" in2=\"d\" operator=\"in\" result=\"o\"/>\n    <feMerge><feMergeNode in=\"o\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n  </filter>\n</defs><g transform=\"translate(256,222) scale(.88) translate(-256,-222)\"><g transform=\"translate(0,0) translate(256,388) rotate(0) scale(1.0,1.0) translate(-256,-388)\"><circle cx=\"420\" cy=\"352\" r=\"38\" fill=\"#FF9DB0\" stroke=\"#E87C96\" stroke-width=\"4\"/><circle cx=\"432\" cy=\"340\" r=\"9\" fill=\"#FFC2CF\"/><g transform=\"translate(178,162) rotate(-18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><g transform=\"translate(334,162) rotate(18)\"><path d=\"M0,0 C-46,-24 -46,-110 2,-182 C44,-112 46,-26 0,0Z\" fill=\"#FFB52E\" stroke=\"#E89A10\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M0,-12 C-26,-30 -26,-96 2,-146 C26,-98 26,-32 0,-12Z\" fill=\"#FF9DB0\"/></g><ellipse cx=\"200\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 200 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><ellipse cx=\"312\" cy=\"388\" rx=\"54\" ry=\"26\" fill=\"#FFBE2E\" transform=\"rotate(0 312 388)\" stroke=\"#E89A10\" stroke-width=\"4\"/><path d=\"M101,282 C101,190 170,128 256,128 C342,128 411,190 411,282 C411,342 380,374 330,374 L182,374 C132,374 101,342 101,282 Z\" fill=\"url(#jepi-bg)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"186\" cy=\"172\" rx=\"44\" ry=\"24\" fill=\"#ffffff\" transform=\"rotate(-35 186 172)\" opacity=\".75\"/><ellipse cx=\"124\" cy=\"238\" rx=\"7\" ry=\"14\" fill=\"#ffffff\" transform=\"rotate(-8 124 238)\" opacity=\".6\"/><g transform=\"translate(0,-30)\"><g clip-path=\"url(#jepi-bodyclip2)\"><path d=\"M90,206 Q256,246 422,206\" stroke=\"#B3201B\" stroke-width=\"34\" fill=\"none\"/><path d=\"M90,192 Q256,232 422,192\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,220 Q256,260 422,220\" stroke=\"#1d1206\" stroke-width=\"5\" fill=\"none\"/><path d=\"M90,197 Q256,237 422,197\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M90,215 Q256,255 422,215\" stroke=\"#F4D27A\" stroke-width=\"3\" fill=\"none\"/><path d=\"M101.1,199.6 L108.1,208.6 L101.1,217.6 L94.1,208.6Z\" fill=\"#F4D27A\"/><path d=\"M101.1,205.1 L104.1,208.6 L101.1,212.1 L98.1,208.6Z\" fill=\"#1d1206\"/><path d=\"M123.2,204.2 L130.2,213.2 L123.2,222.2 L116.2,213.2Z\" fill=\"#F4D27A\"/><path d=\"M123.2,209.7 L126.2,213.2 L123.2,216.7 L120.2,213.2Z\" fill=\"#1d1206\"/><path d=\"M145.3,208.1 L152.3,217.1 L145.3,226.1 L138.3,217.1Z\" fill=\"#F4D27A\"/><path d=\"M145.3,213.6 L148.3,217.1 L145.3,220.6 L142.3,217.1Z\" fill=\"#1d1206\"/><path d=\"M167.5,211.3 L174.5,220.3 L167.5,229.3 L160.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M167.5,216.8 L170.5,220.3 L167.5,223.8 L164.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M189.6,213.8 L196.6,222.8 L189.6,231.8 L182.6,222.8Z\" fill=\"#F4D27A\"/><path d=\"M189.6,219.3 L192.6,222.8 L189.6,226.3 L186.6,222.8Z\" fill=\"#1d1206\"/><path d=\"M211.7,215.6 L218.7,224.6 L211.7,233.6 L204.7,224.6Z\" fill=\"#F4D27A\"/><path d=\"M211.7,221.1 L214.7,224.6 L211.7,228.1 L208.7,224.6Z\" fill=\"#1d1206\"/><path d=\"M233.9,216.6 L240.9,225.6 L233.9,234.6 L226.9,225.6Z\" fill=\"#F4D27A\"/><path d=\"M233.9,222.1 L236.9,225.6 L233.9,229.1 L230.9,225.6Z\" fill=\"#1d1206\"/><path d=\"M256.0,217.0 L263.0,226.0 L256.0,235.0 L249.0,226.0Z\" fill=\"#F4D27A\"/><path d=\"M256.0,222.5 L259.0,226.0 L256.0,229.5 L253.0,226.0Z\" fill=\"#1d1206\"/><path d=\"M278.1,216.6 L285.1,225.6 L278.1,234.6 L271.1,225.6Z\" fill=\"#F4D27A\"/><path d=\"M278.1,222.1 L281.1,225.6 L278.1,229.1 L275.1,225.6Z\" fill=\"#1d1206\"/><path d=\"M300.3,215.6 L307.3,224.6 L300.3,233.6 L293.3,224.6Z\" fill=\"#F4D27A\"/><path d=\"M300.3,221.1 L303.3,224.6 L300.3,228.1 L297.3,224.6Z\" fill=\"#1d1206\"/><path d=\"M322.4,213.8 L329.4,222.8 L322.4,231.8 L315.4,222.8Z\" fill=\"#F4D27A\"/><path d=\"M322.4,219.3 L325.4,222.8 L322.4,226.3 L319.4,222.8Z\" fill=\"#1d1206\"/><path d=\"M344.5,211.3 L351.5,220.3 L344.5,229.3 L337.5,220.3Z\" fill=\"#F4D27A\"/><path d=\"M344.5,216.8 L347.5,220.3 L344.5,223.8 L341.5,220.3Z\" fill=\"#1d1206\"/><path d=\"M366.7,208.1 L373.7,217.1 L366.7,226.1 L359.7,217.1Z\" fill=\"#F4D27A\"/><path d=\"M366.7,213.6 L369.7,217.1 L366.7,220.6 L363.7,217.1Z\" fill=\"#1d1206\"/><path d=\"M388.8,204.2 L395.8,213.2 L388.8,222.2 L381.8,213.2Z\" fill=\"#F4D27A\"/><path d=\"M388.8,209.7 L391.8,213.2 L388.8,216.7 L385.8,213.2Z\" fill=\"#1d1206\"/><path d=\"M410.9,199.6 L417.9,208.6 L410.9,217.6 L403.9,208.6Z\" fill=\"#F4D27A\"/><path d=\"M410.9,205.1 L413.9,208.6 L410.9,212.1 L407.9,208.6Z\" fill=\"#1d1206\"/></g></g><ellipse cx=\"148\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 148 308)\" opacity=\"0.9\"/><ellipse cx=\"364\" cy=\"308\" rx=\"28\" ry=\"17\" fill=\"#FF9E8A\" transform=\"rotate(0 364 308)\" opacity=\"0.9\"/><path d=\"M163,258 L150,254 M349,258 L362,254\" stroke=\"#2A2230\" stroke-width=\"7\" stroke-linecap=\"round\"/><rect x=\"248\" y=\"252\" width=\"16\" height=\"9\" rx=\"4\" fill=\"#2A2230\"/><ellipse cx=\"205\" cy=\"262\" rx=\"46\" ry=\"33\" fill=\"#2A2230\"/><ellipse cx=\"307\" cy=\"262\" rx=\"46\" ry=\"33\" fill=\"#2A2230\"/><ellipse cx=\"191\" cy=\"248\" rx=\"17\" ry=\"4.5\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-14 191 248)\"/><ellipse cx=\"293\" cy=\"248\" rx=\"17\" ry=\"4.5\" fill=\"#fff\" opacity=\".55\" transform=\"rotate(-14 293 248)\"/><path d=\"M226,312 Q250,328 276,316 Q294,308 300,290\" stroke=\"#8A5A4A\" stroke-width=\"7\" fill=\"none\" stroke-linecap=\"round\"/><ellipse cx=\"100\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(18 100 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><ellipse cx=\"412\" cy=\"328\" rx=\"24\" ry=\"44\" fill=\"#FFD43B\" transform=\"rotate(-18 412 328)\" stroke=\"#F0B400\" stroke-width=\"5\"/><g transform=\"translate(0,-24)\"><path d=\"M398,206 L420,262 L438,256 L420,204Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M402,210 L424,262\" stroke=\"#F4D27A\" stroke-width=\"3\"/><path d=\"M392,208 L398,268 L416,266 L412,208Z\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M398,214 L402,266\" stroke=\"#F4D27A\" stroke-width=\"3\"/><ellipse cx=\"398\" cy=\"204\" rx=\"17\" ry=\"15\" fill=\"#B3201B\" stroke=\"#1d1206\" stroke-width=\"3\"/><path d=\"M390,200 L406,208 M390,208 L406,200\" stroke=\"#F4D27A\" stroke-width=\"3\"/></g></g></g></svg>"};})();
+/* Jepi di Buku Job: kartu Beranda (admin & tim). Satu Jepi dipindah-pindah antar halaman.
+   Interaktif: sambutan, bereaksi pada perubahan data (job baru, tugas selesai), info saat diketuk, celetukan berkala. */
+(function(){
+var JOKES={
+ semangat:['Gas, gas, gas!','Kamera siap, Jepi juga siap!','Hari ini pasti keren hasilnya.'],
+ fokus:['Ssst... lagi fokus. Eh, tapi boleh dicolek kok.','Satu per satu, pasti beres.','Fokus dulu, kopi nanti.'],
+ cemas:['Tenang, ayo kita kejar pelan-pelan.','Duh... tapi pasti keburu kok!','Satu tugas dulu yuk, jangan panik.'],
+ bangga:['Beres semua! Jepi bangga banget.','Mantap! Boleh dong libur sebentar.','Keren! Tepuk tangan dari Jepi.'],
+ ngantuk:['Hoaam... udah malam lho.','Tidur dulu yuk, besok lanjut.','Jepi juga ngantuk nih...'],
+ santai:['Santai dulu, dunia nggak akan kabur.','Lagi nggak ada yang mendesak. Aman!','Waktunya ngopi?'],
+ senang:['Hehe, halo!','Hari yang bagus ya!','Jepi senang lihat kamu.'],
+ jahil:['Kacamatanya kupinjam dulu ya.','Eh, tadi ada yang colek Jepi!','Hehe... cuma iseng.']
+};
+var st={taps:[],n:0,last:null,timer:null,rev:null,hi:false};
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function A(host,k){return host.getAttribute('data-'+k)||''}
+function bub(host){var c=host.closest('[data-jepi-card]');return c&&c.querySelector('.jepi-say span')}
+function say(host,txt,o){
+  o=o||{};var inst=window.Jepi&&Jepi._inst,b=bub(host);
+  if(b&&txt){b.textContent=txt;b.style.animation='none';void b.offsetWidth;b.style.animation=''}
+  if(!inst)return;
+  if(o.mood)inst.setMood(o.mood);
+  if(o.act)inst.act(o.act);
+  if(txt)inst.talk(Math.min(3.5,.6+txt.length/28));
+  clearTimeout(st.rev);
+  if(o.mood)st.rev=setTimeout(function(){try{inst.setMood(A(host,'mood')||'senang')}catch(e){}},o.ttl||6000);
+}
+function info(host){
+  var m=[],nx=A(host,'next'),p=+A(host,'pending'),t=+A(host,'telat');
+  if(nx)m.push({t:nx,mood:'semangat',act:'wave'});
+  if(t>0)m.push({t:t+' tugas lewat jadwal. Yuk dibereskan satu-satu.',mood:'cemas',act:'ears'});
+  else if(p>0)m.push({t:p+' tugas masih menunggu. Santai, pasti beres.',mood:'fokus',act:'hop'});
+  else m.push({t:'Tidak ada tugas yang menunggu. Mantap!',mood:'bangga',act:'dance'});
+  return m;
+}
+function tap(inst){
+  var host=inst.el.parentNode;if(!host)return;
+  var now=Date.now();st.taps=st.taps.filter(function(x){return now-x<3000});st.taps.push(now);
+  if(st.taps.length>=5){st.taps=[];say(host,'Aduuh, pusing! Jangan dikocok dong.',{mood:'kaget',act:'dance',ttl:4000});return}
+  st.n++;
+  var i=st.n%5,mood=A(host,'mood')||'senang';
+  if(i===1){var m=info(host);var x=m[Math.floor(Math.random()*m.length)];say(host,x.t,{mood:x.mood,act:x.act});}
+  else if(i===2){say(host,pick(JOKES.jahil),{mood:'jahil',act:'bleh',ttl:4500})}
+  else if(i===3){say(host,'Keren kan?',{mood:'keren',act:'cool',ttl:4500})}
+  else if(i===4){say(host,pick(JOKES[mood]||JOKES.senang),{act:'wink'})}
+  else{say(host,pick(JOKES[mood]||JOKES.senang),{act:'hop'})}
+  if(Math.random()<.3)inst.flip();
+}
+function welcome(host){
+  var t=A(host,'hi');if(!t)return;
+  try{if(sessionStorage.getItem('jepi_hi'))return;sessionStorage.setItem('jepi_hi','1')}catch(e){}
+  setTimeout(function(){if(host.isConnected)say(host,t,{mood:'senang',act:'wave',ttl:7000})},1400);
+}
+function changes(host){
+  var cur={jobs:+A(host,'jobs'),pending:+A(host,'pending'),telat:+A(host,'telat'),todo:+A(host,'todo')},p=st.last;st.last=cur;
+  if(!st.t0)st.t0=Date.now();
+  if(!p||Date.now()-st.t0<10000){st.last=cur;return false}
+  var r=null;
+  if(cur.jobs>p.jobs)r={t:'Ada job baru masuk! '+(A(host,'newest')||'Cek jadwalnya ya.'),mood:'semangat',act:'hop'};
+  else if(cur.jobs<p.jobs)r={t:'Satu job dihapus dari daftar.',mood:'kaget',act:'ears'};
+  else if(cur.todo===0&&p.todo>0)r={t:'Semua beres! Jepi bangga banget sama kamu.',mood:'bangga',act:'dance'};
+  else if(cur.pending<p.pending)r={t:'Satu tugas selesai. Mantap!',mood:'bangga',act:'hop'};
+  else if(cur.pending>p.pending)r={t:'Ada tugas baru. Semangat ya!',mood:'fokus',act:'ears'};
+  else if(cur.todo<p.todo)r={t:'Satu pekerjaan lagi tuntas. Terus ya!',mood:'senang',act:'hop'};
+  if(r){setTimeout(function(){if(host.isConnected)say(host,r.t,r)},700);return true}
+  return false;
+}
+function chatter(){
+  clearInterval(st.timer);
+  st.timer=setInterval(function(){
+    try{
+      if(document.visibilityState!=='visible')return;
+      var host=document.querySelector('#app [data-jepi-host]');if(!host)return;
+      var r=host.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)return;
+      var m=info(host),mood=A(host,'mood')||'senang';
+      if(Math.random()<.4){var x=m[0];say(host,x.t,{act:x.act})}
+      else say(host,pick(JOKES[mood]||JOKES.senang),{act:pick(['ears','hop','wink'])});
+    }catch(e){}
+  },55000);
+}
+window.jepiAfterRender=function(){
+  try{
+    if(!window.Jepi)return;
+    var host=document.querySelector('#app [data-jepi-host]');
+    if(!host)return;
+    Jepi.mount(host,{mood:A(host,'mood')||'senang',palette:'acak',onTap:tap,shadow:'120,90,20'});
+    if(!changes(host))welcome(host);
+    chatter();
+  }catch(e){console.warn('Jepi',e)}
+};
+})();
+
+</script>
 <style id="lhStyle">
 /* ===== Halaman utama akun hanya-chat (liaww): jadwal job + ikon chat mengambang ===== */
 #lh{--lh-bg:#FFF8E6;--lh-card:#FFFFFF;--lh-ink:#4A3A28;--lh-mut:#9A8A72;--lh-line:#F3E5BE;--lh-butter:#FFD84D;--lh-butter2:#FFC21F;--lh-pink:#FFC9D8;--lh-pinkd:#D9577F;--lh-mint:#C7EFE0;
@@ -22292,6 +23252,11 @@ document.addEventListener('click',function(e){
 #lh .lh-hero.now{background:linear-gradient(135deg,#FFC4D6 0,#FFA9C4 100%);box-shadow:0 10px 26px rgba(217,87,127,.28),inset 0 0 0 2px rgba(255,255,255,.55)}
 #lh .lh-hero.idle{background:linear-gradient(135deg,#D5F3E7 0,#B9E8D5 100%);box-shadow:0 10px 26px rgba(80,170,140,.22),inset 0 0 0 2px rgba(255,255,255,.55)}
 #lh .lh-hero .row{position:relative;z-index:1;display:flex;gap:12px;align-items:flex-start}
+#lh .lh-jepi{width:84px;height:84px;flex:none;position:relative;margin:-8px 0 -8px -8px}
+#lh .lh-say{position:relative;margin-top:12px;padding:10px 13px;border-radius:16px;background:rgba(255,255,255,.72);color:#4A3A28;font-size:13px;line-height:1.4;font-weight:600;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.8)}
+#lh .lh-say::before{content:"";position:absolute;left:30px;top:-6px;width:12px;height:12px;background:inherit;transform:rotate(45deg);border-radius:3px}
+#lh .lh-say span{display:block;animation:lhPop .35s ease}
+@keyframes lhPop{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 #lh .lh-mascot{width:52px;height:52px;flex:none;filter:drop-shadow(0 4px 6px rgba(120,80,0,.18));animation:lhBob 3.6s ease-in-out infinite}
 @keyframes lhBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-4px) rotate(3deg)}}
 #lh .lh-hero .tx{min-width:0;flex:1}
@@ -22450,6 +23415,103 @@ document.addEventListener('click',function(e){
   }
   function durasi(j){return diff(j.b,j.a)+1}
 
+  var LV=['Jepi sayang banget sama kamu, {n}.','Kamu nggak sendirian ya, {n}. Ada Jepi di sini.','Semangat terus ya, {n}. Jepi bangga sama kamu.','Jangan lupa makan dan minum, {n}. Jepi sayang kamu.','Kamu orang paling spesial buat Admin, dan buat Jepi juga, {n}.','Peluk jauh dari Jepi untuk {n}.','Hari ini kamu hebat, {n}. Jepi selalu dukung kamu.','Senyum dong, {n}. Jepi suka lihat kamu senyum.','Admin dan Jepi sama-sama sayang kamu, {n}.','Istirahat yang cukup ya, {n}. Jepi sayang kamu.'];
+  /* nama panggilan: S.nm.liaww = nama yang Admin berikan untuk akun ini (jadi "...ku"), S.nm.aku = nama yang akun ini berikan untuk Admin (jadi "...mu", mis. abangmu) */
+  function namaKu(){nmMuat();var n=(S.nm&&S.nm.liaww)||namaTampil();n=String(n).trim().split(/\s+/)[0]||'Sayang';n=n.charAt(0).toUpperCase()+n.slice(1);return /ku$/i.test(n)?n:n+'ku'}
+  var NMK='kaone_jepi_nama_v1';
+  function nmMuat(){if(S.nm)return;try{var o=JSON.parse(localStorage.getItem(NMK)||'null');if(o&&(o.aku||o.liaww))S.nm=o}catch(e){}}
+  function nmSimpan(x){try{localStorage.setItem(NMK,JSON.stringify({aku:x.aku||'',liaww:x.liaww||''}))}catch(e){}}
+  function adm(){nmMuat();var a=S.nm&&S.nm.aku;if(!a)return '';a=String(a).trim();return /mu$/i.test(a)?a:a+'mu'}
+  function cap1(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+  function nmFix(t){
+    var a=adm();t=String(t||'');
+    if(a)t=t.replace(/\bAdmin\b/g,a);
+    return t.replace(/(^|[.!?]\s+)([a-z])/g,function(_,p,c){return p+c.toUpperCase()});
+  }
+  function jumlahTok(t){var a=adm()||'Admin';return t.replace(/\{n\}/g,namaKu()).replace(/\{A\}/g,cap1(a)).replace(/\{a\}/g,a)}
+  var LV2=['{A} lagi mikirin kamu di sela kerjanya, {n}. Jepi lihat sendiri.','{A} titip peluk hangat buat kamu, {n}.','Kata Jepi, kamu alasan {a} semangat tiap hari.','Kalau {a} lagi capek, ingat kamu langsung senyum lagi.','Jepi sering lihat {a} senyum-senyum sendiri baca pesanmu, {n}.','{A} kangen kamu, {n}. Jepi yang jadi saksinya.','Dunia {a} lebih berwarna karena ada kamu, {n}.','Muach! Ciuman jauh dari {a} dan Jepi, {n}.','Kamu pelabuhan paling nyaman buat {a}, {n}.','Satu pesan dari kamu bisa bikin {a} kuat seharian.'];
+  function lvTime(){
+    var h=parseInt(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',hour12:false}).format(new Date()),10)%24,a;
+    if(h<4||h>=23)a=['Selamat tidur, {n}. Mimpikan {a} ya.','Sudah larut, {n}. Tidur yang nyenyak, Jepi jagain.'];
+    else if(h<11)a=['Selamat pagi, {n}. Semoga harimu seindah senyummu.','Pagi, {n}! Jepi bangun duluan cuma buat nyapa kamu.'];
+    else if(h<15)a=['Sudah makan siang belum, {n}? Jepi nggak mau kamu telat makan.','Siang, {n}. Jangan lupa minum, ya. {A} pasti ingin kamu sehat.'];
+    else if(h<18)a=['Sore, {n}. Capek ya? Sini, Jepi kasih peluk.','Sore-sore begini Jepi jadi ingat senyum kamu, {n}.'];
+    else a=['Selamat malam, {n}. Hari ini kamu sudah hebat.','Malam ini bintangnya cantik, tapi masih kalah cantik dari kamu, {n}.'];
+    return a[Math.floor(Math.random()*a.length)];
+  }
+  function lvLine(){
+    var r=Math.random(),s;
+    if(r<.3)s=lvTime();else if(r<.65)s=LV2[Math.floor(Math.random()*LV2.length)];else s=LV[Math.floor(Math.random()*LV.length)];
+    return nmFix(jumlahTok(s));
+  }
+  /* Jepi: ekspresi + pesan untuk lawan chat, menyesuaikan jadwal Admin (sedang job / akan job / santai / larut malam) */
+  function jepiState(now,nxt,t){
+    var d=new Date(),parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d),h=0,mi=0,i;
+    for(i=0;i<parts.length;i++){if(parts[i].type==='hour')h=parseInt(parts[i].value,10)%24;if(parts[i].type==='minute')mi=parseInt(parts[i].value,10)}
+    var menit=h*60+mi;
+    if(now.length){
+      var j=now[0],mulai=-1,m=/^(\d{1,2})[:.](\d{2})/.exec(j.jam||'');
+      if(m)mulai=parseInt(m[1],10)*60+parseInt(m[2],10);
+      if(now.length>1)return{m:'semangat',t:'Hari ini job Admin banyak banget. Doakan lancar ya, chat tetap bisa kamu kirim. Jepi sayang kamu \uD83D\uDC9B'};
+      if(diff(j.a,t)<0)return{m:'fokus',t:'Admin masih bertugas di acara ini. Chat-mu tetap masuk, nanti dibalas ya.'};
+      if(mulai>=0&&menit<mulai-90)return{m:'senang',t:'Hari ini Admin ada job. Belum mulai kok, masih sempat kirim pesan!'};
+      if(mulai>=0&&menit<mulai)return{m:'semangat',t:'Admin sebentar lagi mulai kerja. Doakan lancar ya!'};
+      if(mulai>=0&&menit>mulai+9*60)return{m:'bangga',t:'Job Admin hari ini kemungkinan sudah selesai. Hebat, ya!'};
+      return{m:'fokus',t:'Admin lagi fokus kerja sekarang. Pesanmu tetap masuk, nanti dibalas ya. Admin dan Jepi sayang kamu \uD83D\uDC9B'};
+    }
+    if(h>=23||h<4)return{m:'ngantuk',t:'Sudah larut, Admin mungkin lagi istirahat. Pesanmu akan dibaca besok ya. Mimpi indah, Jepi sayang kamu.'};
+    if(nxt){
+      var ds=diff(nxt.a,t);
+      if(ds===1)return{m:'senang',t:'Besok Admin ada job. Hari ini masih santai, yuk ngobrol!'};
+      if(ds<=3)return{m:'senang',t:'Beberapa hari lagi Admin ada job. Sekarang masih bisa santai.'};
+      return{m:'santai',t:'Jadwal Admin masih longgar. Waktunya ngobrol santai!'};
+    }
+    return{m:'santai',t:'Admin lagi tidak ada job. Waktunya santai dan ngobrol!'};
+  }
+  var JK=['Hehe, kacamatanya kupinjam dulu ya \uD83D\uDE0E','Eh, tadi ada yang colek Jepi!','Jepi cuma iseng, jangan bilang Admin ya.','Halo! Jepi jagain jadwal Admin nih.','Keren kan? \uD83D\uDE0E'];
+  function jepiMount(root){
+    try{
+      if(!window.Jepi)return;
+      var host=root.querySelector('[data-jepi-host]');if(!host)return;
+      var inst0=Jepi._inst,bsay=function(txt,mood,act){txt=txt?nmFix(txt):txt;var b=root.querySelector('.lh-say span');if(b&&txt){b.textContent=txt;b.style.animation='none';void b.offsetWidth;b.style.animation=''}
+        var i=Jepi._inst;if(!i)return;if(mood)i.setMood(mood);if(act)i.act(act);if(txt)i.talk(Math.min(3.5,.6+txt.length/28));
+        if(mood){clearTimeout(S.jrev);S.jrev=setTimeout(function(){try{i.setMood(host.getAttribute('data-mood')||'senang')}catch(e){}},7000)}};
+      if(!S.nmTry){S.nmTry=0}
+      nmMuat();
+      if(S.nmTry<4&&!S.nmBusy){
+        S.nmBusy=true;S.nmTry++;
+        try{popNama().then(function(x){S.nmBusy=false;if(x&&(x.aku||x.liaww)){var ber=!S.nm||S.nm.aku!==x.aku||S.nm.liaww!==x.liaww;S.nm=x;nmSimpan(x);if(ber)paint()}else setTimeout(function(){S.nmBusy=false;var rt=$('lh');if(rt&&S.nmTry<4)jepiMount(rt)},6000)}).catch(function(){S.nmBusy=false})}catch(e){S.nmBusy=false}
+      }
+      var nJ=S.jobs.length;
+      if(S.jN==null){S.jN=nJ;S.j0=Date.now()}
+      else if(nJ>S.jN&&Date.now()-S.j0>10000){S.jN=nJ;setTimeout(function(){bsay('Ada job baru di jadwal Admin!','semangat','hop')},700)}
+      else if(nJ<S.jN){S.jN=nJ}
+      var sapa=S.today?'':'';
+      try{if(!sessionStorage.getItem('jepi_hi_lh')){sessionStorage.setItem('jepi_hi_lh','1');var nm=namaKu();setTimeout(function(){if(host.isConnected)bsay('Halo, '+nm+'! Selamat datang. Jepi kangen, nemenin kamu di sini ya. Tahan lama-lama di Jepi buat dapat peluk.','sayang','wave')},1400)}}catch(e){}
+      clearInterval(S.jtimer);S.jtimer=setInterval(function(){
+        if(document.visibilityState!=='visible'||!host.isConnected)return;
+        var tip=root.querySelector('.lh-say span');if(!tip)return;
+        var r=Math.random();
+        if(r<.65)bsay(lvLine(),'sayang',['hop','wave','ears'][Math.floor(Math.random()*3)]);
+        else if(r<.85)bsay(S.jtext||'',null,'ears');
+        else bsay(JK[Math.floor(Math.random()*JK.length)],'jahil','wink');
+      },22000);
+      if(!host.__hug){host.__hug=1;var ht=null;
+        host.addEventListener('pointerdown',function(){clearTimeout(ht);ht=setTimeout(function(){S.jhugAt=Date.now();bsay(nmFix(jumlahTok('Peluuuk! Pelukan hangat dari {a} lewat Jepi, {n}.')),'sayang','hop');setTimeout(function(){if(Jepi._inst)Jepi._inst.act('wave')},900)},700)});
+        ['pointerup','pointerleave','pointercancel'].forEach(function(ev){host.addEventListener(ev,function(){clearTimeout(ht)})});}
+      Jepi.mount(host,{mood:host.getAttribute('data-mood')||'senang',palette:'acak',shadow:'120,90,20',onTap:function(inst){
+        var now=Date.now();
+        if(Date.now()-(S.jhugAt||0)<600)return;
+        var now=Date.now();S.jtaps=(S.jtaps||[]).filter(function(x){return now-x<3000});S.jtaps.push(now);
+        if(S.jtaps.length>=5){S.jtaps=[];bsay('Aduuh, pusing! Jangan dikocok dong.','kaget','dance');return}
+        S.jn=(S.jn||0)+1;
+        if(S.jn%4===1){bsay(S.jtext||'Halo!',host.getAttribute('data-mood')||null,'wave')}
+        else if(S.jn%4===3){var r=Math.random();bsay(JK[Math.floor(Math.random()*JK.length)],r<.5?'jahil':'keren',r<.35?'bleh':r<.65?'cool':'wink')}
+        else bsay(lvLine(),'sayang',S.jn%2?'hop':'wave')
+        if(Math.random()<.3)inst.flip();
+      }});
+    }catch(e){console.warn('Jepi',e)}
+  }
   function heroHtml(up){
     var t=todayStart();
     var now=up.filter(function(j){return diff(j.a,t)<=0&&diff(j.b,t)>=0});
@@ -22472,7 +23534,9 @@ document.addEventListener('click',function(e){
       cls='idle';chip='\u2615 Lagi santai';judul='Belum ada jadwal lapangan';
       sub='Admin lagi tidak ada job. Waktunya istirahat dan ngobrol santai \uD83C\uDF3F';
     }
-    return '<section class="lh-hero '+cls+'"><div class="row">'+MASKOT+'<div class="tx"><span class="lh-chip">'+chip+'</span><h2>'+esc(judul)+'</h2><p class="sub">'+esc(sub)+'</p></div></div>'+(meta?'<div class="meta">'+meta+'</div>':'')+'</section>';
+    var jp=jepiState(now,nxt,t);
+    S.jmood=jp.m;S.jtext=jp.t;
+    return '<section class="lh-hero '+cls+'"><div class="row"><div class="lh-jepi" data-jepi-host data-mood="'+jp.m+'" role="img" aria-label="Jepi"></div><div class="tx"><span class="lh-chip">'+chip+'</span><h2>'+esc(judul)+'</h2><p class="sub">'+esc(sub)+'</p></div></div>'+'<div class="lh-say"><span>'+esc(nmFix(jp.t))+'</span></div>'+(meta?'<div class="meta">'+meta+'</div>':'')+'</section>';
   }
   function weekHtml(up){
     var t=todayStart(),cells='',tot=0,k;
@@ -22545,6 +23609,7 @@ document.addEventListener('click',function(e){
       +'<button type="button" class="lh-ib" data-act="menu" aria-label="Menu">'+IC.dots+'</button></header>'+body
       +'</div><div class="lh-menu" id="lhMenu"><div class="box"><button type="button" data-act="keluar">'+IC.out+'Keluar akun</button></div></div>';
     root.scrollTop=scroll;
+    jepiMount(root);
   }
   function load(){
     S.loading=true;paint();
@@ -22695,6 +23760,8 @@ document.addEventListener('click',function(e){
     st.textContent='#lhPop{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:rgba(36,28,6,.58);overscroll-behavior:contain}'
     +'#lhPop .box{width:100%;max-width:380px;max-height:100%;overflow:auto;background:#FFFBEA;border:1.5px solid #f0e1a0;border-radius:24px;padding:24px 20px 18px;text-align:center;color:#241c06;box-shadow:0 24px 60px rgba(0,0,0,.35);font-family:"Bricolage Grotesque",system-ui,sans-serif;outline:0}'
     +'#lhPop .em{font-size:42px;line-height:1}'
+    +'#lhPop .em.jpx{width:130px;height:130px;margin:-8px auto -6px;position:relative;animation:none!important;font-size:0}'
+    +'#lhPop .jpl{margin:4px auto 0;max-width:290px;font-size:13.5px;font-weight:700;line-height:1.45;color:#B5456B;background:#FFE8F0;border-radius:14px;padding:8px 12px}'
     +'#lhPop h2{margin:10px 0 6px;font-size:21px;font-weight:800;letter-spacing:-.02em}'
     +'#lhPop p{margin:10px 0 0;font-size:14px;line-height:1.65;color:#5b5646}'
     +'#lhPop p.job{font-size:12.5px;font-weight:700;color:#7A5A00;background:#FFF1B8;border-radius:12px;padding:8px 10px}'
@@ -22725,6 +23792,14 @@ document.addEventListener('click',function(e){
     var ov=document.createElement('div');ov.id='lhPop';if(o.anim)ov.className='rom';ov.setAttribute('role','alertdialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','lhPopT');
     ov.innerHTML='<div class="box" tabindex="-1"><div class="em" aria-hidden="true">'+o.em+'</div><h2 id="lhPopT">'+esc(o.judul)+'</h2>'+o.html+'<button type="button" class="ok" id="lhPopOk"></button></div>';
     document.body.appendChild(ov);
+    var jpOn=false;
+    if(o.jenis==='b'&&window.Jepi){try{
+      var emEl=ov.querySelector('.em');emEl.classList.add('jpx');emEl.innerHTML='';
+      var pi=Jepi.mount(emEl,{mood:'sayang',palette:'acak',shadow:'120,90,20',onTap:function(i){i.act(['hop','wave','wink'][Math.floor(Math.random()*3)]);var q=ov.querySelector('.jpl');if(q)q.textContent=lvLine()}});
+      var lv=document.createElement('div');lv.className='jpl';lv.textContent=lvLine();emEl.parentNode.insertBefore(lv,emEl.nextSibling);
+      jpOn=true;setTimeout(function(){pi.act('wave')},500);
+      var jiv=setInterval(function(){if(!ov.isConnected){clearInterval(jiv);return}var q=ov.querySelector('.jpl');if(q){q.textContent=lvLine();pi.act(['hop','ears','wave'][Math.floor(Math.random()*3)])}},7000);
+    }catch(e){console.warn('Jepi',e)}}
     var box=ov.firstChild;if(o.anim)popFx(ov);var ok=ov.querySelector('#lhPopOk'),terkunci=!!o.kunci,selesai=false,t0=Date.now(),iv=null;
     var LBL=o.tombol||'Mengerti \uD83D\uDC9B';
     function ruang(){return $('kc')&&$('kc').classList.contains('on')}
@@ -22733,6 +23808,7 @@ document.addEventListener('click',function(e){
       selesai=true;clearInterval(iv);
       document.removeEventListener('keydown',onKey,true);document.removeEventListener('focusin',onFocus,true);window.removeEventListener('popstate',onPop);
       ov.remove();S.pop=false;
+      if(jpOn){var rt=$('lh');if(rt)jepiMount(rt)}
       var st=popState(wib().d);st[o.jenis]=(st[o.jenis]||0)+1;popSimpan(st);
       if(!lewatBack){try{if(history.state&&history.state.lhPop)history.back()}catch(e){}}
     }

@@ -9934,7 +9934,8 @@ function viewBeranda(){
   // ----- Jepi: ekspresi & pesan menyesuaikan keadaan (waktu, job, tugas) dan peran -----
   let jepiMood='senang', jepiMsg='';
   const tim = !isAdmin();
-  if(jamWib>=23 || jamWib<4){ jepiMood='ngantuk'; jepiMsg = tim ? 'Sudah larut. Istirahat dulu ya, besok lanjut lagi.' : 'Sudah larut, jangan lupa istirahat ya. Sisanya besok.'; }
+  if(jamWib<6){ jepiMood='ngantuk'; jepiMsg = 'Zzz... Jepi lagi tidur dan istirahat. Jangan diganggu dulu ya, Jepi bangun jam 6 pagi.'; }
+  else if(jamWib>=23){ jepiMood='ngantuk'; jepiMsg = tim ? 'Sudah larut. Istirahat dulu ya, besok lanjut lagi.' : 'Sudah larut, jangan lupa istirahat ya. Sisanya besok.'; }
   else if(taskTelat>0){ jepiMood='cemas'; jepiMsg = `Ada ${taskTelat} tugas yang lewat jadwal. Yuk dikejar pelan-pelan.`; }
   else if(jobHariIni>0){ jepiMood='semangat'; jepiMsg = jobHariIni>1 ? `Ada ${jobHariIni} job hari ini. Semangat, pasti keren hasilnya!` : (tim ? 'Ada job hari ini. Semangat, kamu pasti bisa!' : 'Ada job hari ini. Semangat, kameranya siap!'); }
   else if(homeTaskPending>0){ jepiMood='fokus'; jepiMsg = tim ? `${homeTaskPending} tugas menunggumu. Satu-satu ya, pasti beres.` : `${homeTaskPending} tugas tim masih berjalan. Pantau pelan-pelan ya.`; }
@@ -18097,12 +18098,23 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.20.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.21.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.21.0',
+    tanggal: '15 Oktober 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Jepi makin banyak tingkah! Sesekali dia bersembunyi di balik kartu job berikutnya lalu mengintip dan mengagetkanmu, duduk santai di atas kartu, mencolek kartu sampai bergoyang, atau berlari melintasi layar. Tingkah ini muncul sendiri di Beranda Admin, Akun Tim, dan akun lawan chat.' },
+      { kategori: 'Fitur', teks: 'Ketuk Jepi yang sedang mengintip dari balik kartu, dan dia akan melompat keluar karena kaget ketahuan.' },
+      { kategori: 'Fitur', teks: 'Tiga tingkah baru Jepi: tidur di atas kartu lalu kaget terbangun, berjoget di tengah layar, dan mengintip dari pinggir layar.' },
+      { kategori: 'Fitur', teks: 'Jepi sekarang tidur dan istirahat pukul 00.00 sampai 06.00 WIB. Selama jam itu dia tidak bisa diganggu: tidak menyapa, tidak bercanda, dan tidak berkeliling di layar. Kalau diketuk, dia hanya mengigau pelan, lalu mengucapkan selamat pagi saat bangun.' },
+      { kategori: 'Peningkatan', teks: 'Jepi jadi lebih perhatian di malam hari.' }
+    ]
+  },
   {
     version: '1.20.0',
     tanggal: '14 Oktober 2026',
@@ -23148,7 +23160,9 @@ var Jepi=window.Jepi={
    JepiGo.go(selektor, teks, suasana, {home:function(){return elemenAsal}, remount:function(){...}, z:9100}) */
 (function(){
 if(window.JepiGo)return;
-var T={el:null,host:null,bub:null,active:false,sel:'',tg:null,timers:[],hop:null,o:null,x:0,y:0,lastGo:0,lastEnd:0};
+/* Jam tidur Jepi: 00.00-06.00 WIB. Selama itu Jepi tidur dan istirahat, jadi tidak bisa diganggu. */
+window.jepiTidur=function(){try{var h=parseInt(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',hour12:false}).format(new Date()),10)%24;return h>=0&&h<6}catch(e){return false}};
+var T={el:null,host:null,bub:null,active:false,sel:'',tg:null,timers:[],hop:null,o:null,x:0,y:0,lastGo:0,lastEnd:0,mode:'',v:84,fx:.5,inst:null,caught:false,lines:null};
 function css(){
   if(document.getElementById('jpgCss'))return;
   var s=document.createElement('style');s.id='jpgCss';
@@ -23161,7 +23175,9 @@ function css(){
   +'.jpg-hl{outline:3px solid #FFC21F;outline-offset:3px;border-radius:14px;animation:jpgHl 1.3s ease-in-out infinite}'
   +'@keyframes jpgHl{0%,100%{box-shadow:0 0 0 0 rgba(255,194,31,.75)}50%{box-shadow:0 0 0 12px rgba(255,194,31,0)}}'
   +'.jpg-away{position:relative}.jpg-away::after{content:"";position:absolute;inset:18px;border:2px dashed rgba(120,100,60,.35);border-radius:50%}'
-  +'@media(prefers-reduced-motion:reduce){#jpgT .jpg-bub,.jpg-hl{animation:none}}';
+  +'.jpg-wig{animation:jpgWig .6s ease-in-out 2}'
+  +'@keyframes jpgWig{0%,100%{transform:none}20%{transform:rotate(-1.4deg) translateX(-3px)}50%{transform:rotate(1.4deg) translateX(3px)}80%{transform:rotate(-.7deg) translateX(-1px)}}'
+  +'@media(prefers-reduced-motion:reduce){#jpgT .jpg-bub,.jpg-hl,.jpg-wig{animation:none}}';
   document.head.appendChild(s);
 }
 function tEl(){
@@ -23181,8 +23197,9 @@ function findTg(sel){
   return null;
 }
 function cl(v,a,b){return Math.max(a,Math.min(b,v))}
-function dest(tg){
+function dest(tg,at){
   var r=tg.getBoundingClientRect(),W=innerWidth,H=innerHeight,S0=84,x,y;
+  if(at==='top'&&r.top-S0+8>=6){x=r.left+(T.fx==null?.5:T.fx)*Math.max(0,r.width-S0);return{x:cl(x,6,W-S0-6),y:cl(r.top-S0+8,6,H-S0-6)}}
   if(r.left-S0-6>=6){x=r.left-S0-6;y=r.top+r.height/2-S0/2}
   else if(r.right+S0+6<=W-6){x=r.right+6;y=r.top+r.height/2-S0/2}
   else{x=r.left+r.width/2-S0/2;y=r.top-S0-4;if(y<6)y=r.bottom+4}
@@ -23202,14 +23219,15 @@ function fixBubble(){
 }
 function reposition(){
   var tg=T.tg;if(!tg||!document.contains(tg))return;
-  var d=dest(tg);place(d.x,d.y,false);if(T.el)T.el.style.transition='transform 180ms linear';fixBubble();
+  if(T.mode==='peek'){setV(T.v,0);return}
+  var d=dest(tg,T.o&&T.o.at);place(d.x,d.y,false);if(T.el)T.el.style.transition='transform 180ms linear';fixBubble();
 }
 function clearT(){T.timers.forEach(clearTimeout);T.timers=[];clearInterval(T.hop);T.hop=null}
 function homeEl(){return T.o&&T.o.home?T.o.home():null}
 function go(sel,text,mood,o){
   if(T.active||!window.Jepi||!Jepi._inst)return false;
   var tg=findTg(sel);if(!tg)return false;
-  T.o=o||{};T.active=true;T.sel=sel;T.tg=tg;T.lastGo=Date.now();
+  T.o=o||{};T.active=true;T.sel=sel;T.tg=tg;T.lastGo=Date.now();T.mode='go';T.v=84;T.fx=.25+Math.random()*.5;T.caught=false;
   var reduce=false;try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
   var from=homeEl();
   tg.scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'});
@@ -23220,7 +23238,7 @@ function go(sel,text,mood,o){
     e.hidden=false;T.bub.hidden=true;place(fr.left,fr.top,false);
     var inst=Jepi.mount(T.host,{mood:'semangat',palette:'acak',shadow:'120,90,20',onTap:function(){end()}});
     if(from)from.classList.add('jpg-away');
-    var d=dest(tg);void e.offsetWidth;
+    var d=dest(tg,T.o.at);void e.offsetWidth;
     if(reduce)place(d.x,d.y,false);else place(d.x,d.y,true,1000);
     fixBubble();
     if(!reduce)T.hop=setInterval(function(){try{inst.act('hop')}catch(x){}},480);
@@ -23228,7 +23246,8 @@ function go(sel,text,mood,o){
       clearInterval(T.hop);T.hop=null;reposition();
       try{inst.setMood(mood||'semangat');inst.act('wave');inst.talk(Math.min(3.5,.6+(text||'').length/28))}catch(x){}
       T.bub.textContent=text||'Di sini ya!';T.bub.hidden=false;fixBubble();
-      tg.classList.add('jpg-hl');
+      if(!(T.o&&T.o.hl===false))tg.classList.add('jpg-hl');
+      try{if(T.o&&T.o.arrive)T.o.arrive(tg,inst)}catch(x){console.warn('JepiGo',x)}
       T.timers.push(setTimeout(function(){end()},10000));
     },reduce?50:1050));
   },reduce?0:500));
@@ -23237,15 +23256,17 @@ function go(sel,text,mood,o){
 function end(instant){
   if(!T.active)return;
   clearT();
-  document.querySelectorAll('.jpg-hl').forEach(function(x){x.classList.remove('jpg-hl')});
+  document.querySelectorAll('.jpg-hl,.jpg-wig').forEach(function(x){x.classList.remove('jpg-hl');x.classList.remove('jpg-wig')});
   if(T.bub)T.bub.hidden=true;
   var home=homeEl(),o=T.o||{};
   var finish=function(){
-    T.active=false;T.tg=null;T.lastEnd=Date.now();
+    T.active=false;T.tg=null;T.mode='';T.caught=false;T.lastEnd=Date.now();
+    if(T.host){T.host.style.transition='';T.host.style.clipPath=''}
     if(T.el)T.el.hidden=true;
     document.querySelectorAll('.jpg-away').forEach(function(x){x.classList.remove('jpg-away')});
     try{if(o.remount)o.remount()}catch(e){console.warn('JepiGo',e)}
   };
+  if(T.mode==='peek'&&!instant&&T.tg&&document.contains(T.tg)&&T.v>0){setV(0,480);T.timers=[setTimeout(finish,540)];return}
   if(instant||!home||!T.el){finish();return}
   var r=home.getBoundingClientRect();place(r.left,r.top,true,900);
   T.timers=[setTimeout(finish,950)];
@@ -23256,7 +23277,203 @@ function refresh(){
   if(!ng){end(true);return false}
   T.tg=ng;var h=homeEl();if(h)h.classList.add('jpg-away');reposition();return true;
 }
-window.JepiGo={go:go,end:end,refresh:refresh,active:function(){return T.active},since:function(){return Date.now()-Math.max(T.lastGo,T.lastEnd)}};
+
+/* ===== Tingkah Jepi (dipakai Admin, Akun Tim, dan akun lawan chat) =====
+   peek : bersembunyi di balik kartu (mis. kartu job berikutnya), mengintip, lalu muncul mengagetkan
+   sit  : duduk santai di atas kartu
+   poke : mencolek kartu sampai bergoyang
+   run  : berlari melintasi layar lalu kembali
+   antic(): memilih satu tingkah secara acak sesuai kartu yang ada di layar. */
+var EASE='cubic-bezier(.45,.05,.25,1)';
+function reduceM(){try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}}
+function rnd(a){return a[Math.floor(Math.random()*a.length)]}
+function hopOn(inst,ms){clearInterval(T.hop);T.hop=setInterval(function(){try{inst.act('hop')}catch(x){}},ms||480)}
+function say(txt){
+  if(!T.bub||!txt)return;
+  T.bub.textContent=txt;T.bub.hidden=false;fixBubble();
+  try{if(T.inst)T.inst.talk(Math.min(3.5,.6+txt.length/28))}catch(x){}
+}
+/* v = tinggi bagian Jepi yang kelihatan di atas tepi kartu (0 = sembunyi total, 84 = muncul penuh) */
+function setV(v,ms){
+  if(!T.tg||!T.el)return;
+  T.v=v;
+  var r=T.tg.getBoundingClientRect(),x=cl(r.left+(T.fx==null?.5:T.fx)*Math.max(0,r.width-84),6,innerWidth-90);
+  if(T.host){T.host.style.transition=ms?'clip-path '+ms+'ms '+EASE:'none';T.host.style.clipPath='inset(0 0 '+Math.max(0,84-v)+'px 0)'}
+  place(x,r.top-v,!!ms,ms);fixBubble();
+}
+function caught(){
+  if(!T.active||T.mode!=='peek')return;
+  if(T.caught||T.v>=84){end();return}
+  T.caught=true;clearT();
+  setV(84,380);
+  try{T.inst.setMood('kaget');T.inst.act('hop')}catch(x){}
+  say((T.lines&&T.lines[2])||'Waduh, ketahuan! Jepi kalah petak umpet.');
+  T.timers.push(setTimeout(function(){end()},2800));
+}
+function peek(sel,lines,mood,o){
+  if(T.active||!window.Jepi||!Jepi._inst)return false;
+  var tg0=findTg(sel);if(!tg0)return false;
+  lines=lines||[];
+  T.o=o||{};T.active=true;T.sel=sel;T.tg=tg0;T.mode='peek';T.v=84;T.fx=.2+Math.random()*.6;T.caught=false;T.lines=lines;T.lastGo=Date.now();
+  var reduce=reduceM(),from=homeEl();
+  tg0.scrollIntoView({block:'center',behavior:reduce?'auto':'smooth'});
+  var at=function(ms,fn){T.timers.push(setTimeout(function(){if(T.active&&T.mode==='peek')fn()},ms))};
+  T.timers.push(setTimeout(function(){
+    if(!T.active)return;
+    var tg=findTg(sel)||tg0;T.tg=tg;
+    var r=tg.getBoundingClientRect();
+    if(r.top<70||r.width<120){T.active=false;T.tg=null;T.mode='';clearT();go(sel,lines[0]||'Di sini ya!',mood||'jahil',o);return}
+    var e=tEl(),fr=from&&document.contains(from)?from.getBoundingClientRect():{left:8,top:innerHeight-170};
+    e.hidden=false;T.bub.hidden=true;T.host.style.transition='none';T.host.style.clipPath='';place(fr.left,fr.top,false);
+    var inst=T.inst=Jepi.mount(T.host,{mood:'jahil',palette:'acak',shadow:'120,90,20',onTap:function(){caught()}});
+    if(from)from.classList.add('jpg-away');
+    void e.offsetWidth;
+    setV(84,reduce?0:1100);
+    if(!reduce)hopOn(inst);
+    at(reduce?60:1200,function(){clearInterval(T.hop);T.hop=null;try{inst.act('ears')}catch(x){}});
+    at(reduce?200:1800,function(){setV(0,reduce?0:650)});
+    at(reduce?500:3200,function(){setV(46,reduce?0:750);try{inst.setMood('jahil');inst.act('ears')}catch(x){}say(lines[0]||'Psst... Jepi ngumpet di balik kartu ini. Jangan bilang siapa-siapa ya.')});
+    at(reduce?3500:6200,function(){T.bub.hidden=true;setV(16,reduce?0:450)});
+    at(reduce?4000:7300,function(){setV(84,reduce?0:380);try{inst.setMood('kaget');inst.act('hop')}catch(x){}say(lines[1]||'Dar! Kaget ya? Hehe.')});
+    at(reduce?7000:9800,function(){end()});
+  },reduce?0:500));
+  return true;
+}
+function run(lines,mood,o){
+  if(T.active||!window.Jepi||!Jepi._inst)return false;
+  var from=o&&o.home?o.home():null;
+  if(!from||!document.contains(from))return false;
+  var r=from.getBoundingClientRect();
+  if(r.bottom<20||r.top>innerHeight-100)return false;
+  lines=lines||[];
+  T.o=o;T.active=true;T.sel='';T.tg=null;T.mode='run';T.caught=false;T.lastGo=Date.now();
+  var reduce=reduceM(),e=tEl();
+  e.hidden=false;T.bub.hidden=true;T.host.style.transition='none';T.host.style.clipPath='';place(r.left,r.top,false);
+  var inst=T.inst=Jepi.mount(T.host,{mood:'semangat',palette:'acak',shadow:'120,90,20',onTap:function(){end()}});
+  from.classList.add('jpg-away');
+  var W=innerWidth,far=r.left<W/2?W-84-10:10;
+  var at=function(ms,fn){T.timers.push(setTimeout(function(){if(T.active&&T.mode==='run')fn()},ms))};
+  void e.offsetWidth;
+  if(!reduce)hopOn(inst,380);
+  place(far,r.top,true,reduce?10:1900);
+  at(reduce?60:1950,function(){clearInterval(T.hop);T.hop=null;try{inst.setMood('senang');inst.act('wave')}catch(x){}say(lines[0]||'Hup hup hup! Jepi lagi olahraga dulu.')});
+  at(reduce?2500:4900,function(){try{inst.setMood('santai')}catch(x){}say(lines[1]||'Hosh... hosh... capek juga. Balik dulu ah!')});
+  at(reduce?4500:7300,function(){
+    T.bub.hidden=true;if(!reduce)hopOn(inst,380);
+    var h=homeEl(),hr=h&&document.contains(h)?h.getBoundingClientRect():r;
+    place(hr.left,hr.top,true,reduce?10:1900);
+  });
+  at(reduce?4700:9300,function(){end(true)});
+  return true;
+}
+function dance(lines,mood,o){
+  if(T.active||!window.Jepi||!Jepi._inst)return false;
+  var from=o&&o.home?o.home():null;
+  if(!from||!document.contains(from))return false;
+  var r=from.getBoundingClientRect();
+  if(r.bottom<20||r.top>innerHeight-100)return false;
+  lines=lines||[];
+  T.o=o;T.active=true;T.sel='';T.tg=null;T.mode='dance';T.caught=false;T.lastGo=Date.now();
+  var reduce=reduceM(),e=tEl();
+  e.hidden=false;T.bub.hidden=true;T.host.style.transition='none';T.host.style.clipPath='';place(r.left,r.top,false);
+  var inst=T.inst=Jepi.mount(T.host,{mood:'semangat',palette:'acak',shadow:'120,90,20',onTap:function(){end()}});
+  from.classList.add('jpg-away');
+  var cx=Math.round((innerWidth-84)/2),cy=cl(r.top,6,innerHeight-170);
+  var at=function(ms,fn){T.timers.push(setTimeout(function(){if(T.active&&T.mode==='dance')fn()},ms))};
+  void e.offsetWidth;
+  if(!reduce)hopOn(inst,420);
+  place(cx,cy,true,reduce?10:1200);
+  at(reduce?60:1250,function(){clearInterval(T.hop);T.hop=null;try{inst.setMood('bangga');inst.act('dance')}catch(x){}say(lines[0]||'Ada musik di kepala Jepi nih. Joget dulu ya!')});
+  at(reduce?1200:3000,function(){try{inst.act('dance')}catch(x){}});
+  at(reduce?2000:4600,function(){try{inst.act('dance')}catch(x){}say(lines[1]||'Capek, tapi seru. Balik dulu ah!')});
+  at(reduce?3000:6600,function(){
+    T.bub.hidden=true;try{inst.setMood('senang')}catch(x){}if(!reduce)hopOn(inst,420);
+    var h=homeEl(),hr=h&&document.contains(h)?h.getBoundingClientRect():r;
+    place(hr.left,hr.top,true,reduce?10:1200);
+  });
+  at(reduce?3200:7900,function(){end(true)});
+  return true;
+}
+function edge(lines,mood,o){
+  if(T.active||!window.Jepi||!Jepi._inst)return false;
+  var from=o&&o.home?o.home():null;
+  if(!from||!document.contains(from))return false;
+  var r=from.getBoundingClientRect();
+  if(r.bottom<20||r.top>innerHeight-100)return false;
+  lines=lines||[];
+  T.o=o;T.active=true;T.sel='';T.tg=null;T.mode='edge';T.caught=false;T.lastGo=Date.now();
+  var reduce=reduceM(),e=tEl(),W=innerWidth,side=Math.random()<.5?-1:1,y=cl(Math.round(innerHeight*(.3+Math.random()*.35)),90,innerHeight-190);
+  var out=side<0?-84:W,peekX=side<0?-84+48:W-48,deepX=side<0?-84+68:W-68;
+  e.hidden=false;T.bub.hidden=true;T.host.style.transition='none';T.host.style.clipPath='';place(out,y,false);
+  var inst=T.inst=Jepi.mount(T.host,{mood:'jahil',palette:'acak',shadow:'120,90,20',onTap:function(){end(true)}});
+  from.classList.add('jpg-away');
+  var at=function(ms,fn){T.timers.push(setTimeout(function(){if(T.active&&T.mode==='edge')fn()},ms))};
+  void e.offsetWidth;
+  place(peekX,y,true,reduce?10:800);
+  at(reduce?60:900,function(){try{inst.setMood('jahil');inst.act('ears')}catch(x){}say(lines[0]||'Psst... Jepi ngintip dari pinggir layar.')});
+  at(reduce?2500:3600,function(){try{inst.setMood('senang');inst.act('wave')}catch(x){}place(deepX,y,true,reduce?10:450);say(lines[1]||'Halo! Jepi cuma mau lihat kamu. Daah!')});
+  at(reduce?4500:6400,function(){T.bub.hidden=true;place(out,y,true,reduce?10:650)});
+  at(reduce?4700:7200,function(){end(true)});
+  return true;
+}
+function play(kind,sel,lines,mood,o){
+  if(window.jepiTidur())return false;
+  o=o||{};lines=lines||[];
+  var b={home:o.home,remount:o.remount};
+  if(kind==='peek')return peek(sel,lines,mood||'jahil',b);
+  if(kind==='run')return run(lines,mood,b);
+  if(kind==='dance')return dance(lines,mood||'bangga',b);
+  if(kind==='edge')return edge(lines,mood||'senang',b);
+  if(kind==='sleep'){
+    b.at='top';b.hl=false;
+    b.arrive=function(tg,inst){
+      T.timers.push(setTimeout(function(){try{inst.setMood('kaget');inst.act('hop')}catch(x){}say(lines[1]||'Eh! Jepi nggak tidur kok, cuma merem.')},4200));
+      T.timers.push(setTimeout(function(){try{inst.setMood('senang');inst.act('wave')}catch(x){}say(lines[2]||'Hoaam... oke, Jepi sudah segar lagi!')},7000));
+    };
+    return go(sel,lines[0]||'Zzz... Jepi tidur sebentar di sini ya. Kartunya empuk.',mood||'ngantuk',b);
+  }
+  if(kind==='sit'){
+    b.at='top';b.hl=false;
+    b.arrive=function(tg,inst){
+      T.timers.push(setTimeout(function(){try{inst.act('ears')}catch(x){}},1600));
+      T.timers.push(setTimeout(function(){try{inst.act('wink')}catch(x){}say(lines[1])},4200));
+    };
+    return go(sel,lines[0]||'Numpang duduk di sini ya. Kartunya empuk banget!',mood||'santai',b);
+  }
+  if(kind==='poke'){
+    b.hl=false;
+    b.arrive=function(tg,inst){
+      var n=0;
+      (function w(){
+        if(!T.active||T.tg!==tg||n>=2)return;n++;
+        try{inst.act('hop')}catch(x){}
+        tg.classList.remove('jpg-wig');void tg.offsetWidth;tg.classList.add('jpg-wig');
+        T.timers.push(setTimeout(function(){tg.classList.remove('jpg-wig')},1300));
+        T.timers.push(setTimeout(w,1800));
+      })();
+      T.timers.push(setTimeout(function(){say(lines[1])},3800));
+    };
+    return go(sel,lines[0]||'Colek colek... kartunya goyang. Hehe.',mood||'jahil',b);
+  }
+  return false;
+}
+/* antic({home, remount, next:'selektor kartu job berikutnya', any:['selektor kartu lain',...], lines:function(kind){return [teks,...]}}) */
+function antic(o){
+  o=o||{};
+  if(T.active||!window.Jepi||!Jepi._inst||window.jepiTidur())return false;
+  var h=o.home?o.home():null;
+  if(!h||!document.contains(h))return false;
+  var hr=h.getBoundingClientRect();if(hr.bottom<0||hr.top>innerHeight)return false;
+  var nx=o.next&&findTg(o.next)?o.next:'',an='',a=o.any||[],i;
+  for(i=0;i<a.length&&!an;i++)if(findTg(a[i]))an=a[i];
+  var ks=['run','dance','edge'];
+  if(nx)ks.push('peek','peek','peek');
+  if(nx||an)ks.push('sit','poke','sleep');
+  var k=rnd(ks),sel=(k==='run'||k==='dance'||k==='edge')?'':k==='peek'?(nx||an):(nx&&an?(Math.random()<.5?nx:an):(nx||an));
+  var ln=[];try{ln=o.lines?o.lines(k):[]}catch(e){}
+  return play(k,sel,ln,{peek:'jahil',sit:'santai',poke:'jahil',run:'semangat',sleep:'ngantuk',dance:'bangga',edge:'senang'}[k],{home:o.home,remount:o.remount});
+}
+window.JepiGo={go:go,end:end,refresh:refresh,play:play,antic:antic,has:function(s){return !!findTg(s)},active:function(){return T.active},since:function(){return Date.now()-Math.max(T.lastGo,T.lastEnd)}};
 })();
 
 /* Jepi di Buku Job: kartu Beranda (admin & tim). Satu Jepi dipindah-pindah antar halaman.
@@ -23279,6 +23496,26 @@ function bub(host){var c=host.closest('[data-jepi-card]');return c&&c.querySelec
 function homeEl(){return document.querySelector('#app [data-jepi-host]')}
 function remount(){var h=homeEl();if(h&&window.Jepi)Jepi.mount(h,{mood:A(h,'mood')||'senang',palette:'acak',onTap:tap,shadow:'120,90,20'})}
 function travel(o){return window.JepiGo&&JepiGo.go(o.tg,o.t,o.m,{home:homeEl,remount:remount})}
+var ANT={
+ peek:[['Psst... Jepi lagi ngumpet di balik kartu job. Jangan bilang siapa-siapa ya.','Dar! Kaget ya? Hehe.','Waduh, ketahuan! Jepi kalah petak umpet.'],
+       ['Ssst! Jepi main petak umpet di sini. Jangan ngintip ya... eh, kamu sudah ngintip.','Taraa! Jepi muncul lagi.','Yah, cepat banget ketahuannya!'],
+       ['Kalau ada yang tanya, Jepi nggak di sini ya. Jepi cuma kartu job.','Haaa! Hampir aja kamu lewatin Jepi.','Aduh, ketahuan lagi. Ya sudah, Jepi nyerah.']],
+ sit:[['Numpang duduk di sini ya. Kartunya empuk banget!','Dari sini kelihatan semua jadwalmu. Jepi jagain.'],
+      ['Jepi capek lompat-lompat. Duduk dulu sebentar, ya.','Oke, istirahat selesai. Lanjut jagain!']],
+ poke:[['Colek colek... kartunya goyang. Hehe.','Eh, jangan marah ya. Jepi cuma iseng.'],
+       ['Tuk tuk! Ada orang di dalam kartu ini?','Nggak ada yang jawab. Ya sudah.']],
+ run:[['Hup hup hup! Jepi lagi olahraga dulu.','Hosh... hosh... capek juga. Balik dulu ah!'],
+      ['Wuuus! Jepi lewat, permisi!','Hehe, cuma lewat kok. Daah!']],
+ sleep:[['Zzz... Jepi tidur sebentar di sini ya. Kartunya empuk.','Eh! Jepi nggak tidur kok, cuma merem.','Hoaam... oke, Jepi sudah segar lagi!'],
+        ['Zzz... jangan bangunin Jepi... zzz...','Hah?! Jepi nggak ketiduran, sumpah!','Hehe, ketahuan ngantuk. Lanjut jaga ya!']],
+ dance:[['Ada musik di kepala Jepi nih. Joget dulu ya!','Capek, tapi seru. Balik kerja dulu ah!'],
+         ['Satu, dua, tiga... goyang!','Tadaa! Jepi bakat jadi penari, kan?']],
+ edge:[['Psst... Jepi ngintip dari pinggir layar.','Halo! Jepi cuma mau lihat kamu kerja. Daah!'],
+        ['Hihi, Jepi pura-pura jadi hantu kelinci. Buu!','Nggak seram ya? Ya sudah, Jepi pergi.']]
+};
+var ZZ=['Zzz... Jepi lagi tidur. Jangan diganggu dulu ya.','Ssst... Jepi istirahat sampai jam 6 pagi.','Zzz... nanti saja ya... zzz...'];
+function tidur(){return !!(window.jepiTidur&&jepiTidur())}
+function antic(){return !!(window.JepiGo&&JepiGo.antic({home:homeEl,remount:remount,next:'.dash-next',any:['.dash-row','.dash-week','.dash-empty'],lines:function(k){return pick(ANT[k])}}))}
 function goBtn(host,o){
   var c=host.closest('[data-jepi-card]'),s=c&&c.querySelector('.jepi-say'),old=s&&s.querySelector('.jepi-go');
   if(old)old.remove();
@@ -23307,18 +23544,20 @@ function info(host){
 }
 function tap(inst){
   var host=inst.el.parentNode;if(!host)return;
+  if(tidur()){st.zz=true;host.setAttribute('data-mood','ngantuk');say(host,pick(ZZ),{mood:'ngantuk',ttl:5000});return}
   var now=Date.now();st.taps=st.taps.filter(function(x){return now-x<3000});st.taps.push(now);
   if(st.taps.length>=5){st.taps=[];say(host,'Aduuh, pusing! Jangan dikocok dong.',{mood:'kaget',act:'dance',ttl:4000});return}
   st.n++;
   var i=st.n%5,mood=A(host,'mood')||'senang';
   if(i===1){var m=info(host);var x=m[Math.floor(Math.random()*m.length)];say(host,x.t,{mood:x.mood,act:x.act,tg:x.tg});if(x.tg&&Math.random()<.6)setTimeout(function(){travel({tg:x.tg,t:x.t,m:x.mood})},800)}
-  else if(i===2){say(host,pick(JOKES.jahil),{mood:'jahil',act:'bleh',ttl:4500})}
+  else if(i===2){if(!(Math.random()<.5&&window.JepiGo&&!JepiGo.active()&&antic()))say(host,pick(JOKES.jahil),{mood:'jahil',act:'bleh',ttl:4500})}
   else if(i===3){say(host,'Keren kan?',{mood:'keren',act:'cool',ttl:4500})}
   else if(i===4){say(host,pick(JOKES[mood]||JOKES.senang),{act:'wink'})}
   else{say(host,pick(JOKES[mood]||JOKES.senang),{act:'hop'})}
   if(Math.random()<.3)inst.flip();
 }
 function welcome(host){
+  if(tidur())return;
   var t=A(host,'hi');if(!t)return;
   try{if(sessionStorage.getItem('jepi_hi'))return;sessionStorage.setItem('jepi_hi','1')}catch(e){}
   setTimeout(function(){if(host.isConnected)say(host,t,{mood:'senang',act:'wave',ttl:7000})},1400);
@@ -23327,6 +23566,7 @@ function changes(host){
   var cur={jobs:+A(host,'jobs'),pending:+A(host,'pending'),telat:+A(host,'telat'),todo:+A(host,'todo'),psn:+A(host,'psn')},p=st.last;st.last=cur;
   if(!st.t0)st.t0=Date.now();
   if(!p||Date.now()-st.t0<10000){st.last=cur;return false}
+  if(tidur())return true;
   var r=null;
   if(cur.psn>p.psn)r={t:'Ada pesanan baru dari klien! Cek lalu konfirmasi booking-nya ya.',mood:'semangat',act:'hop',tg:'.psn-banner',auto:1};
   else if(cur.jobs>p.jobs)r={t:'Ada job baru masuk! '+(A(host,'newest')||'Cek jadwalnya ya.'),mood:'semangat',act:'hop',tg:'.dash-next',auto:1};
@@ -23345,6 +23585,13 @@ function chatter(){
       if(document.visibilityState!=='visible')return;
       var host=document.querySelector('#app [data-jepi-host]');if(!host)return;
       var r=host.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)return;
+      if(tidur()){
+        st.zz=true;
+        if(host.getAttribute('data-mood')!=='ngantuk'){st.m0=host.getAttribute('data-mood');host.setAttribute('data-mood','ngantuk');say(host,'Zzz... Jepi lagi tidur dan istirahat. Jangan diganggu dulu ya.',{mood:'ngantuk',ttl:60000})}
+        return;
+      }
+      if(st.zz){st.zz=false;var cm=host.getAttribute('data-mood'),m0=(cm==='ngantuk'&&st.m0)?st.m0:cm;st.m0=null;host.setAttribute('data-mood',m0||'senang');say(host,'Hoaam... selamat pagi! Jepi sudah bangun.',{mood:'senang',act:'wave',ttl:6000});return}
+      if(window.JepiGo&&!JepiGo.active()&&JepiGo.since()>45000&&Math.random()<.4&&antic())return;
       var m=info(host),mood=A(host,'mood')||'senang';
       if(Math.random()<.4){var x=m[Math.floor(Math.random()*m.length)];say(host,x.t,{act:x.act,tg:x.tg});if(x.tg&&window.JepiGo&&!JepiGo.active()&&JepiGo.since()>90000&&Math.random()<.5)setTimeout(function(){travel({tg:x.tg,t:x.t,m:x.mood})},1200)}
       else say(host,pick(JOKES[mood]||JOKES.senang),{act:pick(['ears','hop','wink'])});
@@ -23358,8 +23605,10 @@ window.jepiAfterRender=function(){
     if(!host)return;
     if(window.JepiGo&&JepiGo.active()){if(JepiGo.refresh()){host.classList.add('jpg-away');return}}
     Jepi.mount(host,{mood:A(host,'mood')||'senang',palette:'acak',onTap:tap,shadow:'120,90,20'});
+    if(tidur())st.zz=true;
     if(!changes(host))welcome(host);
     chatter();
+    if(!st.fa){st.fa=1;setTimeout(function(){try{if(document.visibilityState==='visible')antic()}catch(e){}},16000+Math.random()*8000)}
   }catch(e){console.warn('Jepi',e)}
 };
 })();
@@ -23572,7 +23821,7 @@ window.jepiAfterRender=function(){
   var LV2=['{A} lagi mikirin kamu di sela kerjanya, {n}. Jepi lihat sendiri.','{A} titip peluk hangat buat kamu, {n}.','Kata Jepi, kamu alasan {a} semangat tiap hari.','Kalau {a} lagi capek, ingat kamu langsung senyum lagi.','Jepi sering lihat {a} senyum-senyum sendiri baca pesanmu, {n}.','{A} kangen kamu, {n}. Jepi yang jadi saksinya.','Dunia {a} lebih berwarna karena ada kamu, {n}.','Muach! Ciuman jauh dari {a} dan Jepi, {n}.','Kamu pelabuhan paling nyaman buat {a}, {n}.','Satu pesan dari kamu bisa bikin {a} kuat seharian.'];
   function lvTime(){
     var h=parseInt(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',hour12:false}).format(new Date()),10)%24,a;
-    if(h<4||h>=23)a=['Selamat tidur, {n}. Mimpikan {a} ya.','Sudah larut, {n}. Tidur yang nyenyak, Jepi jagain.'];
+    if(h<4||h>=22)a=[PSN_TIDUR,'Selamat tidur, {n}. Mimpikan {a} ya.','Sudah larut, {n}. Tidur yang nyenyak, Jepi jagain.'];
     else if(h<11)a=['Selamat pagi, {n}. Semoga harimu seindah senyummu.','Pagi, {n}! Jepi bangun duluan cuma buat nyapa kamu.'];
     else if(h<15)a=['Sudah makan siang belum, {n}? Jepi nggak mau kamu telat makan.','Siang, {n}. Jangan lupa minum, ya. {A} pasti ingin kamu sehat.'];
     else if(h<18)a=['Sore, {n}. Capek ya? Sini, Jepi kasih peluk.','Sore-sore begini Jepi jadi ingat senyum kamu, {n}.'];
@@ -23586,9 +23835,11 @@ window.jepiAfterRender=function(){
   }
   /* Jepi: ekspresi + pesan untuk lawan chat, menyesuaikan jadwal Admin (sedang job / akan job / santai / larut malam) */
   function jepiState(now,nxt,t){
+    if(tidurNow())return{m:'ngantuk',t:jumlahTok(PSN_TIDUR_Z)};
     var d=new Date(),parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d),h=0,mi=0,i;
     for(i=0;i<parts.length;i++){if(parts[i].type==='hour')h=parseInt(parts[i].value,10)%24;if(parts[i].type==='minute')mi=parseInt(parts[i].value,10)}
     var menit=h*60+mi;
+    if(h>=22)return{m:h>=23?'ngantuk':'sayang',t:jumlahTok(PSN_TIDUR)};
     if(now.length){
       var j=now[0],mulai=-1,m=/^(\d{1,2})[:.](\d{2})/.exec(j.jam||'');
       if(m)mulai=parseInt(m[1],10)*60+parseInt(m[2],10);
@@ -23631,6 +23882,31 @@ window.jepiAfterRender=function(){
     ['Jepi cuma iseng godain kamu, {n}. Jangan bilang {a} ya.'],
     ['Jangan senyum-senyum gitu dong, {n}. Jepi jadi ikut salah tingkah.']
   ];
+  /* Tingkah Jepi untuk Liaw: bersembunyi di balik kartu job, duduk di kartu, mencolek kartu, atau berlari */
+  var LA={
+    peek:[['Psst, {n}... Jepi ngumpet di balik kartu job {a}. Jangan bilang-bilang ya.','Dar! Kaget ya, {n}? Hihi.','Waduh, ketahuan sama {n}! Jepi kalah petak umpet.'],
+          ['Ssst! Jepi lagi sembunyi dari {a}. {n}, pura-pura nggak lihat ya.','Taraa! Jepi muncul lagi. Kangen nggak, {n}?','Yah, ketahuan deh. Tapi {n} nggak lapor {a} kan?'],
+          ['Kalau {a} nanya, Jepi nggak di sini ya. Jepi cuma kartu job, {n}.','Haaa! Hampir aja kamu lewatin Jepi, {n}.','Aduh, ketahuan lagi. Jepi nyerah deh, {n}.']],
+    sit:[['Jepi numpang duduk di kartu job {a} ya, {n}. Empuk banget!','Dari sini Jepi bisa mantau jadwal {a} buat kamu, {n}.'],
+         ['Capek lompat-lompat. Duduk sebentar ya, {n}. Temenin Jepi dong.','Hehe, istirahat selesai. Jepi balik ya.']],
+    poke:[['Colek colek kartu job {a}... goyang nih. Hehe.','Ssst, jangan bilang {a} Jepi iseng colek kartunya ya, {n}.'],
+          ['Tuk tuk! Ada {a} di dalam kartunya?','Nggak ada yang jawab. Jepi balik dulu ya, {n}.']],
+    run:[['Hup hup hup! Jepi olahraga dulu biar kuat gendong rindu {a}.','Hosh... hosh... capek. Balik dulu ya, {n}.'],
+         ['Wuuus! Jepi lari bawa titipan peluk dari {a} buat kamu, {n}!','Hehe, cuma lewat kok. Pelukannya sudah sampai ya?']],
+    sleep:[['Zzz... Jepi tidur di kartu job {a} ya, {n}. Empuk banget.','Eh! Jepi nggak tidur kok, cuma merem sambil mikirin {n}.','Hoaam... Jepi sudah segar lagi. Jagain {n} lagi ah!'],
+           ['Zzz... jangan bilang {a} Jepi ketiduran ya, {n}... zzz...','Hah?! Jepi nggak ketiduran, sumpah!','Hehe, ketahuan ngantuk. Lanjut jagain {n} ya.']],
+    dance:[['Jepi lagi senang karena ada {n}. Joget dulu ya!','Capek, tapi seru. Jepi balik dulu ya, {n}.'],
+           ['Satu, dua, tiga... goyang! Ini khusus buat {n}.','Tadaa! Joget dari Jepi, salam dari {a}!']],
+    edge:[['Psst, {n}... Jepi ngintip dari pinggir layar. {a} nggak lihat kan?','Halo {n}! Jepi cuma mau mastiin kamu baik-baik saja. Daah!'],
+          ['Hihi, Jepi pura-pura jadi hantu kelinci. Buu! Takut nggak, {n}?','Nggak seram ya? Ya sudah, Jepi pergi dulu.']]
+  };
+  /* Jam tidur Jepi 00.00-06.00 WIB: tidak bisa diganggu */
+  function tidurNow(){return !!(window.jepiTidur&&jepiTidur())}
+  function malamNow(){try{return parseInt(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',hour12:false}).format(new Date()),10)%24>=22}catch(e){return false}}
+  /* Pesan Admin untuk Liaw lewat Jepi supaya tidur (malam 22.00-24.00 WIB; saat Jepi sudah tidur dipakai versi singkatnya) */
+  var PSN_TIDUR='{n}, ini pesan dari {a} lewat Jepi: sudah malam, saatnya kamu tidur ya. Biar badanmu istirahat dan besok kamu bisa beraktivitas lagi dengan segar. Jangan begadang dan jangan lupa berdoa dulu. {A} sayang kamu. Selamat tidur, mimpi indah ya \uD83D\uDC9B';
+  var PSN_TIDUR_Z='Zzz... Jepi sudah tidur, {n}. Tapi pesan dari {a} harus sampai: kamu juga harus tidur ya, biar besok bisa beraktivitas lagi dengan segar. Jangan begadang. Selamat tidur, mimpi indah \uD83D\uDC9B';
+  var ZZL=['Zzz... Jepi lagi tidur. Jangan diganggu dulu ya.','Ssst... Jepi istirahat sampai jam 6 pagi. Mimpi indah ya.','Zzz... nanti saja ya... zzz...'];
   function jepiGoda(bsay,host){
     try{
       var k,n=JG.length;
@@ -23659,6 +23935,13 @@ window.jepiAfterRender=function(){
         var i=Jepi._inst;if(!i)return;if(mood)i.setMood(mood);if(act)i.act(act);if(txt)i.talk(Math.min(3.5,.6+txt.length/28));
         if(mood){clearTimeout(S.jrev);S.jrev=setTimeout(function(){try{i.setMood(host.getAttribute('data-mood')||'senang')}catch(e){}},7000)}};
       var away=!!(window.JepiGo&&JepiGo.active()&&JepiGo.refresh());if(away)host.classList.add('jpg-away');
+      if(tidurNow())S.jzz=true;
+      var lhAntic=function(){
+        if(!window.JepiGo||JepiGo.active())return false;
+        return !!JepiGo.antic({home:function(){return root.querySelector('.lh-jepi')},remount:function(){var rt=$('lh');if(rt)jepiMount(rt)},next:'.lh-card:not(.past)',any:['.lh-card','.lh-day'],
+          lines:function(k){var v=LA[k];v=v[Math.floor(Math.random()*v.length)];return v.map(function(s){return nmFix(jumlahTok(s))})}});
+      };
+      if(!S.jfa){S.jfa=1;setTimeout(function(){try{if(host.isConnected&&document.visibilityState==='visible')lhAntic()}catch(e){}},22000+Math.random()*8000)}
       if(!S.nmTry){S.nmTry=0}
       nmMuat();
       if(S.nmTry<4&&!S.nmBusy){
@@ -23667,13 +23950,16 @@ window.jepiAfterRender=function(){
       }
       var nJ=S.jobs.length;
       if(S.jN==null){S.jN=nJ;S.j0=Date.now()}
-      else if(nJ>S.jN&&Date.now()-S.j0>10000){S.jN=nJ;setTimeout(function(){bsay('Ada job baru di jadwal Admin!','semangat','hop','.lh-card:not(.past)',1)},700)}
+      else if(nJ>S.jN&&Date.now()-S.j0>10000){S.jN=nJ;if(!tidurNow())setTimeout(function(){bsay('Ada job baru di jadwal Admin!','semangat','hop','.lh-card:not(.past)',1)},700)}
       else if(nJ<S.jN){S.jN=nJ}
       var sapa=S.today?'':'';
-      try{if(!sessionStorage.getItem('jepi_hi_lh')){sessionStorage.setItem('jepi_hi_lh','1');var nm=namaKu();setTimeout(function(){if(host.isConnected)bsay('Halo, '+nm+'! Selamat datang. Jepi kangen, nemenin kamu di sini ya. Tahan lama-lama di Jepi buat dapat peluk.','sayang','wave')},1400);setTimeout(function(){if(host.isConnected)bsay('Kalau mau ngobrol, ketuk ikon chat ini ya, '+nm+'. Jepi antar ke sana.','sayang','wave','#lhFab',1)},9500)}}catch(e){}
+      try{if(!tidurNow()&&!sessionStorage.getItem('jepi_hi_lh')){sessionStorage.setItem('jepi_hi_lh','1');var nm=namaKu();setTimeout(function(){if(host.isConnected)bsay('Halo, '+nm+'! Selamat datang. Jepi kangen, nemenin kamu di sini ya. Tahan lama-lama di Jepi buat dapat peluk.','sayang','wave')},1400);if(malamNow())setTimeout(function(){if(host.isConnected)bsay(jumlahTok(PSN_TIDUR),'sayang','wave')},9000);else setTimeout(function(){if(host.isConnected)bsay('Kalau mau ngobrol, ketuk ikon chat ini ya, '+nm+'. Jepi antar ke sana.','sayang','wave','#lhFab',1)},9500)}}catch(e){}
       clearInterval(S.jtimer);S.jtimer=setInterval(function(){
         if(document.visibilityState!=='visible'||!host.isConnected)return;
         var tip=root.querySelector('.lh-say span');if(!tip)return;
+        if(tidurNow()){S.jzz=true;if(host.getAttribute('data-mood')!=='ngantuk'){S.jm0=host.getAttribute('data-mood');host.setAttribute('data-mood','ngantuk');S.jpsn=Date.now();bsay(jumlahTok(PSN_TIDUR_Z),'ngantuk',null)}return}
+        if(S.jzz){S.jzz=false;var cm=host.getAttribute('data-mood'),m0=(cm==='ngantuk'&&S.jm0)?S.jm0:cm;S.jm0=null;host.setAttribute('data-mood',m0||'senang');bsay('Hoaam... selamat pagi! Jepi sudah bangun.','senang','wave');return}
+        if(window.JepiGo&&!JepiGo.active()&&JepiGo.since()>40000&&Math.random()<.35&&lhAntic())return;
         var r=Math.random();
         if(r<.4){
           if(Math.random()<.3){var kt=nmFix(jumlahTok('Kangen {a}? Ketuk ikon chat ini ya, {n}. Dia pasti senang.'));bsay(kt,'sayang','wave','#lhFab');if(window.JepiGo&&!JepiGo.active()&&JepiGo.since()>90000&&Math.random()<.5)setTimeout(function(){lhGo('#lhFab',kt,'sayang')},1200)}
@@ -23683,16 +23969,17 @@ window.jepiAfterRender=function(){
         else jepiGoda(bsay,host);
       },18000);
       if(!host.__hug){host.__hug=1;var ht=null;
-        host.addEventListener('pointerdown',function(){clearTimeout(ht);ht=setTimeout(function(){S.jhugAt=Date.now();bsay(nmFix(jumlahTok('Peluuuk! Pelukan hangat dari {a} lewat Jepi, {n}.')),'sayang','hop');setTimeout(function(){if(Jepi._inst)Jepi._inst.act('wave')},900)},700)});
+        host.addEventListener('pointerdown',function(){clearTimeout(ht);ht=setTimeout(function(){S.jhugAt=Date.now();if(tidurNow()){bsay(ZZL[0],'ngantuk',null);return}bsay(nmFix(jumlahTok('Peluuuk! Pelukan hangat dari {a} lewat Jepi, {n}.')),'sayang','hop');setTimeout(function(){if(Jepi._inst)Jepi._inst.act('wave')},900)},700)});
         ['pointerup','pointerleave','pointercancel'].forEach(function(ev){host.addEventListener(ev,function(){clearTimeout(ht)})});}
       if(!away)Jepi.mount(host,{mood:host.getAttribute('data-mood')||'senang',palette:'acak',shadow:'120,90,20',onTap:function(inst){
         var now=Date.now();
         if(Date.now()-(S.jhugAt||0)<600)return;
+        if(tidurNow()){S.jzz=true;if(Date.now()-(S.jpsn||0)>600000){S.jpsn=Date.now();bsay(jumlahTok(PSN_TIDUR_Z),'ngantuk',null)}else bsay(ZZL[Math.floor(Math.random()*ZZL.length)],'ngantuk',null);return}
         var now=Date.now();S.jtaps=(S.jtaps||[]).filter(function(x){return now-x<3000});S.jtaps.push(now);
         if(S.jtaps.length>=5){S.jtaps=[];bsay('Aduuh, pusing! Jangan dikocok dong.','kaget','dance');return}
         S.jn=(S.jn||0)+1;
         if(S.jn%4===1){var st1=S.jtext||'Halo!',tg1='.lh-card:not(.past),.lh-day';bsay(st1,host.getAttribute('data-mood')||null,'wave',tg1);if(Math.random()<.6)setTimeout(function(){lhGo(tg1,nmFix(st1),host.getAttribute('data-mood')||null)},800)}
-        else if(S.jn%4===3||S.jn%4===2){jepiGoda(bsay,host)}
+        else if(S.jn%4===3||S.jn%4===2){if(!(S.jn%4===2&&Math.random()<.5&&lhAntic()))jepiGoda(bsay,host)}
         else{var ll=lvLine();var fab=Math.random()<.25;if(fab)ll=nmFix(jumlahTok('Kangen {a}? Ketuk ikon chat ini ya, {n}.'));bsay(ll,'sayang',S.jn%2?'hop':'wave',fab?'#lhFab':'');if(fab)setTimeout(function(){lhGo('#lhFab',ll,'sayang')},800)}
         if(Math.random()<.3)inst.flip();
       }});

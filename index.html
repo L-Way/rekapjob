@@ -4619,7 +4619,13 @@ async function kaoneCekHanyaChat(){
     return data === true;
   }catch(e){ return null; }
 }
-function kaoneKeluarPaksa(){ try{ localStorage.removeItem(AUTH_SESSION_KEY); }catch(e){} location.reload(); }
+function kaoneKeluarPaksa(){
+  try{ localStorage.removeItem(AUTH_SESSION_KEY); }catch(e){}
+  // Cabut juga token Supabase di perangkat ini, kalau tidak ia tertinggal dan terkirim lagi saat login (memicu 403).
+  let done = false;
+  const r = ()=>{ if(done) return; done = true; location.reload(); };
+  try{ Promise.resolve(supabaseClient.auth.signOut({scope:'local'})).then(r, r); setTimeout(r, 1500); }catch(e){ r(); }
+}
 async function kaoneVerifikasiHanyaChat(){
   try{
     const { data } = await supabaseClient.auth.getSession();
@@ -4693,6 +4699,8 @@ function kaoneSimpanSesi(d){
 async function attemptLogin(username, password){
   if(!cloudSyncEnabled) return {ok:false, reason:'offline'};
   try{
+    // Buang token lama (mis. sisa sesi akun lain / akun hanya-chat) supaya pencarian login dikirim sebagai tamu.
+    try{ await supabaseClient.auth.signOut({scope:'local'}); }catch(e){}
     const { data: email, error: e1 } = await supabaseClient.rpc('kaone_cari_email', { p_username: username });
     if(e1) throw e1;
     const { data: au, error: e2 } = await supabaseClient.auth.signInWithPassword({ email, password });

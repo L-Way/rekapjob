@@ -7197,7 +7197,10 @@ async function pullPesanan(senyap){
     pesananLoading = false;
     await pesananKirimAntrian();
     const sesudah = JSON.stringify(pesananList.map(x=>[x.id, x.status, x.job_id]));
-    if((currentView==='pesanan' || currentView==='beranda') && (!senyap || sebelum!==sesudah)) refreshView();
+    if((currentView==='pesanan' || currentView==='beranda') && (!senyap || sebelum!==sesudah)){
+      // Pembaruan otomatis (senyap) ditunda kalau Anda sedang mengetik / ada pop-up, supaya isian tidak terhapus.
+      if(senyap) rtRequestRender(); else refreshView();
+    }
     renderNotifBadge();
     return true;
   }catch(e){
@@ -7284,8 +7287,8 @@ function psnPasangBannerForm(form, p, r){
   box.className = 'info-box psn-formbox';
   const gabung = pendingPesanan.mode==='gabung';
   const gagal = (r && r.failed) ? r.failed.map(x=>String(x).split(' (')[0]) : [];
-  box.innerHTML = '<b>' + ic('pesanan') + ' ' + (gabung ? 'Gabung pesanan ke job ini: ' : 'Konfirmasi Booking: ') + escapeHtml(p.nama || 'klien') + '</b>' +
-    'Periksa kolomnya, lalu tekan Simpan.' +
+  box.innerHTML = '<b>' + ic('pesanan') + ' ' + (gabung ? 'Timpa job dengan pesanan: ' : 'Konfirmasi Booking: ') + escapeHtml(p.nama || 'klien') + '</b>' +
+    (gabung ? 'Isian pesanan sudah dimasukkan ke job ini; kolom yang kosong di pesanan tidak mengosongkan job. ' : '') + 'Periksa kolomnya, lalu tekan Simpan.' +
     (gagal.length ? '<br>Belum terisi: ' + escapeHtml(gagal.join(', ')) + '.' : '');
   form.parentNode.insertBefore(box, form);
   try{ box.scrollIntoView({block:'start', behavior:'smooth'}); }catch(e){}
@@ -7294,21 +7297,43 @@ function psnPasangBannerForm(form, p, r){
 async function pesananSelesaiDenganJob(pend, jobId){
   const status = pend.mode==='gabung' ? 'digabung' : 'dikonfirmasi';
   const hasil = await pesananKunci(pend.id, status, jobId);
-  if(hasil==='ok') toast(pend.mode==='gabung' ? 'Pesanan digabung ke job' : 'Booking dikonfirmasi');
+  if(hasil==='ok') toast(pend.mode==='gabung' ? 'Job ditimpa dengan data pesanan' : 'Booking dikonfirmasi');
   else if(hasil==='sudah') alert('Perhatian: pesanan ini ternyata sudah diproses di perangkat lain. Periksa Daftar Job, kemungkinan ada job dobel untuk klien ini.');
   else toast('Job tersimpan. Status pesanan akan diperbarui otomatis begitu koneksi pulih.');
   if(currentView==='pesanan') refreshView();
   renderNotifBadge();
 }
+// Job yang tanggal acaranya sama dengan pesanan (klien yang sama ditaruh paling depan).
+function psnKandidatTimpa(p){
+  const dup = psnDuplikat(p), tgl = String(p.tanggal_acara || ''), ada = new Set(), out = [];
+  const tambah = j=>{ const k = String(j.id); if(!ada.has(k)){ ada.add(k); out.push(j); } };
+  dup.jobSama.forEach(tambah);
+  if(tgl) jobs.filter(j=>String(j.tanggalAcara||'')===tgl).forEach(tambah);
+  return out;
+}
+// Pilihan: timpa salah satu job yang sudah ada (isian pesanan masuk ke job itu; kolom yang kosong di pesanan
+// TIDAK mengosongkan job) atau tambah sebagai job baru. Keduanya masih lewat form untuk diperiksa sebelum Simpan.
+function psnPilihAksi(p, kandidat){
+  const r = psnRingkas(p), esc = escapeHtml;
+  const items = kandidat.map(j=>`<button type="button" class="btn btn-outline" data-psn-timpa="${esc(j.id)}" style="width:100%; justify-content:flex-start; text-align:left; margin-top:8px;"><span>Timpa: <b>${esc(psnJudulJob(j))}</b><span style="display:block; font-weight:500; font-size:12px; opacity:.75;">${esc(psnTglPanjang(j.tanggalAcara))}${j.noWhatsapp ? ' · 0' + esc(plNationalDigits(j.noWhatsapp)) : ''}</span></span></button>`).join('');
+  showModal(`<h2 style="margin-top:0;">Sudah ada job di tanggal ini</h2>
+    <p style="margin:0 0 4px;">Pesanan dari <b>${esc(r.nama)}</b>${r.tanggal ? ' untuk ' + esc(psnTglPanjang(r.tanggal)) : ''}. Mau diapakan?</p>
+    ${items}
+    <button type="button" class="btn btn-primary" id="psnPilihBaru" style="width:100%; margin-top:12px;">Tambah sebagai job baru</button>
+    <button type="button" class="btn btn-outline" id="psnPilihBatal" style="width:100%; margin-top:8px;">Batal</button>
+    <p style="margin:12px 0 0; font-size:12px; color:var(--ink-soft);">Kalau menimpa, semua isian dari pesanan masuk ke job yang dipilih. Kolom yang kosong di pesanan tidak mengosongkan isi job. Anda masih bisa memeriksa dan mengubah dulu sebelum menekan Simpan.</p>`);
+  const ov = document.getElementById('modalOverlay');
+  if(!ov) return;
+  const lanjut = (jobId)=>{ closeModal(); setTimeout(()=>pesananMulai(p, jobId), 200); };
+  ov.querySelectorAll('[data-psn-timpa]').forEach(b=>b.addEventListener('click', ()=>lanjut(b.dataset.psnTimpa)));
+  ov.querySelector('#psnPilihBaru')?.addEventListener('click', ()=>lanjut(null));
+  ov.querySelector('#psnPilihBatal')?.addEventListener('click', ()=>closeModal());
+}
 async function pesananKonfirmasi(id){
   const p = pesananCari(id);
   if(!p) return;
-  const dup = psnDuplikat(p);
-  if(dup.jobSama.length){
-    const j = dup.jobSama[0];
-    const ok = confirm('Sudah ada job dengan No. WhatsApp dan tanggal yang sama:\n\n' + psnJudulJob(j) + ' (' + psnTglPanjang(j.tanggalAcara) + ')\n\nKalau ini revisi dari klien yang sama, pilih Batal lalu gunakan tombol "Gabung ke job ini".\n\nTetap buat JOB BARU?');
-    if(!ok) return;
-  }
+  const kandidat = psnKandidatTimpa(p);
+  if(kandidat.length){ psnPilihAksi(p, kandidat); return; }
   pesananMulai(p, null);
 }
 function pesananGabung(id, jobId){
@@ -7387,9 +7412,13 @@ function psnKartuHtml(p){
     rows.push(`<li>${ic('money')}<span>Total ${fmtRp(Math.max(0,(r.harga||0)-(r.diskon||0)))} · DP ${fmtRp(r.dp||0)} · Sisa ${fmtRp(sisa)}</span></li>`);
   }
   let warn = '';
+  const kandTimpa = (p.status==='baru') ? psnKandidatTimpa(p) : [];
+  if(!dup.jobSama.length && kandTimpa.length){
+    warn += `<div class="psn-warn"><b>${ic('warning')} Sudah ada job di tanggal ini</b>${kandTimpa.map(j=>escapeHtml(psnJudulJob(j))).join(', ')}. Saat Konfirmasi Booking, Anda bisa memilih menimpa job itu atau menambah job baru.</div>`;
+  }
   if(dup.jobSama.length){
     const j = dup.jobSama[0];
-    warn += `<div class="psn-warn"><b>${ic('warning')} Sudah ada job untuk klien &amp; tanggal ini</b>${escapeHtml(psnJudulJob(j))} (${escapeHtml(psnTglPanjang(j.tanggalAcara))}). Kalau ini revisi dari klien, gunakan "Gabung ke job ini" supaya tidak ada job dobel.</div>`;
+    warn += `<div class="psn-warn"><b>${ic('warning')} Sudah ada job untuk klien &amp; tanggal ini</b>${escapeHtml(psnJudulJob(j))} (${escapeHtml(psnTglPanjang(j.tanggalAcara))}). Kalau ini revisi dari klien, gunakan "Timpa job yang ada" supaya tidak ada job dobel.</div>`;
   }
   if(dup.pesananLain.length){
     const lain = dup.pesananLain[0];
@@ -7407,7 +7436,7 @@ function psnKartuHtml(p){
   let aksi = '';
   if(p.status==='baru'){
     aksi = `<button type="button" class="btn btn-primary" data-psn-act="konfirmasi" data-psn-id="${escapeHtml(p.id)}">${ic('check-circle')} Konfirmasi Booking</button>`
-      + (dup.jobSama.length ? `<button type="button" class="btn btn-outline" data-psn-act="gabung" data-psn-id="${escapeHtml(p.id)}" data-psn-job="${escapeHtml(dup.jobSama[0].id)}">Gabung ke job ini</button>` : '')
+      + (kandTimpa.length ? `<button type="button" class="btn btn-outline" data-psn-act="timpa" data-psn-id="${escapeHtml(p.id)}">Timpa job yang ada</button>` : '')
       + `<button type="button" class="btn btn-outline" data-psn-act="abaikan" data-psn-id="${escapeHtml(p.id)}">Abaikan</button>`;
   }else if(p.status==='dikonfirmasi' || p.status==='digabung'){
     const j = p.job_id ? jobs.find(x=>String(x.id)===String(p.job_id)) : null;
@@ -7469,6 +7498,7 @@ document.addEventListener('click', (e)=>{
   if(act==='buka') navigate('pesanan');
   else if(act==='konfirmasi') pesananKonfirmasi(id);
   else if(act==='gabung') pesananGabung(id, b.dataset.psnJob);
+  else if(act==='timpa'){ const pp = pesananCari(id); if(pp){ const k = psnKandidatTimpa(pp); if(k.length) psnPilihAksi(pp, k); else pesananMulai(pp, null); } }
   else if(act==='abaikan') pesananAbaikan(id);
   else if(act==='pulihkan') pesananPulihkan(id);
   else if(act==='hapus') pesananHapus(id);
@@ -10803,6 +10833,75 @@ function onHonorTimNominalInput(inp){
 function viewForm(){
   const j = editingId ? jobs.find(x=>x.id===editingId) : null;
   return `<div class="card">${buildJobFormHtml(j)}</div>`;
+}
+/* ---------- Draf otomatis form job ----------
+   Isian disimpan di perangkat ini setiap kali berubah, lalu dipulihkan kalau form terbuka lagi
+   (mis. halaman dimuat ulang atau tab dibuang browser). Dihapus saat job disimpan/dibatalkan/dihapus.
+   Tidak berlaku untuk form Konfirmasi Booking (isiannya dari pesanan) dan tidak menyimpan kolom hitung otomatis. */
+const JD_KEY = 'kaoneMotret_jobDraft_v1' + (WS_ID!=='default' ? '@'+WS_ID : '');
+const JD_UMUR = 2*24*3600*1000;
+let jdRestoring = false, jdTimer = 0;
+function jdKunci(){ return editingId ? 'edit:'+editingId : 'baru'; }
+function jdBaca(){ try{ const d = JSON.parse(localStorage.getItem(JD_KEY)||'null'); return (d && d.v && typeof d.v==='object') ? d : null; }catch(e){ return null; } }
+function jdHapus(){ clearTimeout(jdTimer); try{ localStorage.removeItem(JD_KEY); }catch(e){} }
+function jdItems(form){
+  const seen = {}, out = [];
+  Array.prototype.forEach.call(form.elements, function(el){
+    const t = (el.type||'').toLowerCase();
+    // Kolom Detail Acara & Instagram per peran tidak punya name/id: dikenali lewat data-da-key / data-ig-role.
+    const base = el.name || el.id || (el.dataset && el.dataset.daKey ? 'da:'+el.dataset.daKey : (el.dataset && el.dataset.igRole ? 'ig:'+el.dataset.igRole : ''));
+    if(!base) return;
+    if(/^(file|password|button|submit|reset|image|hidden)$/.test(t) || el.readOnly || el.disabled) return;
+    const pre = (t==='checkbox'||t==='radio') ? base+'|'+(el.value||'') : base;
+    seen[pre] = (seen[pre]||0) + 1;
+    out.push([pre+'#'+seen[pre], el]);
+  });
+  return out;
+}
+function jdSimpan(form){
+  if(jdRestoring || !form || !form.isConnected) return;
+  try{
+    const v = {};
+    jdItems(form).forEach(function(p){ const el = p[1], t = (el.type||'').toLowerCase(); v[p[0]] = (t==='checkbox'||t==='radio') ? (el.checked?1:0) : el.value; });
+    localStorage.setItem(JD_KEY, JSON.stringify({k:jdKunci(), t:Date.now(), v:v}));
+  }catch(e){}
+}
+function jdPulihkan(form){
+  const d = jdBaca();
+  if(!d || d.k!==jdKunci() || Date.now()-d.t>JD_UMUR) return 0;
+  let n = 0; jdRestoring = true;
+  try{
+    // Dua putaran: mengganti Jenis Acara membangun ulang kolom Detail Acara & Instagram, jadi kolom itu
+    // baru ada (dan baru bisa diisi) setelah putaran pertama.
+    for(let putaran=0; putaran<2; putaran++){
+      jdItems(form).forEach(function(p){
+        if(!(p[0] in d.v)) return;
+        const el = p[1], t = (el.type||'').toLowerCase(), val = d.v[p[0]];
+        if(t==='checkbox'||t==='radio'){
+          const on = !!val;
+          if(el.checked!==on){ el.checked = on; el.dispatchEvent(new Event('change',{bubbles:true})); n++; }
+        }else if(String(el.value)!==String(val)){
+          el.value = val; el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true})); n++;
+        }
+      });
+    }
+    try{ updateCalc(); }catch(e){}
+    try{ refreshJfBadges(); }catch(e){}
+  }catch(e){ console.warn('Memulihkan draf gagal', e); }
+  finally{ jdRestoring = false; }
+  return n ? d.t : 0;
+}
+function jdBanner(form, t){
+  document.querySelectorAll('.jd-banner').forEach(x=>x.remove());
+  const m = Math.max(1, Math.round((Date.now()-t)/60000)), w = m<60 ? m+' menit lalu' : Math.round(m/60)+' jam lalu';
+  const box = document.createElement('div');
+  box.className = 'info-box jd-banner';
+  box.innerHTML = '<b>'+ic('refresh')+' Draf isian dipulihkan</b>Terakhir diubah '+w+'. Periksa lagi kolomnya.<div style="margin-top:8px"><button type="button" class="btn btn-outline" id="jdMulai">Mulai dari awal</button></div>';
+  form.parentNode.insertBefore(box, form);
+  box.querySelector('#jdMulai').addEventListener('click', function(){
+    if(!confirm('Hapus draf dan kosongkan form?')) return;
+    jdHapus(); refreshView();
+  });
 }
 function bindJobFormEvents(scopeEl, onDone){
   const form = scopeEl.querySelector('#jobForm');
@@ -17725,9 +17824,17 @@ function attachHandlers(){
   const form = document.getElementById('jobForm');
   if(form){
     bindJobFormEvents(document, (action)=>{
+      jdHapus();   // job sudah disimpan / dibatalkan / dihapus: draf tidak diperlukan lagi
       if(action==='cancelled'){ navigate(jobs.length?'daftar':'beranda'); }
       else { navigate('daftar'); }
     });
+    if(!pendingPesanan){
+      const t = jdPulihkan(form);
+      if(t) jdBanner(form, t);
+      const sv = ()=>{ clearTimeout(jdTimer); jdTimer = setTimeout(()=>jdSimpan(form), 600); };
+      form.addEventListener('input', sv);
+      form.addEventListener('change', sv);
+    }
   }
 
   // DAFTAR
@@ -18184,7 +18291,10 @@ const CHANGELOG = [
       { kategori: 'Peningkatan', teks: 'Halaman Pengaturan dirapikan: isinya dibagi jadi tab (Bisnis, Akun, Integrasi, Data) sehingga tidak lagi satu daftar panjang. Akun Tim hanya melihat tab Akun dan Data.' },
       { kategori: 'Peningkatan', teks: 'Perpindahan antar tab Pengaturan kini lebih halus: penanda tab meluncur ke tab yang dipilih dan isinya bergeser mengikuti arahnya.' },
       { kategori: 'Peningkatan', teks: 'Obrolan Tim punya tampilan baru: pilihan tema, bentuk gelembung pesan yang lebih bagus, dan kiriman GIF.' },
-      { kategori: 'Peningkatan', teks: 'Akun vendor disederhanakan menjadi satu, yaitu Kaone Motret. Kaone Studio dan Bukti Sarjana dihapus dari pilihan karena memang tidak berisi data.' }
+      { kategori: 'Peningkatan', teks: 'Akun vendor disederhanakan menjadi satu, yaitu Kaone Motret. Kaone Studio dan Bukti Sarjana dihapus dari pilihan karena memang tidak berisi data.' },
+      { kategori: 'Peningkatan', teks: 'Isian form job kini disimpan otomatis sebagai draf di perangkat dan dipulihkan kalau halaman tertutup atau dimuat ulang sebelum job disimpan.' },
+      { kategori: 'Perbaikan', teks: 'Booking yang masuk tidak lagi menggambar ulang halaman Beranda atau Pesanan saat Anda sedang mengetik, sehingga isian tidak ikut terhapus.' },
+      { kategori: 'Fitur', teks: 'Pesanan Masuk: kalau tanggal pesanan sama dengan job yang sudah ada, Konfirmasi Booking menawarkan pilihan menimpa job itu atau menambah job baru. Saat menimpa, kolom yang kosong di pesanan tidak mengosongkan isi job.' }
     ]
   },
   {

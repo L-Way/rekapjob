@@ -19,9 +19,6 @@
 <title>Kaone Motret - Buku Job Fotografer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Italiana&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -8624,6 +8621,35 @@ function saveJobs(){
   if(typeof kmJadwal==='function') kmJadwal(); // kirim perubahan job ke Meja Kaone (bila tersambung)
   renderNotifBadge(); // data job berubah -> notifikasi (H-3/bayar/proses) ikut diperbarui
 }
+/* ---------- Pustaka besar: dimuat saat pertama dipakai (bukan tiap aplikasi dibuka) ----------
+   html2canvas (gambar poster/kwitansi/statistik), xlsx (impor/ekspor Excel), jsPDF (kwitansi PDF).
+   Dulu ketiganya (+/- 1,4 MB) diunduh dan diproses di awal setiap kali aplikasi dibuka. */
+const LIB_LAZY = {
+  h2c:  { url:'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', ok:()=>typeof html2canvas!=='undefined',          nama:'pembuat gambar' },
+  xlsx: { url:'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',         ok:()=>typeof XLSX!=='undefined',                 nama:'Excel' },
+  pdf:  { url:'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',         ok:()=>typeof window.jspdf!=='undefined',         nama:'pembuat PDF' }
+};
+const LIB_PROMISE = {};
+function libMuat(k){
+  const L = LIB_LAZY[k];
+  if(L.ok()) return Promise.resolve();
+  if(LIB_PROMISE[k]) return LIB_PROMISE[k];
+  return LIB_PROMISE[k] = new Promise((ok, gagal)=>{
+    const sc = document.createElement('script');
+    sc.src = L.url; sc.async = true;
+    sc.onload = ()=> L.ok() ? ok() : (delete LIB_PROMISE[k], gagal(new Error('tidak siap')));
+    sc.onerror = ()=>{ delete LIB_PROMISE[k]; sc.remove(); gagal(new Error('gagal memuat')); };
+    document.head.appendChild(sc);
+  });
+}
+// Dipakai di awal fungsi yang butuh pustaka: kalau belum ada, muat dulu lalu ulangi fungsi itu lewat "ulang".
+// Mengembalikan true bila pustaka sudah siap (fungsi boleh lanjut), false bila fungsi harus berhenti dulu.
+function libSiap(k, ulang){
+  if(LIB_LAZY[k].ok()) return true;
+  try{ toast('Menyiapkan pustaka ' + LIB_LAZY[k].nama + '…'); }catch(e){}
+  libMuat(k).then(()=>ulang()).catch(()=>alert('Pustaka ' + LIB_LAZY[k].nama + ' belum termuat. Pastikan koneksi internet aktif lalu coba lagi.'));
+  return false;
+}
 function uid(){ return 'job_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
 
 /* ---------- UTIL ---------- */
@@ -13178,10 +13204,7 @@ function buildJobPosterHtml(j){
   `;
 }
 function downloadJobDetailImage(jobId){
-  if(typeof html2canvas === 'undefined'){
-    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
-    return;
-  }
+  if(!libSiap('h2c', ()=>downloadJobDetailImage(jobId))) return;
   const j = jobs.find(x=>x.id===jobId);
   if(!j) return;
   toast('Menyiapkan gambar detail job...');
@@ -13277,10 +13300,7 @@ function buildJobStoryHtml(j){
   `;
 }
 function downloadJobStoryImage(jobId){
-  if(typeof html2canvas === 'undefined'){
-    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
-    return;
-  }
+  if(!libSiap('h2c', ()=>downloadJobStoryImage(jobId))) return;
   const j = jobs.find(x=>x.id===jobId);
   if(!j) return;
   toast('Menyiapkan gambar story...');
@@ -14359,10 +14379,7 @@ function kwUnduh(url, nama){
 
 async function downloadKwitansiImage(jobId){
   if(!isAdmin()) return;
-  if(typeof html2canvas === 'undefined'){
-    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
-    return;
-  }
+  if(!libSiap('h2c', ()=>downloadKwitansiImage(jobId))) return;
   const j = jobs.find(x=>x.id===jobId);
   if(!j) return;
   const d = kwData(j);
@@ -14729,10 +14746,7 @@ async function downloadKwitansiPdf(jobId){
   if(!isAdmin()) return;
   const j = jobs.find(x=>x.id===jobId);
   if(!j) return;
-  if(typeof window.jspdf === 'undefined'){
-    alert('Pustaka pembuat PDF belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
-    return;
-  }
+  if(!libSiap('pdf', ()=>downloadKwitansiPdf(jobId))) return;
   const d = kwData(j);
   const ui = kwGenUi('pdf', d.col);
   try{
@@ -17380,10 +17394,7 @@ function buildUlasanPosterHtml(u){
   `;
 }
 function downloadUlasanImage(id){
-  if(typeof html2canvas === 'undefined'){
-    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
-    return;
-  }
+  if(!libSiap('h2c', ()=>downloadUlasanImage(id))) return;
   const u = ulasanList.find(x=>String(x.id)===String(id));
   if(!u) return;
   toast('Menyiapkan gambar testimoni...');
@@ -17652,7 +17663,7 @@ function importBackup(file){
 
 /* ---------- Import / Template Excel (SheetJS) ---------- */
 function downloadExcelTemplate(){
-  if(typeof XLSX==='undefined'){ alert('Pustaka Excel belum termuat. Pastikan koneksi internet aktif lalu coba lagi.'); return; }
+  if(!libSiap('xlsx', ()=>downloadExcelTemplate())) return;
   const headers = EXCEL_FIELD_MAP.map(f=>f.header);
   const exampleRow = {
     'Nama Klien':'Rani & Budi',
@@ -17719,7 +17730,7 @@ function excelJobMatchKey(tanggalAcara, namaKlien, desa){
 }
 function importExcelFile(file){
   if(!isAdmin()){ alert('Hanya Admin yang bisa mengimpor job dari Excel.'); return; }
-  if(typeof XLSX==='undefined'){ alert('Pustaka Excel belum termuat. Pastikan koneksi internet aktif lalu coba lagi.'); return; }
+  if(!libSiap('xlsx', ()=>importExcelFile(file))) return;
   const reader = new FileReader();
   reader.onload = (e)=>{
     try{
@@ -18159,10 +18170,7 @@ function apiKeyInit(){
 // di gambar, statistik otomatis bergeser ke bawahnya (lihat positionPosterStats).
 function downloadPosterImage(includeKeterangan){
   if(includeKeterangan===undefined) includeKeterangan = false;
-  if(typeof html2canvas === 'undefined'){
-    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
-    return;
-  }
+  if(!libSiap('h2c', ()=>downloadPosterImage(includeKeterangan))) return;
   const poster = document.getElementById('calendarPoster');
   if(!poster) return;
   toast('Menyiapkan gambar kalender...');
@@ -18212,10 +18220,7 @@ function downloadPosterImage(includeKeterangan){
   }
 }
 function downloadRekapImage(){
-  if(typeof html2canvas === 'undefined'){
-    alert('Pustaka pembuat gambar belum termuat. Pastikan koneksi internet aktif lalu coba lagi.');
-    return;
-  }
+  if(!libSiap('h2c', ()=>downloadRekapImage())) return;
   const el = document.getElementById('rekapPoster');
   if(!el) return;
   // Gambar selalu dibuat dengan tata letak lebar (seperti di komputer), meski diunduh dari HP:
@@ -18293,6 +18298,7 @@ const CHANGELOG = [
       { kategori: 'Peningkatan', teks: 'Obrolan Tim punya tampilan baru: pilihan tema, bentuk gelembung pesan yang lebih bagus, dan kiriman GIF.' },
       { kategori: 'Peningkatan', teks: 'Akun vendor disederhanakan menjadi satu, yaitu Kaone Motret. Kaone Studio dan Bukti Sarjana dihapus dari pilihan karena memang tidak berisi data.' },
       { kategori: 'Peningkatan', teks: 'Isian form job kini disimpan otomatis sebagai draf di perangkat dan dipulihkan kalau halaman tertutup atau dimuat ulang sebelum job disimpan.' },
+      { kategori: 'Peningkatan', teks: 'Aplikasi terbuka lebih cepat dan lebih hemat kuota: pustaka untuk Excel, PDF, dan pembuat gambar kini diunduh saat pertama kali dipakai, bukan setiap aplikasi dibuka.' },
       { kategori: 'Perbaikan', teks: 'Booking yang masuk tidak lagi menggambar ulang halaman Beranda atau Pesanan saat Anda sedang mengetik, sehingga isian tidak ikut terhapus.' },
       { kategori: 'Fitur', teks: 'Pesanan Masuk: kalau tanggal pesanan sama dengan job yang sudah ada, Konfirmasi Booking menawarkan pilihan menimpa job itu atau menambah job baru. Saat menimpa, kolom yang kosong di pesanan tidak mengosongkan isi job.' }
     ]
@@ -24607,7 +24613,8 @@ function stPrevRange(){
 }
 function stDownload(){
   const el=document.getElementById('stPoster');
-  if(!el||!window.html2canvas){ toast('Fitur unduh belum siap, coba lagi sebentar.'); return; }
+  if(!el) return;
+  if(!libSiap('h2c', stDownload)) return;
   toast('Menyiapkan gambar…');
   html2canvas(el,{scale:(el.scrollHeight>5000?1:2),backgroundColor:'#FFFBEA',useCORS:true,ignoreElements:x=>x.classList&&x.classList.contains('st-nodl')}).then(c=>{
     const a=document.createElement('a'); a.download='statistik-kaone-motret.png'; a.href=c.toDataURL('image/png'); a.click();

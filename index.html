@@ -1119,27 +1119,28 @@
   .job-poster.jp-compact3 .jp-section-head .jp-ico{width:30px; height:30px;}
   .job-poster.jp-compact3 .jp-section-head .txt{font-size:17px;}
 
-  /* ---------- POSTER UNDUHAN KWITANSI (GAMBAR PNG) - desain v3 ----------
+  /* ---------- POSTER UNDUHAN KWITANSI (GAMBAR PNG) - desain v4 ----------
      Lebar tetap 1080 px, tinggi mengikuti isi (minimal 1350). Dirender html2canvas:
-     TANPA animasi, color-mix, clip-path, filter. Warna turunan datang dari variabel
-     --kr-* yang diisi per Jenis Acara. Hanya info relevan untuk klien (tanpa data
-     keuangan internal), sama dengan versi PDF. */
+     TANPA animasi, color-mix, clip-path, filter, DAN TANPA box-shadow (html2canvas menggambar
+     bayangan besar di dalam lembar sehingga isi kwitansi tampak abu-abu; kedalaman dibuat dengan
+     lapisan kertas .kr-shade). Warna turunan datang dari variabel --kr-* per Jenis Acara. */
   .kr-poster{
-    width:1080px; min-height:1350px; position:relative; box-sizing:border-box; padding:48px;
+    width:1080px; min-height:1350px; position:relative; box-sizing:border-box; padding:48px 48px 70px;
     background:var(--kr-page,#fff4d1); color:#241c06;
     font-family:'Bricolage Grotesque',system-ui,sans-serif;
   }
+  .kr-shade{position:absolute; left:70px; right:70px; top:90px; bottom:44px; border-radius:44px; background:var(--kr-a35);}
   .kr-sheet{
-    position:relative; background:#fff; border-radius:44px; overflow:hidden;
-    box-shadow:0 18px 50px rgba(36,28,6,.16), 0 2px 6px rgba(36,28,6,.06);
+    position:relative; background:#fffdf8; border-radius:44px; overflow:hidden;
+    border:2px solid var(--kr-a35); box-sizing:border-box;
   }
   .kr-head{
-    position:relative; overflow:hidden; padding:44px 56px 40px;
+    position:relative; overflow:hidden; padding:46px 56px 42px;
     background:linear-gradient(135deg,var(--kr-d1),var(--kr-d2));
   }
   .kr-head::before{
-    content:''; position:absolute; right:-130px; top:-150px; width:480px; height:480px; border-radius:50%;
-    background:radial-gradient(circle at 40% 40%, var(--kr-ac) 0%, transparent 68%); opacity:.28;
+    content:''; position:absolute; right:-130px; top:-150px; width:500px; height:500px; border-radius:50%;
+    background:radial-gradient(circle at 40% 40%, var(--kr-ac) 0%, transparent 68%); opacity:.30;
   }
   .kr-head::after{
     content:''; position:absolute; left:-110px; bottom:-190px; width:360px; height:360px; border-radius:50%;
@@ -1156,13 +1157,13 @@
   .kr-doc{margin-left:auto; text-align:right;}
   .kr-doc-t{font-size:23px; font-weight:800; letter-spacing:7px; color:var(--kr-ac);}
   .kr-doc-n{margin-top:8px; font-size:23px; font-weight:600; letter-spacing:.5px; color:#fff;}
-  .kr-who{position:relative; margin-top:34px;}
+  .kr-who{position:relative; margin-top:36px; padding-top:28px; border-top:2px solid var(--kr-a35);}
   .kr-kick{font-size:19px; font-weight:700; letter-spacing:5px; text-transform:uppercase; color:var(--kr-ac);}
-  .kr-name{margin-top:10px; font-size:60px; font-weight:800; line-height:1.12; letter-spacing:-1px; color:#fff; word-break:break-word;}
-  .kr-stripe{height:8px; background:linear-gradient(90deg,var(--kr-ac),var(--kr-a35));}
+  .kr-name{margin-top:10px; font-size:62px; font-weight:800; line-height:1.12; letter-spacing:-1px; color:#fff; word-break:break-word;}
+  .kr-stripe{height:8px; background:linear-gradient(90deg,var(--kr-ac),var(--kr-a35),var(--kr-ac));}
 
-  .kr-body{padding:38px 56px 4px;}
-  .kr-sec{margin-bottom:30px; position:relative;}
+  .kr-body{padding:40px 56px 4px;}
+  .kr-sec{margin-bottom:32px; position:relative;}
   .kr-sh{display:flex; align-items:center; gap:14px; margin-bottom:18px;}
   .kr-sh-ic{width:46px; height:46px; flex-shrink:0; border-radius:15px; background:var(--kr-a18); display:flex; align-items:center; justify-content:center;}
   .kr-sh-t{font-size:21px; font-weight:800; letter-spacing:4px; text-transform:uppercase; color:var(--kr-d2); white-space:nowrap;}
@@ -1171,77 +1172,79 @@
   .kr-tiles{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
   .kr-tile{
     display:flex; align-items:center; gap:20px; min-width:0; box-sizing:border-box;
-    padding:17px 22px; border-radius:24px; background:var(--kr-a10); border:2px solid var(--kr-a18);
+    padding:18px 22px; border-radius:24px; background:#fff; border:2px solid var(--kr-a18);
   }
   .kr-tile.wide{grid-column:1 / -1;}
-  .kr-tile-ic{width:56px; height:56px; flex-shrink:0; border-radius:50%; background:var(--kr-ac); display:flex; align-items:center; justify-content:center;}
+  .kr-tile-ic{width:58px; height:58px; flex-shrink:0; border-radius:50%; background:var(--kr-ac); display:flex; align-items:center; justify-content:center;}
   .kr-tile-tx{min-width:0;}
-  .kr-tile-l{font-size:17px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--ink-soft);}
-  .kr-tile-v{margin-top:5px; font-size:28px; font-weight:700; line-height:1.25; color:#241c06; word-break:break-word;}
+  .kr-tile-l{font-size:16px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--kr-mute,#6b5d3a);}
+  .kr-tile-v{margin-top:5px; font-size:29px; font-weight:700; line-height:1.25; color:#241c06; word-break:break-word;}
 
   .kr-items{
-    display:grid; grid-template-columns:1fr; gap:12px 24px; box-sizing:border-box;
-    padding:24px 28px; border-radius:28px; background:var(--kr-a10); border:2px solid var(--kr-a18);
+    display:grid; grid-template-columns:1fr; gap:14px 24px; box-sizing:border-box;
+    padding:26px 30px; border-radius:28px; background:var(--kr-tint,#fff9e8); border:2px solid var(--kr-a18);
   }
   .kr-items.two{grid-template-columns:1fr 1fr;}
   .kr-item{display:flex; align-items:flex-start; gap:14px; min-width:0; font-size:25px; font-weight:600; line-height:1.3; color:#2f2a18; word-break:break-word;}
   .kr-chk{width:34px; height:34px; flex-shrink:0; margin-top:0; border-radius:50%; background:var(--kr-ac); display:flex; align-items:center; justify-content:center;}
-  .kr-ptext{padding:28px 32px; border-radius:28px; background:var(--kr-a10); border:2px solid var(--kr-a18); font-size:25px; line-height:1.5; color:#3a3423; word-break:break-word;}
+  .kr-ptext{padding:28px 32px; border-radius:28px; background:var(--kr-tint,#fff9e8); border:2px solid var(--kr-a18); font-size:25px; line-height:1.5; color:#3a3423; word-break:break-word;}
 
   /* garis sobek ala struk: dua lekukan di tepi kiri-kanan */
-  .kr-perf{position:relative; height:0; margin:2px -56px 36px; border-top:3px dashed var(--kr-a35);}
-  .kr-perf::before, .kr-perf::after{content:''; position:absolute; top:-27px; width:54px; height:54px; border-radius:50%; background:var(--kr-page,#fff4d1);}
-  .kr-perf::before{left:-27px;}
-  .kr-perf::after{right:-27px;}
+  .kr-perf{position:relative; height:0; margin:2px -56px 38px; border-top:3px dashed var(--kr-a35);}
+  .kr-perf::before, .kr-perf::after{content:''; position:absolute; top:-27px; width:54px; height:54px; border-radius:50%; background:var(--kr-page,#fff4d1); border:2px solid var(--kr-a35); box-sizing:border-box;}
+  .kr-perf::before{left:-29px;}
+  .kr-perf::after{right:-29px;}
 
   .kr-pay.lunas .kr-sh{margin-bottom:44px;}
   .kr-stamp{
     position:absolute; right:10px; top:-18px; transform:rotate(-9deg);
-    border:6px solid #1f8a4c; border-radius:18px; padding:4px 26px; background:rgba(255,255,255,.7);
-    color:#1f8a4c; font-size:44px; font-weight:800; letter-spacing:8px; opacity:.9;
+    border:6px solid #1f8a4c; border-radius:18px; padding:4px 26px; background:rgba(255,255,255,.85);
+    color:#1f8a4c; font-size:44px; font-weight:800; letter-spacing:8px; opacity:.92;
   }
-  .kr-prog{margin-bottom:16px;}
-  .kr-prog-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; font-size:21px; font-weight:700; color:var(--ink-soft);}
-  .kr-prog-top b{font-size:27px; font-weight:800; color:var(--kr-d2);}
+  .kr-prog{margin-bottom:18px;}
+  .kr-prog-top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; font-size:21px; font-weight:700; color:var(--kr-mute,#6b5d3a);}
+  .kr-prog-top b{font-size:28px; font-weight:800; color:var(--kr-d2);}
   .kr-track{height:22px; border-radius:999px; overflow:hidden; background:var(--kr-a18);}
   .kr-fill{height:100%; border-radius:999px; background:linear-gradient(90deg,var(--kr-d2),var(--kr-ac));}
-  .kr-row{display:flex; justify-content:space-between; align-items:baseline; gap:20px; padding:13px 0; border-bottom:2px dashed var(--kr-a18);}
-  .kr-row .l{font-size:25px; font-weight:600; color:var(--ink-soft);}
+  .kr-row{display:flex; justify-content:space-between; align-items:baseline; gap:20px; padding:14px 0; border-bottom:2px dashed var(--kr-a18);}
+  .kr-row .l{font-size:25px; font-weight:600; color:var(--kr-mute,#6b5d3a);}
   .kr-row .v{font-size:29px; font-weight:700; color:#241c06; text-align:right; white-space:nowrap;}
   .kr-row.disc .v{color:#1f8a4c;}
   .kr-row.total{border-bottom:2px dashed var(--kr-a18); border-top:3px solid var(--kr-d2);}
   .kr-row.total .l{font-size:27px; font-weight:800; color:var(--kr-d1);}
-  .kr-row.total .v{font-size:34px; font-weight:800; color:var(--kr-d1);}
+  .kr-row.total .v{font-size:35px; font-weight:800; color:var(--kr-d1);}
   .kr-row.last{border-bottom:none;}
   .kr-due{
-    margin-top:20px; display:flex; align-items:center; justify-content:space-between; gap:24px; box-sizing:border-box;
-    padding:26px 34px; border-radius:30px; background:linear-gradient(135deg,var(--kr-d1),var(--kr-d2));
+    margin-top:22px; display:flex; align-items:center; justify-content:space-between; gap:24px; box-sizing:border-box;
+    padding:28px 36px; border-radius:30px; background:linear-gradient(135deg,var(--kr-d1),var(--kr-d2)); border:3px solid var(--kr-a35);
   }
   .kr-due.ok{background:linear-gradient(135deg,#0f5a33,#1f8a4c);}
   .kr-due-l{font-size:19px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--kr-ac);}
   .kr-due.ok .kr-due-l{color:#b8f0cf;}
-  .kr-due-v{margin-top:8px; font-size:60px; font-weight:800; line-height:1.05; letter-spacing:-1px; color:#fff; white-space:nowrap;}
+  .kr-due-v{margin-top:8px; font-size:62px; font-weight:800; line-height:1.05; letter-spacing:-1px; color:#fff; white-space:nowrap;}
   .kr-st{text-align:right; flex-shrink:0;}
-  .kr-st-l{margin-bottom:10px; font-size:15px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,.72);}
-  .kr-pill{display:inline-block; padding:12px 28px; border-radius:999px; background:#fff; color:#7a4a06; font-size:24px; font-weight:800; white-space:nowrap;}
-  .kr-pill.ok{color:#14673b;}
+  .kr-st-l{margin-bottom:10px; font-size:15px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,.75);}
+  .kr-pill{display:inline-block; padding:12px 30px; border-radius:999px; background:#fff; color:#7a4a06; font-size:25px; font-weight:800; white-space:nowrap;}
+  .kr-pill.dp{background:#ffe7b0; color:#7a4300;}
+  .kr-pill.belum{background:#ffd8d2; color:#8f2a1c;}
+  .kr-pill.ok{background:#d4f4e1; color:#14673b;}
 
-  .kr-note{margin-bottom:18px; padding:20px 26px; border-radius:20px; background:var(--kr-a10); border-left:6px solid var(--kr-ac); font-size:23px; line-height:1.5; color:var(--ink-soft); word-break:break-word;}
-  .kr-note b{color:#241c06; font-size:20px; letter-spacing:2px; text-transform:uppercase;}
-  .kr-link{margin-bottom:18px; display:flex; align-items:center; gap:18px; padding:20px 26px; border-radius:22px; background:var(--kr-a10); border:2px solid var(--kr-a18);}
+  .kr-note{margin-bottom:18px; padding:22px 28px; border-radius:20px; background:var(--kr-tint,#fff9e8); border-left:8px solid var(--kr-ac); font-size:23px; line-height:1.5; color:#4a4128; word-break:break-word;}
+  .kr-note b{color:var(--kr-d2); font-size:19px; letter-spacing:3px; text-transform:uppercase;}
+  .kr-link{margin-bottom:18px; display:flex; align-items:center; gap:18px; padding:20px 26px; border-radius:22px; background:#fff; border:2px solid var(--kr-a18);}
   .kr-link-ic{width:54px; height:54px; flex-shrink:0; border-radius:50%; background:var(--kr-ac); display:flex; align-items:center; justify-content:center;}
   .kr-link-t{font-size:21px; font-weight:800; color:var(--kr-d2);}
   .kr-link-u{margin-top:4px; font-size:21px; font-weight:600; color:#1d4fa8; word-break:break-all;}
-  .kr-verify{margin-bottom:18px; display:flex; align-items:center; gap:32px; padding:22px 28px; border-radius:30px; background:var(--kr-a10); border:2px solid var(--kr-a18);}
-  .kr-qr{flex-shrink:0; padding:12px; border-radius:22px; background:#fff; border:2px solid var(--kr-a18); line-height:0;}
+  .kr-verify{margin-bottom:18px; display:flex; align-items:center; gap:32px; padding:24px 28px; border-radius:30px; background:var(--kr-tint,#fff9e8); border:2px solid var(--kr-a18);}
+  .kr-qr{flex-shrink:0; padding:12px; border-radius:22px; background:#fff; border:2px solid var(--kr-a35); line-height:0;}
   .kr-qr img{display:block;}
   .kr-vx{min-width:0;}
   .kr-vt{display:flex; align-items:center; gap:14px; font-size:31px; font-weight:800; line-height:1.15; color:var(--kr-d2);}
-  .kr-vp{margin-top:12px; font-size:23px; font-weight:500; line-height:1.45; color:var(--ink-soft);}
+  .kr-vp{margin-top:12px; font-size:23px; font-weight:500; line-height:1.45; color:var(--kr-mute,#6b5d3a);}
 
-  .kr-foot{padding:20px 56px 32px; text-align:center;}
-  .kr-foot-t{font-size:31px; font-weight:800; color:var(--kr-d2);}
-  .kr-foot-s{margin-top:8px; font-size:20px; letter-spacing:.4px; color:var(--ink-soft);}
+  .kr-foot{margin:6px 56px 0; padding:26px 0 34px; text-align:center; border-top:2px dashed var(--kr-a18);}
+  .kr-foot-t{font-size:32px; font-weight:800; color:var(--kr-d2);}
+  .kr-foot-s{margin-top:8px; font-size:20px; letter-spacing:.4px; color:var(--kr-mute,#6b5d3a);}
   .kr-bar{height:16px; background:linear-gradient(90deg,var(--kr-d1),var(--kr-ac),var(--kr-d2));}
 
   /* ---------- ANIMASI PROSES PEMBUATAN KWITANSI (tampil di layar, bukan di file) ---------- */
@@ -1635,6 +1638,26 @@
   .psn-detail dl{margin:8px 0 0; display:grid; grid-template-columns:minmax(110px,32%) 1fr; gap:4px 12px;}
   .psn-detail dt{color:var(--ink-soft);}
   .psn-detail dd{margin:0; word-break:break-word; white-space:pre-wrap;}
+  .psn-sum{margin:0 0 14px; padding:14px 16px; border-radius:14px; border:1px solid #ecd49a; background:linear-gradient(135deg,#fff8dc,#fff1bd); color:#3b2a00;}
+  .psn-sum .ps-top{display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; letter-spacing:.3px; text-transform:uppercase; color:#8a6a00;}
+  .psn-sum .ps-nama{font-size:17px; font-weight:800; margin:4px 0 2px; line-height:1.25;}
+  .psn-sum .ps-meta{font-size:12.5px; color:#5c4a12; line-height:1.5;}
+  .psn-sum .ps-chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+  .psn-sum .ps-chip{border:1px solid #e5d08a; background:#fff; color:#3b2a00; border-radius:999px; padding:6px 12px; font:inherit; font-size:12.5px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;}
+  .psn-sum .ps-chip i{font-style:normal; min-width:20px; height:20px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:11.5px; color:#fff; background:#3a9d5d;}
+  .psn-sum .ps-chip.cek i{background:#d98b00;}
+  .psn-sum .ps-chip.belum i{background:#8d8a7e;}
+  .psn-sum .ps-chip.on{box-shadow:0 0 0 2px #d4a72c;}
+  .psn-sum .ps-panel{display:none; margin-top:10px; padding:10px 12px; border-radius:10px; background:#fff; border:1px solid #efe2ae; font-size:12.5px; line-height:1.5;}
+  .psn-sum .ps-panel ul{margin:0; padding-left:18px;}
+  .psn-sum .ps-hint{margin-top:10px; font-size:12px; color:#5c4a12;}
+  .psn-auto{background:#fffbea !important; border-color:#e0b93c !important;}
+  .psn-tag{font-style:normal; font-size:10px; font-weight:700; margin-left:6px; padding:1px 7px; border-radius:999px; background:#fff1bd; color:#7a5a00; border:1px solid #e5d08a; vertical-align:middle;}
+  .antar-konfirm{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:8px; padding:9px 12px; border-radius:10px; background:#fff3d6; border:1px solid #f0d28a; font-size:12px; color:#6b4a00; line-height:1.4;}
+  .psn-ribbon{position:fixed; top:calc(env(safe-area-inset-top,0px) + 8px); left:10px; right:10px; z-index:100000; display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; background:#241f0f; color:#f4ecd0; box-shadow:0 6px 20px rgba(0,0,0,.28); font-size:13px; font-weight:600;}
+  .psn-ribbon span{flex:1; min-width:0;}
+  .psn-ribbon button{border:0; border-radius:8px; padding:6px 12px; font:inherit; font-weight:700; cursor:pointer; background:#f2c94c; color:#241f0f;}
+  .psn-ribbon button[data-rb="tutup"]{background:transparent; color:#cdbf86; padding:6px 8px; font-size:16px; line-height:1;}
   .psn-banner{display:flex; align-items:center; gap:12px; width:100%; margin:0 0 14px; padding:13px 16px; border-radius:14px; border:1px solid #ecd49a; background:linear-gradient(135deg,#fff3c9,#ffe39a); color:#3b2a00; cursor:pointer; text-align:left; font-family:inherit;}
   .psn-banner .pb-ico{font-size:20px; display:flex;}
   .psn-banner .pb-tx{flex:1; display:flex; flex-direction:column; font-size:12.5px;}
@@ -5412,7 +5435,11 @@ async function kmTarik(paksa){
 function kmRefreshUI(){
   try{
     document.querySelectorAll('[data-km-box]').forEach(el=>{ const j=jobs.find(x=>x.id===el.dataset.kmBox); if(j) el.outerHTML=kmBoxHtml(j); });
-    if(typeof refreshView==='function'&&currentView!=='pengaturan'&&!document.getElementById('jobDetailCard')) refreshView();
+    if(currentView!=='pengaturan'&&!document.getElementById('jobDetailCard')){
+      // Jangan gambar ulang paksa: tunda kalau sedang mengisi form / ada pop-up / sedang mengetik / menggulir (lihat rtUserBusy).
+      if(typeof rtRequestRender==='function') rtRequestRender();
+      else if(typeof refreshView==='function'&&currentView!=='form'&&!document.getElementById('modalOverlay')) refreshView();
+    }
     const st=document.getElementById('kmStatus'); if(st) st.innerHTML=kmStatusHtml();
   }catch(e){}
 }
@@ -5852,7 +5879,7 @@ function waTplModalKirim(jobId,key){
 
 /* ---------- Kolom Rp & +62 (prefix menyatu, keyboard angka) ---------- */
 function rpInput(name,val,attrs,plain){
-  return `<div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" enterkeyhint="next" class="money-input" name="${name}" value="${fmtRibuan(val)}" ${attrs||''} ${plain?'':'oninput="handleMoneyInput(this); updateCalc();"'}></div>`;
+  return `<div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" enterkeyhint="next" class="money-input" name="${name}" value="${plain ? fmtRibuan(val) : (Number(String(val==null?'':val).replace(/[^\d]/g,''))>0 ? fmtRibuan(val) : '')}" ${attrs||''} ${plain?'':'oninput="handleMoneyInput(this); updateCalc();"'}></div>`;
 }
 function rpField(label,name,val){ return `<div><label>${label}</label>${rpInput(name,val)}</div>`; }
 function waDigits(v){ let d=String(v||'').replace(/\D/g,''); if(d.startsWith('62')&&d.length>=11) d=d.slice(2); return d.replace(/^0+/,''); }
@@ -6629,6 +6656,7 @@ function pengirimanFieldHtml(d){
         <div class="jr-row"><span>Jarak dari Kaone Motret</span><b id="ongkirAntarJarakText">-</b></div>
         <div class="jr-row"><span>Biaya antar (Rp${fmtRibuan(ONGKIR_ANTAR.perKm)}/km)</span><b id="ongkirAntarBiayaText">-</b></div>
       </div>
+      <div class="antar-konfirm" id="antarKonfirmRow" style="display:none"><span>Alamat antar diisi otomatis dari lokasi acara, jadi ongkos ini masih perkiraan.</span><button type="button" class="btn btn-mini btn-gold-mini" id="btnKonfirmAntar">Alamat sudah benar</button></div>
     </div>`;
 }
 
@@ -6649,11 +6677,15 @@ function setOngkirAntarUi(state, km){
   const elB = document.getElementById('ongkirAntarBiayaText');
   if(hidden) hidden.dataset.state = state;
   let jarakTxt = '-', biayaTxt = '-', gratis = false;
+  const liP = document.getElementById('linkMapsAntarInput');
+  let perkiraan = false;
   if(state==='ok' && km!==null && km!==undefined){
     const biaya = hitungOngkirAntar(km);
     jarakTxt = fmtJarakJalan(km);
     biayaTxt = fmtOngkirAntar(km);
     gratis = biaya===0;
+    perkiraan = !!(liP && liP.dataset.perkiraan==='1');
+    if(perkiraan){ biayaTxt = 'Perkiraan ' + (biaya>0 ? fmtRp(biaya) : '(mungkin gratis)'); gratis = false; }
     if(hidden) hidden.value = biaya || 0;
     if(jkEl) jkEl.value = Math.round(km*10)/10;
   }else if(state==='loading'){
@@ -6674,6 +6706,8 @@ function setOngkirAntarUi(state, km){
   }
   if(elJ) elJ.textContent = jarakTxt;
   if(elB){ elB.textContent = biayaTxt; elB.classList.toggle('ongkir-gratis', gratis); }
+  const krow = document.getElementById('antarKonfirmRow');
+  if(krow) krow.style.display = (state==='ok' && perkiraan) ? 'flex' : 'none';
   refreshJfBadges();
 }
 // Baca Link Maps Antar di form -> parse titik -> jarak real (OSRM, pakai cache) -> ongkos.
@@ -7280,13 +7314,52 @@ async function pesananMulai(p, gabungJobId){
 function psnPasangBannerForm(form, p, r){
   if(!pendingPesanan) return;
   document.querySelectorAll('.psn-formbox').forEach(x=>x.remove());
+  const esc = escapeHtml, gabung = pendingPesanan.mode==='gabung', rs = psnRingkas(p);
+  const li = form.querySelector('#linkMapsAntarInput');
+  const terisi = (r && r.filled) ? r.filled.slice() : [];
+  const cek = [].concat((r && r.review) || [], ((r && r.failed) || []).map(x=>'Belum masuk ke form: ' + String(x).split(' (')[0]));
+  if(li && li.dataset.perkiraan==='1') cek.push('Ongkos antar masih perkiraan. Tekan "Alamat sudah benar" di bagian Pengiriman kalau alamat antarnya sudah pas.');
+  const belum = (r && r.kosong) ? r.kosong.slice() : [];
+  const meta = [];
+  if(rs.ok){
+    if(rs.tanggal) meta.push(esc(psnTglPanjang(rs.tanggal)) + (rs.jam ? ' · ' + esc(rs.jam) : ''));
+    if(rs.paket) meta.push(esc(rs.paket));
+    if(rs.harga>0) meta.push(esc(fmtRp(rs.harga)));
+  }
   const box = document.createElement('div');
-  box.className = 'info-box psn-formbox';
-  const gabung = pendingPesanan.mode==='gabung';
-  const gagal = (r && r.failed) ? r.failed.map(x=>String(x).split(' (')[0]) : [];
-  box.innerHTML = '<b>' + ic('pesanan') + ' ' + (gabung ? 'Timpa job dengan pesanan: ' : 'Konfirmasi Booking: ') + escapeHtml(p.nama || 'klien') + '</b>' +
-    (gabung ? 'Isian pesanan sudah dimasukkan ke job ini; kolom yang kosong di pesanan tidak mengosongkan job. ' : '') + 'Periksa kolomnya, lalu tekan Simpan.' +
-    (gagal.length ? '<br>Belum terisi: ' + escapeHtml(gagal.join(', ')) + '.' : '');
+  box.className = 'psn-sum psn-formbox';
+  box.innerHTML = '<div class="ps-top">' + ic('pesanan') + ' ' + (gabung ? 'Timpa job dengan pesanan' : 'Job baru dari klien') + '</div>' +
+    '<div class="ps-nama">' + esc(p.nama || rs.nama || 'klien') + '</div>' +
+    (meta.length ? '<div class="ps-meta">' + meta.join(' · ') + '</div>' : '') +
+    '<div class="ps-chips">' +
+      '<button type="button" class="ps-chip" data-psn-tab="terisi"><i>' + terisi.length + '</i> Terisi dari klien</button>' +
+      '<button type="button" class="ps-chip cek" data-psn-tab="cek"><i>' + cek.length + '</i> Perlu dicek</button>' +
+      '<button type="button" class="ps-chip belum" data-psn-tab="belum"><i>' + belum.length + '</i> Belum diisi</button>' +
+    '</div><div class="ps-panel"></div>' +
+    '<div class="ps-hint">' + (gabung ? 'Kolom yang kosong di pesanan tidak mengosongkan isi job. ' : '') + 'Kolom bertanda "dari klien" diisi otomatis. Diskon, DP, dan ongkir dibiarkan kosong kalau memang tidak ada. Periksa, lalu tekan Simpan.</div>';
+  const daftar = {terisi, cek, belum};
+  const panel = box.querySelector('.ps-panel');
+  box.querySelectorAll('[data-psn-tab]').forEach(b=>b.addEventListener('click', ()=>{
+    const k = b.dataset.psnTab, buka = !(panel.dataset.k===k && panel.style.display==='block');
+    box.querySelectorAll('[data-psn-tab]').forEach(x=>x.classList.toggle('on', buka && x===b));
+    if(!buka){ panel.style.display = 'none'; panel.dataset.k = ''; return; }
+    const arr = daftar[k] || [];
+    panel.dataset.k = k;
+    panel.innerHTML = arr.length ? '<ul>' + arr.map(x=>'<li>' + esc(x) + '</li>').join('') + '</ul>' : 'Tidak ada.';
+    panel.style.display = 'block';
+  }));
+  // Tandai kolom hasil isian otomatis; tanda hilang begitu Anda mengubah kolomnya sendiri.
+  ((r && r.autoSel) || []).forEach(sel=>{
+    const el = form.querySelector(sel);
+    if(!el || el.type==='hidden') return;
+    el.classList.add('psn-auto');
+    let n = el.parentElement, lbl = null;
+    for(let k=0; k<3 && n && n!==form && !lbl; k++){ lbl = n.querySelector(':scope > label'); n = n.parentElement; }
+    let tag = null;
+    if(lbl && !lbl.querySelector('.psn-tag')){ tag = document.createElement('em'); tag.className = 'psn-tag'; tag.textContent = 'dari klien'; lbl.appendChild(tag); }
+    const hapus = (e)=>{ if(!e.isTrusted) return; el.classList.remove('psn-auto'); if(tag) tag.remove(); el.removeEventListener('input', hapus); el.removeEventListener('change', hapus); };
+    el.addEventListener('input', hapus); el.addEventListener('change', hapus);
+  });
   form.parentNode.insertBefore(box, form);
   try{ box.scrollIntoView({block:'start', behavior:'smooth'}); }catch(e){}
 }
@@ -7482,12 +7555,41 @@ function viewPesanan(){
 function rtOnPesanan(p){
   try{
     if(p && p.eventType==='INSERT' && p.new && !pesananList.some(x=>String(x.id)===String(p.new.id))){
-      toast('Pesanan baru dari ' + (p.new.nama || 'klien'));
+      // Sedang mengisi / ada pop-up: jangan ganggu layar, cukup pita kecil yang bisa diketuk kapan saja.
+      if(typeof rtUserBusy==='function' && rtUserBusy()) psnRibbonTambah(p.new.nama || 'klien');
+      else toast('Pesanan baru dari ' + (p.new.nama || 'klien'));
     }
   }catch(e){}
   clearTimeout(psnPullTimer);
   psnPullTimer = setTimeout(()=>pullPesanan(true), 500);
 }
+let psnRibbonN = 0;
+function psnRibbonTambah(nama){
+  psnRibbonN++;
+  let el = document.getElementById('psnRibbon');
+  if(!el){ el = document.createElement('div'); el.id = 'psnRibbon'; el.className = 'psn-ribbon'; document.body.appendChild(el); }
+  el.innerHTML = '<span>' + (psnRibbonN>1 ? psnRibbonN + ' job baru masuk' : 'Job baru masuk: ' + escapeHtml(nama)) + '</span><button type="button" data-rb="lihat">Lihat</button><button type="button" data-rb="tutup" aria-label="Tutup">×</button>';
+}
+function psnRibbonTutup(){ psnRibbonN = 0; const el = document.getElementById('psnRibbon'); if(el) el.remove(); }
+document.addEventListener('click', (e)=>{
+  const rb = e.target.closest('#psnRibbon [data-rb]');
+  if(!rb) return;
+  if(rb.dataset.rb==='tutup'){ psnRibbonTutup(); return; }
+  const modal = document.getElementById('modalOverlay');
+  if(currentView==='form' && !confirm('Buka Pesanan Masuk? Form job yang sedang diisi tersimpan sebagai draf.')) return;
+  if(currentView!=='form' && modal && !confirm('Tutup jendela yang sedang terbuka dan buka Pesanan Masuk?')) return;
+  psnRibbonTutup(); if(modal) closeModal(); navigate('pesanan');
+});
+// Tanda "perkiraan" pada ongkos antar hilang kalau alamat antar dikonfirmasi / diubah sendiri.
+document.addEventListener('click', (e)=>{
+  const li = document.getElementById('linkMapsAntarInput');
+  if(!li) return;
+  if(e.target.closest('#btnTempelLinkAntar, #btnSamakanLinkAntar')) delete li.dataset.perkiraan;
+  else if(e.target.closest('#btnKonfirmAntar')){ delete li.dataset.perkiraan; updateOngkirAntarCalc({initial:true}); }
+}, true);
+document.addEventListener('input', (e)=>{
+  if(e.isTrusted && e.target && e.target.id==='linkMapsAntarInput') delete e.target.dataset.perkiraan;
+}, true);
 document.addEventListener('click', (e)=>{
   const b = e.target.closest('[data-psn-act]');
   if(!b) return;
@@ -9666,6 +9768,7 @@ function navigate(view, opts){
   // mengubah data job (Pulihkan Data, Hapus Semua, Import Excel, dsb.) di
   // dalamnya tetap dikunci sendiri lewat class admin-only.
   if(!isAdmin() && (view==='form' || view==='pesanan')) view = 'beranda';
+  if(view==='pesanan' && typeof psnRibbonTutup==='function') psnRibbonTutup();
   // Pesanan yang sedang dikonfirmasi hanya berlaku selama form yang dibuka dari tombol "Konfirmasi Booking"
   if(!(view==='form' && opts && opts.pesanan)) pendingPesanan = null;
   // Urutan ini dipakai untuk menentukan arah animasi "berjalan pindah" (lihat
@@ -10369,7 +10472,7 @@ function plSetVal(form, sel, value, fire){
 //   info   : keterangan (kolom yang masih kosong, kolom pricelist yang dialihkan ke Catatan)
 function plApplyToForm(form, data){
   const filled = [], review = [], info = [], failed = [];
-  const checks = [];
+  const checks = [], autoSel = [];
   const val = sel => { const el = form.querySelector(sel); return el ? String(el.value==null?'':el.value).trim() : ''; };
   const verify = (label, want, read)=>{ checks.push({label, want, read}); };
   // Isi satu kolom + daftarkan verifikasinya. opts.want / opts.read dipakai kalau nilai yang
@@ -10378,7 +10481,7 @@ function plApplyToForm(form, data){
     opts = opts || {};
     const ok = plSetVal(form, sel, value, true);
     if(ok){
-      filled.push(label);
+      filled.push(label); autoSel.push(sel);
       verify(label, opts.want!==undefined ? opts.want : value, opts.read || (()=>val(sel)));
     }
     return ok;
@@ -10542,7 +10645,8 @@ function plApplyToForm(form, data){
         const liAntar = form.querySelector('#linkMapsAntarInput');
         if(liAntar && !liAntar.value.trim()){
           if(coord){
-            put('Link Maps Antar', '#linkMapsAntarInput', 'https://www.google.com/maps?q='+String(coord).replace(/\s+/g,''));
+            liAntar.dataset.perkiraan = '1'; // tebakan dari lokasi acara: ongkos belum boleh tampil "Gratis" sebelum dikonfirmasi
+            if(!put('Link Maps Antar', '#linkMapsAntarInput', 'https://www.google.com/maps?q='+String(coord).replace(/\s+/g,''))) delete liAntar.dataset.perkiraan;
             review.push('Link Maps Antar diisi dari lokasi acara. Ganti kalau foto diantar ke alamat lain.');
           }else{
             review.push('Pengiriman "Diantar" tapi titik lokasi tidak terbaca, isi Link Maps Antar manual (link lengkap atau koordinat) supaya ongkos antar terhitung.');
@@ -10583,7 +10687,7 @@ function plApplyToForm(form, data){
    ['Titik Koordinat','#koordinatInput'],['Paket','[name="paket"]'],['Penghasilan','[name="penghasilan"]']
   ].forEach(([l,sel])=>{ const v = val(sel); if(!v || v==='0') kosong.push(l); });
   if(kosong.length) info.push('Masih kosong (tidak ada di data pricelist): ' + kosong.join(', ') + '.');
-  return { filled, review, info, failed };
+  return { filled, review, info, failed, autoSel, kosong };
 }
 
 
@@ -11031,6 +11135,10 @@ function bindJobFormEvents(scopeEl, onDone){
           toast('Ongkos antar masih dihitung. Tunggu sebentar lalu simpan lagi.');
           return;
         }
+        if(stt==='ok' && linkEl && linkEl.dataset.perkiraan==='1'){
+          const vv = hid ? (Number(hid.value)||0) : 0;
+          if(!confirm('Alamat antar masih perkiraan dari lokasi acara. Ongkos antar ' + (vv>0 ? fmtRp(vv) : 'Gratis') + ' akan ikut disimpan. Lanjut simpan?')){ openJfSectionFor(linkEl); return; }
+        }
         if(stt==='short' || stt==='invalid'){
           openJfSectionFor(linkEl); linkEl?.focus();
           toast('Link Maps Antar belum bisa dibaca. Tempel link lengkap atau koordinat, atau kosongkan kolomnya.');
@@ -11256,7 +11364,9 @@ function refreshJfBadges(){
       const st = h ? h.dataset.state : 'none';
       const v = h ? (Number(h.value)||0) : 0;
       const tahu = st==='ok' || (st==='none' && v>0);
-      bp.textContent = 'Diantar' + (tahu ? ' · ' + (v>0 ? fmtRp(v) : 'Gratis') : '');
+      const liB = document.getElementById('linkMapsAntarInput');
+      const prk = st==='ok' && liB && liB.dataset.perkiraan==='1';
+      bp.textContent = 'Diantar' + (prk ? ' · Perkiraan' : (tahu ? ' · ' + (v>0 ? fmtRp(v) : 'Gratis') : ''));
       bp.className = 'jf-badge is-dp';
     }
   }
@@ -14255,7 +14365,8 @@ function kwSecHead(ikon, judul, col){
 function buildKwitansiPosterHtml(j, qr){
   const d = kwData(j), col = d.col;
   const vars = `--kr-d1:${col.hdr1};--kr-d2:${col.hdr2};--kr-ac:${col.accent};`
-    + `--kr-a10:${kwRgba(col.accent,.10)};--kr-a18:${kwRgba(col.accent,.22)};--kr-a35:${kwRgba(col.accent,.50)};--kr-page:${d.pageBg};`;
+    + `--kr-a10:${kwRgba(col.accent,.10)};--kr-a18:${kwRgba(col.accent,.22)};--kr-a35:${kwRgba(col.accent,.50)};--kr-page:${d.pageBg};`
+    + `--kr-mute:${kwMix(col.hdr1,'#ffffff',.28)};--kr-tint:${kwMix(col.accent,'#ffffff',.90)};`;
 
   // Kartu detail pesanan
   const kartu = [
@@ -14282,6 +14393,7 @@ function buildKwitansiPosterHtml(j, qr){
 
   // Rincian pembayaran
   const stOk = d.lunas;
+  const stCls = stOk ? ' ok' : (/belum/i.test(d.status) ? ' belum' : (/dp/i.test(d.status) ? ' dp' : ''));
   const rows = [
     ['Harga Paket', fmtRp(d.harga), ''],
     ...(d.diskon>0 ? [['Diskon', '- '+fmtRp(d.diskon), ' disc']] : []),
@@ -14292,6 +14404,7 @@ function buildKwitansiPosterHtml(j, qr){
 
   return `
     <div id="kwitansiPosterExport" class="kr-poster" style="${vars}">
+      <div class="kr-shade"></div>
       <div class="kr-sheet">
         <div class="kr-head">
           <div class="kr-top">
@@ -14338,7 +14451,7 @@ function buildKwitansiPosterHtml(j, qr){
               </div>
               <div class="kr-st">
                 <div class="kr-st-l">Status</div>
-                <div class="kr-pill${stOk?' ok':''}">${escapeHtml(truncateText(d.status, 22))}</div>
+                <div class="kr-pill${stCls}">${escapeHtml(truncateText(d.status, 22))}</div>
               </div>
             </div>
           </div>

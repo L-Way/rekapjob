@@ -18396,12 +18396,25 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.22.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.23.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.23.0',
+    tanggal: '23 Oktober 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Konfirmasi Booking kini membuka form dengan kartu ringkasan klien di atasnya: nama, tanggal, paket, dan harga, plus tiga penanda (Terisi dari klien, Perlu dicek, Belum diisi) yang bisa diketuk untuk melihat daftarnya. Kolom yang diisi otomatis dari pesanan diberi tanda "dari klien" sampai Anda mengubahnya.' },
+      { kategori: 'Fitur', teks: 'Kalau ada job baru masuk saat Anda sedang mengisi form atau ada jendela terbuka, layar tidak lagi berubah. Sebagai gantinya muncul pita kecil "Job baru masuk" dengan tombol Lihat yang bisa diketuk kapan saja.' },
+      { kategori: 'Peningkatan', teks: 'Gambar kwitansi didesain ulang: lembar krem dengan bingkai tipis, kartu yang lebih rapi dan mudah dibaca, warna keterangan yang lebih tegas, dan status pembayaran berwarna (DP kuning, Belum Bayar merah, Lunas hijau).' },
+      { kategori: 'Peningkatan', teks: 'Ongkos antar yang alamatnya diisi otomatis dari lokasi acara kini ditandai "Perkiraan", tidak langsung tertulis Gratis. Ada tombol "Alamat sudah benar" untuk mengonfirmasinya, dan saat Simpan Anda diingatkan kalau masih perkiraan.' },
+      { kategori: 'Perbaikan', teks: 'Beranda (termasuk daftar 7 hari ke depan) tidak lagi berkedip seperti dimuat ulang, dan isian form tidak lagi terhapus, ketika ada job masuk atau data tersinkron dari Meja Kaone.' },
+      { kategori: 'Perbaikan', teks: 'Kolom Diskon, DP, dan kolom uang lain yang nilainya nol kini dibiarkan kosong di form, tidak lagi terisi "0".' },
+      { kategori: 'Perbaikan', teks: 'Gambar kwitansi yang diunduh tidak lagi tampak abu-abu di bagian isinya.' }
+    ]
+  },
   {
     version: '1.22.0',
     tanggal: '17 Oktober 2026',

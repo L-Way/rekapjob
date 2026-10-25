@@ -441,6 +441,8 @@
     margin:0 auto; transform-origin:top center; flex-shrink:0;
     font-family:'Bricolage Grotesque',system-ui,sans-serif;
   }
+  /* Ilustrasi motif bulanan: lapisan paling bawah, di belakang semua teks poster */
+  .cp-art{position:absolute; left:0; top:0; width:1080px; height:1920px; pointer-events:none; display:block;}
   .poster-wrap{ width:100%; overflow:hidden; border-radius:18px; padding:26px;
     background:linear-gradient(160deg,#211d10,#161307); box-shadow:0 16px 40px rgba(0,0,0,.28);
     position:relative; touch-action:pan-y; -webkit-user-select:none; user-select:none;}
@@ -6912,6 +6914,114 @@ function currentThanksText(){
   return (override && override.trim()) ? override.trim() : getPoeticThanks(calYear, calMonth);
 }
 
+/* ---------- ILUSTRASI POSTER KALENDER: motif khas tiap bulan ----------
+   Dibuat sebagai gambar SVG (data URI) di belakang semua teks poster, mengikuti warna tema.
+   ⚠️ Dirender html2canvas: hanya bentuk dasar SVG (tanpa filter/mask/animasi). */
+const MONTH_ART_NAMES = ['Fajar','Mawar','Tunas','Sakura','Melati','Ombak','Surya','Kawung','Daun Jatuh','Lengkung Senja','Hujan Syukur','Bintang'];
+function posterArtSvgRaw(month, th){
+  const A=th.accent, L=th.accentLight, P=th.accentPale;
+  const n=v=>Math.round(v*10)/10;
+  const G=(x,y,deg,sc,inner)=>`<g transform="translate(${n(x)} ${n(y)}) rotate(${n(deg)}) scale(${sc})">${inner}</g>`;
+  const leaf=(len,fill,op)=>`<path d="M0 0C${len*.25} ${-len*.34} ${len*.75} ${-len*.34} ${len} 0C${len*.75} ${len*.34} ${len*.25} ${len*.34} 0 0Z" fill="${fill}" fill-opacity="${op}" stroke="${A}" stroke-opacity="${Math.min(1,op+.2)}" stroke-width="1.5"/><path d="M0 0L${len*.92} 0" stroke="${A}" stroke-opacity="${op}" stroke-width="1.3"/>`;
+  const heart=(fill,op)=>`<path d="M0 -8C-8 -22 -30 -10 0 22C30 -10 8 -22 0 -8Z" fill="${fill}" fill-opacity="${op}" stroke="${A}" stroke-opacity="${Math.min(1,op+.2)}" stroke-width="1.8"/>`;
+  const spark=(s,fill,op)=>`<path d="M0 ${-s}Q0 0 ${s} 0Q0 0 0 ${s}Q0 0 ${-s} 0Q0 0 0 ${-s}Z" fill="${fill}" fill-opacity="${op}"/>`;
+  const sakuraPetal=`<path d="M0 0C-18 -8 -22 -34 -6 -42L0 -36L6 -42C22 -34 18 -8 0 0Z" fill="${P}" stroke="${L}" stroke-width="1.8"/>`;
+  const sakura=()=>[0,72,144,216,288].map(d=>`<g transform="rotate(${d})">${sakuraPetal}</g>`).join('')+`<circle r="5" fill="${A}"/>`+[0,72,144,216,288].map(d=>`<line x1="0" y1="0" x2="0" y2="-13" stroke="${A}" stroke-width="1.4" transform="rotate(${d+36})"/>`).join('');
+  const jasmine=()=>[0,60,120,180,240,300].map(d=>`<ellipse cx="0" cy="-12" rx="5.2" ry="13" fill="#fffef8" stroke="${L}" stroke-width="1.5" transform="rotate(${d})"/>`).join('')+`<circle r="4" fill="${A}" fill-opacity=".85"/>`;
+  const bez=(p,t)=>{const u=1-t;return [u*u*u*p[0]+3*u*u*t*p[2]+3*u*t*t*p[4]+t*t*t*p[6], u*u*u*p[1]+3*u*u*t*p[3]+3*u*t*t*p[5]+t*t*t*p[7]];};
+  const bezAng=(p,t)=>{const u=1-t;const dx=3*u*u*(p[2]-p[0])+6*u*t*(p[4]-p[2])+3*t*t*(p[6]-p[4]);const dy=3*u*u*(p[3]-p[1])+6*u*t*(p[5]-p[3])+3*t*t*(p[7]-p[5]);return Math.atan2(dy,dx)*180/Math.PI;};
+  const wave=(x0,x1,y,amp,wl,color,op,w)=>{let d=`M${x0} ${y}Q${x0+wl/4} ${y-amp*2} ${x0+wl/2} ${y}`;for(let x=x0+wl;x<=x1;x+=wl/2){d+=`T${n(x)} ${y}`;}return `<path d="${d}" fill="none" stroke="${color}" stroke-opacity="${op}" stroke-width="${w}" stroke-linecap="round"/>`;};
+  const line=(x1,y1,x2,y2,c,op,w)=>`<line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" stroke="${c}" stroke-opacity="${op}" stroke-width="${w}" stroke-linecap="round"/>`;
+  const circ=(x,y,r,fill,op,stroke,sop,sw)=>`<circle cx="${n(x)}" cy="${n(y)}" r="${r}" fill="${fill||'none'}" fill-opacity="${op==null?1:op}" stroke="${stroke||'none'}" stroke-opacity="${sop==null?1:sop}" stroke-width="${sw||0}"/>`;
+  const divLines=(mid)=>line(330,632,mid-40,632,L,.8,1.5)+line(mid+40,632,750,632,L,.8,1.5);
+  let hero='', foot='', div='';
+  const HX=900, HY=330;
+  if(month===0){ // Januari - Fajar
+    hero=circ(HX,HY,62,P,1,A,.9,3)+circ(HX,HY,92,'none',0,L,.8,2)+circ(HX,HY,128,'none',0,A,.35,1.5);
+    for(let i=0;i<30;i++){const a=i*12*Math.PI/180,r0=150,r1=r0+(i%2?22:46);hero+=line(HX+Math.cos(a)*r0,HY+Math.sin(a)*r0,HX+Math.cos(a)*r1,HY+Math.sin(a)*r1,i%2?L:A,i%2?.7:.8,i%2?2:3);}
+    hero+=G(760,190,0,1,spark(14,A,.8))+G(1020,520,0,1,spark(10,L,.9))+G(790,500,0,1,spark(8,A,.6));
+    foot=[110,160,215,275].map((r,i)=>circ(70,1860,r,'none',0,i%2?L:A,.5-i*.07,2)).join('')+circ(70,1860,60,P,.8,A,.6,2);
+    div=divLines(540)+G(540,632,45,1,`<rect x="-9" y="-9" width="18" height="18" fill="${P}" stroke="${A}" stroke-width="2"/>`);
+  } else if(month===1){ // Februari - Mawar
+    [0,45,90,135,180,225,270,315].forEach(d=>{hero+=G(HX,HY,d,1,`<ellipse cx="0" cy="-70" rx="42" ry="68" fill="${P}" fill-opacity=".92" stroke="${L}" stroke-width="2"/>`);});
+    [20,80,140,200,260,320].forEach(d=>{hero+=G(HX,HY,d,1,`<ellipse cx="0" cy="-44" rx="28" ry="46" fill="${L}" fill-opacity=".38" stroke="${A}" stroke-opacity=".75" stroke-width="2"/>`);});
+    hero+=circ(HX,HY,26,'none',0,A,.8,2.5)+circ(HX,HY,14,'none',0,A,.9,2.5)+circ(HX,HY,4,A,1);
+    hero+=G(760,190,-14,1.25,heart(L,.75))+G(1018,176,12,.9,heart(P,.95))+G(775,520,10,.9,heart(P,.95))+G(1030,520,-12,1.1,heart(L,.7));
+    foot=G(120,1700,-10,1.2,heart(P,.9))+G(190,1770,14,.9,heart(L,.7))+G(110,1830,-6,.7,heart(P,.95));
+    div=divLines(540)+G(540,632,0,.75,heart(P,1));
+  } else if(month===2){ // Maret - Tunas
+    const br=[1085,110,985,210,880,360,760,570];
+    hero=`<path d="M${br[0]} ${br[1]}C${br[2]} ${br[3]} ${br[4]} ${br[5]} ${br[6]} ${br[7]}" fill="none" stroke="${A}" stroke-width="3.5" stroke-linecap="round"/>`;
+    for(let i=0;i<9;i++){const t=.1+i*.1,p=bez(br,t),ang=bezAng(br,t),s=i%2?1:-1;const len=88-i*5;hero+=G(p[0],p[1],ang+s*48,1,leaf(len,i%2?P:L,i%2?.95:.55));}
+    const e=bez(br,1);hero+=G(e[0],e[1],bezAng(br,1)-10,1,leaf(40,P,.95))+circ(e[0],e[1],5,A,1);
+    const b2=[-10,1690,80,1720,180,1790,310,1880];
+    foot=`<path d="M${b2[0]} ${b2[1]}C${b2[2]} ${b2[3]} ${b2[4]} ${b2[5]} ${b2[6]} ${b2[7]}" fill="none" stroke="${A}" stroke-width="3" stroke-linecap="round"/>`;
+    for(let i=0;i<5;i++){const t=.18+i*.17,p=bez(b2,t),ang=bezAng(b2,t),s=i%2?1:-1;foot+=G(p[0],p[1],ang+s*50,1,leaf(62-i*4,i%2?P:L,.8));}
+    div=divLines(540)+G(540,632,-90,1,leaf(34,P,1))+G(498,632,-150,1,leaf(22,L,.8))+G(582,632,-30,1,leaf(22,L,.8));
+  } else if(month===3){ // April - Sakura
+    hero=G(HX,HY,10,2.6,sakura())+G(755,185,-18,1.3,sakura())+G(1020,515,25,1.5,sakura())+G(800,520,0,.95,sakura())+G(1030,150,40,.8,sakura());
+    [[700,330,30,.7],[820,130,-40,.8],[980,610,20,.9],[740,430,70,.6],[1050,400,-20,.7],[880,600,-60,.6]].forEach(q=>{hero+=G(q[0],q[1],q[2],q[3],sakuraPetal);});
+    foot=G(120,1720,0,1.5,sakura())+G(210,1810,30,.9,sakura())+G(80,1830,-20,.7,sakuraPetal);
+    div=divLines(540)+G(540,632,0,.62,sakura());
+  } else if(month===4){ // Mei - Melati
+    hero=line(700,78,1080,78,A,.7,2.5);
+    [810,880,950,1020].forEach((x,k)=>{const Ls=[330,460,390,340][k];hero+=line(x,78,x,78+Ls,A,.6,2);
+      for(let y=122;y<78+Ls-20;y+=58){const q=(y/58|0)+k,s=q%2?.78:1.1;hero+=G(x,y,(y*3)%60,s,jasmine());if(q%3===0)hero+=G(x+8,y+28,-35,1,leaf(24,L,.75));}
+      hero+=`<ellipse cx="${x}" cy="${78+Ls+8}" rx="7" ry="13" fill="#fffef8" stroke="${L}" stroke-width="1.5"/>`;});
+    foot=G(120,1790,0,1.4,jasmine())+G(190,1740,20,1,jasmine())+G(80,1730,-10,.9,jasmine())+G(150,1840,-30,1,leaf(46,L,.7))+G(100,1790,200,1,leaf(40,P,.9));
+    div=divLines(540)+G(540,632,0,.8,jasmine())+G(488,632,0,.5,jasmine())+G(592,632,0,.5,jasmine());
+  } else if(month===5){ // Juni - Ombak
+    hero=circ(930,180,52,P,1,A,.8,3)+circ(930,180,74,'none',0,L,.8,2);
+    for(let k=0;k<11;k++){const len=420-k*26,y=250+k*27;hero+=wave(1090-len,1090,y,9,84,k%2?L:A,.9-k*.055,k%2?2.5:3);}
+    foot='';for(let k=0;k<6;k++){const len=330-k*40,y=1800+k*22;foot+=wave(-10,-10+len,y,8,76,k%2?L:A,.75-k*.1,2.5);}
+    div=divLines(540)+wave(496,584,632,7,44,A,.9,3);
+  } else if(month===6){ // Juli - Surya
+    hero=circ(HX,HY,70,P,1,A,.95,3.5)+circ(HX,HY,90,'none',0,L,.9,2)+circ(HX,HY,236,'none',0,L,.45,2);
+    for(let i=0;i<24;i++){const a=i*15*Math.PI/180,w=3.6*Math.PI/180,r0=108,r1=i%2?176:222,fill=i%2?L:A;const p=`${n(HX+Math.cos(a-w)*r0)},${n(HY+Math.sin(a-w)*r0)} ${n(HX+Math.cos(a)*r1)},${n(HY+Math.sin(a)*r1)} ${n(HX+Math.cos(a+w)*r0)},${n(HY+Math.sin(a+w)*r0)}`;hero+=`<polygon points="${p}" fill="${fill}" fill-opacity="${i%2?.65:.85}"/>`;}
+    foot=circ(40,1880,70,P,.9,A,.8,3);for(let i=0;i<9;i++){const a=(-90+i*11.25)*Math.PI/180;foot+=line(40+Math.cos(a)*92,1880+Math.sin(a)*92,40+Math.cos(a)*(i%2?128:156),1880+Math.sin(a)*(i%2?128:156),i%2?L:A,.85,3.5);}
+    div=divLines(540)+circ(540,632,9,P,1,A,.9,2.5);for(let i=0;i<8;i++){const a=i*45*Math.PI/180;div+=line(540+Math.cos(a)*15,632+Math.sin(a)*15,540+Math.cos(a)*23,632+Math.sin(a)*23,A,.9,2.5);}
+  } else if(month===7){ // Agustus - Kawung
+    const kaw=(r)=>[0,90,180,270].map(d=>`<ellipse cx="0" cy="${-r*.52}" rx="${r*.34}" ry="${r*.52}" fill="${P}" fill-opacity=".75" stroke="${A}" stroke-width="1.8" transform="rotate(${d})"/>`).join('')+`<circle r="${r*.1}" fill="${A}"/>`;
+    for(let cx=0;cx<5;cx++)for(let cy=0;cy<7;cy++){const x=720+cx*84+(cy%2?42:0),y=120+cy*72,dist=Math.hypot(x-HX,y-HY),op=Math.max(.14,Math.min(1,1.12-dist/330));if(x>1100)continue;hero+=`<g opacity="${n(op)}">${G(x,y,0,1,kaw(36))}</g>`;}
+    for(let cx=0;cx<3;cx++)for(let cy=0;cy<3;cy++){foot+=`<g opacity="${n(.85-cx*.2-cy*.2)}">${G(70+cx*70+(cy%2?35:0),1790+cy*62,0,1,kaw(30))}</g>`;}
+    div=divLines(540)+G(498,632,0,.55,kaw(36))+G(540,632,0,.7,kaw(36))+G(582,632,0,.55,kaw(36));
+  } else if(month===8){ // September - Daun Jatuh
+    const vein=(len)=>[.25,.45,.65].map(t=>`<path d="M${len*t} 0L${len*(t+.14)} ${-len*.2}M${len*t} 0L${len*(t+.14)} ${len*.2}" stroke="${A}" stroke-opacity=".6" stroke-width="1.1" fill="none"/>`).join('');
+    [[790,160,-60,1.4,0],[960,120,40,1.1,1],[880,270,-150,1.7,0],[1030,330,100,1.3,1],[780,400,20,1.2,1],[940,470,-110,1.5,0],[1040,560,60,.9,0],[830,590,-30,1,1],[730,270,150,.8,0]].forEach(q=>{hero+=G(q[0],q[1],q[2],q[3],leaf(100,q[4]?L:P,q[4]?.6:.95)+vein(100));});
+    [[700,200],[1060,230],[750,520],[1000,430]].forEach(q=>{hero+=circ(q[0],q[1],4,A,.6);});
+    foot=G(70,1740,-30,1.3,leaf(100,P,.95)+vein(100))+G(190,1810,40,1,leaf(100,L,.6)+vein(100))+G(60,1850,-80,.8,leaf(100,P,.9)+vein(100));
+    div=divLines(540)+G(500,632,0,1,leaf(24,P,1))+G(580,632,180,1,leaf(24,P,1))+circ(540,632,4,A,1);
+  } else if(month===9){ // Oktober - Lengkung Terakota
+    const arch=(cx,base,w,h,fill,op,stroke,sop)=>`<path d="M${cx-w} ${base}L${cx-w} ${base-h+w}A${w} ${w} 0 0 1 ${cx+w} ${base-h+w}L${cx+w} ${base}Z" fill="${fill}" fill-opacity="${op}" stroke="${stroke}" stroke-opacity="${sop}" stroke-width="2.5"/>`;
+    hero=arch(900,590,160,470,P,.95,A,.6)+arch(900,590,118,390,L,.5,A,.7)+arch(900,590,76,300,A,.28,A,.8)+circ(900,330,34,P,1,A,.9,3);
+    [[742,560,-16,300],[762,570,-6,250],[782,575,6,330],[722,555,-26,220],[802,578,16,200]].forEach(q=>{const x=q[0],y=q[1],lean=q[2],h=q[3],tx=x+lean*h/60,ty=y-h;hero+=`<path d="M${x} ${y}Q${x+lean*2} ${y-h*.55} ${tx} ${ty}" fill="none" stroke="${A}" stroke-opacity=".75" stroke-width="2.2" stroke-linecap="round"/>`;for(let j=0;j<7;j++){const t=1-j*.035,px=x+(tx-x)*t+lean*.2*(1-t)*4,py=y+(ty-y)*t;hero+=`<ellipse cx="${n(px+(j%2?5:-5))}" cy="${n(py-4)}" rx="3.4" ry="10" fill="${L}" fill-opacity=".9" transform="rotate(${lean*.9+(j%2?18:-18)} ${n(px)} ${n(py)})"/>`;}});
+    foot=arch(110,1890,70,200,P,.9,A,.55)+arch(110,1890,42,140,L,.55,A,.7);
+    div=divLines(540)+arch(540,640,16,38,P,1,A,.9);
+  } else if(month===10){ // November - Hujan Syukur
+    const cl=(fill,stroke,sw,inset)=>`<g fill="${fill}" stroke="${stroke}" stroke-width="${sw}"><circle cx="850" cy="226" r="${44-inset}"/><circle cx="906" cy="196" r="${60-inset}"/><circle cx="966" cy="226" r="${44-inset}"/><rect x="${850}" y="${182+inset}" width="116" height="${88-2*inset}"/></g>`;
+    hero=`<g transform="translate(906 214) scale(1.45) translate(-906 -214)">`+cl(L,L,7,0)+cl(P,P,0,4)+`</g>`;
+    for(let r=0;r<9;r++)for(let c=0;c<8;c++){const x=745+c*44+(r%2?22:0),y=352+r*30;if(x>1070)continue;const op=Math.max(.2,.95-r*.08);hero+=line(x,y,x-9,y+26,r%3===0?L:A,op,r%3===0?3:2.5);}
+    foot='';for(let r=0;r<4;r++)for(let c=0;c<5;c++){foot+=line(60+c*44+(r%2?22:0),1730+r*34,51+c*44+(r%2?22:0),1756+r*34,A,.5-r*.1,2.5);}
+    div=divLines(540)+`<path d="M540 618C528 632 524 641 540 646C556 641 552 632 540 618Z" fill="${P}" stroke="${A}" stroke-width="2"/>`;
+  } else { // Desember - Bintang
+    const pts=[[760,200],[835,285],[900,330],[960,240],[1030,175],[1000,420],[900,520],[790,455]];
+    hero=circ(HX,HY,208,'none',0,L,.55,2)+circ(HX,HY,170,'none',0,A,.25,1.5);
+    hero+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="${L}" stroke-opacity=".8" stroke-width="1.6"/>`;
+    pts.forEach((p,i)=>{hero+=(i===2?G(p[0],p[1],0,1,spark(78,L,.95)):G(p[0],p[1],i*12,1,spark(10+(i*7)%12,i%2?A:L,.95)))+(i===2?circ(p[0],p[1],6,A,1):circ(p[0],p[1],3,A,1));});
+    hero+=G(HX,HY,45,1,spark(40,A,.7));
+    foot=G(130,1740,0,1,spark(34,L,.95))+G(220,1810,0,1,spark(16,A,.9))+G(70,1820,0,1,spark(12,L,.9))+G(190,1700,0,1,spark(9,A,.8))+line(130,1740,220,1810,L,.7,1.5)+line(130,1740,70,1820,L,.7,1.5);
+    div=divLines(540)+G(540,632,0,1,spark(17,L,1))+G(500,632,0,1,spark(6,A,1))+G(580,632,0,1,spark(6,A,1));
+  }
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">${hero}${foot}${div}</svg>`;
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+
+const _posterArtCache = {};
+function posterArtSvg(month, th){
+  const k = month+'|'+th.accent+th.accentLight+th.accentPale;
+  return _posterArtCache[k] || (_posterArtCache[k] = posterArtSvgRaw(month, th));
+}
+
 /* ---------- 12 tema desain poster kalender (bisa dipilih bebas per bulan) ---------- */
 const POSTER_THEMES = [
   {name:'Klasik Emas',      bg1:'#fffdf5', bg2:'#fdf6e0', bg3:'#f8ecc6', accent:'#b8901f', accentLight:'#cbb15a', accentPale:'#efe3bd', ink:'#241c06', ink2:'#2c2712', inkSoft:'#a4914f', quote:'#7a6d47'},
@@ -6926,6 +7036,20 @@ const POSTER_THEMES = [
   {name:'Tembaga Klasik',   bg1:'#fffbf6', bg2:'#faeee1', bg3:'#f0d5b6', accent:'#a9673a', accentLight:'#c68f65', accentPale:'#eeddc9', ink:'#231609', ink2:'#332111', inkSoft:'#b89165', quote:'#8f5a30'},
   {name:'Charcoal Mewah',   bg1:'#f4f2ee', bg2:'#e7e2d9', bg3:'#d4cabb', accent:'#8a6a2f', accentLight:'#a68a55', accentPale:'#ded2b8', ink:'#161510', ink2:'#211f18', inkSoft:'#8c805f', quote:'#5f5334'},
   {name:'Blush Pink Lembut',bg1:'#fffbfc', bg2:'#fcedf1', bg3:'#f6d6e0', accent:'#c46a85', accentLight:'#dc98ac', accentPale:'#f4dbe3', ink:'#231017', ink2:'#341a24', inkSoft:'#c393a2', quote:'#a3506a'},
+  /* ---- 12 warna khas tiap bulan (indeks 12-23). Dipakai otomatis sebagai bawaan: Januari=12 ... Desember=23.
+     12 warna lama di atas tetap bisa dipilih manual dan indeksnya tidak berubah. ---- */
+  {name:'Januari · Fajar Champagne', bg1:'#fffdf6', bg2:'#faf0d8', bg3:'#f1dfb2', accent:'#956c19', accentLight:'#d2b064', accentPale:'#f1e2b9', ink:'#231a08', ink2:'#33290f', inkSoft:'#7a6730', quote:'#6f5f30'},
+  {name:'Februari · Mawar Dusty',    bg1:'#fff8f8', bg2:'#fbe8ea', bg3:'#f3cfd4', accent:'#ab4660', accentLight:'#d68b9e', accentPale:'#f4d8de', ink:'#2a1218', ink2:'#3d1c25', inkSoft:'#885a64', quote:'#84394f'},
+  {name:'Maret · Tunas Segar',       bg1:'#fafdf5', bg2:'#edf4df', bg3:'#d9e8bf', accent:'#4f7c38', accentLight:'#8db76d', accentPale:'#dcebc8', ink:'#16210f', ink2:'#24331a', inkSoft:'#56714d', quote:'#436a2c'},
+  {name:'April · Sakura Pagi',       bg1:'#fffafc', bg2:'#fbe9f1', bg3:'#f2d1e2', accent:'#ae5484', accentLight:'#dc9bbd', accentPale:'#f5dbe8', ink:'#26141e', ink2:'#381f2d', inkSoft:'#855a72', quote:'#8d4a73'},
+  {name:'Mei · Melati Putih',        bg1:'#fdfefb', bg2:'#f0f6e9', bg3:'#dbe8c9', accent:'#477552', accentLight:'#86ac8c', accentPale:'#dcebdc', ink:'#14221a', ink2:'#213328', inkSoft:'#54755b', quote:'#3a5f43'},
+  {name:'Juni · Laut Tosca',         bg1:'#f8fdfd', bg2:'#e4f4f4', bg3:'#c3e5e7', accent:'#157982', accentLight:'#5fb3b9', accentPale:'#cdebed', ink:'#0f2326', ink2:'#1a3a3e', inkSoft:'#407075', quote:'#145b62'},
+  {name:'Juli · Matahari Madu',      bg1:'#fffcf0', bg2:'#ffefc0', bg3:'#fcdc85', accent:'#a26600', accentLight:'#e5ad33', accentPale:'#fbe5a5', ink:'#2a1c00', ink2:'#3d2a05', inkSoft:'#866619', quote:'#7a5200'},
+  {name:'Agustus · Merah Putih',     bg1:'#fffefc', bg2:'#fbf0eb', bg3:'#f2d5cd', accent:'#ad1f29', accentLight:'#d8727a', accentPale:'#f6d8d4', ink:'#2a0f11', ink2:'#3d1a1d', inkSoft:'#945b5f', quote:'#8a1920'},
+  {name:'September · Daun Zaitun',   bg1:'#fdfcf4', bg2:'#f1eed8', bg3:'#e0d9b0', accent:'#7a6c1f', accentLight:'#b3a458', accentPale:'#e8e2bc', ink:'#221e0a', ink2:'#342f14', inkSoft:'#716736', quote:'#5f5515'},
+  {name:'Oktober · Terakota Senja',  bg1:'#fffaf5', bg2:'#fbebdd', bg3:'#f1d0b8', accent:'#b0522f', accentLight:'#d88a68', accentPale:'#f3d9c9', ink:'#2a150c', ink2:'#3d2216', inkSoft:'#865d46', quote:'#86391d'},
+  {name:'November · Biru Hujan',     bg1:'#f8fafd', bg2:'#e8eef6', bg3:'#cbdaea', accent:'#385e8c', accentLight:'#7a9bc0', accentPale:'#d4e0ee', ink:'#111b28', ink2:'#1e2d40', inkSoft:'#546a86', quote:'#2f5078'},
+  {name:'Desember · Zamrud Bintang', bg1:'#f7fbf8', bg2:'#e1f0e7', bg3:'#c0decc', accent:'#1b6045', accentLight:'#c9a443', accentPale:'#d6e7db', ink:'#0e1e16', ink2:'#19301f', inkSoft:'#46715c', quote:'#17533a'},
 ];
 function posterThemeKey(){ return posterKey(calYear, calMonth); }
 function loadPosterThemeOverrides(){
@@ -6935,7 +7059,7 @@ function savePosterThemeOverridesLocal(){ localStorage.setItem('kaoneMotret_post
 function savePosterThemeOverrides(){ savePosterThemeOverridesLocal(); pushToCloud(); }
 function currentThemeIndex(){
   const override = posterThemeOverrides[posterThemeKey()];
-  return (override!==undefined && override!==null && POSTER_THEMES[override]) ? override : calMonth;
+  return (override!==undefined && override!==null && POSTER_THEMES[override]) ? override : (12 + calMonth);
 }
 function applyPosterTheme(poster, theme){
   poster.style.setProperty('--poster-bg1', theme.bg1);
@@ -6966,6 +7090,8 @@ const LAYOUT_STYLES = [
   {name:'Modern Titik Kiri', titleAlign:'left',   dateShape:'dot',       frameStyle:'solid',   fontTitle:"'Bricolage Grotesque',system-ui,sans-serif",           fontQuote:"'Cormorant Garamond',serif"},
   {name:'Mewah Persegi',     titleAlign:'center', dateShape:'square',    frameStyle:'ribbon',  fontTitle:"'Italiana',serif",           fontQuote:"'Cormorant Garamond',serif"},
 ];
+// Tata letak bawaan tiap bulan (indeks LAYOUT_STYLES) - dipilih agar cocok dengan suasana motif bulan itu.
+const MONTH_DEFAULT_LAYOUT = [0,2,1,4,9,3,6,7,5,8,10,11];
 function loadLayoutOverrides(){
   try{ return JSON.parse(localStorage.getItem('kaoneMotret_posterLayout_v1')||'{}'); }catch(e){ return {}; }
 }
@@ -6973,7 +7099,7 @@ function saveLayoutOverridesLocal(){ localStorage.setItem('kaoneMotret_posterLay
 function saveLayoutOverrides(){ saveLayoutOverridesLocal(); pushToCloud(); }
 function currentLayoutIndex(){
   const override = layoutOverrides[posterThemeKey()];
-  return (override!==undefined && override!==null && LAYOUT_STYLES[override]) ? override : calMonth;
+  return (override!==undefined && override!==null && LAYOUT_STYLES[override]) ? override : MONTH_DEFAULT_LAYOUT[calMonth];
 }
 
 // Kutipan motivasi harian untuk Beranda - index berganti otomatis tiap hari
@@ -12199,6 +12325,7 @@ function renderPosterHtml(){
 
   return `
   <div id="calendarPoster" class="cp-poster" style="${themeStyle}" data-title-align="${layout.titleAlign}" data-date-shape="${layout.dateShape}" data-frame-style="${layout.frameStyle}">
+    <img class="cp-art" src="${posterArtSvg(calMonth, theme)}" alt="">
     <div class="cp-ribbon">KAONE MOTRET</div>
     <div class="cp-frame"></div>
     <div class="cp-frame-inner"></div>
@@ -18407,6 +18534,7 @@ const CHANGELOG = [
     version: '1.23.3',
     tanggal: '25 Oktober 2026',
     items: [
+      { kategori: 'Peningkatan', teks: 'Poster Kalender didesain ulang: tiap bulan kini punya ilustrasi dan warna khasnya sendiri (Januari fajar, Februari mawar, Maret tunas, April sakura, Mei melati, Juni ombak, Juli matahari, Agustus kawung, September daun jatuh, Oktober lengkung terakota, November hujan, Desember bintang). Desain atau warna yang sebelumnya sudah Anda pilih sendiri untuk suatu bulan tidak berubah, dan semuanya masih bisa diganti manual.' },
       { kategori: 'Peningkatan', teks: 'Layar kini bisa diperbesar dengan cubitan dua jari, membantu saat teks terasa kecil. Ketuk dua kali cepat tidak lagi memperbesar layar secara tidak sengaja.' }
     ]
   },

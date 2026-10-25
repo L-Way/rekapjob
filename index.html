@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#FFC400">
 <meta name="application-name" content="Kaone Motret">
 <meta name="apple-mobile-web-app-title" content="Kaone Motret">
@@ -19,7 +19,7 @@
 <title>Kaone Motret - Buku Job Fotografer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Italiana&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3"></script>
 <style>
   :root{
     --gold:#FFC400;
@@ -37,7 +37,7 @@
     --shadow:0 6px 24px rgba(180,150,0,0.10), 0 1px 3px rgba(0,0,0,0.06);
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  html,body{margin:0;padding:0;touch-action:manipulation;}   /* pinch-zoom boleh, zoom ketuk-ganda dimatikan */
   body{
     background:linear-gradient(180deg,#FFFBEA 0%,#fffaeb 100%);
     color:var(--ink);
@@ -429,7 +429,7 @@
   .layout-card:hover{border-color:var(--gold);}
   .layout-card.active{border-color:#241f0f; background:var(--gold-pale); box-shadow:0 0 0 1.5px #241f0f;}
   .layout-card-preview{font-size:20px; color:#241f0f; line-height:1;}
-  .layout-card-name{font-size:9.5px; font-weight:600; color:#5c4a12; text-align:center; line-height:1.25;}
+  .layout-card-name{font-size:10.5px; font-weight:600; color:#5c4a12; text-align:center; line-height:1.25;}
 
   .cp-poster{
     --poster-bg1:#fffdf5; --poster-bg2:#fdf6e0; --poster-bg3:#f8ecc6;
@@ -2087,7 +2087,7 @@
     .task-summary-grid{grid-template-columns:repeat(2,1fr); gap:8px; margin:12px 0 16px;}
     .task-stat{padding:11px 12px;}
     .task-stat .ts-value{font-size:18px;}
-    .task-stat .ts-label{font-size:9.5px; letter-spacing:.5px;}
+    .task-stat .ts-label{font-size:10.5px; letter-spacing:.5px;}
     .task-person-card{padding:12px 13px;}
     .task-person-name{font-size:14.5px;}
     .task-person-meta{font-size:10.5px;}
@@ -2156,7 +2156,7 @@
   @media(max-width:380px){
     .quick-menu-item{padding:8px 3px;}
     .quick-menu-item .qm-icon{font-size:17px;}
-    .quick-menu-item .qm-label{font-size:9.5px;}
+    .quick-menu-item .qm-label{font-size:10.5px;}
     .stat-grid{grid-template-columns:1fr 1fr;}
     .task-summary-grid{grid-template-columns:1fr 1fr;}
     .task-stat .ts-value{font-size:16px;}
@@ -2953,7 +2953,7 @@
     --dash-chip:#FFF1B8;
     --dash-line:#f0e1a0;
     --dash-ink:#241c06;
-    --dash-muted:#8a7a3c;
+    --dash-muted:#716329;
   }
   body{padding-bottom:var(--bn-space);}
   .copyright-bar{
@@ -3166,7 +3166,7 @@
   .dash-row .chev .ic{width:15px; height:15px;}
   .dash-row .date{width:38px; padding:5px 0; border-radius:11px;}
   .dash-row .date b{font-size:14.5px;}
-  .dash-row .date span{font-size:9.5px;}
+  .dash-row .date span{font-size:10.5px;}
   .dash-empty{padding:12px 14px; border-radius:16px; font-size:12.5px; gap:10px;}
   .dash-empty .ic{width:20px; height:20px;}
 
@@ -3200,7 +3200,7 @@
   .dash-week{display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px;}
   .dw-day{display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 0 7px; min-width:0; background:#fff; border:1px solid var(--dash-line); border-radius:14px; font-family:inherit; color:var(--dash-ink);}
   .dw-day:hover{transform:none; border-color:#d9cc9a;}
-  .dw-n{font-size:9.5px; font-weight:600; color:var(--dash-muted); text-transform:uppercase; letter-spacing:.3px;}
+  .dw-n{font-size:10.5px; font-weight:600; color:var(--dash-muted); text-transform:uppercase; letter-spacing:.3px;}
   .dw-d{font:700 15px/1.2 'Bricolage Grotesque',system-ui,sans-serif;}
   .dw-c{min-width:18px; height:18px; padding:0 5px; border-radius:999px; font-size:10.5px; font-weight:700; line-height:18px; text-align:center; background:var(--dash-gold); color:#241c06;}
   .dw-c.none{background:transparent; color:#cfc7a8; font-weight:500;}
@@ -3332,7 +3332,7 @@
   .stat-job:hover{transform:none; border-color:#d9cc9a; background:#FFFBEA;}
   .stat-job .sj-date{width:38px; flex:none; padding:5px 0; border-radius:11px; background:var(--dash-chip); color:var(--dash-gold-ink); text-align:center; line-height:1.05;}
   .stat-job .sj-date b{display:block; font-size:14.5px;}
-  .stat-job .sj-date span{font-size:9.5px; font-weight:600;}
+  .stat-job .sj-date span{font-size:10.5px; font-weight:600;}
   .stat-job .sj-tx{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;}
   .stat-job .sj-t{font-weight:600; font-size:12.5px; line-height:1.3; color:var(--dash-ink); overflow-wrap:anywhere;}
   .stat-job .sj-s{font-size:11px; line-height:1.35; color:var(--dash-muted);}
@@ -3530,7 +3530,7 @@
   #taskForm .task-cov-row{font-size:11px; padding:5px 0; gap:6px;}
   #taskForm .task-cov-day{flex:0 0 92px; font-size:11px;}
   #taskForm .task-cov-chip{font-size:10.5px; padding:2px 7px;}
-  #taskForm .task-hari-badge{font-size:9.5px;}
+  #taskForm .task-hari-badge{font-size:10.5px;}
   /* Putaran 2: tombol "Tambah Jam" per hari naik ke baris judul hari (hemat tinggi),
      label hari di ringkasan tidak terpotong, dan tombol Simpan tidak terlipat. */
   #taskForm .task-day-block{position:relative;}
@@ -3585,7 +3585,7 @@
   .jf .jf-sec-h h3,.jf .jf-sec-h .jf-sec-title{font-size:13px; line-height:1.25;}
   .jf .jf-sec-h p,.jf .jf-sec-h .jf-sec-desc,.jf .jf-sec-h small{font-size:10.5px; line-height:1.3;}
   .jf .jf-panel{padding:8px 12px 12px;}
-  .jf .jf-badge{font-size:9.5px; padding:1px 6px;}
+  .jf .jf-badge{font-size:10.5px; padding:1px 6px;}
   .jf .form-grid{gap:9px 10px;}
   .jf input[type=text],.jf input[type=number],.jf input[type=tel],.jf input[type=date],.jf input[type=time],
   .jf input[type=email],.jf input[type=url],.jf input:not([type]),.jf select,.jf textarea{
@@ -3986,7 +3986,7 @@ html.km-has-session #authGate{display:none !important;}
 .task-summary-grid.tg-sum{grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:8px; margin:12px 0 14px;}
 .tg-sum .task-stat{padding:10px 11px;}
 .tg-sum .task-stat .ts-value{font-size:22px;}
-.tg-sum .task-stat .ts-label{font-size:9.5px; letter-spacing:.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.tg-sum .task-stat .ts-label{font-size:10.5px; letter-spacing:.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .tg-sum .task-stat .ts-sub{font-size:10.5px; margin-top:4px;}
 .tg-of{font-size:13px; font-weight:500; opacity:.55; margin-left:1px;}
 .task-stat.gold .ts-bar{background:rgba(255,255,255,.5); margin-top:6px;}
@@ -4201,10 +4201,10 @@ body.ws-vendor header.topbar{box-shadow:inset 0 -3px 0 #FFB800;}
 <style id="kj-match-kaone-job">
 /* ===== Disamakan dengan Kaone Job: warna kuning, bentuk tombol, animasi tab ===== */
 :root{
-  --gold:#FFC400; --gold-light:#FFD42E; --gold-pale:#FFF1B8; --ink:#241c06; --ink-soft:#8a7a3c;
+  --gold:#FFC400; --gold-light:#FFD42E; --gold-pale:#FFF1B8; --ink:#241c06; --ink-soft:#716329;
   --line:#f0e1a0; --paper:#FFFBEA; --btn-edge:#b88a00;
   --ez:cubic-bezier(.2,.8,.2,1); --soft:cubic-bezier(.22,.61,.36,1);
-  --dash-gold:#FFC400; --dash-gold-ink:#241c06; --dash-chip:#FFF1B8; --dash-line:#f0e1a0; --dash-ink:#241c06; --dash-muted:#8a7a3c;
+  --dash-gold:#FFC400; --dash-gold-ink:#241c06; --dash-chip:#FFF1B8; --dash-line:#f0e1a0; --dash-ink:#241c06; --dash-muted:#716329;
 }
 body{background:radial-gradient(800px 480px at 95% -8%,#ffe38a,transparent 60%),radial-gradient(700px 420px at -8% 105%,#ffeaa3,transparent 60%) fixed,#FFFBEA; color:var(--ink);}
 
@@ -9885,6 +9885,7 @@ function fmtCountdown(ts){
   return 'Mulai dalam '+(h>=1 ? d+' hari '+h+' jam' : d+' hari');
 }
 setInterval(()=>{
+  if(document.hidden) return;   // hemat baterai saat aplikasi di latar belakang
   document.querySelectorAll('[data-cd]').forEach(el=>{
     const sp = el.querySelector('span'), t = fmtCountdown(Number(el.dataset.cd));
     if(sp && sp.textContent!==t) sp.textContent = t;
@@ -18396,12 +18397,36 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.23.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.23.3'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.23.3',
+    tanggal: '25 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Layar kini bisa diperbesar dengan cubitan dua jari, membantu saat teks terasa kecil. Ketuk dua kali cepat tidak lagi memperbesar layar secara tidak sengaja.' }
+    ]
+  },
+  {
+    version: '1.23.2',
+    tanggal: '25 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Teks keterangan (label kecil, tanggal, dan lencana) dibuat sedikit lebih besar dan warna teks sekunder dibuat lebih tegas, supaya lebih mudah dibaca terutama di layar HP dan di bawah sinar matahari.' },
+      { kategori: 'Peningkatan', teks: 'Gambar di ruang chat kini punya keterangan untuk pembaca layar (aksesibilitas).' }
+    ]
+  },
+  {
+    version: '1.23.1',
+    tanggal: '25 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Aplikasi lebih hemat baterai: jam di bagian atas dan hitung mundur job berhenti berjalan saat aplikasi tidak sedang dilihat, dan langsung menyala lagi begitu dibuka.' },
+      { kategori: 'Peningkatan', teks: 'Aplikasi lebih stabil dan aman saat dibuka: komponen koneksi data kini dikunci pada satu versi yang sudah teruji, sehingga tidak berubah sendiri tanpa sepengetahuan kita.' },
+      { kategori: 'Peningkatan', teks: 'Pengambilan data dari server dipercepat, terutama saat jumlah job, pesan tim, dan tugas sudah banyak.' }
+    ]
+  },
   {
     version: '1.23.0',
     tanggal: '23 Oktober 2026',
@@ -19697,7 +19722,8 @@ function updateHeaderClock(){
   if(el.textContent !== teks) el.textContent = teks;
 }
 updateHeaderClock();
-setInterval(updateHeaderClock, 1000);
+setInterval(()=>{ if(!document.hidden) updateHeaderClock(); }, 1000);   // hemat baterai: berhenti saat aplikasi di latar belakang
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) updateHeaderClock(); });
 
 const copyrightYearEl = document.getElementById('copyrightYear');
 if(copyrightYearEl) copyrightYearEl.textContent = new Date().getFullYear();
@@ -21601,7 +21627,7 @@ var r=await sb.storage.from('kaone-chat').upload(path,blob,{contentType:mime.spl
 var o={tipe:tipe,media_path:path,media_mime:mime.split(';')[0],media_durasi:dur||null};if(tipe=='foto'){var pv=await thumb(blob);if(pv)o.pratinjau=pv}if(rep)o.balas_ke=rep;rp(null);await put(o)}
 async function buka(id){var mm=msgs[id];if(kcGone(mm))return toast('Foto ini telah hilang otomatis');var r=await sb.functions.invoke('kaone-chat',{body:{aksi:'lihat',id:id}}),d=r.data;
 if(!d||!d.ok)return toast(d&&d.reason=='batas'?'Batas lihat habis':'Media tidak tersedia');
-var m=d.mime||'',h=m.indexOf('image')==0?'<img src="'+d.url+'">':m.indexOf('video')==0?'<video src="'+d.url+'" controls autoplay playsinline controlslist="nodownload"></video>':'<audio src="'+d.url+'" controls autoplay></audio>';
+var m=d.mime||'',h=m.indexOf('image')==0?'<img alt="Gambar terkirim" src="'+d.url+'">':m.indexOf('video')==0?'<video src="'+d.url+'" controls autoplay playsinline controlslist="nodownload"></video>':'<audio src="'+d.url+'" controls autoplay></audio>';
 $('kvb').innerHTML=h;$('kvs').textContent=d.sisa!=null?'Sisa lihat: '+d.sisa+'x':'';$('kcv').classList.add('on');var im=m.indexOf('image')==0,dl=!!(mm&&mm.tipe=='foto'&&im&&mm.pengirim!=me&&peran!='lawan');kcDl=dl?{id:id,url:d.url,mime:m}:null;$('kvd').hidden=!dl;kcNoShot(peran=='lawan'&&im);kcCover(false);if(mm&&mm.tipe=='foto')setTimeout(kcBersih,65000)}
 function send(o){rm&&rm.send({type:'broadcast',event:'sinyal',payload:o})}
 /* ===== PANGGILAN SUARA/VIDEO =====
@@ -21690,12 +21716,12 @@ function kcCard(m,own){var i=kcInfo(m),bad=i.r!='selesai'&&(own||i.r!='tolak'),s
 return '<button type="button" class="kcl'+(bad?' bad':'')+'" data-cb="'+i.v+'"><span class="ci">'+ic(i.v?'video':'phone')+'</span><span class="ct"><b>'+E(kcTitle(m,own))+'</b><small>'+ic(own?'arout':'arin')+E(sub)+'</small></span></button>'}
 var P={},AL=null,U={},other=null,pend=null,delFoto=false,cim=null,cz=1,ox=0,oy=0,dr=null;
 function shut(i){$(i).classList.remove('on')}
-function av(){var u=other&&U[other]&&U[other].u;$('kav').innerHTML=u?'<img src="'+u+'">':mo(T[tema].m[0],'#fff')}
+function av(){var u=other&&U[other]&&U[other].u;$('kav').innerHTML=u?'<img alt="" src="'+u+'">':mo(T[tema].m[0],'#fff')}
 function hdr(){$('kn').textContent=AL||(other&&P[other]&&P[other].nama)||'Chat';av()}
 async function pfLoad(){var r=(await sb.from('kaone_chat_profil').select('*')).data||[],a=(await sb.from('kaone_chat_alias').select('*')).data||[];P={};
 r.forEach(function(x){P[x.user_id]=x;if(x.user_id!=me)other=x.user_id});AL=a[0]&&a[0].nama_lawan||null;
 for(var i=0;i<r.length;i++){var x=r[i];if(!x.foto_at)delete U[x.user_id];if(x.foto_at&&!(U[x.user_id]&&U[x.user_id].v==x.foto_at)){var g=await sb.storage.from('kaone-chat').createSignedUrl('profil/'+x.user_id+'.jpg',3600);if(g.data&&g.data.signedUrl)U[x.user_id]={u:g.data.signedUrl,v:x.foto_at};else delete U[x.user_id]}}hdr()}
-function pa(){var u=delFoto?null:(pend?pend.url:(U[me]&&U[me].u));$('kpa').innerHTML=u?'<img src="'+u+'">':mo(T[tema].m[0],'#fff');$('kpz').textContent=pend?'Foto baru · '+Math.round(pend.blob.size/1024)+' KB':(delFoto?'Foto akan dihapus saat disimpan':'');$('kpd').classList.toggle('on',!!u)}
+function pa(){var u=delFoto?null:(pend?pend.url:(U[me]&&U[me].u));$('kpa').innerHTML=u?'<img alt="" src="'+u+'">':mo(T[tema].m[0],'#fff');$('kpz').textContent=pend?'Foto baru · '+Math.round(pend.blob.size/1024)+' KB':(delFoto?'Foto akan dihapus saat disimpan':'');$('kpd').classList.toggle('on',!!u)}
 function pfOpen(){$('kpn').value=(P[me]&&P[me].nama)||'';$('kpl').value=AL||'';pend=null;delFoto=false;pa();$('kpf').classList.add('on')}
 async function fotoHapus(){var path='profil/'+me+'.jpg',gone=false,ok=false;
 try{var r=await sb.storage.from('kaone-chat').remove([path]);gone=!r.error&&!!(r.data&&r.data.length)}catch(e){}
@@ -21832,7 +21858,7 @@ var kS={},kHold=false,kHv=null,kBusy=false,dn={},dr0=false,rg={},rgn={},sup=0,pk
 function snd(){try{return localStorage.getItem('kcSnd')!=='0'}catch(e){return true}}
 function opOpen(){opRef();$('kop').classList.add('on')}
 function opRef(){var u=other&&U[other]&&U[other].u,real=other&&P[other]&&P[other].nama;
-$('kopa').innerHTML=u?'<img src="'+u+'">':mo(T[tema].m[0],'#fff');
+$('kopa').innerHTML=u?'<img alt="" src="'+u+'">':mo(T[tema].m[0],'#fff');
 $('kopn').textContent=AL||real||'Lawan chat';$('kopp').textContent=AL&&real&&real!=AL?'Nama profil: '+real:'';
 if(lo&&lo.on){$('kops').innerHTML='<span class="od on"></span>Online sekarang';$('kopd').textContent=''}
 else if(lo&&lo.t){$('kops').innerHTML='<span class="od"></span>Terakhir online '+E(lastTxt(lo.t));var d=new Date(lo.t);$('kopd').textContent=isNaN(d)?'':d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+hm(d)}
@@ -24017,7 +24043,7 @@ window.jepiAfterRender=function(){
 @keyframes lhFlash{0%,100%{box-shadow:0 3px 14px rgba(150,110,20,.08),inset 0 0 0 1.5px var(--lh-line)}40%{box-shadow:0 6px 22px rgba(217,87,127,.35),inset 0 0 0 2.5px var(--lh-pinkd)}}
 #lh .lh-card.past{opacity:.78}
 #lh .lh-badge{width:56px;flex:none;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 2px;text-align:center;background:var(--bg,#FFE9A8);color:var(--fg,#7A5A00)}
-#lh .lh-badge .w{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;opacity:.85}
+#lh .lh-badge .w{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;opacity:.85}
 #lh .lh-badge .dd{white-space:nowrap;font-size:21px;font-weight:800;line-height:1.05;letter-spacing:-.03em}
 #lh .lh-badge .dd.r{font-size:15px;white-space:nowrap;letter-spacing:-.04em}
 #lh .lh-badge .m{font-size:10px;font-weight:700;opacity:.85}

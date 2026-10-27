@@ -3771,6 +3771,74 @@ body.chat-only .to-top-btn,body.chat-only .bottomnav,body.chat-only .more-layer,
   .card-wide table.jobtable td.row-actions .icon-btn{margin:0 3px 5px 0; white-space:nowrap; padding:6px 7px; font-size:11.5px;}
 }
 
+/* ----- Daftar Job desktop v2 (djRenderDesktop) ----- */
+@media(min-width:821px){
+  .card-wide .dj-bar{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:4px 0 16px;}
+  .dj-chips{display:flex; gap:8px; flex-wrap:wrap;}
+  .dj-chips button{display:inline-flex; align-items:center; gap:8px; padding:7px 8px 7px 15px; border:1.5px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); font:inherit; font-size:13px; font-weight:700; cursor:pointer; transition:background-color .2s, transform .2s, box-shadow .2s;}
+  .dj-chips button:hover{background:var(--gold-pale); transform:translateY(-1px);}
+  .dj-chips button i{font-style:normal; min-width:24px; height:24px; padding:0 6px; box-sizing:border-box; border-radius:12px; background:var(--gold-pale); display:inline-flex; align-items:center; justify-content:center; font-size:12px;}
+  .dj-chips button.on{background:var(--gold); border-color:var(--btn-edge); box-shadow:0 3px 0 var(--btn-edge);}
+  .dj-chips button.on i{background:var(--ink); color:var(--gold);}
+  .dj-count{font-size:12.5px; font-weight:600; color:var(--ink-soft);}
+  .dj-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:18px; background:#fff;}
+  .card-wide table.jobtable.dj{width:100%; min-width:980px; border-collapse:separate; border-spacing:0; font-size:13px;}
+  .card-wide table.jobtable.dj thead th{position:static; background:#fff6cf; padding:12px 8px; font-size:11px; letter-spacing:.9px; text-transform:uppercase; color:var(--ink-soft); border-bottom:1px solid var(--line); white-space:nowrap; text-align:left;}
+  .card-wide table.jobtable.dj th:first-child, .card-wide table.jobtable.dj td:first-child{padding-left:18px;}
+  .card-wide table.jobtable.dj td{padding:13px 8px; vertical-align:middle; border-bottom:1px solid #f6ecc0; background:#fff; white-space:normal;}
+  .card-wide table.jobtable.dj tr.dj-row{cursor:pointer;}
+  .card-wide table.jobtable.dj tr.dj-row:hover td{background:#fffbe9;}
+  .card-wide table.jobtable.dj tr.dj-row.done td{background:#fcfcf8;}
+  .card-wide table.jobtable.dj tr.dj-row.done .dj-t1{color:var(--ink-soft);}
+  .card-wide table.jobtable.dj tr:last-child td{border-bottom:0;}
+  .dj-t1{font-size:13.5px; font-weight:700; color:var(--ink); line-height:1.35;}
+  .dj-t2{margin-top:3px; font-size:12px; font-weight:500; color:var(--ink-soft); line-height:1.4;}
+  .dj-tgl{min-width:168px;}
+  .dj-klien{min-width:140px;}
+  .dj-acara{min-width:190px;}
+  .dj-bersih b{color:var(--ink); font-weight:800;}
+  .dj-rel{display:inline-block; margin-left:4px; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; background:#eee9d4; color:#6b5f2a; white-space:nowrap;}
+  .dj-rel.now{background:var(--gold); color:var(--ink);}
+  .dj-rel.soon{background:#ffe9a8; color:#7a5200;}
+  .dj-rel.far{background:#f3efdd; color:#6b5f2a;}
+  .dj-rel.past{background:transparent; padding-left:0; color:#8a8366; font-weight:600;}
+  .dj-chip{display:inline-flex; align-items:center; gap:7px; padding:3px 11px 3px 9px; border-radius:999px; background:var(--cb); color:var(--ink); font-size:12.5px; font-weight:700; line-height:1.3;}
+  .dj-chip i{width:9px; height:9px; border-radius:50%; background:var(--c); flex:none;}
+  .dj-num{text-align:right; font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .card-wide table.jobtable.dj th.dj-act, .card-wide table.jobtable.dj td.dj-act{position:sticky; right:0; z-index:2; width:auto; min-width:0; padding:13px 14px 13px 10px; box-shadow:-10px 0 14px -12px rgba(60,45,0,.22);}
+  .card-wide table.jobtable.dj th.dj-act{background:#fff6cf; z-index:3;}
+  .card-wide table.jobtable.dj tr.dj-row:hover td.dj-act{background:#fffbe9;}
+  .dj-acts{display:flex; gap:6px; justify-content:flex-end;}
+  .dj-ib{width:32px; height:32px; padding:0; display:inline-grid; place-items:center; border:1.5px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); cursor:pointer; transition:background-color .15s, transform .15s;}
+  .dj-ib:hover{background:var(--gold-pale); transform:translateY(-1px);}
+  .dj-ib.danger{color:#a8321e;}
+  .dj-ib.danger:hover{background:#fde4de;}
+  .dj-ib svg{width:16px; height:16px;}
+  .card-wide table.jobtable.dj .badge-select-wrap select{min-width:88px;}
+  .card-wide table.jobtable.dj tr.dj-mon td{padding:0; background:#fff1b8; border-bottom:1px solid var(--line); position:static;}
+  .dj-mon button{width:100%; display:flex; align-items:center; gap:10px; padding:10px 18px; border:0; background:transparent; font:inherit; font-size:13px; font-weight:800; color:var(--ink); text-align:left; cursor:pointer;}
+  .dj-mon button b{padding:1px 9px; border-radius:999px; background:var(--gold); font-size:11px; font-weight:800;}
+  .dj-mon button em{margin-left:auto; font-style:normal; font-size:12px; font-weight:700; color:var(--ink-soft);}
+  .dj-chev{display:inline-grid; place-items:center; transition:transform .2s; transform:rotate(90deg);}
+  .dj-chev svg{width:14px; height:14px;}
+  .dj-mon.coll .dj-chev{transform:rotate(0deg);}
+  .dj-more{display:block; margin:16px auto 4px;}
+}
+
+/* ----- Desktop lebar: Beranda 2 kolom, Kalender poster + pengaturan berdampingan ----- */
+@media(min-width:1180px){
+  .dash{max-width:1120px;}
+  .dash .dash-cols{display:grid; grid-template-columns:minmax(0,1.12fr) minmax(0,1fr); column-gap:30px; align-items:start;}
+  .dash .dash-col-b .dash-sec{margin-top:0;}
+  .dash .dash-col-a > :first-child{margin-top:0;}
+}
+@media(min-width:1280px){
+  .cal-layout{display:grid; grid-template-columns:minmax(0,500px) minmax(0,1fr); column-gap:30px; align-items:start;}
+  .cal-main{position:sticky; top:112px;}
+  .cal-side > :first-child{margin-top:0;}
+  .cal-side .layout-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+
 /* ----- HP ----- */
 @media(max-width:640px){
   /* Tombol aksi kartu tugas: teks satu baris */
@@ -5101,16 +5169,18 @@ async function pushOngkirAntarPublic(){
      created_at timestamptz not null default now()
    );
    alter table kaone_motret_ulasan enable row level security;
-   create policy "Publik boleh kirim ulasan" on kaone_motret_ulasan for insert to anon with check (true);
-   create policy "Publik boleh baca ulasan" on kaone_motret_ulasan for select to anon using (true);
-   create policy "Publik boleh hapus ulasan" on kaone_motret_ulasan for delete to anon using (true);
-   create policy "Publik boleh update status publikasi ulasan" on kaone_motret_ulasan for update to anon using (true) with check (true);
+   -- KEBIJAKAN AKSES (samakan dengan yang aktif di database; JANGAN memberi anon hak hapus/ubah):
+   create policy "ulasan: kirim dari form publik" on kaone_motret_ulasan for insert to anon, authenticated
+     with check (rating between 1 and 5 and length(btrim(nama_klien)) between 1 and 100 and length(coalesce(komentar,'')) <= 2000);
+   create policy "ulasan: baca yang dipublikasikan" on kaone_motret_ulasan for select to anon, authenticated
+     using (dipublikasikan or (jsonb_typeof(publish_targets) = 'array' and jsonb_array_length(publish_targets) > 0));
+   create policy "ulasan: admin penuh" on kaone_motret_ulasan for all to authenticated
+     using (kaone_role() = 'admin') with check (kaone_role() = 'admin');
 
    Kalau tabelnya SUDAH ada dari sebelumnya (dibuat sebelum kolom "dipublikasikan" ini
    ditambahkan), cukup jalankan di SQL Editor:
 
    alter table kaone_motret_ulasan add column if not exists dipublikasikan boolean not null default false;
-   create policy "Publik boleh update status publikasi ulasan" on kaone_motret_ulasan for update to anon using (true) with check (true);
 
    TAMBAHAN - kolom "publish_targets" untuk memilih ulasan dipublikasikan ke mana saja
    (Pricelist Wedding / Prewedding / Margondang / Mangayun / Isi Biodata, bisa pilih satu,
@@ -9701,11 +9771,11 @@ function kjCountUp(root){
       if(!isFinite(target) || target<=0) continue;
       const dec = m[3] ? m[3].length-1 : 0;
       const lead = full.match(/^\s*/)[0], trail = full.match(/\s*$/)[0];
-      const t0 = performance.now();
+      const t0 = performance.now(), nd = node;   // nd: milik iterasi ini (node berubah terus oleh while)
       const step = t=>{
-        if(!node.isConnected) return;
+        if(!nd.isConnected) return;
         const p = Math.min(1,(t-t0)/800), v = target*(1-Math.pow(1-p,3));
-        node.nodeValue = p<1
+        nd.nodeValue = p<1
           ? lead + m[1] + v.toLocaleString('id-ID',{minimumFractionDigits:dec, maximumFractionDigits:dec}) + m[4] + trail
           : full;
         if(p<1) requestAnimationFrame(step);
@@ -10365,16 +10435,21 @@ function viewBeranda(){
       <p>${escapeHtml(ringkasLengkap)}</p>
     </header>
 
-    ${jepiCard}
+    <div class="dash-cols">
+      <div class="dash-col dash-col-a">
+        ${jepiCard}
 
-    ${pesananBannerHtml()}
+        ${pesananBannerHtml()}
 
-    ${nextCard}
+        ${nextCard}
 
-    ${weekHtml}
-
-    <h2 class="dash-sec">Perlu dikerjakan ${todos.length ? `<small>${totalTodo} item</small>` : ''}</h2>
-    ${todoHtml}
+        ${weekHtml}
+      </div>
+      <div class="dash-col dash-col-b">
+        <h2 class="dash-sec">Perlu dikerjakan ${todos.length ? `<small>${totalTodo} item</small>` : ''}</h2>
+        ${todoHtml}
+      </div>
+    </div>
 
   </div>
   `;
@@ -11787,6 +11862,8 @@ function kmRenderMobile(wrap, list, filterSig){
   const mq = window.matchMedia('(max-width:640px)');
   const f = ()=>{ if(document.getElementById('daftarTableWrap')) renderDaftarTable(); };
   if(mq.addEventListener) mq.addEventListener('change', f); else if(mq.addListener) mq.addListener(f);
+  const mq2 = window.matchMedia('(min-width:821px)');
+  if(mq2.addEventListener) mq2.addEventListener('change', f); else if(mq2.addListener) mq2.addListener(f);
 })();
 function kmDaftarClick(e){
   const chp = e.target.closest('[data-km-chip]');
@@ -11807,10 +11884,100 @@ function kmDaftarClick(e){
   const mn = e.target.closest('[data-km-menu]');
   if(mn){ e.stopPropagation(); kmOpenRowMenu(mn); return; }
   // Di HP, mengetuk bagian kartu mana pun (selain tombol/pilihan) membuka detail job
-  if(!window.matchMedia('(max-width:640px)').matches) return;
+  const mobil = window.matchMedia('(max-width:640px)').matches;
+  if(!mobil && !e.target.closest('table.dj')) return;
   if(e.target.closest('button,select,a,input,.badge-select-wrap,.kmr-panel')) return;
   const tr = e.target.closest('[data-job-row]');
   if(tr) openJobDetailModal(tr.dataset.jobRow);
+}
+/* ---------- Daftar Job DESKTOP (v2): filter cepat, dikelompokkan per bulan, tanggal + hitung mundur, aksi ikon ---------- */
+function djRelatif(j, today){
+  const s = j.tanggalAcara; if(!s) return {t:'', c:''};
+  const e = getJobFinishDate(j) || s;
+  const sel = (a,b)=> Math.round((new Date(a+'T00:00:00') - new Date(b+'T00:00:00')) / 86400000);
+  if(today>=s && today<=e) return s===e ? {t:'Hari ini', c:'now'} : {t:'Sedang berlangsung', c:'now'};
+  if(today<s){ const n = sel(s, today); return n===1 ? {t:'Besok', c:'soon'} : {t:n+' hari lagi', c: n<=14 ? 'soon' : 'far'}; }
+  return {t: sel(today, e)+' hari lalu', c:'past'};
+}
+function djHari(iso){ try{ return new Date(iso+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long'}); }catch(_){ return ''; } }
+function djBindStatusSelects(wrap){
+  wrap.querySelectorAll('select[data-field]').forEach(sel=>{
+    sel.addEventListener('click', e=> e.stopPropagation());
+    sel.addEventListener('change', e=>{
+      e.stopPropagation();
+      const idx = jobs.findIndex(x=>x.id===sel.dataset.jobId);
+      if(idx===-1) return;
+      jobs[idx][sel.dataset.field] = sel.value;
+      if(sel.dataset.field==='statusPembayaran') jobs[idx].manualStatusPembayaranSet = true;
+      saveJobs();
+      toast('Status diperbarui');
+      renderDaftarTable();
+    });
+  });
+}
+function djRenderDesktop(wrap, list, filterSig){
+  const today = kmTodayISO(), adm = isAdmin();
+  const up = j => (getJobFinishDate(j) || j.tanggalAcara || '') >= today;
+  const defs = [
+    ['mendatang','Mendatang', up],
+    ['semua','Semua', ()=>true],
+    ['proses','Belum beres', j=>kmStatusRingkas(j).cls==='warn']
+  ];
+  if(adm) defs.push(['belumlunas','Belum lunas', j=>j.statusPembayaran!=='Lunas']);
+  defs.push(['selesai','Selesai', j=>kmStatusRingkas(j).cls==='ok']);
+  if(kmQuick===null || !defs.some(d=>d[0]===kmQuick)) kmQuick = jobs.some(up) ? 'mendatang' : 'semua';
+  const sig = filterSig+'|'+kmQuick;
+  if(sig!==kmSig){ kmSig = sig; kmLimit = KM_PAGE; }
+  const chips = defs.map(d=>`<button type="button" data-km-chip="${d[0]}" class="${d[0]===kmQuick?'on':''}" aria-pressed="${d[0]===kmQuick}">${d[1]} <i>${list.filter(d[2]).length}</i></button>`).join('');
+  const aktif = defs.find(d=>d[0]===kmQuick);
+  let items = list.filter(aktif[2]);
+  if(kmQuick!=='mendatang') items = items.slice().reverse();   // terbaru di atas; "Mendatang" = yang terdekat di atas
+
+  const cnt = {};
+  items.forEach(j=>{ const k=(j.tanggalAcara||'').slice(0,7); cnt[k]=(cnt[k]||0)+1; });
+  const nowKey = today.slice(0,7), limit = kmLimit * 2;
+  let rows = '', key = null, rendered = 0, more = 0;
+  for(let i=0;i<items.length;i++){
+    const j = items[i], k = (j.tanggalAcara||'').slice(0,7), coll = kmColl.has(k);
+    if(k!==key){
+      key = k;
+      rows += `<tr class="dj-mon${coll?' coll':''}"><td colspan="12"><button type="button" data-km-mon="${k}" aria-expanded="${!coll}"><span class="dj-chev">${ic('chevron-right')}</span>${k?monthKeyLabel(k):'Tanpa tanggal'}${k===nowKey?'<b>bulan ini</b>':''}<em>${cnt[k]} job</em></button></td></tr>`;
+    }
+    if(coll) continue;
+    if(rendered>=limit){ more = items.length - i; break; }
+    rendered++;
+    const st = kmStatusRingkas(j), rel = djRelatif(j, today);
+    const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : (j.jenisAcara||'-');
+    const col = (typeof JENIS_ACARA_COLORS!=='undefined' && JENIS_ACARA_COLORS[j.jenisAcara]) || {accent:'#c99a1f'};
+    const lok = [desaDisplay(j), j.kecamatan].filter(Boolean).join(' · ') || '-';
+    const mem = (j.namaMempelai||'').trim();
+    const sisa = (j.statusPembayaran==='Lunas' || hitungSisaPembayaran(j)<=0) ? 'Lunas' : fmtRp(hitungSisaPembayaran(j));
+    rows += `
+    <tr class="dj-row${st.cls==='ok'?' done':''}" data-job-row="${escapeHtml(j.id)}">
+      <td class="dj-tgl"><div class="dj-t1">${fmtTglJob(j)}</div><div class="dj-t2">${escapeHtml(djHari(j.tanggalAcara))}${rel.t?` <span class="dj-rel ${rel.c}">${escapeHtml(rel.t)}</span>`:''}</div></td>
+      <td class="dj-klien"><div class="dj-t1">${escapeHtml(j.namaKlien||'-')}</div><div class="dj-t2">#${j.noUrut}${mem && mem!==(j.namaKlien||'').trim() ? ' · '+escapeHtml(mem) : ''}</div></td>
+      <td class="dj-acara"><span class="dj-chip" style="--c:${col.accent}; --cb:${kwRgba(col.accent,.14)}"><i></i>${escapeHtml(jenis)}</span><div class="dj-t2">${escapeHtml(lok)}</div></td>
+      <td>${badgeSelect(j.id, 'prosesEdit', ['Belum Selesai','Selesai'], j.prosesEdit)}</td>
+      <td>${badgeSelect(j.id, 'prosesCetak', ['Belum Selesai','Selesai'], j.prosesCetak)}</td>
+      <td>${badgeSelect(j.id, 'pengiriman', PENGIRIMAN_LIST, j.pengiriman)}</td>
+      <td class="admin-only">${badgeSelect(j.id, 'statusPembayaran', STATUS_BAYAR_LIST, j.statusPembayaran)}<div class="dj-t2 dj-bersih">Bersih <b>${fmtRp(hitungBersih(j))}</b></div></td>
+      <td class="tim-only dj-num">${sisa}</td>
+      <td class="dj-act"><div class="dj-acts">
+        <button type="button" class="dj-ib" data-view-job="${escapeHtml(j.id)}" title="Lihat detail" aria-label="Lihat detail">${ic('eye')}</button>
+        <button type="button" class="dj-ib admin-only" data-edit="${escapeHtml(j.id)}" title="Edit" aria-label="Edit">${ic('edit')}</button>
+        <button type="button" class="dj-ib" data-km-menu="${escapeHtml(j.id)}" title="Menu lainnya (Maps, Hapus)" aria-label="Menu lainnya" aria-haspopup="menu">${ic('nav-more')}</button>
+      </div></td>
+    </tr>`;
+  }
+  let body;
+  if(!items.length) body = `<div class="empty-state"><div class="em">${ic('mailbox-empty')}</div>Tidak ada job di filter ini.</div>`;
+  else body = `<div class="dj-scroll"><table class="jobtable dj"><thead><tr>
+      <th>Tanggal</th><th>Klien</th><th>Acara &amp; Lokasi</th><th>Edit</th><th>Cetak</th><th>Pengiriman</th>
+      <th class="admin-only">Bayar &amp; Bersih</th><th class="tim-only">Sisa</th><th class="dj-act">Aksi</th>
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
+  if(more) body += `<button type="button" class="kmr-more dj-more" data-km-more>Tampilkan lebih banyak <span>(${more} lagi)</span></button>`;
+  wrap.innerHTML = `<div class="dj-bar"><div class="dj-chips" role="group" aria-label="Filter cepat">${chips}</div><div class="dj-count">Menampilkan ${rendered} dari ${items.length} job</div></div>${body}`;
+  djBindStatusSelects(wrap);
 }
 function renderDaftarTable(){
   const wrap = document.getElementById('daftarTableWrap');
@@ -11840,6 +12007,7 @@ function renderDaftarTable(){
   }
 
   if(window.matchMedia('(max-width:640px)').matches){ kmRenderMobile(wrap, list, [q,fj,fb].join('|')); return; }
+  if(window.matchMedia('(min-width:821px)').matches){ djRenderDesktop(wrap, list, [q,fj,fb].join('|')); return; }
 
   wrap.innerHTML = `
   <table class="jobtable">
@@ -12221,6 +12389,8 @@ function viewKalender(){
       <button class="btn btn-primary" id="btnDownloadPoster">${ic('download')} Unduh Gambar (1080×1920)</button>
       <button class="btn btn-outline" id="btnDownloadPosterKeterangan">${ic('download')} Unduh dengan Keterangan Tanggal</button>
     </div>
+    <div class="cal-layout">
+    <div class="cal-main">
     <div class="poster-wrap" id="calSwipeViewport">
       <div class="cal-swipe-track" id="calSwipeTrack">
         <div class="cal-swipe-slide" data-role="prev"></div>
@@ -12233,6 +12403,8 @@ function viewKalender(){
       </div>
     </div>
 
+    </div>
+    <div class="cal-side">
     <div class="thanks-editor admin-only">
       <div class="section-title" style="margin-top:0;">${ic('mail')} Ucapan Terima Kasih di Poster - ${MONTH_NAMES[calMonth]} ${calYear}</div>
       <p style="color:var(--ink-soft); font-size:12.5px; margin:-4px 0 10px;">
@@ -12281,6 +12453,8 @@ function viewKalender(){
 
     <div class="info-box">
       ${ic('bulb')} Klik tanggal untuk lihat detail job.
+    </div>
+    </div>
     </div>
   </div>
   `;
@@ -18644,12 +18818,30 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.23.3'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.25.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.25.0',
+    tanggal: '27 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Beranda di komputer dan laptop kini memakai dua kolom: job berikutnya, tujuh hari ke depan, dan pesanan baru di kiri, serta daftar "Perlu dikerjakan" di kanan, sehingga ruang layar terpakai penuh. Tampilan HP tidak berubah.' },
+      { kategori: 'Peningkatan', teks: 'Halaman Kalender di layar lebar kini menampilkan poster di sebelah kiri dan pengaturan (ucapan terima kasih, desain, warna) di sebelah kanan, jadi tidak perlu menggulir jauh ke bawah untuk mengganti desain.' },
+      { kategori: 'Perbaikan', teks: 'Animasi angka berhitung naik pada kartu ringkasan kini benar-benar berjalan saat halaman dibuka, tidak lagi gagal diam-diam.' },
+      { kategori: 'Perbaikan', teks: 'Penguatan keamanan: foto profil di fitur obrolan kini disaring sebelum ditampilkan.' }
+    ]
+  },
+  {
+    version: '1.24.0',
+    tanggal: '26 Oktober 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Daftar Job di komputer dan laptop dirombak: ada filter cepat (Mendatang, Semua, Belum beres, Belum lunas, Selesai) lengkap dengan jumlahnya, job dikelompokkan per bulan dan tiap bulan bisa dilipat, dan tanggal dilengkapi nama hari serta penanda "Hari ini", "Besok", atau "N hari lagi".' },
+      { kategori: 'Peningkatan', teks: 'Jenis acara tampil sebagai label berwarna beserta lokasinya, Bayar dan Bersih digabung dalam satu kolom, dan tombol aksi dirampingkan menjadi ikon (Lihat, Edit, dan menu titik tiga untuk Maps dan Hapus). Kolom aksi tidak lagi terpotong di sisi kanan, dan mengklik baris mana pun membuka detail job.' }
+    ]
+  },
   {
     version: '1.23.3',
     tanggal: '25 Oktober 2026',
@@ -21964,12 +22156,12 @@ function kcCard(m,own){var i=kcInfo(m),bad=i.r!='selesai'&&(own||i.r!='tolak'),s
 return '<button type="button" class="kcl'+(bad?' bad':'')+'" data-cb="'+i.v+'"><span class="ci">'+ic(i.v?'video':'phone')+'</span><span class="ct"><b>'+E(kcTitle(m,own))+'</b><small>'+ic(own?'arout':'arin')+E(sub)+'</small></span></button>'}
 var P={},AL=null,U={},other=null,pend=null,delFoto=false,cim=null,cz=1,ox=0,oy=0,dr=null;
 function shut(i){$(i).classList.remove('on')}
-function av(){var u=other&&U[other]&&U[other].u;$('kav').innerHTML=u?'<img alt="" src="'+u+'">':mo(T[tema].m[0],'#fff')}
+function av(){var u=other&&U[other]&&U[other].u;$('kav').innerHTML=u?'<img alt="" src="'+E(u)+'">':mo(T[tema].m[0],'#fff')}
 function hdr(){$('kn').textContent=AL||(other&&P[other]&&P[other].nama)||'Chat';av()}
 async function pfLoad(){var r=(await sb.from('kaone_chat_profil').select('*')).data||[],a=(await sb.from('kaone_chat_alias').select('*')).data||[];P={};
 r.forEach(function(x){P[x.user_id]=x;if(x.user_id!=me)other=x.user_id});AL=a[0]&&a[0].nama_lawan||null;
 for(var i=0;i<r.length;i++){var x=r[i];if(!x.foto_at)delete U[x.user_id];if(x.foto_at&&!(U[x.user_id]&&U[x.user_id].v==x.foto_at)){var g=await sb.storage.from('kaone-chat').createSignedUrl('profil/'+x.user_id+'.jpg',3600);if(g.data&&g.data.signedUrl)U[x.user_id]={u:g.data.signedUrl,v:x.foto_at};else delete U[x.user_id]}}hdr()}
-function pa(){var u=delFoto?null:(pend?pend.url:(U[me]&&U[me].u));$('kpa').innerHTML=u?'<img alt="" src="'+u+'">':mo(T[tema].m[0],'#fff');$('kpz').textContent=pend?'Foto baru · '+Math.round(pend.blob.size/1024)+' KB':(delFoto?'Foto akan dihapus saat disimpan':'');$('kpd').classList.toggle('on',!!u)}
+function pa(){var u=delFoto?null:(pend?pend.url:(U[me]&&U[me].u));$('kpa').innerHTML=u?'<img alt="" src="'+E(u)+'">':mo(T[tema].m[0],'#fff');$('kpz').textContent=pend?'Foto baru · '+Math.round(pend.blob.size/1024)+' KB':(delFoto?'Foto akan dihapus saat disimpan':'');$('kpd').classList.toggle('on',!!u)}
 function pfOpen(){$('kpn').value=(P[me]&&P[me].nama)||'';$('kpl').value=AL||'';pend=null;delFoto=false;pa();$('kpf').classList.add('on')}
 async function fotoHapus(){var path='profil/'+me+'.jpg',gone=false,ok=false;
 try{var r=await sb.storage.from('kaone-chat').remove([path]);gone=!r.error&&!!(r.data&&r.data.length)}catch(e){}
@@ -22106,7 +22298,7 @@ var kS={},kHold=false,kHv=null,kBusy=false,dn={},dr0=false,rg={},rgn={},sup=0,pk
 function snd(){try{return localStorage.getItem('kcSnd')!=='0'}catch(e){return true}}
 function opOpen(){opRef();$('kop').classList.add('on')}
 function opRef(){var u=other&&U[other]&&U[other].u,real=other&&P[other]&&P[other].nama;
-$('kopa').innerHTML=u?'<img alt="" src="'+u+'">':mo(T[tema].m[0],'#fff');
+$('kopa').innerHTML=u?'<img alt="" src="'+E(u)+'">':mo(T[tema].m[0],'#fff');
 $('kopn').textContent=AL||real||'Lawan chat';$('kopp').textContent=AL&&real&&real!=AL?'Nama profil: '+real:'';
 if(lo&&lo.on){$('kops').innerHTML='<span class="od on"></span>Online sekarang';$('kopd').textContent=''}
 else if(lo&&lo.t){$('kops').innerHTML='<span class="od"></span>Terakhir online '+E(lastTxt(lo.t));var d=new Date(lo.t);$('kopd').textContent=isNaN(d)?'':d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' · '+hm(d)}

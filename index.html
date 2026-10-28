@@ -5134,8 +5134,16 @@ const SYNC_ROW_ID = WS_ID==='default' ? 'main' : 'ws-' + WS_ID;
    );
    alter table kaone_motret_pengaturan_publik enable row level security;
    create policy "Publik boleh baca pengaturan" on kaone_motret_pengaturan_publik for select to anon using (true);
-   create policy "Publik boleh simpan pengaturan" on kaone_motret_pengaturan_publik for insert to anon with check (true);
-   create policy "Publik boleh ubah pengaturan" on kaone_motret_pengaturan_publik for update to anon using (true) with check (true);
+   -- KEBIJAKAN AKSES (samakan dengan yang aktif di database): publik hanya BACA; ubah hanya Admin.
+   -- JANGAN memberi anon hak simpan/ubah di tabel ini: isinya mencakup harga pricelist dan tarif ongkir.
+   create policy "pengaturan: baca publik" on kaone_motret_pengaturan_publik for select to anon, authenticated using (true);
+   create policy "pengaturan: admin simpan" on kaone_motret_pengaturan_publik for insert to authenticated with check (kaone_role() = 'admin');
+   create policy "pengaturan: admin ubah" on kaone_motret_pengaturan_publik for update to authenticated using (kaone_role() = 'admin') with check (kaone_role() = 'admin');
+
+   Isi tabel ini (kunci): 'ongkir_antar' = {perKm, batasGratis}; 'harga_pricelist' = harga paket, coret, add-on, dan
+   biaya lain untuk halaman pricelist (diatur di Pengaturan > Harga Pricelist).
+   Voucher memakai tabel terpisah kaone_motret_voucher (hanya Admin yang bisa baca/ubah) dan fungsi
+   kaone_voucher_cek(kode, form) yang dipanggil halaman pricelist per kode.
 */
 const PUBLIC_SETTINGS_TABLE = 'kaone_motret_pengaturan_publik';
 // Menerbitkan tarif Ongkos Antar yang berlaku SEKARANG ke tabel publik di atas, supaya
@@ -7824,8 +7832,18 @@ function psnKartuHtml(p){
     </div>
     <ul class="psn-rows">${rows.join('')}</ul>
     ${warn}${detailHtml}
-    <div class="ulasan-actions">${aksi}<button type="button" class="btn btn-danger" data-psn-act="hapus" data-psn-id="${escapeHtml(p.id)}">${ic('trash')} Hapus</button></div>
+    <div class="ulasan-actions">${aksi}<button type="button" class="btn btn-outline" data-psn-act="salin" data-psn-id="${escapeHtml(p.id)}" title="Salin semua isian sebagai teks">Salin Teks</button><button type="button" class="btn btn-danger" data-psn-act="hapus" data-psn-id="${escapeHtml(p.id)}">${ic('trash')} Hapus</button></div>
   </div>`;
+}
+// Teks siap salin dari satu pesanan (pengganti "Salin Data Klien" di halaman pricelist; hanya Admin yang bisa membuka pesanan)
+function psnTeksSalin(p){
+  const r = psnRingkas(p);
+  const baris = ['*' + (PSN_LABEL[p.sumber] || p.sumber || 'Pesanan') + ' - ' + (r.nama || '-') + '*'];
+  const tgl = psnTglPanjang(r.tanggal);
+  if(tgl) baris.push('Tanggal acara: ' + tgl);
+  psnSemuaIsian(p).forEach(x=> baris.push(x[0] + ': ' + String(x[1]).replace(/\s*\n\s*/g, ' ').trim()));
+  baris.push('', 'Diterima: ' + (p.dibuat_pada ? new Date(p.dibuat_pada).toLocaleString('id-ID', {day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '-'));
+  return baris.join('\n');
 }
 function viewPesanan(){
   const cnt = s => pesananList.filter(p=>p.status===s).length;
@@ -7900,6 +7918,7 @@ document.addEventListener('click', (e)=>{
   else if(act==='abaikan') pesananAbaikan(id);
   else if(act==='pulihkan') pesananPulihkan(id);
   else if(act==='hapus') pesananHapus(id);
+  else if(act==='salin'){ const pp = pesananCari(id); if(pp) copyToClipboard(psnTeksSalin(pp), 'Teks pesanan disalin'); }
   else if(act==='filter'){ pesananFilter = b.dataset.psnVal || 'baru'; refreshView(); }
   else if(act==='muat') pullPesanan();
 });
@@ -17967,6 +17986,224 @@ function downloadUlasanImage(id){
    PENGATURAN
 ========================================================= */
 let settingsTab = '';
+/* ---------- Harga Pricelist & Voucher: SATU database (Supabase), diatur dari sini ----------
+   Halaman pricelist (wedding / mangayun / margondang) membaca baris 'harga_pricelist' di tabel
+   kaone_motret_pengaturan_publik, dan mengecek voucher lewat fungsi kaone_voucher_cek (tabel
+   kaone_motret_voucher). Hanya Admin yang bisa mengubah (dijaga juga oleh kebijakan RLS database). */
+const HP_PAKET = {
+  wedding:    { label:'Paket Wedding',            nama:['Reguler','Premium','Signature','Platinum','Luxury','Exclusive'] },
+  mangayun:   { label:'Paket Mangayun / Aqiqah',  nama:['Reguler','Premium','Signature','Platinum'] },
+  margondang: { label:'Paket Margondang',         nama:['Reguler','Premium','Signature','Platinum','Luxury','Exclusive'], coret:true }
+};
+const HP_ADDON = ['Video Shooting Dokumentasi','Cinematic','Cetak Foto 16" + Bingkai','Cetak Foto 12" + Bingkai','Album 1 Roll','Flashdisk 8 GB','Flashdisk 16 GB','Flashdisk 32 GB','Flashdisk 64 GB','Flashdisk 128 GB'];
+const HP_DEFAULT = {
+  versi: 0,
+  paket: {
+    wedding:{Reguler:1150000,Premium:1350000,Signature:1850000,Platinum:2950000,Luxury:4000000,Exclusive:5350000},
+    mangayun:{Reguler:1150000,Premium:1350000,Signature:2350000,Platinum:3850000},
+    margondang:{Reguler:1350000,Premium:1550000,Signature:2000000,Platinum:3150000,Luxury:4200000,Exclusive:5550000}
+  },
+  coret: { margondang:{Reguler:1800000,Premium:2000000,Signature:2400000,Platinum:3650000,Luxury:4650000,Exclusive:5900000} },
+  addon: {'Video Shooting Dokumentasi':1000000,'Cinematic':800000,'Cetak Foto 16" + Bingkai':200000,'Cetak Foto 12" + Bingkai':70000,'Album 1 Roll':150000,'Flashdisk 8 GB':80000,'Flashdisk 16 GB':95000,'Flashdisk 32 GB':110000,'Flashdisk 64 GB':135000,'Flashdisk 128 GB':235000},
+  lain: { akomodasi:200000, penyesuaianHari:1100000 }
+};
+let HP_STATE = null;
+function hpRp(v){ return '<div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-hp="'+escapeHtml(v[0])+'" value="'+escapeHtml(fmtRibuan(v[1]))+'"></div>'; }
+function hargaPricelistCardHtml(){
+  setTimeout(hpMuat, 0);
+  return `<div class="card" id="hpCard"><h2 style="margin-top:0;">${ic('money')} Harga Pricelist</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Harga paket dan add-on yang tampil di halaman pricelist Wedding, Mangayun/Aqiqah, dan Margondang. Setelah disimpan, halaman pricelist otomatis memakai harga baru (tidak perlu mengubah file atau spreadsheet).</p>
+    <div id="hpBody"><p class="field-hint">Memuat harga...</p></div></div>`;
+}
+function hpGambar(){
+  const box = document.getElementById('hpBody'); if(!box) return;
+  const S = HP_STATE || HP_DEFAULT;
+  const g = (o,k,d)=> (o && Number(o[k])>0) ? Number(o[k]) : d;
+  const sec = (judul, isi, buka)=> `<details class="hp-sec"${buka?' open':''} style="margin:10px 0;border:1px solid var(--line);border-radius:14px;padding:4px 14px;background:#fff;"><summary style="cursor:pointer;font-weight:800;padding:10px 0;">${judul}</summary><div class="form-grid" style="margin:4px 0 14px;">${isi}</div></details>`;
+  let html = '';
+  Object.keys(HP_PAKET).forEach((k,i)=>{
+    const P = HP_PAKET[k];
+    const rows = P.nama.map(n=>{
+      const h = hpRp(['paket.'+k+'.'+n, g(S.paket&&S.paket[k], n, HP_DEFAULT.paket[k][n])]);
+      const c = P.coret ? hpRp(['coret.'+k+'.'+n, g(S.coret&&S.coret[k], n, (HP_DEFAULT.coret[k]||{})[n]||0)]) : '';
+      return `<div><label>${escapeHtml(n)}${P.coret?' - harga sekarang':''}</label>${h}</div>` + (P.coret?`<div><label>${escapeHtml(n)} - harga coret (sebelum diskon)</label>${c}</div>`:'');
+    }).join('');
+    html += sec(escapeHtml(P.label), rows, i===0);
+  });
+  html += sec('Add-on (berlaku di semua pricelist)', HP_ADDON.map(n=>`<div><label>${escapeHtml(n)}</label>${hpRp(['addon.'+n, g(S.addon, n, HP_DEFAULT.addon[n])])}</div>`).join(''), false);
+  html += sec('Lainnya', `<div><label>Biaya akomodasi (acara di luar area)</label>${hpRp(['lain.akomodasi', g(S.lain,'akomodasi',HP_DEFAULT.lain.akomodasi)])}</div><div><label>Penyesuaian harga Margondang multi-hari</label>${hpRp(['lain.penyesuaianHari', g(S.lain,'penyesuaianHari',HP_DEFAULT.lain.penyesuaianHari)])}</div>`, false);
+  html += `<div class="form-actions" style="justify-content:flex-start;margin-top:12px;"><button type="button" class="btn btn-primary" data-hp-act="simpan">${ic('save')} Simpan Harga</button><button type="button" class="btn btn-outline" data-hp-act="muat">${ic('refresh')} Muat Ulang</button></div><div class="field-hint" id="hpInfo" style="margin-top:8px;">${S.versi?('Versi harga tersimpan: '+escapeHtml(String(S.versi))+'.'):'Belum pernah disimpan dari sini; yang tampil adalah harga bawaan.'}</div>`;
+  box.innerHTML = html;
+  if(!box.dataset.bound){ box.dataset.bound='1'; box.addEventListener('click', e=>{ const b=e.target.closest('[data-hp-act]'); if(!b) return; if(b.dataset.hpAct==='simpan') hpSimpan(); else hpMuat(); }); }
+}
+async function hpMuat(){
+  const box = document.getElementById('hpBody'); if(!box) return;
+  if(!supabaseClient || !cloudSyncEnabled){ box.innerHTML = '<p class="field-hint">Harga tersimpan di database. Masuk (online) dulu untuk melihat dan mengubahnya.</p>'; return; }
+  try{
+    const { data, error } = await supabaseClient.from(PUBLIC_SETTINGS_TABLE).select('nilai').eq('kunci','harga_pricelist').maybeSingle();
+    if(error) throw error;
+    HP_STATE = (data && data.nilai) ? data.nilai : null;
+    hpGambar();
+  }catch(e){
+    console.error('Gagal memuat harga pricelist', e);
+    box.innerHTML = '<p class="field-hint">Gagal memuat harga dari database. Periksa koneksi, lalu <button type="button" class="btn btn-outline" data-hp-act="muat">coba lagi</button>.</p>';
+    if(!box.dataset.bound){ box.dataset.bound='1'; box.addEventListener('click', ev=>{ const b=ev.target.closest('[data-hp-act]'); if(b) hpMuat(); }); }
+  }
+}
+async function hpSimpan(){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah harga pricelist.'); return; }
+  if(!supabaseClient || !cloudSyncEnabled){ alert('Harus online dan masuk untuk menyimpan harga.'); return; }
+  const out = { versi:((HP_STATE&&HP_STATE.versi)||0)+1, paket:{}, coret:{}, addon:{}, lain:{} };
+  let salah = '';
+  document.querySelectorAll('#hpBody [data-hp]').forEach(i=>{
+    const p = i.dataset.hp.split('.'); const v = parseRibuan(i.value)||0;
+    const kunci = p[0]; const nama = p.slice(1).join('.');
+    if(kunci==='paket'){ const [k,...r]=p.slice(1); const n=r.join('.'); if(v<=0) salah = salah || ('Harga '+n+' ('+HP_PAKET[k].label+') harus lebih dari 0.'); (out.paket[k]=out.paket[k]||{})[n]=v; }
+    else if(kunci==='coret'){ const [k,...r]=p.slice(1); const n=r.join('.'); (out.coret[k]=out.coret[k]||{})[n]=v; }
+    else if(kunci==='addon'){ if(v<=0) salah = salah || ('Harga add-on "'+nama+'" harus lebih dari 0.'); out.addon[nama]=v; }
+    else if(kunci==='lain'){ out.lain[nama]=v; }
+  });
+  if(salah){ alert(salah); return; }
+  try{
+    const { error } = await supabaseClient.from(PUBLIC_SETTINGS_TABLE).upsert({ kunci:'harga_pricelist', nilai:out, updated_at:new Date().toISOString() });
+    if(error) throw error;
+    HP_STATE = out; hpGambar(); toast('Harga pricelist disimpan');
+  }catch(e){ console.error(e); alert('Gagal menyimpan harga: '+(e.message||e)); }
+}
+
+/* ---- Voucher ---- */
+let VC_LIST = [];
+const VC_FORM_NAMA = { wedding:'Wedding', mangayun:'Mangayun/Aqiqah', margondang:'Margondang' };
+function voucherCardHtml(){
+  setTimeout(vcMuat, 0);
+  return `<div class="card" id="vcCard"><h2 style="margin-top:0;">${ic('money')} Voucher Diskon</h2>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Kode voucher yang bisa dipakai klien di halaman pricelist. Kode dicek satu per satu oleh database, jadi daftar kode tidak bisa dilihat orang luar.</p>
+    <div id="vcBody"><p class="field-hint">Memuat voucher...</p></div></div>`;
+}
+function vcRingkasNilai(v){ return v.tipe==='percent' ? (Number(v.nilai)+'%') : fmtRp(Number(v.nilai)); }
+function vcGambar(){
+  const box = document.getElementById('vcBody'); if(!box) return;
+  const today = new Date().toISOString().slice(0,10);
+  const baris = VC_LIST.map(v=>{
+    const kadaluarsa = v.berlaku_sampai && v.berlaku_sampai < today;
+    const untuk = (v.berlaku_untuk&&v.berlaku_untuk.length) ? v.berlaku_untuk.map(x=>VC_FORM_NAMA[x]||x).join(', ') : 'Semua pricelist';
+    return `<tr>
+      <td><b>${escapeHtml(v.kode)}</b>${v.catatan?`<div class="field-hint" style="margin:2px 0 0;">${escapeHtml(v.catatan)}</div>`:''}</td>
+      <td>${escapeHtml(vcRingkasNilai(v))}</td>
+      <td>${v.berlaku_sampai?escapeHtml(v.berlaku_sampai)+(kadaluarsa?' <b style="color:#a8321e;">(lewat)</b>':''):'Tanpa batas'}</td>
+      <td>${escapeHtml(untuk)}</td>
+      <td><label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" data-vc-toggle="${escapeHtml(v.kode)}" ${v.aktif?'checked':''}> ${v.aktif?'Aktif':'Mati'}</label></td>
+      <td style="white-space:nowrap;"><button type="button" class="btn btn-outline" data-vc-edit="${escapeHtml(v.kode)}" title="Ubah">${ic('edit')}</button> <button type="button" class="btn btn-outline" data-vc-hapus="${escapeHtml(v.kode)}" title="Hapus">${ic('trash')}</button></td></tr>`;
+  }).join('');
+  box.innerHTML = `
+    <div style="overflow-x:auto;">${VC_LIST.length?`<table class="jobtable" style="min-width:560px;"><thead><tr><th>Kode</th><th>Diskon</th><th>Berlaku sampai</th><th>Untuk</th><th>Status</th><th></th></tr></thead><tbody>${baris}</tbody></table>`:'<p class="field-hint">Belum ada voucher. Tambahkan di bawah.</p>'}</div>
+    <h3 style="margin:18px 0 6px;font-size:15px;">Tambah / ubah voucher</h3>
+    <div class="form-grid">
+      <div><label>Kode (huruf besar, tanpa spasi)</label><input type="text" id="vcKode" maxlength="40" autocapitalize="characters" placeholder="mis. KAONE10"></div>
+      <div><label>Jenis diskon</label><select id="vcTipe"><option value="percent">Persen (%)</option><option value="nominal">Nominal (Rp)</option></select></div>
+      <div><label>Nilai diskon</label><input type="text" inputmode="decimal" id="vcNilai" placeholder="mis. 10 atau 100.000"></div>
+      <div><label>Berlaku sampai (kosongkan = tanpa batas)</label><input type="date" id="vcSampai"></div>
+      <div style="grid-column:1/-1;"><label>Berlaku untuk (kosongkan semua = semua pricelist)</label>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;">${Object.keys(VC_FORM_NAMA).map(k=>`<label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" data-vc-untuk="${k}"> ${VC_FORM_NAMA[k]}</label>`).join('')}</div></div>
+      <div style="grid-column:1/-1;"><label>Catatan internal (opsional)</label><input type="text" id="vcCatatan" maxlength="120" placeholder="mis. promo akhir tahun"></div>
+    </div>
+    <div class="form-actions" style="justify-content:flex-start;margin-top:10px;"><button type="button" class="btn btn-primary" data-vc-act="simpan">${ic('save')} Simpan Voucher</button><button type="button" class="btn btn-outline" data-vc-act="kosong">Kosongkan form</button></div>
+    <details style="margin-top:14px;"><summary style="cursor:pointer;font-weight:700;">Impor banyak voucher sekaligus (dari spreadsheet lama)</summary>
+      <p class="field-hint">Satu voucher per baris: <b>KODE, jenis, nilai, tanggal-berlaku-sampai(opsional)</b>. Jenis: <b>persen</b> atau <b>nominal</b>. Contoh: <code>KAONE10, persen, 10, 2026-12-31</code> atau <code>HEMAT50, nominal, 50000</code>. Kode yang sudah ada akan diperbarui.</p>
+      <textarea id="vcImpor" rows="5" placeholder="KAONE10, persen, 10, 2026-12-31&#10;HEMAT50, nominal, 50000"></textarea>
+      <div class="form-actions" style="justify-content:flex-start;margin-top:8px;"><button type="button" class="btn btn-outline" data-vc-act="impor">Impor</button></div>
+    </details>
+    <div class="field-hint" id="vcInfo" style="margin-top:8px;"></div>`;
+  if(!box.dataset.bound){
+    box.dataset.bound = '1';
+    box.addEventListener('click', e=>{
+      const a = e.target.closest('[data-vc-act]'), ed = e.target.closest('[data-vc-edit]'), hp = e.target.closest('[data-vc-hapus]');
+      if(a){ if(a.dataset.vcAct==='simpan') vcSimpan(); else if(a.dataset.vcAct==='kosong') vcKosong(); else if(a.dataset.vcAct==='impor') vcImpor(); }
+      else if(ed) vcIsiForm(ed.dataset.vcEdit);
+      else if(hp) vcHapus(hp.dataset.vcHapus);
+    });
+    box.addEventListener('change', e=>{ const t = e.target.closest('[data-vc-toggle]'); if(t) vcToggle(t.dataset.vcToggle, t.checked); });
+  }
+}
+async function vcMuat(){
+  const box = document.getElementById('vcBody'); if(!box) return;
+  if(!supabaseClient || !cloudSyncEnabled){ box.innerHTML = '<p class="field-hint">Voucher tersimpan di database. Masuk (online) dulu untuk mengelolanya.</p>'; return; }
+  try{
+    const { data, error } = await supabaseClient.from('kaone_motret_voucher').select('*').order('dibuat_pada',{ascending:false});
+    if(error) throw error;
+    VC_LIST = data || []; vcGambar();
+  }catch(e){ console.error('Gagal memuat voucher', e); box.innerHTML = '<p class="field-hint">Gagal memuat voucher. Periksa koneksi lalu buka ulang Pengaturan.</p>'; }
+}
+function vcBaca(){
+  const kode = (document.getElementById('vcKode').value||'').trim().toUpperCase().replace(/\s+/g,'');
+  const tipe = document.getElementById('vcTipe').value;
+  const nilai = tipe==='percent' ? Number(String(document.getElementById('vcNilai').value).replace(',','.')) : (parseRibuan(document.getElementById('vcNilai').value)||0);
+  const sampai = document.getElementById('vcSampai').value || null;
+  const untuk = [...document.querySelectorAll('#vcBody [data-vc-untuk]:checked')].map(x=>x.dataset.vcUntuk);
+  const catatan = (document.getElementById('vcCatatan').value||'').trim() || null;
+  return { kode, tipe, nilai, berlaku_sampai:sampai, berlaku_untuk:untuk, catatan };
+}
+function vcValidasi(v){
+  if(v.kode.length<2 || v.kode.length>40 || !/^[A-Z0-9_-]+$/.test(v.kode)) return 'Kode harus 2-40 karakter: huruf, angka, tanda - atau _ (tanpa spasi).';
+  if(!(v.nilai>0)) return 'Nilai diskon harus lebih dari 0.';
+  if(v.tipe==='percent' && v.nilai>100) return 'Diskon persen tidak boleh lebih dari 100.';
+  return '';
+}
+async function vcSimpanSatu(v){
+  const { error } = await supabaseClient.from('kaone_motret_voucher').upsert(Object.assign({}, v, { diperbarui_pada:new Date().toISOString() }), { onConflict:'kode' });
+  if(error) throw error;
+}
+async function vcSimpan(){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengelola voucher.'); return; }
+  const v = vcBaca(); const salah = vcValidasi(v); if(salah){ alert(salah); return; }
+  const ada = VC_LIST.find(x=>x.kode===v.kode); v.aktif = ada ? ada.aktif : true;
+  try{ await vcSimpanSatu(v); toast('Voucher '+v.kode+' disimpan'); await vcMuat(); }catch(e){ console.error(e); alert('Gagal menyimpan voucher: '+(e.message||e)); }
+}
+function vcKosong(){ ['vcKode','vcNilai','vcSampai','vcCatatan'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); document.querySelectorAll('#vcBody [data-vc-untuk]').forEach(c=>c.checked=false); }
+function vcIsiForm(kode){
+  const v = VC_LIST.find(x=>x.kode===kode); if(!v) return;
+  document.getElementById('vcKode').value = v.kode; document.getElementById('vcTipe').value = v.tipe;
+  document.getElementById('vcNilai').value = v.tipe==='percent' ? String(Number(v.nilai)) : fmtRibuan(Number(v.nilai));
+  document.getElementById('vcSampai').value = v.berlaku_sampai || ''; document.getElementById('vcCatatan').value = v.catatan || '';
+  document.querySelectorAll('#vcBody [data-vc-untuk]').forEach(c=>{ c.checked = (v.berlaku_untuk||[]).includes(c.dataset.vcUntuk); });
+  document.getElementById('vcKode').scrollIntoView({block:'center', behavior:'smooth'});
+}
+async function vcToggle(kode, aktif){
+  if(!isAdmin()) return;
+  try{ const { error } = await supabaseClient.from('kaone_motret_voucher').update({ aktif, diperbarui_pada:new Date().toISOString() }).eq('kode', kode); if(error) throw error; const v = VC_LIST.find(x=>x.kode===kode); if(v) v.aktif = aktif; toast('Voucher '+kode+(aktif?' diaktifkan':' dimatikan')); vcGambar(); }
+  catch(e){ console.error(e); alert('Gagal mengubah status voucher: '+(e.message||e)); vcMuat(); }
+}
+async function vcHapus(kode){
+  if(!isAdmin()) return;
+  if(!confirm('Hapus voucher '+kode+'? Klien tidak bisa lagi memakainya.')) return;
+  try{ const { error } = await supabaseClient.from('kaone_motret_voucher').delete().eq('kode', kode); if(error) throw error; toast('Voucher dihapus'); await vcMuat(); }catch(e){ console.error(e); alert('Gagal menghapus voucher: '+(e.message||e)); }
+}
+async function vcImpor(){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengelola voucher.'); return; }
+  const teks = document.getElementById('vcImpor').value || '';
+  const rows = [], gagal = [];
+  teks.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).forEach((baris,i)=>{
+    const p = baris.split(/[,;\t]/).map(s=>s.trim());
+    const kode = (p[0]||'').toUpperCase().replace(/\s+/g,''), jenis = (p[1]||'').toLowerCase();
+    const tipe = /^(persen|percent|%)$/.test(jenis) ? 'percent' : (/^(nominal|rp|rupiah)$/.test(jenis) ? 'nominal' : '');
+    const nilai = tipe==='percent' ? Number(String(p[2]||'').replace(',','.')) : (parseRibuan(p[2]||'')||0);
+    let sampai = (p[3]||'').trim() || null;
+    if(sampai){ const m = sampai.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/) || null; const m2 = sampai.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+      sampai = m ? (m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0')) : (m2 ? (m2[3]+'-'+m2[2].padStart(2,'0')+'-'+m2[1].padStart(2,'0')) : 'SALAH'); }
+    const v = { kode, tipe, nilai, berlaku_sampai: sampai, berlaku_untuk:[], aktif:true, catatan:null };
+    const salah = !tipe ? 'jenis harus persen/nominal' : (sampai==='SALAH' ? 'format tanggal salah' : vcValidasi(v));
+    if(salah) gagal.push('Baris '+(i+1)+' ('+(kode||'?')+'): '+salah); else rows.push(v);
+  });
+  if(!rows.length && !gagal.length){ alert('Tidak ada baris untuk diimpor.'); return; }
+  try{
+    if(rows.length){ const { error } = await supabaseClient.from('kaone_motret_voucher').upsert(rows.map(r=>Object.assign({}, r, {diperbarui_pada:new Date().toISOString()})), { onConflict:'kode' }); if(error) throw error; }
+    document.getElementById('vcImpor').value = '';
+    await vcMuat();
+    const info = document.getElementById('vcInfo'); if(info) info.textContent = rows.length+' voucher diimpor.'+(gagal.length?(' '+gagal.length+' baris dilewati: '+gagal.join(' | ')):'');
+    toast(rows.length+' voucher diimpor');
+  }catch(e){ console.error(e); alert('Gagal mengimpor: '+(e.message||e)); }
+}
+
 function viewPengaturan(){
   const tabs = (isAdmin() ? [['bisnis','money','Bisnis']] : []).concat([['akun','lock','Akun']], isAdmin() ? [['api','settings','Integrasi']] : [], [['data','folder','Data']]);
   if(!tabs.some(t=>t[0]===settingsTab)) settingsTab = tabs[0][0];
@@ -17979,6 +18216,8 @@ function viewPengaturan(){
   <div class="${pn('bisnis')}" data-sp="bisnis">
   ${hargaCetakCardHtml()}
   ${ongkirAntarCardHtml()}
+  ${hargaPricelistCardHtml()}
+  ${voucherCardHtml()}
   ${templateWaCardHtml()}
   ${kmCardHtml()}
   </div>`:''}
@@ -18818,12 +19057,22 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.25.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.26.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.26.0',
+    tanggal: '28 Oktober 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Pesanan Masuk punya tombol "Salin Teks" di setiap pesanan: semua isian klien (pricelist maupun biodata) disalin sebagai teks siap tempel ke WhatsApp. Ini menggantikan "Salin Data Klien" di halaman pricelist, yang memang butuh spreadsheet.' },
+      { kategori: 'Fitur', teks: 'Pengaturan > Bisnis kini punya kartu "Harga Pricelist": harga paket Wedding, Mangayun/Aqiqah, dan Margondang, harga coret, harga add-on, biaya akomodasi, dan penyesuaian harga Margondang multi-hari diatur dari sini. Setelah disimpan, semua halaman pricelist otomatis memakai harga baru tanpa perlu mengubah file.' },
+      { kategori: 'Fitur', teks: 'Kartu baru "Voucher Diskon": tambah, ubah, matikan, dan hapus kode voucher (persen atau nominal, masa berlaku, dan untuk pricelist mana saja), plus impor banyak voucher sekaligus. Halaman pricelist dan Isi Biodata mengecek voucher ke database ini, bukan lagi ke Google Spreadsheet.' },
+      { kategori: 'Peningkatan', teks: 'Satu database: pesanan dan biodata dari halaman pricelist dan Isi Biodata kini disimpan hanya ke database yang sama dengan Rekap Job. Salinan ke Google Spreadsheet dimatikan.' }
+    ]
+  },
   {
     version: '1.25.0',
     tanggal: '27 Oktober 2026',

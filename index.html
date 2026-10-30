@@ -6309,7 +6309,7 @@ function bacaCetak(){
 }
 // Baris isi paket otomatis dari ceklis Hasil Cetak (tanpa awalan "Hasil cetak:"). Dikenali dengan pola ketat
 // supaya bisa dibuang & ditulis ulang tanpa menyentuh teks yang diketik sendiri. Format lama "Hasil cetak: …" juga dikenali.
-const CETAK_BARIS_RE=/^(Foto \d+ Inch( \+ Bingkai)?( x\d+)?|Bingkai \d+ Inch x\d+|Foto 6 Inch \d roll \(\d+ foto\)|Album \d roll|Flashdisk \d+ GB)$/;
+const CETAK_BARIS_RE=/^(Foto \d+ Inch( \+ Bingkai)?( x\d+)?|Bingkai \d+ Inch x\d+|Foto 6 Inch \d roll \(\d+ foto\)|Album \d roll|Flashdisk \d+ GB|\d+ inch( \+ bingkai| tanpa bingkai)? \d+ foto|Album \d roll isi \d+ foto)$/;
 const CETAK_LAMA_RE=/\n?Hasil cetak: [^\n]*/g;
 function cetakBuangBaris(txt){
   return String(txt||'').replace(CETAK_LAMA_RE,'').split(/\r?\n/).filter(l=>!CETAK_BARIS_RE.test(l.trim())).join('\n').replace(/\s+$/,'');
@@ -6321,19 +6321,54 @@ function cetakAmbilBaris(txt){
 function hitungCetak(s){
   const H=HARGA_CETAK, L=[]; let total=0;
   const q=x=>Math.min(99,Math.max(1,parseInt(x)||1));
-  if(s.f16.on){ const n=q(s.f16.qty); total+=n*H.f16; L.push(`Foto 16 Inch + Bingkai x${n}`); }
+  // Penulisan rapi: "16 inch + bingkai 1 foto", "12 inch + bingkai 2 foto" / "12 inch tanpa bingkai 2 foto", "Album 2 roll isi 80 foto".
+  // Foto 6 inch tidak ditulis sebagai baris sendiri: jumlahnya jadi isi album (biayanya tetap dihitung di total).
+  if(s.f16.on){ const n=q(s.f16.qty); total+=n*H.f16; L.push(`16 inch + bingkai ${n} foto`); }
   if(s.f12.on){
     // Jumlah foto & bingkai disimpan terpisah. Data lama (tanpa bingkaiQty) dianggap sama dengan jumlah foto.
     const n=q(s.f12.qty), bq=s.f12.bingkai ? q(s.f12.bingkaiQty!=null ? s.f12.bingkaiQty : s.f12.qty) : 0;
     total+=n*H.f12+bq*H.f12b;
-    if(bq===n) L.push(`Foto 12 Inch + Bingkai x${n}`);
-    else { L.push(`Foto 12 Inch x${n}`); if(bq>0) L.push(`Bingkai 12 Inch x${bq}`); }
+    const dengan=Math.min(n,bq), tanpa=n-dengan;
+    if(dengan>0) L.push(`12 inch + bingkai ${dengan} foto`);
+    if(tanpa>0) L.push(`12 inch tanpa bingkai ${tanpa} foto`);
   }
-  if(s.f10.on){ const n=q(s.f10.qty); total+=n*H.f10; L.push(`Foto 10 Inch x${n}`); }
-  if(s.f6.on){ const r=Number(s.f6.roll)||1, n=ROLL_FOTO[r]; total+=n*H.f6; L.push(`Foto 6 Inch ${r} roll (${n} foto)`); }
-  if(s.album.on){ const r=Number(s.album.roll)||1; total+=H['album'+r]||0; L.push(`Album ${r} roll`); }
+  if(s.f10.on){ const n=q(s.f10.qty); total+=n*H.f10; L.push(`10 inch ${n} foto`); }
+  let isiAlbum=0;
+  if(s.f6.on){ const r=Number(s.f6.roll)||1, n=ROLL_FOTO[r]; total+=n*H.f6; isiAlbum=n; if(!s.album.on) L.push(`6 inch ${n} foto`); }
+  if(s.album.on){ const r=Number(s.album.roll)||1; total+=H['album'+r]||0; L.push(`Album ${r} roll isi ${isiAlbum||ROLL_FOTO[r]||0} foto`); }
   if(s.fd.on){ const g=Number(s.fd.gb)||16; total+=H['fd'+g]||0; L.push(`Flashdisk ${g} GB`); }
   return {total,lines:L};
+}
+// Merapikan penulisan lama untuk TAMPILAN (job yang sudah tersimpan tidak diubah di database):
+//   "Foto 16 Inch + Bingkai x1" -> "16 inch + bingkai 1 foto"; "Foto 12 Inch x2" -> "12 inch tanpa bingkai 2 foto";
+//   "Foto 6 Inch 2 roll (80 foto)" + "Album 2 roll" -> "Album 2 roll isi 80 foto". Baris lain dibiarkan apa adanya.
+function cetakRapikan(txt){
+  const raw = String(txt==null ? '' : txt); if(!raw.trim()) return raw;
+  const L = raw.split(/\r?\n/).map(l=>l.trim());
+  let n12=0, nf12b=0, bq12=0, ada12=false; const f6={};
+  L.forEach(l=>{ let m;
+    if((m=l.match(/^Foto 12 Inch \+ Bingkai x(\d+)$/))){ nf12b+=+m[1]; ada12=true; }
+    else if((m=l.match(/^Foto 12 Inch x(\d+)$/))){ n12+=+m[1]; ada12=true; }
+    else if((m=l.match(/^Bingkai 12 Inch x(\d+)$/))){ bq12+=+m[1]; }
+    else if((m=l.match(/^Foto 6 Inch (\d) roll \((\d+) foto\)$/))){ f6[m[1]]=+m[2]; }
+  });
+  const dengan = nf12b + Math.min(n12,bq12), tanpa = n12 - Math.min(n12,bq12);
+  const adaAlbum = r => L.some(l=>l==='Album '+r+' roll');
+  let sudah12=false; const out=[];
+  L.forEach(l=>{ let m;
+    if(ada12 && /^(Foto 12 Inch( \+ Bingkai)? x\d+|Bingkai 12 Inch x\d+)$/.test(l)){
+      if(sudah12) return; sudah12=true;
+      if(dengan>0) out.push(`12 inch + bingkai ${dengan} foto`);
+      if(tanpa>0) out.push(`12 inch tanpa bingkai ${tanpa} foto`);
+      return;
+    }
+    if((m=l.match(/^Foto (\d+) Inch \+ Bingkai x(\d+)$/))){ out.push(`${m[1]} inch + bingkai ${m[2]} foto`); return; }
+    if((m=l.match(/^Foto (\d+) Inch x(\d+)$/))){ out.push(`${m[1]} inch ${m[2]} foto`); return; }
+    if((m=l.match(/^Foto 6 Inch (\d) roll \((\d+) foto\)$/))){ if(!adaAlbum(m[1])) out.push(`6 inch ${m[2]} foto`); return; }
+    if((m=l.match(/^Album (\d) roll$/))){ out.push(`Album ${m[1]} roll isi ${f6[m[1]]||ROLL_FOTO[m[1]]||0} foto`); return; }
+    out.push(l);
+  });
+  return out.join('\n');
 }
 // Modal/biaya cetak selalu dibulatkan KE ATAS ke kelipatan Rp50.000 (mis. 60rb -> 100rb, 110rb -> 150rb).
 const KELIPATAN_MODAL=50000;
@@ -13040,7 +13075,7 @@ function openDateModal(dateIso){
         ${(isJenisMempelai(j.jenisAcara) && (j.namaMempelai||'').trim()) ? `<div class="mj-row"><span>Kedua Mempelai</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.namaMempelai.trim())}</span></div>` : ''}
         <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}, ${escapeHtml(j.kabupaten||'-')}</span></div>
         <div class="mj-row"><span>Paket</span><span>${escapeHtml(j.paket||'-')}</span></div>
-        ${(j.deskripsiPaket||'').trim() ? `<div class="mj-row"><span>Deskripsi Paket</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.deskripsiPaket.trim())}</span></div>` : ''}
+        ${(j.deskripsiPaket||'').trim() ? `<div class="mj-row"><span>Deskripsi Paket</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(cetakRapikan(j.deskripsiPaket.trim()))}</span></div>` : ''}
         ${(j.addOn||'').trim() ? `<div class="mj-row"><span>Add-On</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.addOn.trim())}</span></div>` : ''}
         ${isAdmin() ? `<div class="mj-row"><span>WhatsApp</span><span>${escapeHtml(j.noWhatsapp||'-')}</span></div>` : ''}
         <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
@@ -13530,7 +13565,7 @@ function openJobDetailModal(jobId){
       ...(isAdmin() ? [['No. WhatsApp', j.noWhatsapp||'-']] : []),
       ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
-      ['Deskripsi Paket', j.deskripsiPaket||'-'],
+      ['Deskripsi Paket', cetakRapikan(j.deskripsiPaket)||'-'],
       ['Add-On', j.addOn||'-'],
     ]},
     ...(detailAcaraRows(j).length ? [{title:'Detail Acara', rows:detailAcaraRows(j)}] : []),
@@ -13701,7 +13736,7 @@ function buildJobPosterHtml(j){
       ...(isAdmin() ? [['No. WhatsApp', j.noWhatsapp||'-']] : []),
       ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
-      ['Deskripsi Paket', truncateText(j.deskripsiPaket, 160) || '-'],
+      ['Deskripsi Paket', truncateText(cetakRapikan(j.deskripsiPaket), 160) || '-'],
       ['Add-On', truncateText(j.addOn, 160) || '-'],
     ]},
     ...(detailAcaraRows(j,{tanpaUmum:true, maks:70}).length ? [{title:'Detail Acara', rows:detailAcaraRows(j,{tanpaUmum:true, maks:70})}] : []),
@@ -13926,7 +13961,7 @@ function copyJobDetails(jobId){
       ...(isAdmin() ? [['No. WhatsApp', j.noWhatsapp||'-']] : []),
       ...instagramDetailRows(j),
       ['Paket', j.paket||'-'],
-      ['Deskripsi Paket', j.deskripsiPaket||'-'],
+      ['Deskripsi Paket', cetakRapikan(j.deskripsiPaket)||'-'],
       ['Add-On', j.addOn||'-'],
     ]},
     ...(detailAcaraRows(j).length ? [{title:ic('clipboard')+' Detail Acara', rows:detailAcaraRows(j)}] : []),
@@ -14203,7 +14238,7 @@ function kwSha256(str){
 // Job lama / tanpa ceklis → memakai Deskripsi Paket apa adanya.
 // Deskripsi Paket + Add-On digabung (Add-On punya kolom sendiri, tapi tetap ikut tampil di isi paket).
 function deskripsiGabung(j){
-  const d = String((j && j.deskripsiPaket) || '').trim(), a = String((j && j.addOn) || '').trim();
+  const d = cetakRapikan(String((j && j.deskripsiPaket) || '').trim()), a = String((j && j.addOn) || '').trim();
   return a ? (d ? d + '\n' : '') + 'Add-On: ' + a : d;
 }
 function kwDeskripsiBagian(j){
@@ -14404,6 +14439,10 @@ function kwItemsPaket(txt){
   const qtyTxt = n=>'x'+(parseInt(n)||1);
   const tokenCetak = tk=>{
     let m;
+    if((m = tk.match(/^(\d+)\s*inch(\s*\+\s*bingkai|\s+tanpa\s+bingkai)?\s+(\d+)\s*foto$/i))){
+      lastInch = m[1]; out.push(m[1]+' inch'+(m[2] ? (/tanpa/i.test(m[2]) ? ' tanpa bingkai' : ' + bingkai') : '')+' '+m[3]+' foto'); return true;
+    }
+    if((m = tk.match(/^Album\s*(\d+)\s*roll\s*isi\s*(\d+)\s*foto$/i))){ out.push('Album '+m[1]+' roll isi '+m[2]+' foto'); return true; }
     if((m = tk.match(/^Foto\s*(?:Ukuran\s*)?(\d+)\s*(?:"|”|″|''|inch|in)?\s*(\+\s*Bingkai)?\s*(?:[×x]\s*(\d+))?$/i))){
       const ukr = m[1], bing = !!m[2], n = m[3]||1;
       if(ukr==='6' && !bing && !/[×x]\s*\d+\s*$/i.test(tk)) return false;   // Foto 6" versi roll ditangani di bawah
@@ -18080,47 +18119,58 @@ function voucherCardHtml(){
     <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Kode voucher yang bisa dipakai klien di halaman pricelist. Kode dicek satu per satu oleh database, jadi daftar kode tidak bisa dilihat orang luar.</p>
     <div id="vcBody"><p class="field-hint">Memuat voucher...</p></div></div>`;
 }
+// Waktu voucher selalu WIB (UTC+7): tampil "26 Des 2026, 23.59 WIB"; isian datetime-local dibaca sebagai WIB.
+function vcFmtWaktu(iso){
+  if(!iso) return 'Tanpa batas';
+  try{ return new Date(iso).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).replace(':','.') + ' WIB'; }catch(_){ return String(iso); }
+}
+function vcKeInputWib(iso){ return iso ? new Date(new Date(iso).getTime()+7*3600*1000).toISOString().slice(0,16) : ''; }
+function vcDariInputWib(v){ return v ? new Date(v+':00+07:00').toISOString() : null; }
 function vcRingkasNilai(v){ return v.tipe==='percent' ? (Number(v.nilai)+'%') : fmtRp(Number(v.nilai)); }
 function vcGambar(){
   const box = document.getElementById('vcBody'); if(!box) return;
   const today = new Date().toISOString().slice(0,10);
   const baris = VC_LIST.map(v=>{
-    const kadaluarsa = v.berlaku_sampai && v.berlaku_sampai < today;
+    const kadaluarsa = v.berlaku_sampai && new Date(v.berlaku_sampai).getTime() < Date.now();
+    const habis = v.kuota != null && Number(v.dipakai||0) >= Number(v.kuota);
     const untuk = (v.berlaku_untuk&&v.berlaku_untuk.length) ? v.berlaku_untuk.map(x=>VC_FORM_NAMA[x]||x).join(', ') : 'Semua pricelist';
     return `<tr>
       <td><b>${escapeHtml(v.kode)}</b>${v.catatan?`<div class="field-hint" style="margin:2px 0 0;">${escapeHtml(v.catatan)}</div>`:''}</td>
       <td>${escapeHtml(vcRingkasNilai(v))}</td>
-      <td>${v.berlaku_sampai?escapeHtml(v.berlaku_sampai)+(kadaluarsa?' <b style="color:#a8321e;">(lewat)</b>':''):'Tanpa batas'}</td>
+      <td>${escapeHtml(vcFmtWaktu(v.berlaku_sampai))}${kadaluarsa?' <b style="color:#a8321e;">(lewat)</b>':''}</td>
+      <td>${Number(v.dipakai||0)} / ${v.kuota!=null?Number(v.kuota):'tanpa batas'}${habis?' <b style="color:#a8321e;">(habis)</b>':''}${Number(v.dipakai||0)>0?`<div><button type="button" class="btn btn-outline" style="padding:2px 8px;font-size:11px;margin-top:4px;" data-vc-reset="${escapeHtml(v.kode)}" title="Kembalikan hitungan pemakaian ke 0">Atur ulang</button></div>`:''}</td>
       <td>${escapeHtml(untuk)}</td>
       <td><label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" data-vc-toggle="${escapeHtml(v.kode)}" ${v.aktif?'checked':''}> ${v.aktif?'Aktif':'Mati'}</label></td>
       <td style="white-space:nowrap;"><button type="button" class="btn btn-outline" data-vc-edit="${escapeHtml(v.kode)}" title="Ubah">${ic('edit')}</button> <button type="button" class="btn btn-outline" data-vc-hapus="${escapeHtml(v.kode)}" title="Hapus">${ic('trash')}</button></td></tr>`;
   }).join('');
   box.innerHTML = `
-    <div style="overflow-x:auto;">${VC_LIST.length?`<table class="jobtable" style="min-width:560px;"><thead><tr><th>Kode</th><th>Diskon</th><th>Berlaku sampai</th><th>Untuk</th><th>Status</th><th></th></tr></thead><tbody>${baris}</tbody></table>`:'<p class="field-hint">Belum ada voucher. Tambahkan di bawah.</p>'}</div>
+    <div style="overflow-x:auto;">${VC_LIST.length?`<table class="jobtable" style="min-width:720px;"><thead><tr><th>Kode</th><th>Diskon</th><th>Berlaku sampai</th><th>Dipakai</th><th>Untuk</th><th>Status</th><th></th></tr></thead><tbody>${baris}</tbody></table>`:'<p class="field-hint">Belum ada voucher. Tambahkan di bawah.</p>'}</div>
     <h3 style="margin:18px 0 6px;font-size:15px;">Tambah / ubah voucher</h3>
     <div class="form-grid">
       <div><label>Kode (huruf besar, tanpa spasi)</label><input type="text" id="vcKode" maxlength="40" autocapitalize="characters" placeholder="mis. KAONE10"></div>
       <div><label>Jenis diskon</label><select id="vcTipe"><option value="percent">Persen (%)</option><option value="nominal">Nominal (Rp)</option></select></div>
       <div><label>Nilai diskon</label><input type="text" inputmode="decimal" id="vcNilai" placeholder="mis. 10 atau 100.000"></div>
-      <div><label>Berlaku sampai (kosongkan = tanpa batas)</label><input type="date" id="vcSampai"></div>
+      <div><label>Berlaku sampai tanggal &amp; jam, WIB (kosongkan = tanpa batas)</label><input type="datetime-local" id="vcSampai"></div>
+      <div><label>Boleh dipakai berapa kali (kosongkan = tanpa batas)</label><input type="number" id="vcKuota" min="1" step="1" inputmode="numeric" placeholder="mis. 50"><div class="field-hint" style="margin:3px 0 0;">Satu klien (nomor WhatsApp yang sama) dihitung satu kali, walau mengisi pricelist dan biodata.</div></div>
       <div style="grid-column:1/-1;"><label>Berlaku untuk (kosongkan semua = semua pricelist)</label>
         <div style="display:flex;gap:14px;flex-wrap:wrap;">${Object.keys(VC_FORM_NAMA).map(k=>`<label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" data-vc-untuk="${k}"> ${VC_FORM_NAMA[k]}</label>`).join('')}</div></div>
       <div style="grid-column:1/-1;"><label>Catatan internal (opsional)</label><input type="text" id="vcCatatan" maxlength="120" placeholder="mis. promo akhir tahun"></div>
     </div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:10px;"><button type="button" class="btn btn-primary" data-vc-act="simpan">${ic('save')} Simpan Voucher</button><button type="button" class="btn btn-outline" data-vc-act="kosong">Kosongkan form</button></div>
     <details style="margin-top:14px;"><summary style="cursor:pointer;font-weight:700;">Impor banyak voucher sekaligus (dari spreadsheet lama)</summary>
-      <p class="field-hint">Satu voucher per baris: <b>KODE, jenis, nilai, tanggal-berlaku-sampai(opsional)</b>. Jenis: <b>persen</b> atau <b>nominal</b>. Contoh: <code>KAONE10, persen, 10, 2026-12-31</code> atau <code>HEMAT50, nominal, 50000</code>. Kode yang sudah ada akan diperbarui.</p>
-      <textarea id="vcImpor" rows="5" placeholder="KAONE10, persen, 10, 2026-12-31&#10;HEMAT50, nominal, 50000"></textarea>
+      <p class="field-hint">Satu voucher per baris: <b>KODE, jenis, nilai, berlaku-sampai (opsional), batas-pemakaian (opsional)</b>. Jenis: <b>persen</b> atau <b>nominal</b>. Berlaku-sampai: tanggal, boleh disertai jam WIB (tanpa jam = 23.59). Contoh: <code>KAONE10, persen, 10, 2026-12-31 18:00, 50</code> atau <code>HEMAT50, nominal, 50000</code>. Kode yang sudah ada akan diperbarui.</p>
+      <textarea id="vcImpor" rows="5" placeholder="KAONE10, persen, 10, 2026-12-31 18:00, 50&#10;HEMAT50, nominal, 50000"></textarea>
       <div class="form-actions" style="justify-content:flex-start;margin-top:8px;"><button type="button" class="btn btn-outline" data-vc-act="impor">Impor</button></div>
     </details>
     <div class="field-hint" id="vcInfo" style="margin-top:8px;"></div>`;
   if(!box.dataset.bound){
     box.dataset.bound = '1';
     box.addEventListener('click', e=>{
-      const a = e.target.closest('[data-vc-act]'), ed = e.target.closest('[data-vc-edit]'), hp = e.target.closest('[data-vc-hapus]');
+      const a = e.target.closest('[data-vc-act]'), ed = e.target.closest('[data-vc-edit]'), hp = e.target.closest('[data-vc-hapus]'), rs = e.target.closest('[data-vc-reset]');
       if(a){ if(a.dataset.vcAct==='simpan') vcSimpan(); else if(a.dataset.vcAct==='kosong') vcKosong(); else if(a.dataset.vcAct==='impor') vcImpor(); }
       else if(ed) vcIsiForm(ed.dataset.vcEdit);
       else if(hp) vcHapus(hp.dataset.vcHapus);
+      else if(rs) vcAturUlang(rs.dataset.vcReset);
     });
     box.addEventListener('change', e=>{ const t = e.target.closest('[data-vc-toggle]'); if(t) vcToggle(t.dataset.vcToggle, t.checked); });
   }
@@ -18138,15 +18188,18 @@ function vcBaca(){
   const kode = (document.getElementById('vcKode').value||'').trim().toUpperCase().replace(/\s+/g,'');
   const tipe = document.getElementById('vcTipe').value;
   const nilai = tipe==='percent' ? Number(String(document.getElementById('vcNilai').value).replace(',','.')) : (parseRibuan(document.getElementById('vcNilai').value)||0);
-  const sampai = document.getElementById('vcSampai').value || null;
+  const sampai = vcDariInputWib(document.getElementById('vcSampai').value);
+  const kuotaTxt = (document.getElementById('vcKuota').value||'').trim();
+  const kuota = kuotaTxt==='' ? null : Math.floor(Number(kuotaTxt));
   const untuk = [...document.querySelectorAll('#vcBody [data-vc-untuk]:checked')].map(x=>x.dataset.vcUntuk);
   const catatan = (document.getElementById('vcCatatan').value||'').trim() || null;
-  return { kode, tipe, nilai, berlaku_sampai:sampai, berlaku_untuk:untuk, catatan };
+  return { kode, tipe, nilai, berlaku_sampai:sampai, kuota, berlaku_untuk:untuk, catatan };
 }
 function vcValidasi(v){
   if(v.kode.length<2 || v.kode.length>40 || !/^[A-Z0-9_-]+$/.test(v.kode)) return 'Kode harus 2-40 karakter: huruf, angka, tanda - atau _ (tanpa spasi).';
   if(!(v.nilai>0)) return 'Nilai diskon harus lebih dari 0.';
   if(v.tipe==='percent' && v.nilai>100) return 'Diskon persen tidak boleh lebih dari 100.';
+  if(v.kuota!=null && !(v.kuota>0)) return 'Batas pemakaian harus berupa angka lebih dari 0 (atau kosongkan untuk tanpa batas).';
   return '';
 }
 async function vcSimpanSatu(v){
@@ -18159,12 +18212,12 @@ async function vcSimpan(){
   const ada = VC_LIST.find(x=>x.kode===v.kode); v.aktif = ada ? ada.aktif : true;
   try{ await vcSimpanSatu(v); toast('Voucher '+v.kode+' disimpan'); await vcMuat(); }catch(e){ console.error(e); alert('Gagal menyimpan voucher: '+(e.message||e)); }
 }
-function vcKosong(){ ['vcKode','vcNilai','vcSampai','vcCatatan'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); document.querySelectorAll('#vcBody [data-vc-untuk]').forEach(c=>c.checked=false); }
+function vcKosong(){ ['vcKode','vcNilai','vcSampai','vcKuota','vcCatatan'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); document.querySelectorAll('#vcBody [data-vc-untuk]').forEach(c=>c.checked=false); }
 function vcIsiForm(kode){
   const v = VC_LIST.find(x=>x.kode===kode); if(!v) return;
   document.getElementById('vcKode').value = v.kode; document.getElementById('vcTipe').value = v.tipe;
   document.getElementById('vcNilai').value = v.tipe==='percent' ? String(Number(v.nilai)) : fmtRibuan(Number(v.nilai));
-  document.getElementById('vcSampai').value = v.berlaku_sampai || ''; document.getElementById('vcCatatan').value = v.catatan || '';
+  document.getElementById('vcSampai').value = vcKeInputWib(v.berlaku_sampai); document.getElementById('vcKuota').value = v.kuota!=null ? String(v.kuota) : ''; document.getElementById('vcCatatan').value = v.catatan || '';
   document.querySelectorAll('#vcBody [data-vc-untuk]').forEach(c=>{ c.checked = (v.berlaku_untuk||[]).includes(c.dataset.vcUntuk); });
   document.getElementById('vcKode').scrollIntoView({block:'center', behavior:'smooth'});
 }
@@ -18172,6 +18225,15 @@ async function vcToggle(kode, aktif){
   if(!isAdmin()) return;
   try{ const { error } = await supabaseClient.from('kaone_motret_voucher').update({ aktif, diperbarui_pada:new Date().toISOString() }).eq('kode', kode); if(error) throw error; const v = VC_LIST.find(x=>x.kode===kode); if(v) v.aktif = aktif; toast('Voucher '+kode+(aktif?' diaktifkan':' dimatikan')); vcGambar(); }
   catch(e){ console.error(e); alert('Gagal mengubah status voucher: '+(e.message||e)); vcMuat(); }
+}
+async function vcAturUlang(kode){
+  if(!isAdmin()) return;
+  if(!confirm('Atur ulang hitungan pemakaian voucher '+kode+' ke 0? Klien yang sudah memakainya dihitung lagi dari awal.')) return;
+  try{
+    const a = await supabaseClient.from('kaone_motret_voucher_pakai').delete().eq('kode', kode); if(a.error) throw a.error;
+    const b = await supabaseClient.from('kaone_motret_voucher').update({ dipakai:0, diperbarui_pada:new Date().toISOString() }).eq('kode', kode); if(b.error) throw b.error;
+    toast('Pemakaian '+kode+' diatur ulang'); await vcMuat();
+  }catch(e){ console.error(e); alert('Gagal mengatur ulang pemakaian: '+(e.message||e)); }
 }
 async function vcHapus(kode){
   if(!isAdmin()) return;
@@ -18187,10 +18249,16 @@ async function vcImpor(){
     const kode = (p[0]||'').toUpperCase().replace(/\s+/g,''), jenis = (p[1]||'').toLowerCase();
     const tipe = /^(persen|percent|%)$/.test(jenis) ? 'percent' : (/^(nominal|rp|rupiah)$/.test(jenis) ? 'nominal' : '');
     const nilai = tipe==='percent' ? Number(String(p[2]||'').replace(',','.')) : (parseRibuan(p[2]||'')||0);
-    let sampai = (p[3]||'').trim() || null;
-    if(sampai){ const m = sampai.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/) || null; const m2 = sampai.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
-      sampai = m ? (m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0')) : (m2 ? (m2[3]+'-'+m2[2].padStart(2,'0')+'-'+m2[1].padStart(2,'0')) : 'SALAH'); }
-    const v = { kode, tipe, nilai, berlaku_sampai: sampai, berlaku_untuk:[], aktif:true, catatan:null };
+    let sampai = (p[3]||'').trim() || null;   // "2026-12-31" atau "2026-12-31 18:00" atau "31/12/2026 18:00" (jam WIB; tanpa jam = 23.59)
+    if(sampai){
+      const mj = sampai.match(/^(.*?)(?:[ T]+(\d{1,2})[:.](\d{2}))?$/), tgl = (mj&&mj[1]||'').trim(), jam = mj&&mj[2]!=null ? mj[2].padStart(2,'0')+':'+mj[3] : '23:59';
+      const m = tgl.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/), m2 = tgl.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+      const iso = m ? (m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0')) : (m2 ? (m2[3]+'-'+m2[2].padStart(2,'0')+'-'+m2[1].padStart(2,'0')) : '');
+      const d = iso ? new Date(iso+'T'+jam+':00+07:00') : null;
+      sampai = d && !isNaN(d) ? d.toISOString() : 'SALAH';
+    }
+    const kuotaImp = (p[4]||'').trim()==='' ? null : Math.floor(Number(p[4]));
+    const v = { kode, tipe, nilai, berlaku_sampai: sampai, kuota: kuotaImp, berlaku_untuk:[], aktif:true, catatan:null };
     const salah = !tipe ? 'jenis harus persen/nominal' : (sampai==='SALAH' ? 'format tanggal salah' : vcValidasi(v));
     if(salah) gagal.push('Baris '+(i+1)+' ('+(kode||'?')+'): '+salah); else rows.push(v);
   });
@@ -19057,12 +19125,21 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.26.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.27.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.27.0',
+    tanggal: '30 Oktober 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Voucher kini bisa dibatasi jumlah pemakaiannya (mis. 50 kali) dan batas waktunya lengkap dengan jam (WIB), bukan hanya tanggal. Tabel voucher menampilkan "Dipakai / batas", ada tombol "Atur ulang" untuk mengembalikan hitungan ke 0, dan impor massal ikut mendukung jam dan batas pemakaian. Satu klien (nomor WhatsApp yang sama) dihitung satu kali walau mengisi pricelist dan biodata.' },
+      { kategori: 'Peningkatan', teks: 'Halaman pricelist dan Isi Biodata menampilkan pesan yang jelas saat voucher sudah habis kuotanya atau sudah lewat waktunya, dan menyebutkan sampai pukul berapa voucher berlaku.' },
+      { kategori: 'Peningkatan', teks: 'Rincian cetak di detail job, pesan WhatsApp, dan kwitansi ditulis lebih rapi, contoh: "16 inch + bingkai 1 foto", "12 inch tanpa bingkai 2 foto", "Album 2 roll isi 80 foto". Foto 6 inch tidak lagi jadi baris sendiri, jumlahnya menjadi isi album. Biaya cetak tidak berubah, dan job lama otomatis ditampilkan dengan penulisan baru.' }
+    ]
+  },
   {
     version: '1.26.0',
     tanggal: '28 Oktober 2026',

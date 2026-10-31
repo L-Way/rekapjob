@@ -214,6 +214,20 @@
     font-family:inherit; background:#fffefb; color:var(--ink); transition:.15s;
   }
   input:focus,select:focus,textarea:focus{outline:none; border-color:var(--gold);}
+  /* Kolom "Berlaku sampai" voucher: pilihan Tanpa batas / Atur tanggal & jam */
+  .vc-seg{display:flex; gap:4px; padding:4px; background:#f6f0d6; border-radius:12px;}
+  .vc-seg button{flex:1; padding:9px 10px; border:0; border-radius:9px; background:transparent; font:inherit; font-size:13.5px; font-weight:700; color:var(--ink-soft); cursor:pointer; transition:background-color .15s, color .15s;}
+  .vc-seg button.on{background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(60,45,0,.18);}
+  .vc-fields{display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:10px; margin-top:10px;}
+  .vc-fields[hidden]{display:none;}
+  .vc-fields .vc-f > span{display:block; margin-bottom:4px; font-size:12px; font-weight:700; color:var(--ink-soft);}
+  .vc-fields input[type=date], .vc-fields input[type=time]{width:100%; min-height:44px; box-sizing:border-box; padding:10px 12px; border:1.5px solid #e5ddc0; border-radius:9px; font-size:14px; font-family:inherit; background:#fffefb; color:var(--ink);}
+  .vc-quick{grid-column:1/-1; display:flex; gap:6px; flex-wrap:wrap;}
+  .vc-quick button{padding:6px 12px; border:1.5px solid #e5ddc0; border-radius:999px; background:#fff; font:inherit; font-size:12.5px; font-weight:700; color:var(--ink); cursor:pointer;}
+  .vc-quick button:hover{background:var(--gold-pale);}
+  .vc-ringkas{grid-column:1/-1; font-size:12.5px; font-weight:600; color:var(--ink-soft);}
+  details.hint-more{margin-top:6px; font-size:12.5px; color:var(--ink-soft);}
+  details.hint-more summary{cursor:pointer; font-weight:700;}
   fieldset{border:1.5px dashed #e6dcae; border-radius:10px; padding:14px 16px 6px; margin:0;}
   legend{font-weight:700; font-size:13px; color:var(--warn); padding:0 6px;}
   .radio-row{display:flex; gap:16px; flex-wrap:wrap; padding:4px 0 8px;}
@@ -5695,14 +5709,14 @@ function kmStatusHtml(){
 }
 function kmCardHtml(){
   return `<div class="card"><h2 style="margin-top:0;">${ic('check-circle')} Sambungan Meja Kaone</h2>
-    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Booking, DP, sesi, pelunasan, dan antar/jemput dikirim otomatis ke Meja Kaone. Klien mendapat link untuk memantau progres foto, otomatis terpasang di kwitansi dan pesan WhatsApp. Pemilihan foto, antrian, dan edit dibaca balik dari Meja Kaone. Job yang Lacaknya dimatikan dilewati dan tidak mendapat link progres.</p>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Booking, DP, sesi, pelunasan, dan antar/jemput dikirim otomatis ke Meja Kaone. Klien dapat link progres di kwitansi dan WhatsApp.</p>
     <label>API Key (izin baca &amp; ubah tahap)</label><input type="password" id="kmKeyIn" value="${escapeHtml(kmKey())}" placeholder="kmk_..." autocomplete="off" style="width:100%">
     <label style="margin-top:10px;display:block;">Alamat Meja Kaone</label><input type="url" id="kmUrlIn" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" value="${escapeHtml(kmBase())}" style="width:100%">
     <label style="margin-top:10px;display:flex;gap:8px;align-items:center;"><input type="checkbox" id="kmOnIn" ${kmGet(KM_ON)==='0'?'':'checked'}> Sinkron otomatis aktif</label>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;"><button type="button" class="btn btn-primary" onclick="kmSimpanPengaturan()">Simpan &amp; tes</button>
     <button type="button" class="btn btn-outline" onclick="kmSinkronSemua()">Sinkronkan semua sekarang</button></div>
     <div class="field-hint" id="kmStatus" style="margin-top:8px;">${kmStatusHtml()}</div>
-    <div class="field-hint">API key disimpan di database Supabase Anda dan hanya bisa dibaca akun Admin, jadi otomatis tersedia di semua perangkat Admin. Tidak ikut cadangan dan tidak terlihat akun Tim. Jangan dibagikan; bila bocor, cabut di Meja Kaone.</div></div>`;
+    <div class="field-hint">API key hanya bisa dibaca Admin dan tersedia di semua perangkat Admin. Jangan dibagikan; bila bocor, cabut di Meja Kaone.</div></div>`;
 }
 async function kmSimpanPengaturan(){
   const key=(document.getElementById('kmKeyIn').value||'').trim(), url=(document.getElementById('kmUrlIn').value||'').trim(), on=document.getElementById('kmOnIn').checked;
@@ -5801,9 +5815,9 @@ function bangunPesanSelesai(j){
 }
 function pesanSelesaiPanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="selesai">
-    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai tombol "Kabari Klien" di Detail Job saat Proses Cetak sudah Selesai. Isinya masih bisa diedit sebelum dikirim.</p>
+    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai tombol "Kabari Klien" saat cetak selesai. Bisa diedit sebelum dikirim.</p>
     <textarea id="pesanSelesaiTpl" rows="11" style="width:100%">${escapeHtml(PESAN_SELESAI_TPL)}</textarea>
-    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {mempelai} {acara} {tanggal} {paket} {deskripsiPaket} {sisa} {tagihan} {ajakan} {ongkir} {maps}. {tagihan} hanya muncul kalau belum lunas, berisi pengingat sisa pembayaran, bukan info tempat bayar (pelunasan biasanya sudah dilakukan di hari H acara). {ajakan} menyesuaikan saklar Pengiriman di job: "Dijemput" mengajak klien datang mengambil sendiri, "Diantar" memberi tahu foto akan diantar tim ke lokasi klien. {ongkir} otomatis kosong kalau Pengiriman = Dijemput, dan berisi nominal ongkos antar, jarak, serta link titik antar dari Link Maps Antar (tarifnya dari Ongkos Antar Foto di Pengaturan) kalau Pengiriman = Diantar. {maps} berisi link Google Maps lokasi Kaone Motret, dari titik yang sama dengan acuan hitung jarak.</div>
+    <div class="field-hint" style="margin-top:8px;">Kode: {nama} {mempelai} {acara} {tanggal} {paket} {deskripsiPaket} {sisa} {tagihan} {ajakan} {ongkir} {maps}<details class="hint-more"><summary>Penjelasan kode</summary>{tagihan} hanya muncul kalau belum lunas, berisi pengingat sisa pembayaran, bukan info tempat bayar (pelunasan biasanya sudah dilakukan di hari H acara). {ajakan} menyesuaikan saklar Pengiriman di job: "Dijemput" mengajak klien datang mengambil sendiri, "Diantar" memberi tahu foto akan diantar tim ke lokasi klien. {ongkir} otomatis kosong kalau Pengiriman = Dijemput, dan berisi nominal ongkos antar, jarak, serta link titik antar dari Link Maps Antar (tarifnya dari Ongkos Antar Foto di Pengaturan) kalau Pengiriman = Diantar. {maps} berisi link Google Maps lokasi Kaone Motret, dari titik yang sama dengan acuan hitung jarak.</details></div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
       <button type="button" class="btn btn-primary" onclick="simpanPesanSelesai()">Simpan pesan</button>
       <button type="button" class="btn btn-outline" onclick="resetPesanSelesai()">Kembalikan bawaan</button>
@@ -5834,7 +5848,7 @@ function pesanBookingPanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="booking" style="display:none;">
     <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai untuk mengabari klien setelah Booking &amp; DP diterima, kirim manual lewat tombol "Konfirmasi Booking/DP" di Detail Job. Isinya masih bisa diedit sebelum dikirim.</p>
     <textarea id="pesanBookingTpl" rows="11" style="width:100%">${escapeHtml(PESAN_BOOKING_TPL)}</textarea>
-    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {mempelai} {acara} {tanggal} {paket} {deskripsiPaketLine} {dp} {sisa} {maps}. {deskripsiPaketLine} otomatis kosong kalau Deskripsi Paket belum diisi. {mempelai} berisi Nama Kedua Mempelai (hanya untuk Wedding/Patuaekkon/Margondang, selain itu kosong), belum dipakai di pesan bawaan, silakan tambahkan sendiri kalau perlu.</div>
+    <div class="field-hint" style="margin-top:8px;">Kode: {nama} {mempelai} {acara} {tanggal} {paket} {deskripsiPaketLine} {dp} {sisa} {maps}<details class="hint-more"><summary>Penjelasan kode</summary>{deskripsiPaketLine} otomatis kosong kalau Deskripsi Paket belum diisi. {mempelai} berisi Nama Kedua Mempelai (hanya untuk Wedding/Patuaekkon/Margondang, selain itu kosong), belum dipakai di pesan bawaan, silakan tambahkan sendiri kalau perlu.</details></div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
       <button type="button" class="btn btn-primary" onclick="simpanPesanBooking()">Simpan pesan</button>
       <button type="button" class="btn btn-outline" onclick="resetPesanBooking()">Kembalikan bawaan</button>
@@ -5865,7 +5879,7 @@ function pesanH1PanelHtml(){
   return `<div class="wa-tpl-panel" data-wa-tpl-panel="h1" style="display:none;">
     <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai untuk mengingatkan klien sehari sebelum acara, kirim manual lewat tombol "Pengingat H-1" di Detail Job. Isinya masih bisa diedit sebelum dikirim.</p>
     <textarea id="pesanH1Tpl" rows="11" style="width:100%">${escapeHtml(PESAN_H1_TPL)}</textarea>
-    <div class="field-hint" style="margin-top:8px;">Kode otomatis: {nama} {mempelai} {acara} {tanggal} {paket} {lokasi} {jam} {jamLine} {maps}. {jam} hanya berisi jamnya saja (mis. "09.00"), sedangkan {jamLine} sudah berupa baris siap-pakai "Jam    : 09.00 WIB", keduanya otomatis kosong kalau kolom Jam Acara di form job tidak diisi.</div>
+    <div class="field-hint" style="margin-top:8px;">Kode: {nama} {mempelai} {acara} {tanggal} {paket} {lokasi} {jam} {jamLine} {maps}<details class="hint-more"><summary>Penjelasan kode</summary>{jam} hanya berisi jamnya saja (mis. "09.00"), sedangkan {jamLine} sudah berupa baris siap-pakai "Jam    : 09.00 WIB", keduanya otomatis kosong kalau kolom Jam Acara di form job tidak diisi.</details></div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
       <button type="button" class="btn btn-primary" onclick="simpanPesanH1()">Simpan pesan</button>
       <button type="button" class="btn btn-outline" onclick="resetPesanH1()">Kembalikan bawaan</button>
@@ -5875,7 +5889,7 @@ function pesanH1PanelHtml(){
 /* ---- Kartu gabungan (tab) untuk Pengaturan ---- */
 function templateWaCardHtml(){
   return `<div class="card"><h2 style="margin-top:0;">${ic('phone')} Template Pesan WhatsApp</h2>
-    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Tiga pesan siap-pakai untuk klien. Pilih tab untuk mengubah format masing-masing, perubahan disimpan otomatis dan langsung dipakai untuk job berikutnya.</p>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Tiga pesan siap pakai untuk klien. Perubahan tersimpan otomatis.</p>
     <div class="wa-tpl-tabs">
       <button type="button" class="wa-tpl-tab active" data-wa-tpl-tab="selesai" onclick="switchWaTplTab('selesai')">Foto Selesai</button>
       <button type="button" class="wa-tpl-tab" data-wa-tpl-tab="booking" onclick="switchWaTplTab('booking')">Booking / DP Diterima</button>
@@ -6242,7 +6256,7 @@ let HARGA_CETAK=(()=>{try{return {...HARGA_CETAK_DEFAULT,...JSON.parse(localStor
 const HARGA_CETAK_FIELDS=[['f16','Foto 16 Inch + Bingkai (per foto)'],['f12','Foto 12 Inch (per foto)'],['f12b','Bingkai 12 Inch (per foto)'],['f10','Foto 10 Inch (per foto)'],['f6','Foto 6 Inch (per lembar)'],['album1','Album 1 roll'],['album2','Album 2 roll'],['album3','Album 3 roll'],['album4','Album 4 roll'],['fd16','Flashdisk 16 GB'],['fd32','Flashdisk 32 GB'],['fd64','Flashdisk 64 GB'],['shia350','Modal Shia Makeup (paket standar)'],['shia400','Modal Shia Makeup (12" pakai bingkai)']];
 function hargaCetakCardHtml(){
   return `<div class="card"><h2 style="margin-top:0;">${ic('money')} Harga Cetak</h2>
-    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai di form Input Job untuk menghitung Biaya Cetak dan Harga Paket Shia Makeup secara otomatis.</p>
+    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai di form Input Job untuk menghitung Biaya Cetak dan Harga Paket Shia Makeup.</p>
     <form class="form-grid hc" onsubmit="simpanHargaCetak(event)">
       ${HARGA_CETAK_FIELDS.map(([k,l])=>`<div><label>${l}</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-hk="${k}" value="${fmtRibuan(HARGA_CETAK[k])}" oninput="handleMoneyInput(this)"></div></div>`).join('')}
       <div class="full form-actions"><button type="submit" class="btn btn-primary">Simpan harga</button></div>
@@ -6279,12 +6293,12 @@ function fmtOngkirAntar(km){
 }
 function ongkirAntarCardHtml(){
   return `<div class="card ongkir-card"><h2 style="margin-top:0;">${ic('car')} Ongkos Antar Foto</h2>
-    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Dipakai otomatis saat saklar Pengiriman di Input/Edit Job diatur ke "Diantar" (foto diantar tim ke lokasi klien). Dihitung dari jarak real titik di kolom Link Maps Antar (Input/Edit Job) ke Kaone Motret, lalu dibulatkan ke atas per Rp1.000 (mis. Rp47.670 jadi Rp48.000).</p>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Berlaku saat Pengiriman "Diantar". Dihitung dari jarak Link Maps Antar ke Kaone Motret, dibulatkan ke atas per Rp1.000.</p>
     <div class="form-grid">
       <div><label>Tarif per KM</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-ongkirantar="perKm" value="${fmtRibuan(ONGKIR_ANTAR.perKm)}" oninput="handleMoneyInput(this)"></div></div>
       <div><label>Gratis Jika Biaya Sampai Dengan</label><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" data-ongkirantar="batasGratis" value="${fmtRibuan(ONGKIR_ANTAR.batasGratis)}" oninput="handleMoneyInput(this)"></div></div>
     </div>
-    <div class="field-hint" style="margin-top:8px;">Contoh dengan pengaturan bawaan: jarak 6 km → Rp18.000 (≤ Rp19.999) dianggap GRATIS. Jarak 15,89 km → Rp47.670 dibulatkan jadi Rp48.000 (≥ Rp20.000) dan tetap ditagih penuh.</div>
+    <div class="field-hint" style="margin-top:8px;">Contoh: 6 km = Rp18.000 → gratis. 15,89 km = Rp48.000 → ditagih.</div>
     <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
       <button type="button" class="btn btn-primary" onclick="simpanOngkirAntar()">${ic('save')} Simpan</button>
       <button type="button" class="btn btn-outline" onclick="resetOngkirAntarForm()">Kembalikan bawaan</button>
@@ -18051,7 +18065,7 @@ function hpRp(v){ return '<div class="rp-input-wrap"><span class="rp-prefix">Rp<
 function hargaPricelistCardHtml(){
   setTimeout(hpMuat, 0);
   return `<div class="card" id="hpCard"><h2 style="margin-top:0;">${ic('money')} Harga Pricelist</h2>
-    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Harga paket dan add-on yang tampil di halaman pricelist Wedding, Mangayun/Aqiqah, dan Margondang. Setelah disimpan, halaman pricelist otomatis memakai harga baru (tidak perlu mengubah file atau spreadsheet).</p>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Harga di halaman pricelist. Setelah disimpan, langsung dipakai di sana.</p>
     <div id="hpBody"><p class="field-hint">Memuat harga...</p></div></div>`;
 }
 function hpGambar(){
@@ -18065,19 +18079,19 @@ function hpGambar(){
     const rows = P.nama.map(n=>{
       const h = hpRp(['paket.'+k+'.'+n, g(S.paket&&S.paket[k], n, HP_DEFAULT.paket[k][n])]);
       const c = P.coret ? hpRp(['coret.'+k+'.'+n, g(S.coret&&S.coret[k], n, (HP_DEFAULT.coret[k]||{})[n]||0)]) : '';
-      return `<div><label>${escapeHtml(n)}${P.coret?' - harga sekarang':''}</label>${h}</div>` + (P.coret?`<div><label>${escapeHtml(n)} - harga coret (sebelum diskon)</label>${c}</div>`:'');
+      return `<div><label>${escapeHtml(n)}${P.coret?' - harga sekarang':''}</label>${h}</div>` + (P.coret?`<div><label>${escapeHtml(n)} - harga coret</label>${c}</div>`:'');
     }).join('');
     html += sec(escapeHtml(P.label), rows, i===0);
   });
   html += sec('Add-on (berlaku di semua pricelist)', HP_ADDON.map(n=>`<div><label>${escapeHtml(n)}</label>${hpRp(['addon.'+n, g(S.addon, n, HP_DEFAULT.addon[n])])}</div>`).join(''), false);
-  html += sec('Lainnya', `<div><label>Biaya akomodasi (acara di luar area)</label>${hpRp(['lain.akomodasi', g(S.lain,'akomodasi',HP_DEFAULT.lain.akomodasi)])}</div><div><label>Penyesuaian harga Margondang multi-hari</label>${hpRp(['lain.penyesuaianHari', g(S.lain,'penyesuaianHari',HP_DEFAULT.lain.penyesuaianHari)])}</div>`, false);
-  html += `<div class="form-actions" style="justify-content:flex-start;margin-top:12px;"><button type="button" class="btn btn-primary" data-hp-act="simpan">${ic('save')} Simpan Harga</button><button type="button" class="btn btn-outline" data-hp-act="muat">${ic('refresh')} Muat Ulang</button></div><div class="field-hint" id="hpInfo" style="margin-top:8px;">${S.versi?('Versi harga tersimpan: '+escapeHtml(String(S.versi))+'.'):'Belum pernah disimpan dari sini; yang tampil adalah harga bawaan.'}</div>`;
+  html += sec('Lainnya', `<div><label>Biaya akomodasi (luar area)</label>${hpRp(['lain.akomodasi', g(S.lain,'akomodasi',HP_DEFAULT.lain.akomodasi)])}</div><div><label>Penyesuaian Margondang multi-hari</label>${hpRp(['lain.penyesuaianHari', g(S.lain,'penyesuaianHari',HP_DEFAULT.lain.penyesuaianHari)])}</div>`, false);
+  html += `<div class="form-actions" style="justify-content:flex-start;margin-top:12px;"><button type="button" class="btn btn-primary" data-hp-act="simpan">${ic('save')} Simpan Harga</button><button type="button" class="btn btn-outline" data-hp-act="muat">${ic('refresh')} Muat Ulang</button></div><div class="field-hint" id="hpInfo" style="margin-top:8px;">${S.versi?('Versi '+escapeHtml(String(S.versi))+'.'):'Belum pernah disimpan, ini harga bawaan.'}</div>`;
   box.innerHTML = html;
   if(!box.dataset.bound){ box.dataset.bound='1'; box.addEventListener('click', e=>{ const b=e.target.closest('[data-hp-act]'); if(!b) return; if(b.dataset.hpAct==='simpan') hpSimpan(); else hpMuat(); }); }
 }
 async function hpMuat(){
   const box = document.getElementById('hpBody'); if(!box) return;
-  if(!supabaseClient || !cloudSyncEnabled){ box.innerHTML = '<p class="field-hint">Harga tersimpan di database. Masuk (online) dulu untuk melihat dan mengubahnya.</p>'; return; }
+  if(!supabaseClient || !cloudSyncEnabled){ box.innerHTML = '<p class="field-hint">Masuk (online) untuk mengubah harga.</p>'; return; }
   try{
     const { data, error } = await supabaseClient.from(PUBLIC_SETTINGS_TABLE).select('nilai').eq('kunci','harga_pricelist').maybeSingle();
     if(error) throw error;
@@ -18085,7 +18099,7 @@ async function hpMuat(){
     hpGambar();
   }catch(e){
     console.error('Gagal memuat harga pricelist', e);
-    box.innerHTML = '<p class="field-hint">Gagal memuat harga dari database. Periksa koneksi, lalu <button type="button" class="btn btn-outline" data-hp-act="muat">coba lagi</button>.</p>';
+    box.innerHTML = '<p class="field-hint">Gagal memuat harga. Cek koneksi, lalu <button type="button" class="btn btn-outline" data-hp-act="muat">coba lagi</button>.</p>';
     if(!box.dataset.bound){ box.dataset.bound='1'; box.addEventListener('click', ev=>{ const b=ev.target.closest('[data-hp-act]'); if(b) hpMuat(); }); }
   }
 }
@@ -18116,7 +18130,7 @@ const VC_FORM_NAMA = { wedding:'Wedding', mangayun:'Mangayun/Aqiqah', margondang
 function voucherCardHtml(){
   setTimeout(vcMuat, 0);
   return `<div class="card" id="vcCard"><h2 style="margin-top:0;">${ic('money')} Voucher Diskon</h2>
-    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Kode voucher yang bisa dipakai klien di halaman pricelist. Kode dicek satu per satu oleh database, jadi daftar kode tidak bisa dilihat orang luar.</p>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Kode diskon untuk klien. Daftar kode tidak bisa dilihat orang luar.</p>
     <div id="vcBody"><p class="field-hint">Memuat voucher...</p></div></div>`;
 }
 // Waktu voucher selalu WIB (UTC+7): tampil "26 Des 2026, 23.59 WIB"; isian datetime-local dibaca sebagai WIB.
@@ -18126,9 +18140,30 @@ function vcFmtWaktu(iso){
 }
 function vcKeInputWib(iso){ return iso ? new Date(new Date(iso).getTime()+7*3600*1000).toISOString().slice(0,16) : ''; }
 function vcDariInputWib(v){ return v ? new Date(v+':00+07:00').toISOString() : null; }
+let VC_MODE = 'tanpa';   // 'tanpa' = tanpa batas waktu, 'atur' = pakai tanggal & jam
+function vcSetMode(m){
+  VC_MODE = m;
+  document.querySelectorAll('#vcBody [data-vc-mode]').forEach(b=>b.classList.toggle('on', b.dataset.vcMode===m));
+  const f = document.getElementById('vcWhen'); if(f) f.hidden = (m!=='atur');
+  vcRingkasWaktu();
+}
+function vcRingkasWaktu(){
+  const r = document.getElementById('vcRingkas'); if(!r) return;
+  const t = document.getElementById('vcTgl').value, j = document.getElementById('vcJam').value || '23:59';
+  r.textContent = t ? ('Berakhir ' + vcFmtWaktu(vcDariInputWib(t+'T'+j))) : 'Pilih tanggal berakhirnya.';
+}
+function vcTanggalWib(tambahHari){ return new Date(Date.now()+7*3600*1000+tambahHari*86400000).toISOString().slice(0,10); }
+function vcQuick(k){
+  let t;
+  if(k==='eom'){ const d = new Date(Date.now()+7*3600*1000); t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth()+1, 0)).toISOString().slice(0,10); }
+  else t = vcTanggalWib(Number(k));
+  document.getElementById('vcTgl').value = t; if(!document.getElementById('vcJam').value) document.getElementById('vcJam').value = '23:59';
+  vcRingkasWaktu();
+}
 function vcRingkasNilai(v){ return v.tipe==='percent' ? (Number(v.nilai)+'%') : fmtRp(Number(v.nilai)); }
 function vcGambar(){
   const box = document.getElementById('vcBody'); if(!box) return;
+  VC_MODE = 'tanpa';
   const today = new Date().toISOString().slice(0,10);
   const baris = VC_LIST.map(v=>{
     const kadaluarsa = v.berlaku_sampai && new Date(v.berlaku_sampai).getTime() < Date.now();
@@ -18145,20 +18180,27 @@ function vcGambar(){
   }).join('');
   box.innerHTML = `
     <div style="overflow-x:auto;">${VC_LIST.length?`<table class="jobtable" style="min-width:720px;"><thead><tr><th>Kode</th><th>Diskon</th><th>Berlaku sampai</th><th>Dipakai</th><th>Untuk</th><th>Status</th><th></th></tr></thead><tbody>${baris}</tbody></table>`:'<p class="field-hint">Belum ada voucher. Tambahkan di bawah.</p>'}</div>
-    <h3 style="margin:18px 0 6px;font-size:15px;">Tambah / ubah voucher</h3>
+    <h3 style="margin:18px 0 6px;font-size:15px;">Tambah / ubah</h3>
     <div class="form-grid">
-      <div><label>Kode (huruf besar, tanpa spasi)</label><input type="text" id="vcKode" maxlength="40" autocapitalize="characters" placeholder="mis. KAONE10"></div>
+      <div><label>Kode voucher</label><input type="text" id="vcKode" maxlength="40" autocapitalize="characters" placeholder="mis. KAONE10"></div>
       <div><label>Jenis diskon</label><select id="vcTipe"><option value="percent">Persen (%)</option><option value="nominal">Nominal (Rp)</option></select></div>
       <div><label>Nilai diskon</label><input type="text" inputmode="decimal" id="vcNilai" placeholder="mis. 10 atau 100.000"></div>
-      <div><label>Berlaku sampai tanggal &amp; jam, WIB (kosongkan = tanpa batas)</label><input type="datetime-local" id="vcSampai"></div>
-      <div><label>Boleh dipakai berapa kali (kosongkan = tanpa batas)</label><input type="number" id="vcKuota" min="1" step="1" inputmode="numeric" placeholder="mis. 50"><div class="field-hint" style="margin:3px 0 0;">Satu klien (nomor WhatsApp yang sama) dihitung satu kali, walau mengisi pricelist dan biodata.</div></div>
-      <div style="grid-column:1/-1;"><label>Berlaku untuk (kosongkan semua = semua pricelist)</label>
+      <div style="grid-column:1/-1;"><label>Berlaku sampai (WIB)</label>
+        <div class="vc-seg" role="group" aria-label="Batas waktu"><button type="button" data-vc-mode="tanpa" class="on">Tanpa batas</button><button type="button" data-vc-mode="atur">Tanggal &amp; jam</button></div>
+        <div class="vc-fields" id="vcWhen" hidden>
+          <div class="vc-f"><span>Tanggal</span><input type="date" id="vcTgl"></div>
+          <div class="vc-f"><span>Jam</span><input type="time" id="vcJam" value="23:59"></div>
+          <div class="vc-quick"><button type="button" data-vc-q="7">+7 hari</button><button type="button" data-vc-q="30">+30 hari</button><button type="button" data-vc-q="eom">Akhir bulan</button></div>
+          <div class="vc-ringkas" id="vcRingkas"></div>
+        </div></div>
+      <div><label>Batas pemakaian</label><input type="number" id="vcKuota" min="1" step="1" inputmode="numeric" placeholder="Kosong = tanpa batas"><div class="field-hint" style="margin:3px 0 0;">Satu klien dihitung sekali.</div></div>
+      <div style="grid-column:1/-1;"><label>Berlaku untuk</label>
         <div style="display:flex;gap:14px;flex-wrap:wrap;">${Object.keys(VC_FORM_NAMA).map(k=>`<label style="display:inline-flex;gap:6px;align-items:center;margin:0;"><input type="checkbox" data-vc-untuk="${k}"> ${VC_FORM_NAMA[k]}</label>`).join('')}</div></div>
-      <div style="grid-column:1/-1;"><label>Catatan internal (opsional)</label><input type="text" id="vcCatatan" maxlength="120" placeholder="mis. promo akhir tahun"></div>
+      <div style="grid-column:1/-1;"><label>Catatan (opsional)</label><input type="text" id="vcCatatan" maxlength="120" placeholder="mis. promo akhir tahun"></div>
     </div>
-    <div class="form-actions" style="justify-content:flex-start;margin-top:10px;"><button type="button" class="btn btn-primary" data-vc-act="simpan">${ic('save')} Simpan Voucher</button><button type="button" class="btn btn-outline" data-vc-act="kosong">Kosongkan form</button></div>
-    <details style="margin-top:14px;"><summary style="cursor:pointer;font-weight:700;">Impor banyak voucher sekaligus (dari spreadsheet lama)</summary>
-      <p class="field-hint">Satu voucher per baris: <b>KODE, jenis, nilai, berlaku-sampai (opsional), batas-pemakaian (opsional)</b>. Jenis: <b>persen</b> atau <b>nominal</b>. Berlaku-sampai: tanggal, boleh disertai jam WIB (tanpa jam = 23.59). Contoh: <code>KAONE10, persen, 10, 2026-12-31 18:00, 50</code> atau <code>HEMAT50, nominal, 50000</code>. Kode yang sudah ada akan diperbarui.</p>
+    <div class="form-actions" style="justify-content:flex-start;margin-top:10px;"><button type="button" class="btn btn-primary" data-vc-act="simpan">${ic('save')} Simpan</button><button type="button" class="btn btn-outline" data-vc-act="kosong">Kosongkan</button></div>
+    <details style="margin-top:14px;"><summary style="cursor:pointer;font-weight:700;">Impor banyak voucher</summary>
+      <p class="field-hint">Satu per baris: <b>KODE, persen/nominal, nilai, sampai, batas</b> (dua terakhir boleh kosong). Contoh: <code>KAONE10, persen, 10, 2026-12-31 18:00, 50</code></p>
       <textarea id="vcImpor" rows="5" placeholder="KAONE10, persen, 10, 2026-12-31 18:00, 50&#10;HEMAT50, nominal, 50000"></textarea>
       <div class="form-actions" style="justify-content:flex-start;margin-top:8px;"><button type="button" class="btn btn-outline" data-vc-act="impor">Impor</button></div>
     </details>
@@ -18166,44 +18208,52 @@ function vcGambar(){
   if(!box.dataset.bound){
     box.dataset.bound = '1';
     box.addEventListener('click', e=>{
+      const md = e.target.closest('[data-vc-mode]'), qk = e.target.closest('[data-vc-q]');
+      if(md){ vcSetMode(md.dataset.vcMode); return; }
+      if(qk){ vcQuick(qk.dataset.vcQ); return; }
       const a = e.target.closest('[data-vc-act]'), ed = e.target.closest('[data-vc-edit]'), hp = e.target.closest('[data-vc-hapus]'), rs = e.target.closest('[data-vc-reset]');
       if(a){ if(a.dataset.vcAct==='simpan') vcSimpan(); else if(a.dataset.vcAct==='kosong') vcKosong(); else if(a.dataset.vcAct==='impor') vcImpor(); }
       else if(ed) vcIsiForm(ed.dataset.vcEdit);
       else if(hp) vcHapus(hp.dataset.vcHapus);
       else if(rs) vcAturUlang(rs.dataset.vcReset);
     });
-    box.addEventListener('change', e=>{ const t = e.target.closest('[data-vc-toggle]'); if(t) vcToggle(t.dataset.vcToggle, t.checked); });
+    box.addEventListener('change', e=>{ const t = e.target.closest('[data-vc-toggle]'); if(t) vcToggle(t.dataset.vcToggle, t.checked); if(e.target.id==='vcTgl' || e.target.id==='vcJam') vcRingkasWaktu(); });
   }
 }
 async function vcMuat(){
   const box = document.getElementById('vcBody'); if(!box) return;
-  if(!supabaseClient || !cloudSyncEnabled){ box.innerHTML = '<p class="field-hint">Voucher tersimpan di database. Masuk (online) dulu untuk mengelolanya.</p>'; return; }
+  if(!supabaseClient || !cloudSyncEnabled){ box.innerHTML = '<p class="field-hint">Masuk (online) untuk mengelola voucher.</p>'; return; }
   try{
     const { data, error } = await supabaseClient.from('kaone_motret_voucher').select('*').order('dibuat_pada',{ascending:false});
     if(error) throw error;
     VC_LIST = data || []; vcGambar();
-  }catch(e){ console.error('Gagal memuat voucher', e); box.innerHTML = '<p class="field-hint">Gagal memuat voucher. Periksa koneksi lalu buka ulang Pengaturan.</p>'; }
+  }catch(e){ console.error('Gagal memuat voucher', e); box.innerHTML = '<p class="field-hint">Gagal memuat voucher. Cek koneksi, lalu buka ulang.</p>'; }
 }
 function vcBaca(){
   const kode = (document.getElementById('vcKode').value||'').trim().toUpperCase().replace(/\s+/g,'');
   const tipe = document.getElementById('vcTipe').value;
   const nilai = tipe==='percent' ? Number(String(document.getElementById('vcNilai').value).replace(',','.')) : (parseRibuan(document.getElementById('vcNilai').value)||0);
-  const sampai = vcDariInputWib(document.getElementById('vcSampai').value);
+  const tgl = document.getElementById('vcTgl').value, jam = document.getElementById('vcJam').value || '23:59';
+  const sampai = (VC_MODE==='atur' && tgl) ? vcDariInputWib(tgl+'T'+jam) : null;
+  const tglKosong = (VC_MODE==='atur' && !tgl);
   const kuotaTxt = (document.getElementById('vcKuota').value||'').trim();
   const kuota = kuotaTxt==='' ? null : Math.floor(Number(kuotaTxt));
   const untuk = [...document.querySelectorAll('#vcBody [data-vc-untuk]:checked')].map(x=>x.dataset.vcUntuk);
   const catatan = (document.getElementById('vcCatatan').value||'').trim() || null;
-  return { kode, tipe, nilai, berlaku_sampai:sampai, kuota, berlaku_untuk:untuk, catatan };
+  return { kode, tipe, nilai, berlaku_sampai:sampai, kuota, berlaku_untuk:untuk, catatan, tglKosong };
 }
 function vcValidasi(v){
   if(v.kode.length<2 || v.kode.length>40 || !/^[A-Z0-9_-]+$/.test(v.kode)) return 'Kode harus 2-40 karakter: huruf, angka, tanda - atau _ (tanpa spasi).';
   if(!(v.nilai>0)) return 'Nilai diskon harus lebih dari 0.';
   if(v.tipe==='percent' && v.nilai>100) return 'Diskon persen tidak boleh lebih dari 100.';
+  if(v.tglKosong) return 'Isi tanggal berakhirnya, atau pilih "Tanpa batas".';
+  if(v.berlaku_sampai && new Date(v.berlaku_sampai).getTime() <= Date.now()) return 'Waktu berlakunya sudah lewat. Pilih tanggal dan jam yang akan datang.';
   if(v.kuota!=null && !(v.kuota>0)) return 'Batas pemakaian harus berupa angka lebih dari 0 (atau kosongkan untuk tanpa batas).';
   return '';
 }
 async function vcSimpanSatu(v){
-  const { error } = await supabaseClient.from('kaone_motret_voucher').upsert(Object.assign({}, v, { diperbarui_pada:new Date().toISOString() }), { onConflict:'kode' });
+  const { tglKosong, ...baris } = v;
+  const { error } = await supabaseClient.from('kaone_motret_voucher').upsert(Object.assign({}, baris, { diperbarui_pada:new Date().toISOString() }), { onConflict:'kode' });
   if(error) throw error;
 }
 async function vcSimpan(){
@@ -18212,12 +18262,13 @@ async function vcSimpan(){
   const ada = VC_LIST.find(x=>x.kode===v.kode); v.aktif = ada ? ada.aktif : true;
   try{ await vcSimpanSatu(v); toast('Voucher '+v.kode+' disimpan'); await vcMuat(); }catch(e){ console.error(e); alert('Gagal menyimpan voucher: '+(e.message||e)); }
 }
-function vcKosong(){ ['vcKode','vcNilai','vcSampai','vcKuota','vcCatatan'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); document.querySelectorAll('#vcBody [data-vc-untuk]').forEach(c=>c.checked=false); }
+function vcKosong(){ ['vcKode','vcNilai','vcTgl','vcKuota','vcCatatan'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; }); const jm=document.getElementById('vcJam'); if(jm) jm.value='23:59'; vcSetMode('tanpa'); document.querySelectorAll('#vcBody [data-vc-untuk]').forEach(c=>c.checked=false); }
 function vcIsiForm(kode){
   const v = VC_LIST.find(x=>x.kode===kode); if(!v) return;
   document.getElementById('vcKode').value = v.kode; document.getElementById('vcTipe').value = v.tipe;
   document.getElementById('vcNilai').value = v.tipe==='percent' ? String(Number(v.nilai)) : fmtRibuan(Number(v.nilai));
-  document.getElementById('vcSampai').value = vcKeInputWib(v.berlaku_sampai); document.getElementById('vcKuota').value = v.kuota!=null ? String(v.kuota) : ''; document.getElementById('vcCatatan').value = v.catatan || '';
+  { const w = vcKeInputWib(v.berlaku_sampai); document.getElementById('vcTgl').value = w ? w.slice(0,10) : ''; document.getElementById('vcJam').value = w ? w.slice(11,16) : '23:59'; vcSetMode(w ? 'atur' : 'tanpa'); }
+  document.getElementById('vcKuota').value = v.kuota!=null ? String(v.kuota) : ''; document.getElementById('vcCatatan').value = v.catatan || '';
   document.querySelectorAll('#vcBody [data-vc-untuk]').forEach(c=>{ c.checked = (v.berlaku_untuk||[]).includes(c.dataset.vcUntuk); });
   document.getElementById('vcKode').scrollIntoView({block:'center', behavior:'smooth'});
 }
@@ -18320,7 +18371,7 @@ function viewPengaturan(){
   <div class="card admin-only">
     <h2 style="margin-top:0;">${ic('folder')} Kelola Akun (Admin)</h2>
     <p style="color:var(--ink-soft);font-size:13.5px;">
-      Akun yang mendaftar sendiri harus Anda setujui dulu sebelum bisa masuk. Sandi tersimpan terenkripsi dan tidak bisa dilihat; kalau ada yang lupa, gunakan Atur Sandi.
+      Akun yang daftar sendiri harus Anda setujui dulu. Sandi tidak bisa dilihat; jika lupa, pakai Atur Sandi.
     </p>
     ${akunLoading ? `<div class="info-box">${ic('hourglass')} Memuat daftar akun...</div>` : `
     <div style="overflow-x:auto;">
@@ -19135,7 +19186,8 @@ const CHANGELOG = [
     version: '1.27.0',
     tanggal: '30 Oktober 2026',
     items: [
-      { kategori: 'Fitur', teks: 'Voucher kini bisa dibatasi jumlah pemakaiannya (mis. 50 kali) dan batas waktunya lengkap dengan jam (WIB), bukan hanya tanggal. Tabel voucher menampilkan "Dipakai / batas", ada tombol "Atur ulang" untuk mengembalikan hitungan ke 0, dan impor massal ikut mendukung jam dan batas pemakaian. Satu klien (nomor WhatsApp yang sama) dihitung satu kali walau mengisi pricelist dan biodata.' },
+      { kategori: 'Peningkatan', teks: 'Teks penjelasan di Pengaturan dipersingkat. Keterangan panjang tentang kode otomatis di template pesan WhatsApp kini dilipat di bawah "Penjelasan kode".' },
+      { kategori: 'Fitur', teks: 'Voucher kini bisa dibatasi jumlah pemakaiannya (mis. 50 kali) dan batas waktunya lengkap dengan jam (WIB). Kolom "Berlaku sampai" dibuat lebih rapi: pilih Tanpa batas atau Tanggal & jam, dengan pintasan +7 hari, +30 hari, dan Akhir bulan. Tabel voucher menampilkan "Dipakai / batas", ada tombol "Atur ulang" untuk mengembalikan hitungan ke 0, dan impor massal ikut mendukung jam dan batas pemakaian. Satu klien (nomor WhatsApp yang sama) dihitung satu kali walau mengisi pricelist dan biodata.' },
       { kategori: 'Peningkatan', teks: 'Halaman pricelist dan Isi Biodata menampilkan pesan yang jelas saat voucher sudah habis kuotanya atau sudah lewat waktunya, dan menyebutkan sampai pukul berapa voucher berlaku.' },
       { kategori: 'Peningkatan', teks: 'Rincian cetak di detail job, pesan WhatsApp, dan kwitansi ditulis lebih rapi, contoh: "16 inch + bingkai 1 foto", "12 inch tanpa bingkai 2 foto", "Album 2 roll isi 80 foto". Foto 6 inch tidak lagi jadi baris sendiri, jumlahnya menjadi isi album. Biaya cetak tidak berubah, dan job lama otomatis ditampilkan dengan penulisan baru.' }
     ]

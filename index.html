@@ -949,6 +949,8 @@
   @media(hover:hover){ .jd-r:hover{background:#fffcee;} }
   .jd-k{font-size:11.5px; line-height:1.45; color:var(--ink-soft); padding-top:2px;}
   .jd-v{font-size:13px; font-weight:600; line-height:1.5; color:var(--ink); min-width:0; overflow-wrap:anywhere;}
+  .jd-lines .jd-line{position:relative; padding:3px 0 3px 15px;}
+  .jd-lines .jd-line::before{content:''; position:absolute; left:2px; top:.95em; width:6px; height:6px; border-radius:50%; background:var(--gold);}
   .jd-v.empty{color:#bdb59c; font-weight:500;}
   .jd-r.hl{background:linear-gradient(90deg,rgba(255,196,0,.16),rgba(255,196,0,0) 70%); box-shadow:inset 3px 0 0 var(--jd-accent);}
   .jd-r.hl .jd-v{font-family:'Bricolage Grotesque',system-ui,sans-serif; font-size:14.5px; font-weight:700;}
@@ -6356,8 +6358,21 @@ function hitungCetak(s){
 // Merapikan penulisan lama untuk TAMPILAN (job yang sudah tersimpan tidak diubah di database):
 //   "Foto 16 Inch + Bingkai x1" -> "16 inch + bingkai 1 foto"; "Foto 12 Inch x2" -> "12 inch tanpa bingkai 2 foto";
 //   "Foto 6 Inch 2 roll (80 foto)" + "Album 2 roll" -> "Album 2 roll isi 80 foto". Baris lain dibiarkan apa adanya.
+// Teks satu kalimat tanpa pemisah (mis. "Album 1 roll isi 40 foto 2 foto ukuran 12 inch 1 foto ukuran 16 inch video shooting")
+// dipecah jadi satu jenis per baris. Hanya dipecah kalau SEMUA bagiannya butir yang dikenali; selain itu dibiarkan.
+const CETAK_BUTIR_RE = /\d+\s*foto\s*ukuran\s*\d+\s*(?:inch|")(?:\s*\+\s*bingkai)?|Album\s*\d+\s*roll(?:\s*isi\s*\d+\s*foto)?|\d+\s*inch(?:\s*(?:\+\s*bingkai|tanpa\s+bingkai))?\s*\d+\s*foto|Foto\s*(?:Ukuran\s*)?\d+\s*Inch(?:\s*\+\s*Bingkai)?(?:\s*x\d+)?|Bingkai\s*\d+\s*Inch\s*x\d+|Flashdisk\s*\d+\s*GB|Video(?:\s*Shooting)?(?:\s*Dokumentasi)?|Cinematic/gi;
+function cetakPisahBaris(t){
+  if(/[\n,;]/.test(t)) return t;
+  const butir = []; let sisa = t, m; CETAK_BUTIR_RE.lastIndex = 0;
+  while((m = CETAK_BUTIR_RE.exec(t))){ butir.push(m[0].trim()); sisa = sisa.replace(m[0], ' '); if(m[0].length===0) CETAK_BUTIR_RE.lastIndex++; }
+  if(butir.length < 2 || sisa.replace(/[\s.+&]|dan/gi,'') !== '') return t;
+  return butir.join('\n');
+}
+// Satu baris = satu jenis, untuk ditampilkan sebagai daftar (bukan satu paragraf).
+function cetakBarisArr(txt){ return cetakRapikan(txt).split(/\r?\n/).map(x=>x.trim()).filter(Boolean); }
+function cetakBarisHtml(txt){ return '<div class="jd-lines">' + cetakBarisArr(txt).map(x=>'<div class="jd-line">'+escapeHtml(x)+'</div>').join('') + '</div>'; }
 function cetakRapikan(txt){
-  const raw = String(txt==null ? '' : txt); if(!raw.trim()) return raw;
+  const raw = cetakPisahBaris(String(txt==null ? '' : txt)); if(!raw.trim()) return raw;
   const L = raw.split(/\r?\n/).map(l=>l.trim());
   let n12=0, nf12b=0, bq12=0, ada12=false; const f6={};
   L.forEach(l=>{ let m;
@@ -13089,7 +13104,7 @@ function openDateModal(dateIso){
         ${(isJenisMempelai(j.jenisAcara) && (j.namaMempelai||'').trim()) ? `<div class="mj-row"><span>Kedua Mempelai</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.namaMempelai.trim())}</span></div>` : ''}
         <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}, ${escapeHtml(j.kabupaten||'-')}</span></div>
         <div class="mj-row"><span>Paket</span><span>${escapeHtml(j.paket||'-')}</span></div>
-        ${(j.deskripsiPaket||'').trim() ? `<div class="mj-row"><span>Deskripsi Paket</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(cetakRapikan(j.deskripsiPaket.trim()))}</span></div>` : ''}
+        ${(j.deskripsiPaket||'').trim() ? `<div class="mj-row"><span>Deskripsi Paket</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${cetakBarisArr(j.deskripsiPaket.trim()).map(x=>escapeHtml(x)).join('<br>')}</span></div>` : ''}
         ${(j.addOn||'').trim() ? `<div class="mj-row"><span>Add-On</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.addOn.trim())}</span></div>` : ''}
         ${isAdmin() ? `<div class="mj-row"><span>WhatsApp</span><span>${escapeHtml(j.noWhatsapp||'-')}</span></div>` : ''}
         <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
@@ -13514,6 +13529,7 @@ function jdValueHtml(label, raw, id){
   const kosong = (val.trim()==='' || val.trim()==='-');
   if(id) return `<div class="jd-v${kosong?' empty':''}" id="${id}">${escapeHtml(val)}</div>`;   // diisi ulang lewat id (jarak/biaya/durasi)
   if(kosong) return `<div class="jd-v empty">-</div>`;
+  if(label==='Deskripsi Paket' || (label==='Add-On' && /\n/.test(val))) return `<div class="jd-v">${cetakBarisHtml(val)}</div>`;
   if(/^Link Maps/i.test(label) && /^https?:\/\//i.test(val.trim()))
     return `<div class="jd-v"><a class="jd-link" href="${escapeHtml(val.trim())}" target="_blank" rel="noopener">${ic('pin')} Buka di Maps</a></div>`;
   if(/^Instagram/i.test(label) && /^@[\w.]+$/.test(val.trim()))
@@ -19176,12 +19192,19 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.27.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.28.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.28.0',
+    tanggal: '31 Oktober 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Deskripsi Paket di detail job kini ditampilkan satu jenis per baris dengan penanda titik, bukan satu paragraf panjang. Teks yang terlanjur tertulis satu kalimat (mis. "Album 1 roll isi 40 foto 2 foto ukuran 12 inch 1 foto ukuran 16 inch video shooting") otomatis dipecah per jenis. Isi data tidak diubah.' }
+    ]
+  },
   {
     version: '1.27.0',
     tanggal: '30 Oktober 2026',

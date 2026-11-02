@@ -649,6 +649,12 @@
   .bb-total{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-top:14px; padding-top:12px; border-top:1px dashed var(--gold-light); font-size:12.5px; color:var(--ink-soft);}
   .bb-total b{color:var(--ink); font-size:13px; white-space:nowrap;}
   .bb-total + .bb-hours{margin-top:2px;}
+  /* Dana yang perlu disisihkan Admin (tampil langsung di bawah angka utama kartu Bonus Tim) */
+  .bb-reserve{margin-top:12px; padding:10px 12px; border-radius:12px; background:#fffdf3; border:1px solid var(--gold-light); display:grid; gap:8px;}
+  .bb-reserve-row{display:flex; justify-content:space-between; align-items:baseline; gap:12px;}
+  .bb-reserve-k{font-size:12px; line-height:1.4; color:var(--ink-soft);}
+  .bb-reserve-k small{display:block; font-size:11px; opacity:.85; margin-top:1px;}
+  .bb-reserve-v{font-size:14px; font-weight:800; color:var(--ink); white-space:nowrap;}
 
   /* Tagihan hari H (desain v2) */
   .th-card{position:relative; margin:0 0 16px; padding:16px; border-radius:20px; overflow:hidden;
@@ -8558,6 +8564,17 @@ function teamBonusBreakdown(people){
            waitMonths:Object.values(months), taskHrs:sum('taskHrs'), adjHrs:sum('adjHrs'), totalHrs:sum('totalHrs'),
            readyAccounts:list.filter(x=>x.ready>0).length, accounts:list.length };
 }
+// Dana yang perlu disisihkan Admin kalau seluruh Tim mengklaim sekaligus.
+// Sekarang = saldo siap diklaim + klaim yang sudah diajukan tapi belum diproses.
+// Total belum dibayar = sekarang + bonus yang masih masa tunggu (bisa diklaim di bulan berikutnya).
+function renderBonusReserve(b){
+  const sekarang = (b.ready||0) + (b.pendingRp||0);
+  const semua = sekarang + (b.waiting||0);
+  if(semua<=0) return '';
+  const rows = [`<div class="bb-reserve-row"><div class="bb-reserve-k">Siapkan dana sekarang<small>Siap diklaim${b.pendingRp>0?' + klaim menunggu':''}</small></div><div class="bb-reserve-v">${fmtRp(sekarang)}</div></div>`];
+  if(b.waiting>0) rows.push(`<div class="bb-reserve-row"><div class="bb-reserve-k">Total belum dibayar<small>Termasuk bonus yang masih masa tunggu</small></div><div class="bb-reserve-v">${fmtRp(semua)}</div></div>`);
+  return `<div class="bb-reserve">${rows.join('')}</div>`;
+}
 // Kartu Bonus Tim (Admin): angka utama = bonus yang masih bisa diklaim, lalu rincian & pengaturan.
 function renderTeamBonusCard(people, pendingList){
   if(!akunSudahMuat){
@@ -8584,6 +8601,7 @@ function renderTeamBonusCard(people, pendingList){
         </div>
         <button type="button" class="bonus-adjust-btn" id="btnEditBonusRate">${ic('edit')} Atur Tarif</button>
       </div>
+      ${renderBonusReserve(b)}
       ${tgFold('bonus-tim', 'Lihat rincian', renderBonusBreakdownData(b, 'admin') + `
       <div class="tbc-grid">
         <div class="tbc-item"><div class="tbc-k">Tarif bonus</div><div class="tbc-v">${fmtRp(BONUS_PER_JAM)} / jam</div><div class="tbc-n">Dihitung otomatis dari jam kerja</div></div>
@@ -19213,12 +19231,19 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.28.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.28.1'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.28.1',
+    tanggal: '2 November 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Kartu Bonus Tim (Admin) kini langsung menampilkan dana yang perlu disiapkan, tanpa membuka rincian: jumlah yang harus siap dibayar sekarang (siap diklaim ditambah klaim yang menunggu diproses) dan total bonus yang belum dibayar termasuk yang masih masa tunggu. Berguna untuk menyisihkan uang kalau seluruh Tim mengklaim sekaligus.' },
+    ]
+  },
   {
     version: '1.28.0',
     tanggal: '31 Oktober 2026',

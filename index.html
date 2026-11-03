@@ -7797,6 +7797,16 @@ function pesananGabung(id, jobId){
   if(!confirm('Gabungkan pesanan ini ke job:\n\n' + psnJudulJob(j) + ' (' + psnTglPanjang(j.tanggalAcara) + ')\n\nKolom yang ada isinya di pesanan akan MENIMPA isi job itu (kolom kosong tidak diubah). Anda masih bisa memeriksa dulu di form sebelum menyimpan.')) return;
   pesananMulai(p, jobId);
 }
+// Job dari pesanan ini sudah hilang (terhapus / tidak termuat): kembalikan pesanan ke "baru" lalu buka form job baru
+async function pesananBuatUlang(id){
+  const p = pesananCari(id);
+  if(!p) return;
+  if(p.job_id && jobs.find(x=>String(x.id)===String(p.job_id))){ toast('Job untuk pesanan ini masih ada.'); refreshView(); return; }
+  if(!confirm('Job untuk "' + (p.nama || 'klien') + '" tidak ditemukan di Daftar Job.\n\nBuat job baru dari data pesanan ini? Form akan terbuka dan terisi otomatis, tinggal periksa lalu Simpan.')) return;
+  const r = await pesananUbahStatus(id, p.status, 'baru');
+  if(r!=='ok'){ toast('Gagal menyiapkan pesanan. Periksa koneksi lalu coba lagi.'); pullPesanan(true); return; }
+  pesananMulai(p, null);
+}
 async function pesananAbaikan(id){
   const p = pesananCari(id);
   if(!p) return;
@@ -7896,7 +7906,7 @@ function psnKartuHtml(p){
   }else if(p.status==='dikonfirmasi' || p.status==='digabung'){
     const j = p.job_id ? jobs.find(x=>String(x.id)===String(p.job_id)) : null;
     aksi = j ? `<button type="button" class="btn btn-outline" data-view-job="${escapeHtml(j.id)}">Lihat Job</button>`
-             : `<span class="psn-note">Job terkait sudah tidak ada di daftar.</span>`;
+             : `<span class="psn-note">Job terkait sudah tidak ada di daftar.</span><button type="button" class="btn btn-primary" data-psn-act="ulang" data-psn-id="${escapeHtml(p.id)}">${ic('check-circle')} Buat Job Lagi</button>`;
   }else if(p.status==='diabaikan'){
     aksi = `<button type="button" class="btn btn-outline" data-psn-act="pulihkan" data-psn-id="${escapeHtml(p.id)}">Pulihkan jadi Baru</button>`;
   }
@@ -7994,6 +8004,7 @@ document.addEventListener('click', (e)=>{
   else if(act==='gabung') pesananGabung(id, b.dataset.psnJob);
   else if(act==='timpa'){ const pp = pesananCari(id); if(pp){ const k = psnKandidatTimpa(pp); if(k.length) psnPilihAksi(pp, k); else pesananMulai(pp, null); } }
   else if(act==='abaikan') pesananAbaikan(id);
+  else if(act==='ulang') pesananBuatUlang(id);
   else if(act==='pulihkan') pesananPulihkan(id);
   else if(act==='hapus') pesananHapus(id);
   else if(act==='salin'){ const pp = pesananCari(id); if(pp) copyToClipboard(psnTeksSalin(pp), 'Teks pesanan disalin'); }

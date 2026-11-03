@@ -649,6 +649,8 @@
   .bb-total{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-top:14px; padding-top:12px; border-top:1px dashed var(--gold-light); font-size:12.5px; color:var(--ink-soft);}
   .bb-total b{color:var(--ink); font-size:13px; white-space:nowrap;}
   .bb-total + .bb-hours{margin-top:2px;}
+  .hari-tgl{display:inline-block; margin-left:6px; padding:1px 9px; border-radius:999px; background:var(--gold-pale); border:1px solid var(--gold-light); color:#5c4a12; font-size:11.5px; font-weight:700; vertical-align:1px;}
+  .hari-tgl:empty{display:none;}
   /* Dana yang perlu disisihkan Admin (tampil langsung di bawah angka utama kartu Bonus Tim) */
   .bb-reserve{margin-top:12px; padding:10px 12px; border-radius:12px; background:#fffdf3; border:1px solid var(--gold-light); display:grid; gap:8px;}
   .bb-reserve-row{display:flex; justify-content:space-between; align-items:baseline; gap:12px;}
@@ -11144,8 +11146,8 @@ function buildJobFormHtml(j){
       <section class="jf-sec open"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('user')}</span><div class="jf-sec-htx"><h3>Data Klien &amp; Acara</h3><p>Siapa yang memesan dan kapan acaranya.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
         <div><label>Nama Klien / Pemesan</label><input type="text" name="namaKlien" value="${escapeHtml(d.namaKlien)}" placeholder="Nama klien" autocomplete="off"></div>
         <div><label>No. WhatsApp</label>${waFieldHtml(d.noWhatsapp)}</div>
-        <div><label>Tanggal Acara (Mulai) *</label><input type="date" name="tanggalAcara" id="tanggalAcaraInput" value="${d.tanggalAcara}" required oninput="onTanggalAcaraChange()"></div>
-        <div><label>Tanggal Acara (Selesai) *</label><input type="date" name="tanggalSelesai" id="tanggalSelesaiInput" value="${escapeHtml(getJobFinishDate(d)||d.tanggalAcara||'')}" required oninput="updateDurasiHariHint()"></div>
+        <div><label>Tanggal Acara (Mulai) * <span class="hari-tgl" id="hariMulaiLabel"></span></label><input type="date" name="tanggalAcara" id="tanggalAcaraInput" value="${d.tanggalAcara}" required oninput="onTanggalAcaraChange()"></div>
+        <div><label>Tanggal Acara (Selesai) * <span class="hari-tgl" id="hariSelesaiLabel"></span></label><input type="date" name="tanggalSelesai" id="tanggalSelesaiInput" value="${escapeHtml(getJobFinishDate(d)||d.tanggalAcara||'')}" required oninput="updateDurasiHariHint()"></div>
         <div><label>Jam Acara (opsional)</label><div class="rp-input-wrap jam-acara-wrap"><span class="rp-prefix">${ic('clock')}</span><input type="time" name="jamAcara" id="jamAcaraInput" value="${escapeHtml(d.jamAcara||'')}"></div></div>
         <div class="full" id="durasiHariHintWrap"><div class="field-hint" id="durasiHariHint">Job 1 hari, tugas tim otomatis ditandai selesai pukul 23.59 pada Tanggal Acara.</div></div>
         <div>
@@ -11659,7 +11661,20 @@ function onTanggalAcaraChange(){
   }
   updateDurasiHariHint();
 }
+// Menampilkan nama hari (mis. "Kamis") di samping label kedua kolom tanggal acara.
+function updateHariTanggalLabel(){
+  [['tanggalAcaraInput','hariMulaiLabel'],['tanggalSelesaiInput','hariSelesaiLabel']].forEach(([inp,lbl])=>{
+    const el = document.getElementById(lbl);
+    if(!el) return;
+    const v = document.getElementById(inp)?.value || '';
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+    el.textContent = m ? namaHariID(new Date(Date.UTC(+m[1], +m[2]-1, +m[3], 12)), {timeZone:'UTC'}) : '';
+  });
+}
+document.addEventListener('input', e=>{ if(e.target && (e.target.id==='tanggalAcaraInput' || e.target.id==='tanggalSelesaiInput')) updateHariTanggalLabel(); });
+document.addEventListener('change', e=>{ if(e.target && (e.target.id==='tanggalAcaraInput' || e.target.id==='tanggalSelesaiInput')) updateHariTanggalLabel(); });
 function updateDurasiHariHint(){
+  updateHariTanggalLabel();
   const hintEl = document.getElementById('durasiHariHint');
   if(!hintEl) return;
   const mulai = document.getElementById('tanggalAcaraInput')?.value || '';
@@ -19231,12 +19246,19 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.28.1'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.28.2'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.28.2',
+    tanggal: '2 November 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Form job kini menampilkan nama hari (mis. Kamis) di samping label Tanggal Acara Mulai dan Selesai, dan ikut berubah otomatis saat tanggal diganti atau terisi dari data klien.' },
+    ]
+  },
   {
     version: '1.28.1',
     tanggal: '2 November 2026',

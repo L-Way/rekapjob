@@ -3430,6 +3430,24 @@
   .fin-title{display:flex; align-items:center; gap:8px; margin:0 0 10px; font-size:11px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:#7a6f4a;}
   .jf .da-title{display:flex; align-items:center; gap:8px; margin:8px 0 -2px; padding-top:10px; border-top:1px dashed #e6dcae; font-size:11px; font-weight:800; letter-spacing:.7px; text-transform:uppercase; color:#7a6f4a;}
   .jf .da-input{width:100%; box-sizing:border-box;}
+  /* ---------- Biodata Klien & Acara: kelompok bernomor yang rapi ---------- */
+  .jf .bio-panel.form-grid{display:flex; flex-direction:column; align-items:stretch; gap:12px;}
+  .jf .bio-panel > .bio-grp{width:100%; min-width:0; align-self:stretch;}
+  .jf .bio-grp{counter-increment:bio; position:relative; background:linear-gradient(180deg,#fffef9,#fffcf0); border:1px solid #f1e5b2; border-radius:14px; padding:14px 15px 15px; box-shadow:0 1px 0 rgba(255,255,255,.9) inset, 0 6px 16px -14px rgba(150,115,0,.55);}
+  .jf .bio-grp::before{content:''; position:absolute; left:0; top:14px; bottom:14px; width:3px; border-radius:0 3px 3px 0; background:linear-gradient(180deg,var(--gold-light),var(--gold));}
+  .jf .bio-panel{counter-reset:bio;}
+  .jf .bio-h, .jf .bio-grp .da-title{display:flex; align-items:center; gap:9px; margin:0 0 13px; padding:0; border:0; font-size:11.5px; font-weight:800; letter-spacing:.9px; text-transform:uppercase; color:#5c4a12;}
+  .jf .bio-h::before, .jf .bio-grp .da-title::before{content:counter(bio); flex:0 0 auto; width:22px; height:22px; border-radius:50%; background:var(--ink); color:var(--gold-light); display:grid; place-items:center; font-size:11px; letter-spacing:0; line-height:1;}
+  .jf .bio-h::after, .jf .bio-grp .da-title::after{content:''; flex:1; height:1px; background:linear-gradient(90deg,#ecdf9e,transparent);}
+  .jf .bio-grp .form-grid{gap:13px 16px;}
+  .jf .bio-grp .form-grid > .da-title{margin-bottom:0;}
+  .jf .bio-grp.bio-detail:has(#detailAcaraWrap:empty){display:none;}
+  .jf .bio-grp .jam-acara-wrap{max-width:100%;}
+  .jf .bio-grp label{font-size:12px; letter-spacing:.25px;}
+  .jf .bio-grp input:not([type=checkbox]),.jf .bio-grp select,.jf .bio-grp textarea{background:#fff; border-color:#e9e0bb; border-radius:10px;}
+  .jf .bio-grp input:not([type=checkbox]):focus,.jf .bio-grp select:focus,.jf .bio-grp textarea:focus{border-color:var(--gold); box-shadow:0 0 0 3px rgba(255,196,0,.18);}
+  @media(max-width:720px){ .jf .bio-grp{padding:12px 12px 13px;} .jf .bio-grp .form-grid{gap:11px;} }
+
   .fin-dot{display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--gold);}
   .fin-dot.is-in{background:#2e9e55;}
   .fin-dot.is-out{background:#d9534f;}
@@ -6043,16 +6061,20 @@ function bukaInstagramByBtn(btn){
    harus SAMA PERSIS dengan salah satu nilai di JENIS_ACARA_LIST. Jenis acara yang tidak
    terdaftar di sini (termasuk "Lainnya") otomatis dapat 1 kolom Instagram generik. */
 const INSTAGRAM_ROLES_BY_ACARA = {
-  'Margondang 1 Hari': ['Pengantin Laki-laki','Pengantin Perempuan'],
-  'Margondang 2 Hari': ['Pengantin Laki-laki','Pengantin Perempuan'],
-  'Wedding': ['Pengantin Laki-laki','Pengantin Perempuan'],
-  'Patuaekkon': ['Pengantin Laki-laki','Pengantin Perempuan'],
-  'Mangayun/Aqiqah': ['Ayah','Ibu','Anak'],
+  'Margondang 1 Hari': ['Pengantin Perempuan','Pengantin Laki-laki'],
+  'Margondang 2 Hari': ['Pengantin Perempuan','Pengantin Laki-laki'],
+  'Wedding': ['Pengantin Perempuan','Pengantin Laki-laki'],
+  'Patuaekkon': ['Pengantin Perempuan','Pengantin Laki-laki'],
+  'Mangayun/Aqiqah': ['Anak','Ibu','Ayah'],
   'Wisuda': ['Wisudawan'],
 };
 function getInstagramRoles(jenisAcara){
   return INSTAGRAM_ROLES_BY_ACARA[jenisAcara] || ['Instagram'];
 }
+// Nama peran yang TERSIMPAN di job (kunci) tidak diubah supaya data lama tetap cocok;
+// yang ditampilkan ke pengguna memakai istilah di formulir: Pengantin Wanita / Pengantin Pria.
+const INSTAGRAM_ROLE_LABEL = {'Pengantin Perempuan':'Pengantin Wanita', 'Pengantin Laki-laki':'Pengantin Pria'};
+function igRoleLabel(role){ return INSTAGRAM_ROLE_LABEL[role] || role; }
 /* ---------- Kolom "Nama Kedua Mempelai" ----------
    Hanya muncul di form Job untuk jenis acara yang memang punya sepasang mempelai.
    Kalau nanti ada jenis acara lain yang perlu kolom ini, cukup tambahkan namanya di
@@ -6074,7 +6096,7 @@ function instagramDetailRows(j){
   const list = Array.isArray(j.instagramList) ? j.instagramList : [];
   if(!list.length) return [['Instagram', '-']];
   const generic = list.length===1 && list[0].role==='Instagram';
-  return list.map(it=>[ generic?'Instagram':('Instagram '+it.role), it.username?('@'+it.username):'-' ]);
+  return list.map(it=>[ generic?'Instagram':('Instagram '+igRoleLabel(it.role)), it.username?('@'+it.username):'-' ]);
 }
 // Cocokkan username yang sudah pernah diisi ke susunan role yang baru (berdasarkan
 // nama role-nya) - supaya kalau jenis acaranya tetap sama, isian yang sudah diketik
@@ -6087,20 +6109,25 @@ function matchInstagramRoles(roles, existingList){
 function instagramFieldsHtml(roles, list){
   const generic = roles.length===1 && roles[0]==='Instagram';
   return list.map(it=>{
-    const labelTeks = generic ? 'Instagram' : ('Instagram '+it.role);
+    const labelTeks = generic ? 'Instagram' : ('Instagram '+igRoleLabel(it.role));
     return `<div>
       <label>${escapeHtml(labelTeks)}</label>
       <div class="ig-field-wrap">
         <div class="rp-input-wrap"><span class="rp-prefix">@</span><input type="text" class="ig-role-input" data-ig-role="${escapeHtml(it.role)}" value="${escapeHtml(igUsername(it.username))}" placeholder="${generic?'username_klien':'username'}" autocomplete="off" oninput="onInstagramInput(this)"></div>
-        <button type="button" class="ig-open-btn" onclick="bukaInstagramByBtn(this)" title="Buka profil Instagram ${generic?'':escapeHtml(it.role)}">${ic('instagram')}</button>
+        <button type="button" class="ig-open-btn" onclick="bukaInstagramByBtn(this)" title="Buka profil Instagram ${generic?'':escapeHtml(igRoleLabel(it.role))}">${ic('instagram')}</button>
       </div>
     </div>`;
   }).join('');
 }
 // Dipicu saat Jenis Acara diganti di form: susun ulang kolom Instagram sesuai jenis
 // acara yang baru, sambil tetap mempertahankan isian yang cocok (lihat matchInstagramRoles).
+function jamAcaraLabelTeks(jenisAcara, jenisAcaraLain){
+  return detailGrupAcara(jenisAcara, jenisAcaraLain)==='margondang' ? 'Waktu Mulai Acara' : 'Waktu Acara';
+}
 function onJenisAcaraChange(sel){
   const jenisLainWrap = document.getElementById('jenisLainWrap');
+  { const lb = document.getElementById('jamAcaraLabel');
+    if(lb){ const fm = sel.closest('form') || document; lb.textContent = jamAcaraLabelTeks(sel.value, fm.querySelector('input[name="jenisAcaraLain"]')?.value || ''); } }
   if(jenisLainWrap) jenisLainWrap.style.display = sel.value==='Lainnya' ? 'block' : 'none';
   // Kolom Nama Kedua Mempelai: tampil hanya untuk Wedding/Patuaekkon/Margondang. Isiannya
   // tidak dihapus di sini (kalau salah pilih lalu balik lagi, ketikan tidak hilang) -
@@ -6130,15 +6157,12 @@ const DETAIL_ACARA_SKEMA = {
   ],
   margondang: [
     {key:'konsepPakaian', label:'Adat / Konsep Pakaian', placeholder:'Contoh: Adat Batak, gaun putih'},
-    {key:'waktuSelesai', label:'Waktu Selesai Acara', type:'time'},
+    {key:'waktuSelesai', label:'Waktu Selesai Acara (Perkiraan)', type:'time'},
   ],
   mangayun: [
     {key:'namaAnak', label:'Nama Anak', placeholder:'Nama anak'},
     {key:'namaIbu', label:'Nama Ibu', placeholder:'Nama ibu'},
     {key:'namaAyah', label:'Nama Ayah', placeholder:'Nama ayah'},
-    {key:'namaOrangTua', label:'Nama Orang Tua', placeholder:'Nama orang tua'},
-    {key:'namaBayi', label:'Nama Bayi', placeholder:'Nama bayi'},
-    {key:'tanggalLahirBayi', label:'Tanggal Lahir Bayi', placeholder:'Contoh: 12 Mei 2026'},
   ],
   wisuda: [
     {key:'institusi', label:'Universitas / Institusi', placeholder:'Nama kampus atau sekolah'},
@@ -6155,17 +6179,34 @@ const DETAIL_ACARA_SKEMA = {
   ],
   umum: [
     {key:'pemilihanFoto', label:'Pemilihan Foto', placeholder:'Contoh: Dipilih klien', umum:true},
-    {key:'igVendor', label:'Instagram Vendor', type:'textarea', full:true, placeholder:'@mua, @dekor, @wo ...', umum:true},
+    {key:'igVendor', label:'Instagram Semua Vendor', type:'textarea', full:true, placeholder:'@mua, @dekor, @wo ...', umum:true},
     {key:'kodeVoucher', label:'Kode Voucher', placeholder:'Kode voucher klien', umum:true},
   ],
 };
+// Kolom lama yang sudah tidak jadi kolom bawaan (tidak ada di formulir terbaru). Hanya ditampilkan
+// kalau job lama memang sudah punya isinya, supaya data lama tidak hilang tapi kolom kosongnya
+// tidak lagi muncul di job baru.
+const DETAIL_ACARA_LEGACY = {
+  mangayun: [
+    {key:'namaOrangTua', label:'Nama Orang Tua', placeholder:'Nama orang tua'},
+    {key:'namaBayi', label:'Nama Bayi', placeholder:'Nama bayi'},
+    {key:'tanggalLahirBayi', label:'Tanggal Lahir Bayi', placeholder:'Contoh: 12 Mei 2026'},
+  ],
+};
 const DETAIL_GRUP_LABEL = {pernikahan:'Pernikahan', margondang:'Margondang', mangayun:'Mangayun/Aqiqah', wisuda:'Wisuda', undangan:'Undangan'};
-const DETAIL_ACARA_LABEL = (()=>{ const m={}; Object.keys(DETAIL_ACARA_SKEMA).forEach(g=>DETAIL_ACARA_SKEMA[g].forEach(f=>{ m[f.key]=f.label; })); return m; })();
+const DETAIL_ACARA_LABEL = (()=>{ const m={}; Object.keys(DETAIL_ACARA_SKEMA).forEach(g=>DETAIL_ACARA_SKEMA[g].forEach(f=>{ m[f.key]=f.label; })); Object.keys(DETAIL_ACARA_LEGACY).forEach(g=>DETAIL_ACARA_LEGACY[g].forEach(f=>{ m[f.key]=f.label; })); return m; })();
 // Kolom tambahan dinamis: pertanyaan di formulir pricelist yang belum punya kolom tetap di aplikasi.
 // Setiap pertanyaan jadi kolom sendiri di Detail Acara, berlabel persis judul kolom spreadsheet,
 // kuncinya "x_" + judul. Karena tiap jenis acara punya daftar pertanyaan sendiri, hanya pertanyaan
 // milik jenis itu yang muncul. Label disimpan di job.detailAcaraEkstra = { kunci: label }.
 let detailAcaraEkstraLabel = {};
+// Kolom hitungan / info harga dari formulir (Diskon, Total Biaya, Sisa Pembayaran, Ongkos kirim, dst.)
+// BUKAN data klien: nilainya sudah dihitung aplikasi di bagian Keuangan & Pengiriman, jadi tidak boleh
+// muncul lagi sebagai kolom tambahan di Detail Acara (itu yang membuat "Ongkos kirim: Gratis" tampil
+// walau klien memilih Dijemput).
+function detailEkstraKeuangan(label){
+  return /^\s*(diskon|total|subtotal|sisa|harga|ongkos|ongkir|biaya|dp\b|uang muka|tagihan)/i.test(String(label||'').replace(/^x_/,'').replace(/_/g,' '));
+}
 function detailEkstraKunci(judul){ return 'x_' + String(judul||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40); }
 function detailAcaraLabel(key){ return DETAIL_ACARA_LABEL[key] || detailAcaraEkstraLabel[key] || key; }
 function detailGrupAcara(jenisAcara, jenisAcaraLain){
@@ -6182,21 +6223,22 @@ function detailGrupAcara(jenisAcara, jenisAcaraLain){
   return '';
 }
 // Daftar kolom yang berlaku untuk sebuah jenis acara (kosong kalau Jenis Acara belum dipilih).
-function detailAcaraSkema(jenisAcara, jenisAcaraLain){
+function detailAcaraSkema(jenisAcara, jenisAcaraLain, vals){
   if(!jenisAcara) return [];
   const g = detailGrupAcara(jenisAcara, jenisAcaraLain);
-  return [...(DETAIL_ACARA_SKEMA[g] || []), ...DETAIL_ACARA_SKEMA.umum];
+  const lama = (DETAIL_ACARA_LEGACY[g] || []).filter(f=> vals && String(vals[f.key]==null?'':vals[f.key]).trim());
+  return [...(DETAIL_ACARA_SKEMA[g] || []), ...lama, ...DETAIL_ACARA_SKEMA.umum];
 }
 function detailAcaraKunci(jenisAcara, jenisAcaraLain){
   return jenisAcara ? (jenisAcara + '|' + detailGrupAcara(jenisAcara, jenisAcaraLain)) : '';
 }
 function detailAcaraFieldsHtml(jenisAcara, jenisAcaraLain, vals){
-  const skema = detailAcaraSkema(jenisAcara, jenisAcaraLain);
-  if(!skema.length) return '';
   vals = vals || {};
+  const skema = detailAcaraSkema(jenisAcara, jenisAcaraLain, vals);
+  if(!skema.length) return '';
   const grup = detailGrupAcara(jenisAcara, jenisAcaraLain);
   const judul = jenisAcara==='Lainnya' ? (DETAIL_GRUP_LABEL[grup] || 'Lainnya') : jenisAcara;
-  const ekstra = Object.keys(detailAcaraEkstraLabel).filter(k=>k.indexOf('x_')===0 && (k in vals));
+  const ekstra = Object.keys(detailAcaraEkstraLabel).filter(k=>k.indexOf('x_')===0 && (k in vals) && !detailEkstraKeuangan(detailAcaraEkstraLabel[k]));
   const skemaPlus = [...skema, ...ekstra.map(k=>({key:k, label:detailAcaraEkstraLabel[k], type:'textarea', full:true, ekstra:true}))];
   return `<div class="full da-title">Detail Acara · ${escapeHtml(judul)}</div>` + skemaPlus.map(f=>{
     const v = escapeHtml(vals[f.key] == null ? '' : vals[f.key]);
@@ -6244,11 +6286,11 @@ function kumpulkanDetailAcara(form){
 function detailAcaraRows(j, opts){
   opts = opts || {};
   const v = (j && j.detailAcara) || {};
-  return detailAcaraSkema(j && j.jenisAcara, j && j.jenisAcaraLain)
+  return detailAcaraSkema(j && j.jenisAcara, j && j.jenisAcaraLain, v)
     .filter(f=> !(opts.tanpaUmum && f.umum))
     .map(f=>[f.label, String(v[f.key] == null ? '' : v[f.key]).trim()])
     .filter(([,val])=>val)
-    .concat(opts.tanpaUmum ? [] : Object.keys(v).filter(k=>k.indexOf('x_')===0 && String(v[k]||'').trim())
+    .concat(opts.tanpaUmum ? [] : Object.keys(v).filter(k=>k.indexOf('x_')===0 && String(v[k]||'').trim() && !detailEkstraKeuangan((j.detailAcaraEkstra && j.detailAcaraEkstra[k]) || k))
       .map(k=>[(j.detailAcaraEkstra && j.detailAcaraEkstra[k]) || k, String(v[k]).trim()]))
     .map(([l,val])=>[l, opts.maks ? truncateText(val, opts.maks) : val]);
 }
@@ -6723,6 +6765,8 @@ const PENGIRIMAN_LIST = ['Sudah Dijemput','Sudah Diantar','Belum Diantar','Belum
 // diisi lewat saklar (metode) + status terpisah supaya lebih nyaman. 2 fungsi ini
 // membongkar nilai gabungan itu jadi metode ('diantar'/'dijemput') dan status Sudah/Belum.
 function pengirimanMetode(p){ return (p||'').includes('Dijemput') ? 'dijemput' : 'diantar'; }
+// Ongkos antar hanya ditampilkan bila pengirimannya BENAR-BENAR tercatat Diantar (kosong/tidak jelas tidak dianggap diantar).
+function pengirimanDiantarPasti(p){ return /diantar/i.test(String(p||'')); }
 function pengirimanSudah(p){ return (p||'').startsWith('Sudah'); }
 function buildPengirimanValue(metode, sudah){
   return (sudah?'Sudah ':'Belum ') + (metode==='dijemput'?'Dijemput':'Diantar');
@@ -9369,7 +9413,7 @@ function keuanganRowsUntukRole(j){
       ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
       ['Biaya Cetak', fmtRp(j.biayaCetak)],
       ['Honor Tim', fmtRp(j.honorTim)],
-      ['Diskon', fmtRp(j.diskon)],
+      ...((Number(j.diskon)||0) > 0 ? [['Diskon', fmtRp(j.diskon)]] : []),
       ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
       ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
       ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
@@ -10755,12 +10799,12 @@ function plNormalizeCore(sourceKey, f){
     if(sourceKey==='mangayun'){
       out.namaKlien = g('Nama Pemesan');
       out.jenis = 'Mangayun/Aqiqah';
-      out.jam = plParseWaktu(f['Jam Acara']);
+      out.jam = plParseWaktu(f['Waktu Acara']) || plParseWaktu(f['Jam Acara']);
       out.ig = { 'Anak':plIg(f['IG Anak']), 'Ibu':plIg(f['IG Ibu']), 'Ayah':plIg(f['IG Ayah']) };
       det('namaAnak', g('Nama Anak')); det('namaIbu', g('Nama Ibu')); det('namaAyah', g('Nama Ayah'));
     } else {
       out.namaKlien = g('Nama');
-      out.jam = plParseWaktu(f['Waktu Acara']);
+      out.jam = plParseWaktu(f['Waktu Acara']) || plParseWaktu(f['Waktu Mulai Acara']);
       out.ig = { 'Pengantin Perempuan':plIg(f['IG Pengantin Wanita']), 'Pengantin Laki-laki':plIg(f['IG Pengantin Pria']) };
       out.namaMempelai = g('Nama Mempelai');   // diisikan ke kolom Nama Kedua Mempelai (lihat plApplyToForm)
       if(sourceKey==='margondang'){
@@ -10768,14 +10812,17 @@ function plNormalizeCore(sourceKey, f){
         if(hari==='2') out.jenis = 'Margondang 2 Hari';
         else if(hari==='3'){ out.jenis = 'Lainnya'; out.jenisLain = 'Margondang 3 Hari'; }
         else out.jenis = 'Margondang 1 Hari';
+        { const ws = plParseWaktu(f['Waktu Selesai Acara (Perkiraan)']) || plParseWaktu(f['Waktu Selesai Acara']);
+          if(ws) det('waktuSelesai', ws); }
+        det('konsepPakaian', g('Konsep Pakaian') || g('Adat/Konsep Pakaian'));
       } else {
         out.jenis = 'Wedding'; out.jenisKeep = ['Wedding','Patuaekkon'];
         out.catatanJenis = 'Pricelist Wedding mencakup Wedding dan Patuaekkon, periksa Jenis Acara.';
-        det('konsepPakaian', g('Konsep Pakaian'));
+        det('konsepPakaian', g('Konsep Pakaian') || g('Adat/Konsep Pakaian'));
       }
     }
     det('pemilihanFoto', g('Pemilihan Foto'));
-    det('igVendor', g('IG Vendor'));
+    det('igVendor', [g('IG Vendor'), g('Instagram Semua Vendor')].filter((x,i,a)=>x && a.indexOf(x)===i).join(' ; '));
     { const ht = g('Harga Tidak Cocok');   // diisi form pricelist kalau harga yang dikirim klien tidak sama dengan daftar harga
       if(ht && !/^(tidak|no|false|0|-)$/i.test(ht)) out.peringatan.push('Pricelist menandai "Harga Tidak Cocok" (' + ht + '), periksa harga paket dan biaya sebelum disimpan.'); }
     if(g('Catatan')) lines.push(g('Catatan'));
@@ -10787,10 +10834,12 @@ function plNormalizeCore(sourceKey, f){
   out.wa = plNationalDigits(f['No. WhatsApp']);
   out.paket = g('Nama Paket') || g('Jenis Paket');
   out.penghasilan = plNum(f['Harga Paket']);
-  out.dp = plNum(f['DP (Uang Muka)']);
+  out.dp = plNum(f['DP (Uang Muka)']) || plNum(f['DP']);
+  out.addOn = plWithoutAddOnNone(f['Add On'] || f['Add-On']);   // kolom Add On di formulir biodata
+  out.diskon = plNum(f['Diskon']);
   if(g('Kode Voucher')){
     det('kodeVoucher', g('Kode Voucher'));
-    out.peringatan.push('Kode Voucher "' + g('Kode Voucher') + '" sudah masuk, tapi diskonnya belum dihitung, isi kolom Diskon bila ada.');
+    if(!out.diskon) out.peringatan.push('Kode Voucher "' + g('Kode Voucher') + '" sudah masuk, tapi diskonnya belum dihitung, isi kolom Diskon bila ada.');
   }
   if(fk==='wisuda'){
     out.namaKlien = g('Nama Wisudawan/i');
@@ -10815,34 +10864,41 @@ function plNormalizeCore(sourceKey, f){
     return out;
   }
   out.tanggal = plParseTanggal(f['Tanggal Acara']);
-  out.maps = g('Maps Acara');
+  out.maps = g('Maps Acara') || g('Maps');
   out.alamat = plParseAlamat(f['Alamat Acara']);
+  { // Formulir terbaru: Desa, Kecamatan, Kabupaten, Provinsi bisa berupa kolom tersendiri.
+    const aD = g('Desa'), aK = g('Kecamatan'), aB = g('Kabupaten'), aP = g('Provinsi') || g('Pervinsi');
+    if(aD || aK || aB || aP) out.alamat = { desa:aD, kecamatan:aK, kabupaten:aB, provinsi:aP, terurai:true };
+  }
   const p = g('Pengambilan Hasil Cetak');
   out.pengambilan = /^diantar/i.test(p) ? 'Diantar' : (/^dijemput/i.test(p) ? 'Dijemput' : '');
   det('pemilihanFoto', g('Pemilihan Foto'));
   det('igVendor', [g('Instagram Semua Vendor'), g('IG All Vendor')].filter((x,i,a)=>x && a.indexOf(x)===i).join(' ; '));
   if(g('Catatan Penting Untuk Fotografer')) lines.push(g('Catatan Penting Untuk Fotografer'));
   if(fk==='mangayun'){
-    out.namaKlien = g('Nama Pemesan/Penanggung Jawab');
+    out.namaKlien = g('Nama Lengkap') || g('Nama Pemesan/Penanggung Jawab');
     out.jenis = 'Mangayun/Aqiqah';
-    out.jam = plParseWaktu(f['Jam Acara']);
-    out.ig = { 'Anak':plIg(f['IG Anak']), 'Ibu':plIg(f['IG Ibu']), 'Ayah':plIg(f['IG Ayah']) };
+    out.jam = plParseWaktu(f['Waktu Acara']) || plParseWaktu(f['Jam Acara']);
+    out.ig = { 'Anak':plIg(f['IG Anak'] || f['Ig Anak']), 'Ibu':plIg(f['IG Ibu'] || f['Ig Ibu']), 'Ayah':plIg(f['IG Ayah'] || f['Ig Ayah']) };
     det('namaAnak', g('Nama Anak')); det('namaIbu', g('Nama Ibu')); det('namaAyah', g('Nama Ayah'));
-    det('namaOrangTua', g('Nama Orang Tua')); det('namaBayi', g('Nama Bayi'));
-    { const tl = plParseTanggal(f['Tanggal Lahir Bayi']);   // tampil "12 Mei 2026", bukan format mentah dari Sheets
-      if(tl && tl.start){ const [y,m,d] = tl.start.split('-'); det('tanggalLahirBayi', (+d)+' '+['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][+m-1]+' '+y); }
-      else det('tanggalLahirBayi', g('Tanggal Lahir Bayi')); }
   } else {
-    out.namaKlien = g('Nama Lengkap');
+    out.namaKlien = g('Nama Lengkap') || g('Nama Pemesan');
     out.ig = { 'Pengantin Perempuan':plIg(f['Instagram Pengantin Wanita']), 'Pengantin Laki-laki':plIg(f['Instagram Pengantin Pria']) };
     out.namaMempelai = g('Nama Kedua Mempelai');   // diisikan ke kolom Nama Kedua Mempelai (lihat plApplyToForm)
     if(fk==='margondang'){
       out.jam = plParseWaktu(f['Waktu Mulai Acara']);
-      out.jenis = 'Margondang 1 Hari'; out.jenisKeep = ['Margondang 1 Hari','Margondang 2 Hari'];
-      out.catatanJenis = 'Biodata Margondang tidak memuat jumlah hari, periksa Jenis Acara (1 atau 2 Hari).';
+      { const hari = (g('Jumlah Hari').match(/\d+/) || [''])[0];   // kolom Jumlah Hari di formulir biodata Margondang
+        if(hari==='2') out.jenis = 'Margondang 2 Hari';
+        else if(hari==='3'){ out.jenis = 'Lainnya'; out.jenisLain = 'Margondang 3 Hari'; }
+        else if(hari) out.jenis = 'Margondang 1 Hari';
+        else {
+          out.jenis = 'Margondang 1 Hari'; out.jenisKeep = ['Margondang 1 Hari','Margondang 2 Hari'];
+          out.catatanJenis = 'Jumlah Hari tidak terbaca dari biodata Margondang, periksa Jenis Acara (1 atau 2 Hari).';
+        } }
       det('konsepPakaian', g('Adat/Konsep Pakaian'));
-      { const ws = plParseWaktu(f['Waktu Selesai Acara']);
-        if(ws) det('waktuSelesai', ws); else if(g('Waktu Selesai Acara')) lines.push('Waktu Selesai: ' + g('Waktu Selesai Acara')); }
+      { const wsRaw = g('Waktu Selesai Acara (Perkiraan)') || g('Waktu Selesai Acara');
+        const ws = plParseWaktu(wsRaw);
+        if(ws) det('waktuSelesai', ws); else if(wsRaw) lines.push('Waktu Selesai (Perkiraan): ' + wsRaw); }
     } else {
       out.jam = plParseWaktu(f['Waktu Acara']);
       out.jenis = 'Wedding'; out.jenisKeep = ['Wedding','Patuaekkon'];
@@ -10870,6 +10926,7 @@ function plNormalize(sourceKey, raw){
     if(v && typeof v==='object'){ try{ v = JSON.stringify(v); }catch(_){ v = ''; } }
     v = plWithoutAddOnNone(v);
     if(!v) return;
+    if(detailEkstraKeuangan(k)) return;   // kolom hitungan/info harga: bukan data klien
     lain.push({ k: String(k).trim(), v });
   });
   out.kolomLain = lain;
@@ -11154,13 +11211,12 @@ function buildJobFormHtml(j){
           ${j?`<button type="button" class="icon-btn icon-btn-danger jf-del-btn" id="btnDeleteJob" title="Hapus job ini" aria-label="Hapus job ini">${ic('trash')}</button>`:''}
         </div>
       </div>
-      <section class="jf-sec open"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('user')}</span><div class="jf-sec-htx"><h3>Data Klien &amp; Acara</h3><p>Siapa yang memesan dan kapan acaranya.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
-        <div><label>Nama Klien / Pemesan</label><input type="text" name="namaKlien" value="${escapeHtml(d.namaKlien)}" placeholder="Nama klien" autocomplete="off"></div>
+      <section class="jf-sec open"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('user')}</span><div class="jf-sec-htx"><h3>Biodata Klien &amp; Acara</h3><p>Pemesan, paket, nama, waktu, dan detail acara. Terisi otomatis dari Pricelist atau Isi Biodata.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel bio-panel">
+        <div class="bio-grp"><div class="bio-h">Data Pemesan</div><div class="form-grid">
+        <div><label>Nama Lengkap</label><input type="text" name="namaKlien" value="${escapeHtml(d.namaKlien)}" placeholder="Nama klien" autocomplete="off"></div>
         <div><label>No. WhatsApp</label>${waFieldHtml(d.noWhatsapp)}</div>
-        <div><label>Tanggal Acara (Mulai) * <span class="hari-tgl" id="hariMulaiLabel"></span></label><input type="date" name="tanggalAcara" id="tanggalAcaraInput" value="${d.tanggalAcara}" required oninput="onTanggalAcaraChange()"></div>
-        <div><label>Tanggal Acara (Selesai) * <span class="hari-tgl" id="hariSelesaiLabel"></span></label><input type="date" name="tanggalSelesai" id="tanggalSelesaiInput" value="${escapeHtml(getJobFinishDate(d)||d.tanggalAcara||'')}" required oninput="updateDurasiHariHint()"></div>
-        <div><label>Jam Acara (opsional)</label><div class="rp-input-wrap jam-acara-wrap"><span class="rp-prefix">${ic('clock')}</span><input type="time" name="jamAcara" id="jamAcaraInput" value="${escapeHtml(d.jamAcara||'')}"></div></div>
-        <div class="full" id="durasiHariHintWrap"><div class="field-hint" id="durasiHariHint">Job 1 hari, tugas tim otomatis ditandai selesai pukul 23.59 pada Tanggal Acara.</div></div>
+        </div></div>
+        <div class="bio-grp"><div class="bio-h">Paket &amp; Layanan</div><div class="form-grid">
         <div>
           <label>Jenis Acara *</label>
           <select name="jenisAcara" required onchange="onJenisAcaraChange(this)">
@@ -11168,19 +11224,30 @@ function buildJobFormHtml(j){
             ${opt(JENIS_ACARA_LIST, d.jenisAcara)}
           </select>
         </div>
-        <div><label>Paket</label><input type="text" name="paket" value="${escapeHtml(d.paket)}" placeholder="Nama / isi paket"></div>
+        <div><label>Nama Paket</label><input type="text" name="paket" value="${escapeHtml(d.paket)}" placeholder="Nama / isi paket"></div>
         <div class="full" id="jenisLainWrap" style="display:${d.jenisAcara==='Lainnya'?'block':'none'}"><label>Sebutkan Jenis Acara Lainnya</label><input type="text" name="jenisAcaraLain" value="${escapeHtml(d.jenisAcaraLain||'')}" oninput="refreshDetailAcara()"></div>
-        <div class="full" id="mempelaiWrap" style="display:${isJenisMempelai(d.jenisAcara)?'block':'none'}"><label>Nama Kedua Mempelai</label><input type="text" name="namaMempelai" value="${escapeHtml(d.namaMempelai||'')}" placeholder="Contoh: Budi &amp; Ani" autocomplete="off"></div>
-        <div id="instagramFieldsWrap" style="display:contents;">${instagramFieldsHtml(igRolesAwal, igListAwal)}</div>
-        <div id="detailAcaraWrap" style="display:contents;" data-kunci="${escapeHtml(detailAcaraKunci(d.jenisAcara, d.jenisAcaraLain))}">${detailAcaraFieldsHtml(d.jenisAcara, d.jenisAcaraLain, detailAcaraStash)}</div>
+        <div class="full">
+          <label>Add On</label>
+          <textarea name="addOn" rows="2" placeholder="Add-On yang dipesan klien, misal: Drone, album tambahan 20R, dll.">${escapeHtml(d.addOn||'')}</textarea>
+        </div>
         <div class="full">
           <label>Deskripsi Paket</label>
           <textarea name="deskripsiPaket" rows="3" placeholder="Rincian isi paket, misal: 1 album 20R, cetak 4R 50 lembar, softfile semua foto, dll.">${escapeHtml(d.deskripsiPaket||'')}</textarea>
         </div>
-        <div class="full">
-          <label>Add-On</label>
-          <textarea name="addOn" rows="2" placeholder="Add-On yang dipesan klien, misal: Drone, album tambahan 20R, dll.">${escapeHtml(d.addOn||'')}</textarea>
-        </div>
+        </div></div>
+        <div class="bio-grp"><div class="bio-h">Nama &amp; Instagram</div><div class="form-grid">
+        <div class="full" id="mempelaiWrap" style="display:${isJenisMempelai(d.jenisAcara)?'block':'none'}"><label>Nama Kedua Mempelai</label><input type="text" name="namaMempelai" value="${escapeHtml(d.namaMempelai||'')}" placeholder="Contoh: Budi &amp; Ani" autocomplete="off"></div>
+        <div id="instagramFieldsWrap" style="display:contents;">${instagramFieldsHtml(igRolesAwal, igListAwal)}</div>
+        </div></div>
+        <div class="bio-grp"><div class="bio-h">Waktu Acara</div><div class="form-grid">
+        <div><label>Tanggal Acara (Mulai) * <span class="hari-tgl" id="hariMulaiLabel"></span></label><input type="date" name="tanggalAcara" id="tanggalAcaraInput" value="${d.tanggalAcara}" required oninput="onTanggalAcaraChange()"></div>
+        <div><label>Tanggal Acara (Selesai) * <span class="hari-tgl" id="hariSelesaiLabel"></span></label><input type="date" name="tanggalSelesai" id="tanggalSelesaiInput" value="${escapeHtml(getJobFinishDate(d)||d.tanggalAcara||'')}" required oninput="updateDurasiHariHint()"></div>
+        <div><label id="jamAcaraLabel">${jamAcaraLabelTeks(d.jenisAcara, d.jenisAcaraLain)}</label><div class="rp-input-wrap jam-acara-wrap"><span class="rp-prefix">${ic('clock')}</span><input type="time" name="jamAcara" id="jamAcaraInput" value="${escapeHtml(d.jamAcara||'')}"></div></div>
+        <div class="full" id="durasiHariHintWrap"><div class="field-hint" id="durasiHariHint">Job 1 hari, tugas tim otomatis ditandai selesai pukul 23.59 pada Tanggal Acara.</div></div>
+        </div></div>
+        <div class="bio-grp bio-detail"><div class="form-grid">
+        <div id="detailAcaraWrap" style="display:contents;" data-kunci="${escapeHtml(detailAcaraKunci(d.jenisAcara, d.jenisAcaraLain))}">${detailAcaraFieldsHtml(d.jenisAcara, d.jenisAcaraLain, detailAcaraStash)}</div>
+        </div></div>
         </div>
 
       </section>
@@ -11194,9 +11261,9 @@ function buildJobFormHtml(j){
           <label>Nama Dusun</label>
           <input type="text" name="dusun" value="${escapeHtml(d.dusun||'')}" placeholder="Contoh: Dusun II Sukamaju">
         </div>
-        <div><label>Desa / Kelurahan</label><input type="text" name="desa" value="${escapeHtml(d.desa)}"></div>
+        <div><label>Desa</label><input type="text" name="desa" value="${escapeHtml(d.desa)}"></div>
         <div><label>Kecamatan</label><input type="text" name="kecamatan" value="${escapeHtml(d.kecamatan)}"></div>
-        <div><label>Kabupaten / Kota</label><input type="text" name="kabupaten" value="${escapeHtml(d.kabupaten)}"></div>
+        <div><label>Kabupaten</label><input type="text" name="kabupaten" value="${escapeHtml(d.kabupaten)}"></div>
         <div><label>Provinsi</label><input type="text" name="provinsi" value="${escapeHtml(d.provinsi)}"></div>
         <input type="hidden" name="linkMaps" value="${escapeHtml(d.linkMaps||'')}">
         <div class="full">
@@ -11250,7 +11317,7 @@ function buildJobFormHtml(j){
           <div class="fin-title"><i class="fin-dot is-in"></i>Pemasukan dari klien</div>
           <div class="form-grid">
             ${rpField('Penghasilan Dari Klien/Mitra','penghasilan',d.penghasilan)}
-            ${rpField('Diskon','diskon',d.diskon)}
+            ${rpField('Diskon (sesuai voucher)','diskon',d.diskon)}
             ${rpField('DP (uang muka)','dp',d.dp)}
             <div>
               <label>Status Pembayaran</label>
@@ -11277,9 +11344,9 @@ function buildJobFormHtml(j){
       </div>
 
       </section>
-      <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('note')}</span><div class="jf-sec-htx"><h3>Catatan Tambahan</h3><p>Permintaan khusus atau hal yang perlu diingat.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
+      <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('note')}</span><div class="jf-sec-htx"><h3>Catatan Penting Untuk Fotografer</h3><p>Permintaan khusus klien atau hal yang perlu diingat saat acara.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
         <div class="full">
-          <label>Catatan</label>
+          <label>Catatan Penting Untuk Fotografer</label>
           <textarea name="catatan" rows="3" placeholder="Catatan lain seputar job ini...">${escapeHtml(d.catatan||'')}</textarea>
         </div>
       </div>
@@ -13665,7 +13732,7 @@ function openJobDetailModal(jobId){
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
-      ...(isAdmin() && pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
+      ...(isAdmin() && pengirimanDiantarPasti(j.pengiriman) ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
       ...(pengirimanMetode(j.pengiriman)==='diantar' && j.linkMapsAntar ? [['Link Maps Antar', j.linkMapsAntar]] : []),
       ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
@@ -13836,7 +13903,7 @@ function buildJobPosterHtml(j){
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
-      ...(isAdmin() && pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
+      ...(isAdmin() && pengirimanDiantarPasti(j.pengiriman) ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
       ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
       ['Tim/Freelancer', namaTimLengkap(j, j.timFreelancer)||'-'],
@@ -14061,7 +14128,7 @@ function copyJobDetails(jobId){
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
-      ...(isAdmin() && pengirimanMetode(j.pengiriman)==='diantar' ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
+      ...(isAdmin() && pengirimanDiantarPasti(j.pengiriman) ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
       ...(pengirimanMetode(j.pengiriman)==='diantar' && j.linkMapsAntar ? [['Link Maps Antar', j.linkMapsAntar]] : []),
       ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
@@ -14883,8 +14950,17 @@ function kwData(j){
   const terbayar = total>0 ? Math.max(0, Math.min(100, Math.round((total - Math.max(0,sisa)) / total * 100))) : 0;
   const status = String(j.statusPembayaran||'-');
   const nama = (j.namaKlien||'').trim();
+  // Ongkos antar HANYA tampil kalau klien memilih foto Diantar. Tidak ikut Total Tagihan karena
+  // dibayar saat foto diterima. "Gratis" hanya kalau memang gratis (jarak sudah terhitung / tanpa titik antar).
+  let ongkir = '';
+  if(pengirimanDiantarPasti(j.pengiriman)){
+    const biaya = Number(j.ongkirAntar)||0;
+    const jr = (j.jarakAntarKm===null || j.jarakAntarKm===undefined || j.jarakAntarKm==='') ? NaN : Number(j.jarakAntarKm);
+    if(biaya>0) ongkir = fmtRp(biaya);
+    else if(isFinite(jr) || !j.linkMapsAntar) ongkir = 'Gratis';
+  }
   return {
-    col, jenis, harga, diskon, total, dp, sisa, lunas, terbayar, status, nama,
+    col, jenis, harga, diskon, total, dp, sisa, lunas, terbayar, status, nama, ongkir,
     noKwitansi: `KMT-${kwKodePastikan(j)}`,
     printedAt: new Intl.DateTimeFormat('id-ID', {timeZone:'Asia/Jakarta', day:'numeric', month:'long', year:'numeric'}).format(new Date()),
     tgl: fmtTglJob(j),
@@ -14970,7 +15046,8 @@ function buildKwitansiPosterHtml(j, qr){
     ['Harga Paket', fmtRp(d.harga), ''],
     ...(d.diskon>0 ? [['Diskon', '- '+fmtRp(d.diskon), ' disc']] : []),
     ['Total Tagihan', fmtRp(d.total), ' total'],
-    ['DP / Sudah Dibayar', fmtRp(d.dp), ' last']
+    ['DP / Sudah Dibayar', fmtRp(d.dp), d.ongkir ? '' : ' last'],
+    ...(d.ongkir ? [['Ongkos Antar', d.ongkir, ' last']] : [])
   ];
   const lebarIsi = d.terbayar>0 ? Math.max(d.terbayar, 4) : 0;
 
@@ -15290,7 +15367,8 @@ function kwGambarPdf(doc, j, d, qrUrl, logo, banyak){
     ['Harga Paket', fmtRp(d.harga), 'n'],
     ...(d.diskon>0 ? [['Diskon', '- '+fmtRp(d.diskon), 'diskon']] : []),
     ['Total Tagihan', fmtRp(d.total), 'total'],
-    ['DP / Sudah Dibayar', fmtRp(d.dp), 'n']
+    ['DP / Sudah Dibayar', fmtRp(d.dp), 'n'],
+    ...(d.ongkir ? [['Ongkos Antar', d.ongkir, 'n']] : [])
   ];
   pastikan(5 + 8 + barisBayar.reduce((s,r)=>s+(r[2]==='total'?8:6),0) + 3 + 16);
   judul('Rincian Pembayaran');
@@ -19257,12 +19335,24 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.28.2'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.29.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.29.0',
+    tanggal: '5 November 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Kolom di form Input/Edit Job untuk Wedding, Patuaekkon, Margondang, dan Mangayun kini disamakan dengan formulir klien: Nama Lengkap, No. WhatsApp, Nama Paket, Add On, Pemilihan Foto, Nama Kedua Mempelai, Instagram Pengantin Wanita dan Pria, Tanggal dan Waktu Acara, alamat, Maps, pengambilan hasil cetak, Adat/Konsep Pakaian, Instagram Semua Vendor, Catatan Penting Untuk Fotografer, Kode Voucher, dan DP. Urutannya juga dirapikan.' },
+      { kategori: 'Peningkatan', teks: 'Kolom hitungan dari formulir (Diskon, Total Biaya, Sisa Pembayaran, Ongkos kirim) tidak lagi muncul sebagai kolom tambahan di Detail Acara, jadi tulisan "Ongkos kirim: Gratis" tidak tampil lagi untuk foto yang dijemput. Baris Diskon di rincian keuangan juga disembunyikan kalau Rp0.' },
+      { kategori: 'Peningkatan', teks: 'Ongkos Antar kini hanya muncul kalau klien memilih foto Diantar, di Detail Job, pesan WhatsApp, dan kwitansi (PDF dan gambar). Di kwitansi, ongkos antar tampil sebagai baris tersendiri di bawah DP dan tidak ikut dihitung dalam Total Tagihan. Kalau foto dijemput, barisnya tidak ada.' },
+      { kategori: 'Peningkatan', teks: 'Tampilan bagian Biodata Klien & Acara di form job dibuat lebih elegan dan terstruktur: kolom dikelompokkan dalam kartu bernomor (Data Pemesan, Paket & Layanan, Nama & Instagram, Waktu Acara, Detail Acara) dengan garis emas, jarak yang lebih lega, dan kolom isian yang lebih halus.' },
+      { kategori: 'Peningkatan', teks: 'Kolom khusus Margondang ditambah Waktu Mulai dan Waktu Selesai Acara (Perkiraan). Mangayun kini hanya punya Nama Anak, Ibu, dan Ayah beserta Instagram masing-masing. Kolom lama yang ganda atau tidak jelas (Nama Orang Tua, Nama Bayi, Tanggal Lahir Bayi) tidak lagi muncul di job baru, tapi tetap tampil di job lama yang sudah terisi.' },
+      { kategori: 'Peningkatan', teks: 'Pengisian otomatis dari Pricelist dan Isi Biodata ikut menyesuaikan: Add On, Jumlah Hari Margondang, Waktu Selesai, Diskon, serta alamat yang kolomnya terpisah kini terbaca dan masuk ke kolom yang tepat. Kolom lain di Rekap Job (Deskripsi Paket, Hasil Cetak, Proses dan Vendor, Penghasilan, Diskon, Status Pembayaran, Biaya Cetak, Honor Tim, Sedekah) tidak berubah.' },
+    ]
+  },
   {
     version: '1.28.2',
     tanggal: '2 November 2026',

@@ -9408,14 +9408,15 @@ function tagihanHariH(j){
 function keuanganRowsUntukRole(j){
   if(isAdmin()){
     return [
-      ['DP', fmtRp(j.dp)],
       ['Penghasilan Dari Klien/Mitra', fmtRp(j.penghasilan)],
+      ...((Number(j.diskon)||0) > 0 ? [['Diskon', fmtRp(j.diskon)]] : []),
+      ['DP', fmtRp(j.dp)],
       ['Sisa Pembayaran', fmtRp(hitungSisaPembayaran(j))],
+      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
       ['Biaya Cetak', fmtRp(j.biayaCetak)],
       ['Honor Tim', fmtRp(j.honorTim)],
-      ...((Number(j.diskon)||0) > 0 ? [['Diskon', fmtRp(j.diskon)]] : []),
-      ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus||'-'})`],
-      ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
+      // Sedekah baru mengurangi Penghasilan Bersih setelah ditunaikan (status Sudah).
+      ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus==='Sudah' ? 'Sudah ditunaikan' : 'Belum ditunaikan'})`],
       ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
     ];
   }
@@ -19346,7 +19347,7 @@ const CHANGELOG = [
     tanggal: '5 November 2026',
     items: [
       { kategori: 'Peningkatan', teks: 'Kolom di form Input/Edit Job untuk Wedding, Patuaekkon, Margondang, dan Mangayun kini disamakan dengan formulir klien: Nama Lengkap, No. WhatsApp, Nama Paket, Add On, Pemilihan Foto, Nama Kedua Mempelai, Instagram Pengantin Wanita dan Pria, Tanggal dan Waktu Acara, alamat, Maps, pengambilan hasil cetak, Adat/Konsep Pakaian, Instagram Semua Vendor, Catatan Penting Untuk Fotografer, Kode Voucher, dan DP. Urutannya juga dirapikan.' },
-      { kategori: 'Peningkatan', teks: 'Kolom hitungan dari formulir (Diskon, Total Biaya, Sisa Pembayaran, Ongkos kirim) tidak lagi muncul sebagai kolom tambahan di Detail Acara, jadi tulisan "Ongkos kirim: Gratis" tidak tampil lagi untuk foto yang dijemput. Baris Diskon di rincian keuangan juga disembunyikan kalau Rp0.' },
+      { kategori: 'Peningkatan', teks: 'Kolom hitungan dari formulir (Diskon, Total Biaya, Sisa Pembayaran, Ongkos kirim) tidak lagi muncul sebagai kolom tambahan di Detail Acara, jadi tulisan "Ongkos kirim: Gratis" tidak tampil lagi untuk foto yang dijemput. Baris Diskon di rincian keuangan juga disembunyikan kalau Rp0. Urutan rincian Keuangan di Detail Job dirapikan dari penghasilan sampai penghasilan bersih, dan status Sedekah kini tertulis Sudah/Belum ditunaikan (sedekah hanya mengurangi Penghasilan Bersih setelah ditunaikan).' },
       { kategori: 'Peningkatan', teks: 'Ongkos Antar kini hanya muncul kalau klien memilih foto Diantar, di Detail Job, pesan WhatsApp, dan kwitansi (PDF dan gambar). Di kwitansi, ongkos antar tampil sebagai baris tersendiri di bawah DP dan tidak ikut dihitung dalam Total Tagihan. Kalau foto dijemput, barisnya tidak ada.' },
       { kategori: 'Peningkatan', teks: 'Tampilan bagian Biodata Klien & Acara di form job dibuat lebih elegan dan terstruktur: kolom dikelompokkan dalam kartu bernomor (Data Pemesan, Paket & Layanan, Nama & Instagram, Waktu Acara, Detail Acara) dengan garis emas, jarak yang lebih lega, dan kolom isian yang lebih halus.' },
       { kategori: 'Peningkatan', teks: 'Kolom khusus Margondang ditambah Waktu Mulai dan Waktu Selesai Acara (Perkiraan). Mangayun kini hanya punya Nama Anak, Ibu, dan Ayah beserta Instagram masing-masing. Kolom lama yang ganda atau tidak jelas (Nama Orang Tua, Nama Bayi, Tanggal Lahir Bayi) tidak lagi muncul di job baru, tapi tetap tampil di job lama yang sudah terisi.' },

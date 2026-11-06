@@ -4403,24 +4403,29 @@ body > header.topbar{flex:none;}
   html.sb-hidden .bottomnav{transform:translateX(-102%); box-shadow:none; visibility:hidden; pointer-events:none; transition:transform .45s var(--ez,cubic-bezier(.2,.8,.2,1)), box-shadow .45s, visibility 0s linear .45s;}
   .toast{transition:left .45s var(--ez,cubic-bezier(.2,.8,.2,1));}
 
-  /* Tombol sembunyikan / tampilkan, menempel di tepi menu */
+  /* Tombol garis tiga di sudut kiri atas */
   #sbToggle{
-    display:flex; align-items:center; justify-content:center;
-    position:fixed; z-index:170; top:50%; left:calc(var(--sb-w) - 15px);
-    width:30px; height:60px; margin-top:-30px; padding:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+    position:fixed; z-index:200; top:calc(14px + env(safe-area-inset-top,0px)); left:14px;
+    width:44px; height:44px; padding:0;
     background:#fff; color:var(--ink,#241c06);
-    border:1.5px solid var(--dash-line,#f0e1a0); border-radius:15px;
-    box-shadow:0 6px 16px -8px rgba(60,45,0,.45); cursor:pointer;
-    transition:left .45s var(--ez,cubic-bezier(.2,.8,.2,1)), background .25s, width .25s, box-shadow .25s, border-radius .35s;
+    border:1.5px solid var(--dash-line,#f0e1a0); border-radius:14px;
+    box-shadow:0 4px 0 var(--btn-edge,#b88a00); cursor:pointer;
+    transition:background .25s, transform .25s var(--ez,cubic-bezier(.2,.8,.2,1)), box-shadow .25s;
     -webkit-tap-highlight-color:transparent;
   }
-  #sbToggle svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; transition:transform .45s var(--ez,cubic-bezier(.2,.8,.2,1));}
-  #sbToggle:hover{background:var(--gold,#FFC400); box-shadow:0 4px 0 var(--btn-edge,#b88a00), 0 12px 22px -10px #ffc400aa;}
-  #sbToggle:active{transform:scale(.94);}
+  #sbToggle i{display:block; width:20px; height:2.5px; border-radius:2px; background:currentColor; transition:transform .4s var(--ez,cubic-bezier(.2,.8,.2,1)), opacity .25s, width .3s;}
+  #sbToggle:hover{background:var(--gold,#FFC400); transform:translateY(-2px); box-shadow:0 6px 0 var(--btn-edge,#b88a00), 0 12px 20px -10px #ffc400aa;}
+  #sbToggle:hover i:nth-child(2){width:14px;}
+  #sbToggle:active{transform:translateY(2px) scale(.95); box-shadow:0 1px 0 var(--btn-edge,#b88a00);}
   #sbToggle:focus-visible{outline:2px solid var(--ink,#241c06); outline-offset:2px;}
-  html.sb-hidden #sbToggle{left:0; width:26px; border-left:0; border-radius:0 15px 15px 0;}
-  html.sb-hidden #sbToggle:hover{width:34px;}
-  html.sb-hidden #sbToggle svg{transform:rotate(180deg);}
+  /* Menu terbuka: garis tiga berubah jadi X */
+  html:not(.sb-hidden) #sbToggle i:nth-child(1){transform:translateY(7.5px) rotate(45deg);}
+  html:not(.sb-hidden) #sbToggle i:nth-child(2){opacity:0; transform:scaleX(0);}
+  html:not(.sb-hidden) #sbToggle i:nth-child(3){transform:translateY(-7.5px) rotate(-45deg);}
+  /* Menu tersembunyi: beri ruang di header supaya logo tidak tertutup tombol */
+  header.topbar{transition:padding-left .45s var(--ez,cubic-bezier(.2,.8,.2,1));}
+  html.sb-hidden header.topbar{padding-left:calc(70px + env(safe-area-inset-left,0px));}
   body.view-form #sbToggle, body.chat-only #sbToggle, html.kc-open #sbToggle, body:has(#modalOverlay) #sbToggle{display:none !important;}
 
   /* Efek saat kursor di atas menu */
@@ -4458,7 +4463,7 @@ body > header.topbar{flex:none;}
 @keyframes sbWiggle{0%,100%{rotate:0deg} 30%{rotate:-10deg} 60%{rotate:8deg}}
 @keyframes sbIn{from{opacity:0; transform:translateX(-22px);}}
 @media (prefers-reduced-motion:reduce){
-  body,.bottomnav,#sbToggle,#sbToggle svg,.toast{transition:none !important;}
+  body,.bottomnav,#sbToggle,header.topbar,.toast{transition:none !important;}
   .bn-tab::after,.bn-tab:hover .ic,html.sb-opening .bn-tab{animation:none !important;}
 }
 </style>
@@ -4667,7 +4672,7 @@ body > header.topbar{flex:none;}
   </div>
 </div>
 
-<button type="button" id="sbToggle" aria-label="Sembunyikan menu samping" aria-controls="bottomNav" aria-expanded="true" title="Sembunyikan / tampilkan menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+<button type="button" id="sbToggle" aria-label="Sembunyikan menu samping" aria-controls="bottomNav" aria-expanded="true" title="Menu (Ctrl + \)"><i></i><i></i><i></i></button>
 <script id="kjSidebarJs">
 (function(){
   var KEY='kaoneMotret_sidebarHidden_v1', root=document.documentElement, btn=document.getElementById('sbToggle'), t;
@@ -19451,7 +19456,7 @@ const CHANGELOG = [
     version: '1.30.0',
     tanggal: '6 November 2026',
     items: [
-      { kategori: 'Fitur', teks: 'Menu samping di layar lebar kini bisa disembunyikan dan ditampilkan lagi lewat tombol di tepi menu (atau tekan Ctrl + \\). Pilihanmu diingat, dan halaman otomatis melebar saat menu disembunyikan.' },
+      { kategori: 'Fitur', teks: 'Menu samping di layar lebar kini bisa disembunyikan dan ditampilkan lagi lewat tombol garis tiga di sudut kiri atas (atau tekan Ctrl + \\). Pilihanmu diingat, dan halaman otomatis melebar saat menu disembunyikan.' },
       { kategori: 'Peningkatan', teks: 'Menu samping punya efek baru saat kursor di atasnya: garis emas di kiri, kilau yang menyapu, ikon yang bergoyang, dan menu muncul satu per satu saat dibuka.' },
       { kategori: 'Perbaikan', teks: 'Bagian hak cipta di bawah kini selalu menempel di dasar layar, tidak lagi menggantung di tengah dengan ruang kosong di bawahnya saat isi halaman pendek.' },
     ]

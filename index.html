@@ -4391,9 +4391,9 @@ body{background:radial-gradient(800px 480px at 95% -8%,#ffe38a,transparent 60%),
 /* ===== v1.30.0: menu samping bisa disembunyikan + efek hover; footer selalu di dasar layar ===== */
 /* Footer menempel di dasar layar walau isi halaman pendek */
 body:not(.chat-only){display:flex; flex-direction:column; min-height:100vh; min-height:100dvh; box-sizing:border-box;}
-body > main#app{flex:0 0 auto;}
-body > .copyright-bar{margin-top:auto !important; flex:none;}
-body > header.topbar{flex:none;}
+body > main#app{flex:0 0 auto; width:100%; min-width:0; max-width:100%;}
+body > .copyright-bar{margin-top:auto !important; flex:none; min-width:0; max-width:100%;}
+body > header.topbar{flex:none; min-width:0; max-width:100%;}
 
 #sbToggle{display:none;}
 @media (min-width:1100px){
@@ -19446,12 +19446,19 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.30.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.30.1'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.30.1',
+    tanggal: '6 November 2026',
+    items: [
+      { kategori: 'Perbaikan', teks: 'Poster di menu Kalender kembali pas di layar HP. Sebelumnya poster tampil raksasa dan tidak mengecil karena perubahan posisi footer di v1.30.0.' },
+    ]
+  },
   {
     version: '1.30.0',
     tanggal: '6 November 2026',

@@ -4387,6 +4387,82 @@ body{background:radial-gradient(800px 480px at 95% -8%,#ffe38a,transparent 60%),
 #authForm.kj-in,#registerForm.kj-in{animation:kjFormIn .45s var(--soft) backwards;}
 @media (prefers-reduced-motion:reduce){ .auth-ind{transition:none;} #authForm.kj-in,#registerForm.kj-in{animation:none;} }
 </style>
+<style id="kjSidebarFx">
+/* ===== v1.30.0: menu samping bisa disembunyikan + efek hover; footer selalu di dasar layar ===== */
+/* Footer menempel di dasar layar walau isi halaman pendek */
+body:not(.chat-only){display:flex; flex-direction:column; min-height:100vh; min-height:100dvh; box-sizing:border-box;}
+body > main#app{flex:0 0 auto;}
+body > .copyright-bar{margin-top:auto !important; flex:none;}
+body > header.topbar{flex:none;}
+
+#sbToggle{display:none;}
+@media (min-width:1100px){
+  body{transition:padding-left .45s var(--ez,cubic-bezier(.2,.8,.2,1));}
+  .bottomnav{transition:transform .45s var(--ez,cubic-bezier(.2,.8,.2,1)), box-shadow .45s, visibility 0s linear 0s; will-change:transform;}
+  html.sb-hidden{--sb-w:0px;}
+  html.sb-hidden .bottomnav{transform:translateX(-102%); box-shadow:none; visibility:hidden; pointer-events:none; transition:transform .45s var(--ez,cubic-bezier(.2,.8,.2,1)), box-shadow .45s, visibility 0s linear .45s;}
+  .toast{transition:left .45s var(--ez,cubic-bezier(.2,.8,.2,1));}
+
+  /* Tombol sembunyikan / tampilkan, menempel di tepi menu */
+  #sbToggle{
+    display:flex; align-items:center; justify-content:center;
+    position:fixed; z-index:170; top:50%; left:calc(var(--sb-w) - 15px);
+    width:30px; height:60px; margin-top:-30px; padding:0;
+    background:#fff; color:var(--ink,#241c06);
+    border:1.5px solid var(--dash-line,#f0e1a0); border-radius:15px;
+    box-shadow:0 6px 16px -8px rgba(60,45,0,.45); cursor:pointer;
+    transition:left .45s var(--ez,cubic-bezier(.2,.8,.2,1)), background .25s, width .25s, box-shadow .25s, border-radius .35s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #sbToggle svg{width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; transition:transform .45s var(--ez,cubic-bezier(.2,.8,.2,1));}
+  #sbToggle:hover{background:var(--gold,#FFC400); box-shadow:0 4px 0 var(--btn-edge,#b88a00), 0 12px 22px -10px #ffc400aa;}
+  #sbToggle:active{transform:scale(.94);}
+  #sbToggle:focus-visible{outline:2px solid var(--ink,#241c06); outline-offset:2px;}
+  html.sb-hidden #sbToggle{left:0; width:26px; border-left:0; border-radius:0 15px 15px 0;}
+  html.sb-hidden #sbToggle:hover{width:34px;}
+  html.sb-hidden #sbToggle svg{transform:rotate(180deg);}
+  body.view-form #sbToggle, body.chat-only #sbToggle, html.kc-open #sbToggle, body:has(#modalOverlay) #sbToggle{display:none !important;}
+
+  /* Efek saat kursor di atas menu */
+  .bn-tab{--bar:0; isolation:isolate;}
+  .bn-tab::before{ /* garis emas di kiri */
+    content:''; position:absolute; left:0; top:22%; bottom:22%; width:4px; border-radius:0 4px 4px 0;
+    background:var(--gold,#FFC400); transform:scaleY(0); transform-origin:center;
+    transition:transform .35s cubic-bezier(.34,1.56,.64,1); z-index:2;
+  }
+  .bn-tab::after{ /* kilau yang menyapu */
+    content:''; position:absolute; top:0; bottom:0; left:-60%; width:45%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.65),transparent);
+    transform:skewX(-18deg); opacity:0; pointer-events:none; z-index:1;
+  }
+  .bn-tab:hover{background:linear-gradient(90deg,rgba(255,196,0,.26),rgba(255,196,0,.08)); color:var(--ink,#241c06); box-shadow:inset 0 0 0 1px rgba(224,185,58,.35);}
+  .bn-tab:hover::before{transform:scaleY(1);}
+  .bn-tab:hover::after{animation:sbShine .8s ease forwards;}
+  .bn-tab:hover .ic{transform:scale(1.18) rotate(-8deg); animation:sbWiggle .6s ease;}
+  .bn-tab:hover span{letter-spacing:.2px;}
+  .bn-tab span{transition:letter-spacing .3s ease;}
+  .bn-tab.active:hover{box-shadow:none; background:transparent;}
+  .bn-tab.active:hover::before{transform:scaleY(0);}
+  .bn-tab:active{transform:translateX(2px) scale(.97);}
+  .bn-tab:focus-visible{outline:2px solid var(--gold,#FFC400); outline-offset:-2px;}
+
+  /* Menu muncul satu per satu saat dibuka */
+  html.sb-opening .bn-tab{animation:sbIn .5s var(--ez,cubic-bezier(.2,.8,.2,1)) backwards;}
+  html.sb-opening .bn-tab:nth-child(2){animation-delay:.08s}
+  html.sb-opening .bn-tab:nth-child(3){animation-delay:.14s}
+  html.sb-opening .bn-tab:nth-child(4){animation-delay:.2s}
+  html.sb-opening .bn-tab:nth-child(5){animation-delay:.26s}
+  html.sb-opening .bn-tab:nth-child(6){animation-delay:.32s}
+}
+@keyframes sbShine{0%{left:-60%; opacity:0} 20%{opacity:1} 100%{left:130%; opacity:0}}
+@keyframes sbWiggle{0%,100%{rotate:0deg} 30%{rotate:-10deg} 60%{rotate:8deg}}
+@keyframes sbIn{from{opacity:0; transform:translateX(-22px);}}
+@media (prefers-reduced-motion:reduce){
+  body,.bottomnav,#sbToggle,#sbToggle svg,.toast{transition:none !important;}
+  .bn-tab::after,.bn-tab:hover .ic,html.sb-opening .bn-tab{animation:none !important;}
+}
+</style>
+
 </head>
 <body>
 
@@ -4591,6 +4667,35 @@ body{background:radial-gradient(800px 480px at 95% -8%,#ffe38a,transparent 60%),
   </div>
 </div>
 
+<button type="button" id="sbToggle" aria-label="Sembunyikan menu samping" aria-controls="bottomNav" aria-expanded="true" title="Sembunyikan / tampilkan menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+<script id="kjSidebarJs">
+(function(){
+  var KEY='kaoneMotret_sidebarHidden_v1', root=document.documentElement, btn=document.getElementById('sbToggle'), t;
+  function save(v){try{localStorage.setItem(KEY,v?'1':'0');}catch(e){}}
+  function load(){try{return localStorage.getItem(KEY)==='1';}catch(e){return false;}}
+  function sync(){
+    var h=root.classList.contains('sb-hidden');
+    btn.setAttribute('aria-expanded',h?'false':'true');
+    btn.setAttribute('aria-label',h?'Tampilkan menu samping':'Sembunyikan menu samping');
+  }
+  function reind(){ /* tata ulang pil emas setelah menu bergeser */
+    try{ window.dispatchEvent(new Event('resize')); }catch(e){}
+  }
+  function set(h,persist){
+    root.classList.toggle('sb-hidden',h);
+    if(!h){ root.classList.add('sb-opening'); clearTimeout(t); t=setTimeout(function(){root.classList.remove('sb-opening');reind();},800); }
+    else reind();
+    if(persist!==false) save(h);
+    sync();
+  }
+  if(load()) root.classList.add('sb-hidden');
+  sync();
+  btn.addEventListener('click',function(){ set(!root.classList.contains('sb-hidden')); });
+  document.addEventListener('keydown',function(e){
+    if((e.ctrlKey||e.metaKey)&&e.key==='\\'){ e.preventDefault(); btn.click(); }
+  });
+})();
+</script>
 <div id="toast" class="toast"></div>
 
 <script>
@@ -19336,12 +19441,21 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.29.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.30.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.30.0',
+    tanggal: '6 November 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Menu samping di layar lebar kini bisa disembunyikan dan ditampilkan lagi lewat tombol di tepi menu (atau tekan Ctrl + \\). Pilihanmu diingat, dan halaman otomatis melebar saat menu disembunyikan.' },
+      { kategori: 'Peningkatan', teks: 'Menu samping punya efek baru saat kursor di atasnya: garis emas di kiri, kilau yang menyapu, ikon yang bergoyang, dan menu muncul satu per satu saat dibuka.' },
+      { kategori: 'Perbaikan', teks: 'Bagian hak cipta di bawah kini selalu menempel di dasar layar, tidak lagi menggantung di tengah dengan ruang kosong di bawahnya saat isi halaman pendek.' },
+    ]
+  },
   {
     version: '1.29.0',
     tanggal: '5 November 2026',

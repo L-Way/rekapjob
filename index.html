@@ -4983,6 +4983,26 @@ function kaoneSimpanSesi(d){
   currentHanyaChat = isHanyaChatUsername(d.username);
   kaonePersistSesi();
 }
+/* Label perangkat sederhana & ramah-baca untuk riwayat login (terlihat oleh pemilik akun sendiri). */
+function kaoneLabelPerangkat(){
+  try{
+    const ua = navigator.userAgent || '';
+    let os = 'Perangkat tidak dikenal';
+    if(/iphone/i.test(ua)) os = 'iPhone';
+    else if(/ipad/i.test(ua)) os = 'iPad';
+    else if(/android/i.test(ua)) os = 'Android';
+    else if(/windows/i.test(ua)) os = 'Windows';
+    else if(/macintosh|mac os/i.test(ua)) os = 'Mac';
+    else if(/linux/i.test(ua)) os = 'Linux';
+    let browser = '';
+    if(/edg\//i.test(ua)) browser = 'Edge';
+    else if(/chrome\//i.test(ua) && !/edg\//i.test(ua)) browser = 'Chrome';
+    else if(/crios/i.test(ua)) browser = 'Chrome';
+    else if(/fxios|firefox/i.test(ua)) browser = 'Firefox';
+    else if(/safari/i.test(ua) && !/chrome|crios|android/i.test(ua)) browser = 'Safari';
+    return browser ? (browser + ' di ' + os) : os;
+  }catch(e){ return 'Perangkat tidak dikenal'; }
+}
 async function attemptLogin(username, password){
   if(!cloudSyncEnabled) return {ok:false, reason:'offline'};
   try{
@@ -5002,6 +5022,7 @@ async function attemptLogin(username, password){
     const hc = await kaoneCekHanyaChat();
     if(hc === true && !currentHanyaChat){ currentHanyaChat = true; kaonePersistSesi(); }
     kaoneBersihkanCacheTim();
+    try{ await supabaseClient.rpc('kaone_catat_login', { p_perangkat: kaoneLabelPerangkat() }); }catch(e){}
     return {ok:true};
   }catch(e){
     console.error('Gagal login', e);
@@ -23423,6 +23444,44 @@ window.addEventListener('scroll', function(){ window.__kmLastScroll = Date.now()
     st.parentNode.insertBefore(sh, st.nextSibling);
     b.addEventListener('click', function(){ st.classList.remove('on'); sh.classList.add('on'); muat(); });
     sh.addEventListener('click', function(e){ if(e.target===sh || e.target.id==='kakunx') sh.classList.remove('on'); });
+  }
+  pasang(); setTimeout(pasang, 1500); setTimeout(pasang, 5000);
+})();
+</script>
+<script>
+/* Riwayat Login - terlihat oleh akun yang sedang login sendiri (transparan, bukan rahasia). */
+(function(){
+  function sheet(){ return document.getElementById('kriw'); }
+  async function muat(){
+    var body = document.getElementById('kriwb'); if(!body) return;
+    body.textContent = 'Memuat…';
+    try{
+      var r = await supabaseClient.rpc('kaone_log_login_saya');
+      if(r.error) throw r.error;
+      var list = r.data || [];
+      if(!list.length){ body.textContent = 'Belum ada riwayat login tercatat.'; return; }
+      body.innerHTML = list.map(function(x){
+        var w = '-';
+        try{ w = new Date(x.dibuat_at).toLocaleString('id-ID', {dateStyle:'medium', timeStyle:'short'}); }catch(e){}
+        return '<div style="padding:7px 0;border-bottom:1px solid rgba(127,127,127,.18)">' +
+          '<div style="font-weight:700;font-size:13.5px">' + escapeHtml(x.perangkat || 'Perangkat tidak dikenal') + '</div>' +
+          '<div style="opacity:.7;font-size:12px">' + escapeHtml(w) + '</div></div>';
+      }).join('');
+    }catch(e){ body.textContent = 'Gagal memuat riwayat login. Pastikan koneksi internet aktif.'; }
+  }
+  function pasang(){
+    if(typeof kaoneChatBoleh !== 'function' || !kaoneChatBoleh()) return;
+    var st = document.getElementById('kst'); if(!st || document.getElementById('kmriw')) return;
+    var tutup = document.getElementById('kstx'); if(!tutup) return;
+    var ikon = document.querySelector('#kmp span');
+    var b = document.createElement('button'); b.type='button'; b.className='it'; b.id='kmriw';
+    b.innerHTML = '<span>' + (ikon ? ikon.innerHTML : '') + '</span>Riwayat login akun saya';
+    tutup.parentNode.before(b);
+    var sh = document.createElement('div'); sh.className='sh'; sh.id='kriw';
+    sh.innerHTML = '<div class="sc"><b>Riwayat login akun saya</b><div style="opacity:.7;font-size:12px;margin:2px 0 8px">Daftar perangkat yang baru login ke akun ini. Kalau ada yang tidak kamu kenali, segera ganti sandi.</div><div id="kriwb" style="padding:4px 0 8px;font-size:13px;line-height:1.5"></div><div class="rw"><button type="button" id="kriwx" class="pri">Tutup</button></div></div>';
+    st.parentNode.insertBefore(sh, st.nextSibling);
+    b.addEventListener('click', function(){ st.classList.remove('on'); sh.classList.add('on'); muat(); });
+    sh.addEventListener('click', function(e){ if(e.target===sh || e.target.id==='kriwx') sh.classList.remove('on'); });
   }
   pasang(); setTimeout(pasang, 1500); setTimeout(pasang, 5000);
 })();

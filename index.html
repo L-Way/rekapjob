@@ -5126,6 +5126,15 @@ async function kaoneAturPassword(id){
   if(error){ alert('Gagal mengatur sandi.'); return; }
   toast('Sandi diperbarui. Sampaikan sandi baru ke pemilik akun.');
 }
+/* Cabut semua sesi login akun lain (admin saja). Akun itu akan otomatis ter-logout di semua perangkat
+   di mana ia sedang login, dan harus login ulang. */
+async function kaoneCabutSesi(id){
+  if(!isAdmin()) return;
+  if(!confirm('Cabut semua sesi login akun ini? Akun tersebut akan langsung ter-logout dari semua perangkat.')) return;
+  const { error } = await supabaseClient.rpc('kaone_cabut_sesi', { p_id:id });
+  if(error){ alert('Gagal mencabut sesi.'); return; }
+  toast('Sesi login akun ini sudah dicabut dari semua perangkat.');
+}
 /* Daftar seluruh akun - hanya diambil & ditampilkan di panel "Kelola Akun" milik
    Admin (menu Pengaturan). Akun biasa tidak pernah menarik daftar lengkap ini. */
 let akunList = [];
@@ -18675,7 +18684,8 @@ function viewPengaturan(){
               <td>${a.created_at ? new Date(a.created_at).toLocaleDateString('id-ID') : '-'}</td>
               <td>${a.id===currentUserId ? '-' : `
                 <button type="button" class="btn btn-outline" onclick="kaoneSetujuiAkun('${a.id}', ${a.disetujui?'false':'true'})">${a.disetujui?'Nonaktifkan':'Setujui'}</button>
-                <button type="button" class="btn btn-outline" onclick="kaoneAturPassword('${a.id}')">Atur Sandi</button>`}</td>
+                <button type="button" class="btn btn-outline" onclick="kaoneAturPassword('${a.id}')">Atur Sandi</button>
+                <button type="button" class="btn btn-outline" onclick="kaoneCabutSesi('${a.id}')">Cabut Sesi</button>`}</td>
             </tr>
           `).join('') : `<tr><td colspan="6">Belum ada akun terdaftar.</td></tr>`}
         </tbody>
@@ -23427,7 +23437,10 @@ window.addEventListener('scroll', function(){ window.__kmLastScroll = Date.now()
         var b2 = document.createElement('button'); b2.type='button'; b2.className='it';
         b2.textContent = 'Atur sandi';
         b2.addEventListener('click', function(){ kaoneAturPassword(a.id); });
-        box.appendChild(b1); box.appendChild(b2); body.appendChild(box);
+        var b3 = document.createElement('button'); b3.type='button'; b3.className='it';
+        b3.textContent = 'Cabut sesi login';
+        b3.addEventListener('click', function(){ kaoneCabutSesi(a.id); });
+        box.appendChild(b1); box.appendChild(b2); box.appendChild(b3); body.appendChild(box);
       });
     }catch(e){ body.textContent = 'Gagal memuat akun. Pastikan koneksi internet aktif.'; }
   }

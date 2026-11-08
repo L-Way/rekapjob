@@ -23592,6 +23592,32 @@ window.addEventListener('scroll', function(){ window.__kmLastScroll = Date.now()
 (function(){
   function boleh(){ return typeof currentUserRole!=='undefined' && currentUserRole==='admin'; }
   function sheet(){ return document.getElementById('kakun'); }
+  /* Penanda berhasil/gagal yang tampil DI DALAM panel ini (toast biasa tertutup ruang chat). */
+  var SV_OK = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="9.5"/><path d="M7.8 12.4l3 3 5.6-6.2"/></svg>';
+  var SV_NO = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="9.5"/><path d="M8.8 8.8l6.4 6.4M15.2 8.8l-6.4 6.4"/></svg>';
+  var tmrInfo = 0;
+  function info(ok, msg){
+    var m = document.getElementById('kakunm'); if(!m) return false;
+    m.style.cssText = 'display:flex;align-items:flex-start;gap:8px;margin:6px 14px 2px;padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.45;font-weight:600;' +
+      (ok ? 'background:#E6F7EC;color:#146C37;border:1px solid #A9E1BF' : 'background:#FDECEC;color:#A11D1D;border:1px solid #F3B4B4');
+    m.setAttribute('role', ok ? 'status' : 'alert');
+    m.innerHTML = (ok ? SV_OK : SV_NO) + '<span></span>';
+    m.lastChild.textContent = (ok ? 'Berhasil: ' : 'Gagal: ') + msg;
+    clearTimeout(tmrInfo); tmrInfo = setTimeout(function(){ m.style.display = 'none'; }, ok ? 5000 : 9000);
+    return true;
+  }
+  /* Hasil aksi akun (username, sandi, cabut sesi, setujui) dialihkan ke panel ini saat panel terbuka. */
+  (function(){
+    var asli = window.kaoneToastHasil; if(typeof asli !== 'function' || asli.__kakun) return;
+    var baru = function(ok, msg){ var sh = sheet(); if(sh && sh.classList.contains('on') && info(ok, msg)) return; return asli(ok, msg); };
+    baru.__kakun = true; window.kaoneToastHasil = baru;
+  })();
+  async function jalan(btn, fn, gagalMsg){
+    btn.disabled = true; 
+    try{ await fn(); }
+    catch(e){ console.error(e); info(false, gagalMsg + ' Periksa koneksi internet lalu coba lagi.'); }
+    btn.disabled = false;
+  }
   async function muat(){
     var body = document.getElementById('kakunb'); if(!body) return;
     body.textContent = 'Memuat…';
@@ -23609,16 +23635,16 @@ window.addEventListener('scroll', function(){ window.__kmLastScroll = Date.now()
         st.textContent = a.disetujui ? 'Status: Aktif' : 'Status: Menunggu persetujuan / nonaktif'; box.appendChild(st);
         var b1 = document.createElement('button'); b1.type='button'; b1.className='it';
         b1.textContent = a.disetujui ? 'Nonaktifkan akun' : 'Setujui akun';
-        b1.addEventListener('click', async function(){ await kaoneSetujuiAkun(a.id, !a.disetujui); muat(); });
+        b1.addEventListener('click', function(){ jalan(b1, async function(){ await kaoneSetujuiAkun(a.id, !a.disetujui); muat(); }, 'Status akun tidak berubah.'); });
         var b2 = document.createElement('button'); b2.type='button'; b2.className='it';
         b2.textContent = 'Atur sandi';
-        b2.addEventListener('click', function(){ kaoneAturPassword(a.id); });
+        b2.addEventListener('click', function(){ jalan(b2, function(){ return kaoneAturPassword(a.id); }, 'Sandi tidak berubah.'); });
         var b3 = document.createElement('button'); b3.type='button'; b3.className='it';
         b3.textContent = 'Cabut sesi login';
-        b3.addEventListener('click', function(){ kaoneCabutSesi(a.id); });
+        b3.addEventListener('click', function(){ jalan(b3, function(){ return kaoneCabutSesi(a.id); }, 'Sesi login belum dicabut.'); });
         var b4 = document.createElement('button'); b4.type='button'; b4.className='it';
         b4.textContent = 'Ubah username';
-        b4.addEventListener('click', async function(){ await kaoneUbahUsername(a.id, a.username); muat(); });
+        b4.addEventListener('click', function(){ jalan(b4, async function(){ await kaoneUbahUsername(a.id, a.username); muat(); }, 'Username tidak berubah.'); });
         box.appendChild(b1); box.appendChild(b2); box.appendChild(b3); box.appendChild(b4); body.appendChild(box);
       });
     }catch(e){ body.textContent = 'Gagal memuat akun. Pastikan koneksi internet aktif.'; }
@@ -23632,9 +23658,9 @@ window.addEventListener('scroll', function(){ window.__kmLastScroll = Date.now()
     b.innerHTML = '<span>' + (ikon ? ikon.innerHTML : '') + '</span>Kelola akun chat';
     tutup.parentNode.before(b);
     var sh = document.createElement('div'); sh.className='sh'; sh.id='kakun';
-    sh.innerHTML = '<div class="sc"><b>Kelola akun chat</b><div id="kakunb" style="padding:4px 14px 8px;font-size:13px;line-height:1.5"></div><div class="rw"><button type="button" id="kakunx" class="pri">Tutup</button></div></div>';
+    sh.innerHTML = '<div class="sc"><b>Kelola akun chat</b><div id="kakunm" style="display:none"></div><div id="kakunb" style="padding:4px 14px 8px;font-size:13px;line-height:1.5"></div><div class="rw"><button type="button" id="kakunx" class="pri">Tutup</button></div></div>';
     st.parentNode.insertBefore(sh, st.nextSibling);
-    b.addEventListener('click', function(){ st.classList.remove('on'); sh.classList.add('on'); muat(); });
+    b.addEventListener('click', function(){ st.classList.remove('on'); sh.classList.add('on'); var m=document.getElementById('kakunm'); if(m)m.style.display='none'; muat(); });
     sh.addEventListener('click', function(e){ if(e.target===sh || e.target.id==='kakunx') sh.classList.remove('on'); });
   }
   pasang(); setTimeout(pasang, 1500); setTimeout(pasang, 5000);

@@ -10635,7 +10635,7 @@ function viewBeranda(){
     const end = new Date((getJobFinishDate(j) || j.tanggalAcara)+'T00:00:00');
     return !Number.isNaN(end.getTime()) && end >= todayStart;
   }).sort((a,b)=>new Date(a.tanggalAcara)-new Date(b.tanggalAcara));
-  const nextJob = upcomingAll[0] || null;
+  const nextJob = upcomingAll.find(j=>!j.acaraSelesaiAt) || upcomingAll[0] || null;
 
   // ----- pembantu tampilan -----
   // Tanggal & jam lengkap sudah tampil live di header, jadi judul Beranda TIDAK mengulang
@@ -10659,6 +10659,7 @@ function viewBeranda(){
   const selisihHari = j => Math.round((startOf(j) - todayStart)/86400000);
   // Penanda waktu singkat: "Hari ini" / "Besok" / "N hari lagi" / "Berlangsung"
   const hariLagi = j => {
+    if(j.acaraSelesaiAt) return {t:'Selesai', now:false};
     const diff = selisihHari(j);
     if(diff<0) return {t:'Berlangsung', now:true};
     if(diff===0) return {t:'Hari ini', now:true};
@@ -10706,7 +10707,7 @@ function viewBeranda(){
     }
     const h = hariLagi(nextJob);
     const cdTs = jobStartTs(nextJob);
-    const cdHtml = cdTs ? `<div class="dash-cd" data-cd="${cdTs}">${ic('clock')}<span style="font-variant-numeric:tabular-nums">${escapeHtml(fmtCountdown(cdTs))}</span></div>` : '';
+    const cdHtml = nextJob.acaraSelesaiAt ? `<div class="dash-cd">${ic('check')}<span>Selesai pukul ${escapeHtml(fmtJamWib(nextJob.acaraSelesaiAt))}</span></div>` : cdTs ? `<div class="dash-cd" data-cd="${cdTs}">${ic('clock')}<span style="font-variant-numeric:tabular-nums">${escapeHtml(fmtCountdown(cdTs))}</span></div>` : '';
     const dur = getJobDurasiHari(nextJob);
     const jam = (nextJob.jamAcara||'').trim();
     const lok = lokasiText(nextJob);
@@ -13947,13 +13948,13 @@ function acaraSelesaiBoxHtml(j){
   if(j.acaraSelesaiAt){
     return `<div class="as-box done admin-only" id="asBox">
       <div class="as-head">${ic('check')} Status Acara</div>
-      <p class="as-txt"><span class="as-st-done">Acara sudah selesai</span> pukul <b>${escapeHtml(fmtJamWib(j.acaraSelesaiAt))}</b>.${j.acaraEtaAt?` Estimasi tiba di rumah <b>${escapeHtml(fmtJamWib(j.acaraEtaAt))}</b> (waktu tempuh${j.acaraTempuhMenit?' ± '+j.acaraTempuhMenit+' menit':''} + ${ACARA_BUFFER_MENIT} menit).`:''}</p>
+      <p class="as-txt"><span class="as-st-done">Selesai</span> pukul <b>${escapeHtml(fmtJamWib(j.acaraSelesaiAt))}</b>.${j.acaraEtaAt?` Estimasi tiba <b>${escapeHtml(fmtJamWib(j.acaraEtaAt))}</b>.`:''}</p>
       <button type="button" class="as-btn ghost" data-acara-batal="${j.id}">${ic('undo')} Batalkan tanda selesai</button>
     </div>`;
   }
   return `<div class="as-box admin-only" id="asBox">
     <div class="as-head">${ic('clock')} Status Acara</div>
-    <p class="as-txt">Saat ini: <span class="${st.k==='jalan'?'as-st-run':''}"><b>${escapeHtml(st.t)}</b></span>. Setelah acara beres, tandai selesai. Pop-up kabar pulang otomatis muncul di akun lawan chat Anda.</p>
+    <p class="as-txt">Saat ini: <span class="${st.k==='jalan'?'as-st-run':''}"><b>${escapeHtml(st.t)}</b></span></p>
     <button type="button" class="as-btn" data-acara-selesai="${j.id}">${ic('check')} Tandai Acara Selesai</button>
   </div>`;
 }
@@ -13973,12 +13974,13 @@ async function tandaiAcaraSelesai(jobId, btn){
   }
   const now = new Date();
   const eta = new Date(now.getTime() + (menit + ACARA_BUFFER_MENIT)*60000);
-  if(!confirm('Tandai acara selesai?\n\nEstimasi tiba di rumah: '+fmtJamWib(eta)+'\n(waktu tempuh ± '+menit+' menit + '+ACARA_BUFFER_MENIT+' menit)\n\nPop-up kabar pulang akan muncul di akun lawan chat Anda.')) return;
+  if(!confirm('Tandai acara selesai?\n\nEstimasi tiba di rumah: '+fmtJamWib(eta)+'\n(waktu tempuh ± '+menit+' menit + '+ACARA_BUFFER_MENIT+' menit)')) return;
   j.acaraSelesaiAt = now.toISOString();
   j.acaraEtaAt = eta.toISOString();
   j.acaraTempuhMenit = menit;
   saveJobs();
   kaoneToastHasil(true,'Acara ditandai selesai. Estimasi tiba '+fmtJamWib(eta)+'.');
+  try{ render(); }catch(e){}
   try{ openJobDetailModal(jobId); }catch(e){}
 }
 function batalkanAcaraSelesai(jobId){
@@ -13987,6 +13989,7 @@ function batalkanAcaraSelesai(jobId){
   delete j.acaraSelesaiAt; delete j.acaraEtaAt; delete j.acaraTempuhMenit;
   saveJobs();
   kaoneToastHasil(true,'Tanda selesai dibatalkan.');
+  try{ render(); }catch(e){}
   try{ openJobDetailModal(jobId); }catch(e){}
 }
 /* ---------- Modal Detail Job (lihat, unduh gambar, salin, ics, google calendar) ---------- */
@@ -19650,7 +19653,7 @@ const CHANGELOG = [
     version: '1.31.0',
     tanggal: '8 November 2026',
     items: [
-      { kategori: 'Fitur', teks: 'Detail Job punya kotak "Status Acara" dengan tombol Tandai Acara Selesai, untuk mengubah status acara dari sedang berjalan menjadi selesai. Aplikasi menampilkan jam selesai dan perkiraan tiba di rumah (waktu tempuh yang sudah ada ditambah 30 menit). Salah tekan? Ada tombol Batalkan tanda selesai.' },
+      { kategori: 'Fitur', teks: 'Detail Job punya kotak "Status Acara" dengan tombol Tandai Acara Selesai, untuk mengubah status acara dari sedang berjalan menjadi selesai. Aplikasi menampilkan jam selesai dan perkiraan tiba di rumah (waktu tempuh yang sudah ada ditambah 30 menit). Kartu Job berikutnya di Beranda ikut berubah menjadi Selesai dan pindah ke job berikutnya. Salah tekan? Ada tombol Batalkan tanda selesai.' },
       { kategori: 'Fitur', teks: 'Setiap job kini punya penanda layanan dokumentasi: Foto saja, Foto + Video, Foto + Cinematic, atau Foto + Video + Cinematic. Pilih di form Input/Edit Job (Layanan Dokumentasi); penandanya berupa ikon kecil berwarna di kartu Job berikutnya di Beranda, daftar job, Detail Job, rincian tanggal di Kalender, dan hasil Salin Detail, sehingga kamu dan tim langsung tahu cakupan job. Job lama otomatis ditebak dari Add-On, Paket, atau Deskripsi Paket.' },
     ]
   },

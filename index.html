@@ -1004,6 +1004,25 @@
      Dikelompokkan: Bagikan & unduh, Kwitansi (Admin), Kalender, lalu Edit Job. HP: baris penuh
      yang mudah disentuh; layar lebar: dua kolom. */
   .da-wrap{margin-top:18px; display:grid; gap:16px;}
+  /* Penanda layanan: Foto saja / + Video / + Cinematic */
+  .lm-chip{display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:800; line-height:1.4; white-space:nowrap; vertical-align:middle; margin:2px 0 0 6px; background:#EFE8D6; color:#6b5a2a; border:1px solid rgba(0,0,0,.06);}
+  .lm-chip.lm-video{background:#DDEBFF; color:#1d4f91;}
+  .lm-chip.lm-cinematic{background:#EADCFB; color:#5b2c97;}
+  .lm-chip.lm-video_cinematic{background:linear-gradient(90deg,#DDEBFF,#EADCFB); color:#3b3a99;}
+  .dj-acara .lm-chip{margin:3px 0 0 0;}
+  /* Tombol "Tandai Acara Selesai" di Detail Job */
+  .as-box{margin-top:14px; border:1.5px solid #f0e1a0; background:#FFFBEA; border-radius:16px; padding:14px;}
+  .as-box.done{background:#ecfdf3; border-color:#bbf0cf;}
+  .as-head{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px;}
+  .as-head .ic{width:15px; height:15px;}
+  .as-txt{font-size:13px; line-height:1.55; color:var(--ink); margin:0 0 10px;}
+  .as-txt b{font-weight:800;}
+  .as-btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:48px; border:0; border-radius:12px; font:700 14.5px inherit; font-family:inherit; cursor:pointer; background:#241c06; color:#FFD42E;}
+  .as-btn .ic{width:18px; height:18px;}
+  .as-btn:active{transform:scale(.98);}
+  .as-btn[disabled]{opacity:.6; cursor:wait;}
+  .as-btn.ghost{background:#fff; color:#7a4a06; border:1px solid #e6d79a; min-height:42px; font-size:13px;}
+  .as-st-run{color:#b45309; font-weight:700;} .as-st-done{color:#15803d; font-weight:700;}
   .da-group{animation:thRise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i,0)*80ms + 200ms);}
   .da-glabel{display:flex; align-items:center; gap:10px; margin:0 2px 9px; font-size:11px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; color:var(--ink-soft);}
   .da-glabel::after{content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--line),rgba(240,225,160,0));}
@@ -1911,6 +1930,8 @@
     box-shadow:0 8px 24px rgba(0,0,0,.3); z-index:400; opacity:0; pointer-events:none; transition:.25s;
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+  .toast.ok{background:#163a1f; color:#d8f5de;}
+  .toast.gagal{background:#3a1616; color:#f8d9d9;}
 
   .backup-row{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
   .info-box{background:#fff8e6; border:1px solid #f0e0a0; border-radius:10px; padding:12px 16px; font-size:12.5px; color:#5b4e10; line-height:1.6; margin-top:14px;}
@@ -5113,18 +5134,18 @@ async function kaoneSetujuiAkun(id, setuju){
   if(!isAdmin()) return;
   if(!confirm(setuju ? 'Setujui akun ini agar bisa masuk dan melihat data Tim?' : 'Nonaktifkan akun ini? Akun tidak akan bisa membuka data lagi.')) return;
   const { error } = await supabaseClient.rpc('kaone_setujui_akun', { p_id:id, p_setuju:setuju });
-  if(error){ alert('Gagal mengubah status akun.'); return; }
-  toast(setuju ? 'Akun disetujui' : 'Akun dinonaktifkan');
+  if(error){ kaoneToastHasil(false, 'Gagal mengubah status akun.'); return; }
+  kaoneToastHasil(true, setuju ? 'Akun disetujui.' : 'Akun dinonaktifkan.');
   pullAkunFromCloud();
 }
 async function kaoneAturPassword(id){
   if(!isAdmin()) return;
   const baru = prompt('Masukkan sandi baru untuk akun ini (minimal 6 karakter):');
   if(baru===null) return;
-  if(baru.length < 6){ alert('Sandi minimal 6 karakter.'); return; }
+  if(baru.length < 6){ kaoneToastHasil(false, 'Sandi minimal 6 karakter.'); return; }
   const { error } = await supabaseClient.rpc('kaone_atur_password', { p_id:id, p_password:baru });
-  if(error){ alert('Gagal mengatur sandi.'); return; }
-  toast('Sandi diperbarui. Sampaikan sandi baru ke pemilik akun.');
+  if(error){ kaoneToastHasil(false, 'Gagal mengatur sandi.'); return; }
+  kaoneToastHasil(true, 'Sandi diperbarui. Sampaikan sandi baru ke pemilik akun.');
 }
 /* Ubah username akun lain (admin saja). Akun itu harus login pakai username baru setelah ini;
    username lama langsung tidak berlaku. */
@@ -5133,15 +5154,14 @@ async function kaoneUbahUsername(id, usernameLama){
   const baru = prompt('Username baru untuk akun ini (3-40 karakter):', usernameLama || '');
   if(baru===null) return;
   const v = baru.trim();
-  if(v.length < 3 || v.length > 40){ alert('Username harus 3-40 karakter.'); return; }
+  if(v.length < 3 || v.length > 40){ kaoneToastHasil(false, 'Username harus 3-40 karakter.'); return; }
   const { data, error } = await supabaseClient.rpc('kaone_admin_ubah_username', { p_id:id, p_username:v });
   if(error || !data || data.ok !== true){
     const reason = data && data.reason;
-    if(reason === 'taken') alert('Username itu sudah dipakai akun lain.');
-    else alert('Gagal mengubah username.');
+    kaoneToastHasil(false, reason === 'taken' ? 'Username itu sudah dipakai akun lain.' : 'Gagal mengubah username.');
     return;
   }
-  toast('Username diperbarui menjadi "' + v + '". Sampaikan ke pemilik akun untuk login pakai username baru.');
+  kaoneToastHasil(true, 'Username diperbarui menjadi "' + v + '". Sampaikan ke pemilik akun untuk login pakai username baru.');
   pullAkunFromCloud();
 }
 /* Cabut semua sesi login akun lain (admin saja). Akun itu akan otomatis ter-logout di semua perangkat
@@ -5150,8 +5170,8 @@ async function kaoneCabutSesi(id){
   if(!isAdmin()) return;
   if(!confirm('Cabut semua sesi login akun ini? Akun tersebut akan langsung ter-logout dari semua perangkat.')) return;
   const { error } = await supabaseClient.rpc('kaone_cabut_sesi', { p_id:id });
-  if(error){ alert('Gagal mencabut sesi.'); return; }
-  toast('Sesi login akun ini sudah dicabut dari semua perangkat.');
+  if(error){ kaoneToastHasil(false, 'Gagal mencabut sesi.'); return; }
+  kaoneToastHasil(true, 'Sesi login akun ini sudah dicabut dari semua perangkat.');
 }
 /* Daftar seluruh akun - hanya diambil & ditampilkan di panel "Kelola Akun" milik
    Admin (menu Pengaturan). Akun biasa tidak pernah menarik daftar lengkap ini. */
@@ -9463,6 +9483,17 @@ function toast(msg){
   clearTimeout(window.__toastTimer);
   window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
 }
+/* Penanda jelas berhasil (hijau, centang) atau gagal (merah, silang) untuk aksi kelola akun
+   (ubah username, atur sandi, cabut sesi, setujui/nonaktifkan). Dipakai supaya hasil setiap
+   aksi selalu terlihat tegas, bukan hanya pesan netral. */
+function kaoneToastHasil(ok, msg){
+  const t = document.getElementById('toast');
+  t.textContent = (ok ? '✅ ' : '❌ ') + msg;
+  t.classList.remove('ok','gagal');
+  t.classList.add(ok ? 'ok' : 'gagal', 'show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.classList.remove('ok','gagal'), 300); }, ok ? 2400 : 3600);
+}
 function escapeHtml(s){
   return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -11384,6 +11415,9 @@ function buildJobFormHtml(j){
           </select>
         </div>
         <div><label>Nama Paket</label><input type="text" name="paket" value="${escapeHtml(d.paket)}" placeholder="Nama / isi paket"></div>
+        <div><label>Layanan Dokumentasi</label>
+          <select name="layananMedia">${layananSelectOptions(layananMediaKey(d))}</select>
+        </div>
         <div class="full" id="jenisLainWrap" style="display:${d.jenisAcara==='Lainnya'?'block':'none'}"><label>Sebutkan Jenis Acara Lainnya</label><input type="text" name="jenisAcaraLain" value="${escapeHtml(d.jenisAcaraLain||'')}" oninput="refreshDetailAcara()"></div>
         <div class="full">
           <label>Add On</label>
@@ -12315,7 +12349,7 @@ function djRenderDesktop(wrap, list, filterSig){
     <tr class="dj-row${st.cls==='ok'?' done':''}" data-job-row="${escapeHtml(j.id)}">
       <td class="dj-tgl"><div class="dj-t1">${fmtTglJob(j)}</div><div class="dj-t2">${escapeHtml(djHari(j.tanggalAcara))}${rel.t?` <span class="dj-rel ${rel.c}">${escapeHtml(rel.t)}</span>`:''}</div></td>
       <td class="dj-klien"><div class="dj-t1">${escapeHtml(j.namaKlien||'-')}</div><div class="dj-t2">#${j.noUrut}${mem && mem!==(j.namaKlien||'').trim() ? ' · '+escapeHtml(mem) : ''}</div></td>
-      <td class="dj-acara"><span class="dj-chip" style="--c:${col.accent}; --cb:${kwRgba(col.accent,.14)}"><i></i>${escapeHtml(jenis)}</span><div class="dj-t2">${escapeHtml(lok)}</div></td>
+      <td class="dj-acara"><span class="dj-chip" style="--c:${col.accent}; --cb:${kwRgba(col.accent,.14)}"><i></i>${escapeHtml(jenis)}</span>${layananChipHtml(j)}<div class="dj-t2">${escapeHtml(lok)}</div></td>
       <td>${badgeSelect(j.id, 'prosesEdit', ['Belum Selesai','Selesai'], j.prosesEdit)}</td>
       <td>${badgeSelect(j.id, 'prosesCetak', ['Belum Selesai','Selesai'], j.prosesCetak)}</td>
       <td>${badgeSelect(j.id, 'pengiriman', PENGIRIMAN_LIST, j.pengiriman)}</td>
@@ -12388,7 +12422,7 @@ function renderDaftarTable(){
         <td class="km-m km-menu"><button type="button" class="km-menubtn" data-km-menu="${escapeHtml(j.id)}" aria-label="Menu job" aria-haspopup="menu">${ic('nav-more')}</button></td>
         <td class="km-m km-sum">${escapeHtml(jenisTxt)} · ${escapeHtml(lokasiTxt)}</td>
         <td class="km-m km-stat"><button type="button" class="km-chip ${st.cls}" data-km-toggle="${escapeHtml(j.id)}" aria-expanded="${terbuka?'true':'false'}" title="Ketuk untuk melihat / mengubah status"><span class="km-lbl">${escapeHtml(st.label)}</span>${st.extra ? `<span class="km-more">+${st.extra}</span>` : ''}</button></td>
-        <td data-label="Jenis Acara">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara)}</td>
+        <td data-label="Jenis Acara">${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara)} ${layananChipHtml(j)}</td>
         <td data-label="Lokasi">${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}</td>
         <td data-label="Edit">${badgeSelect(j.id, 'prosesEdit', ['Belum Selesai','Selesai'], j.prosesEdit)}</td>
         <td data-label="Cetak">${badgeSelect(j.id, 'prosesCetak', ['Belum Selesai','Selesai'], j.prosesCetak)}</td>
@@ -13389,6 +13423,7 @@ function openDateModal(dateIso){
       <div class="modal-job">
         <div style="font-weight:700;margin-bottom:4px;">#${getJobNo(j.id)} - ${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
         <div class="mj-row"><span>Jenis Acara</span><span>${escapeHtml(j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Lainnya'):j.jenisAcara||'-')}</span></div>
+        <div class="mj-row"><span>Layanan</span><span>${layananChipHtml(j)}</span></div>
         ${(isJenisMempelai(j.jenisAcara) && (j.namaMempelai||'').trim()) ? `<div class="mj-row"><span>Kedua Mempelai</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.namaMempelai.trim())}</span></div>` : ''}
         <div class="mj-row"><span>Lokasi</span><span>${escapeHtml(desaDisplay(j)||'-')}, ${escapeHtml(j.kecamatan||'-')}, ${escapeHtml(j.kabupaten||'-')}</span></div>
         <div class="mj-row"><span>Paket</span><span>${escapeHtml(j.paket||'-')}</span></div>
@@ -13849,6 +13884,107 @@ function jdSectionHtml(sec, i){
     ${isi}
   </section>`;
 }
+/* ---------- Penanda layanan job: Foto saja / Foto + Video / Foto + Cinematic / Foto + Video + Cinematic ----------
+   Disimpan di j.layananMedia ('foto'|'video'|'cinematic'|'video_cinematic'). Job lama yang belum punya nilai ini
+   ditebak dari teks Add-On / Paket / Deskripsi Paket (kata "video" & "cinematic"); aturan yang sama dipakai di
+   fungsi database kaone_chat_jadwal untuk akun lawan chat. */
+const LAYANAN_MEDIA = {
+  foto:            {l:'Foto saja',                 s:'Foto saja',            e:'📷'},
+  video:           {l:'Foto + Video',              s:'+ Video',              e:'🎥'},
+  cinematic:       {l:'Foto + Cinematic',          s:'+ Cinematic',          e:'🎬'},
+  video_cinematic: {l:'Foto + Video + Cinematic',  s:'+ Video & Cinematic',  e:'🎥🎬'}
+};
+function layananMediaKey(j){
+  const v = j && j.layananMedia;
+  if(v && LAYANAN_MEDIA[v]) return v;
+  const t = [j&&j.addOn, j&&j.paket, j&&j.deskripsiPaket].filter(Boolean).join(' ');
+  const vid = /video/i.test(t), cin = /cinematic|sinematik/i.test(t);
+  return vid&&cin ? 'video_cinematic' : vid ? 'video' : cin ? 'cinematic' : 'foto';
+}
+function layananMediaLabel(j){ return LAYANAN_MEDIA[layananMediaKey(j)].l; }
+function layananChipHtml(j){
+  const k = layananMediaKey(j), m = LAYANAN_MEDIA[k];
+  return `<span class="lm-chip lm-${k}" title="${escapeHtml(m.l)}">${m.e} ${escapeHtml(m.s)}</span>`;
+}
+function layananSelectOptions(sel){
+  return Object.keys(LAYANAN_MEDIA).map(k=>`<option value="${k}"${k===sel?' selected':''}>${LAYANAN_MEDIA[k].e} ${escapeHtml(LAYANAN_MEDIA[k].l)}</option>`).join('');
+}
+/* ---------- Tandai Acara Selesai (admin) ----------
+   Mengubah status acara dari "sedang berjalan" menjadi "selesai". Menyimpan:
+     acaraSelesaiAt  = waktu (ISO) saat ditandai selesai
+     acaraEtaAt      = perkiraan tiba di rumah (ISO) = sekarang + waktu tempuh yang sudah ada + 30 menit
+     acaraTempuhMenit= waktu tempuh yang dipakai (menit)
+   Kedua kolom waktu ikut terkirim ke akun lawan chat lewat fungsi database kaone_chat_jadwal,
+   lalu memunculkan 1 pop-up romantis di akun itu (lihat popSelesai). */
+const ACARA_BUFFER_MENIT = 30;
+function fmtJamWib(isoOrDate){
+  const d = (isoOrDate instanceof Date) ? isoOrDate : new Date(isoOrDate);
+  if(isNaN(d)) return '-';
+  const p = {};
+  new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d).forEach(x=>{p[x.type]=x.value;});
+  return (p.hour||'00').replace(/^24$/,'00')+'.'+(p.minute||'00')+' WIB';
+}
+function acaraStatusInfo(j){
+  if(j.acaraSelesaiAt) return {k:'selesai', t:'Selesai'};
+  const t = new Date(); const hari = t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+  const a = j.tanggalAcara||'', b = j.tanggalSelesai||j.tanggalAcara||'';
+  if(a && a<=hari && (b||a)>=hari) return {k:'jalan', t:'Sedang berjalan'};
+  if(a && a>hari) return {k:'belum', t:'Belum mulai'};
+  return {k:'lewat', t:'Belum ditandai selesai'};
+}
+async function acaraTempuhMenit(j){
+  let r = getCachedJarakTempuh(j);
+  if(!r){ try{ r = await fetchJarakTempuh(j); }catch(e){ r = null; } }
+  if(r && typeof r.durMin==='number' && isFinite(r.durMin)) return Math.max(5, Math.round(r.durMin/5)*5);
+  return null;
+}
+function acaraSelesaiBoxHtml(j){
+  const st = acaraStatusInfo(j);
+  if(j.acaraSelesaiAt){
+    return `<div class="as-box done admin-only" id="asBox">
+      <div class="as-head">${ic('check')} Status Acara</div>
+      <p class="as-txt"><span class="as-st-done">Acara sudah selesai</span> pukul <b>${escapeHtml(fmtJamWib(j.acaraSelesaiAt))}</b>.${j.acaraEtaAt?` Estimasi tiba di rumah <b>${escapeHtml(fmtJamWib(j.acaraEtaAt))}</b> (waktu tempuh${j.acaraTempuhMenit?' ± '+j.acaraTempuhMenit+' menit':''} + ${ACARA_BUFFER_MENIT} menit).`:''}</p>
+      <button type="button" class="as-btn ghost" data-acara-batal="${j.id}">${ic('undo')} Batalkan tanda selesai</button>
+    </div>`;
+  }
+  return `<div class="as-box admin-only" id="asBox">
+    <div class="as-head">${ic('clock')} Status Acara</div>
+    <p class="as-txt">Saat ini: <span class="${st.k==='jalan'?'as-st-run':''}"><b>${escapeHtml(st.t)}</b></span>. Setelah acara beres, tandai selesai. Pop-up kabar pulang otomatis muncul di akun lawan chat Anda.</p>
+    <button type="button" class="as-btn" data-acara-selesai="${j.id}">${ic('check')} Tandai Acara Selesai</button>
+  </div>`;
+}
+async function tandaiAcaraSelesai(jobId, btn){
+  const j = jobs.find(x=>x.id===jobId); if(!j || j.acaraSelesaiAt) return;
+  const hari = new Date(); const iniHari = hari.getFullYear()+'-'+String(hari.getMonth()+1).padStart(2,'0')+'-'+String(hari.getDate()).padStart(2,'0');
+  if(j.tanggalSelesai && j.tanggalSelesai > iniHari && !confirm('Acara ini dijadwalkan sampai '+j.tanggalSelesai+'. Tetap tandai selesai sekarang?')) return;
+  if(btn){ btn.disabled = true; }
+  let menit = await acaraTempuhMenit(j);
+  if(btn){ btn.disabled = false; }
+  if(menit===null){
+    const v = prompt('Estimasi waktu tempuh belum tersedia (koordinat/koneksi). Masukkan perkiraan lama perjalanan pulang dalam menit:', '30');
+    if(v===null) return;
+    const n = parseInt(String(v).replace(/[^\d]/g,''),10);
+    if(!isFinite(n) || n<0){ kaoneToastHasil(false,'Angka menit tidak valid.'); return; }
+    menit = n;
+  }
+  const now = new Date();
+  const eta = new Date(now.getTime() + (menit + ACARA_BUFFER_MENIT)*60000);
+  if(!confirm('Tandai acara selesai?\n\nEstimasi tiba di rumah: '+fmtJamWib(eta)+'\n(waktu tempuh ± '+menit+' menit + '+ACARA_BUFFER_MENIT+' menit)\n\nPop-up kabar pulang akan muncul di akun lawan chat Anda.')) return;
+  j.acaraSelesaiAt = now.toISOString();
+  j.acaraEtaAt = eta.toISOString();
+  j.acaraTempuhMenit = menit;
+  saveJobs();
+  kaoneToastHasil(true,'Acara ditandai selesai. Estimasi tiba '+fmtJamWib(eta)+'.');
+  try{ openJobDetailModal(jobId); }catch(e){}
+}
+function batalkanAcaraSelesai(jobId){
+  const j = jobs.find(x=>x.id===jobId); if(!j || !j.acaraSelesaiAt) return;
+  if(!confirm('Batalkan tanda selesai? Status acara kembali ke "sedang berjalan" / belum selesai.')) return;
+  delete j.acaraSelesaiAt; delete j.acaraEtaAt; delete j.acaraTempuhMenit;
+  saveJobs();
+  kaoneToastHasil(true,'Tanda selesai dibatalkan.');
+  try{ openJobDetailModal(jobId); }catch(e){}
+}
 /* ---------- Modal Detail Job (lihat, unduh gambar, salin, ics, google calendar) ---------- */
 function openJobDetailModal(jobId){
   const j = jobs.find(x=>x.id===jobId);
@@ -13882,12 +14018,14 @@ function openJobDetailModal(jobId){
       ['Perkiraan Waktu Tempuh', durasiTempuhTeksAwal, 'jdDurasiTempuhText'],
       ...(isAdmin() ? [['No. WhatsApp', j.noWhatsapp||'-']] : []),
       ...instagramDetailRows(j),
+      ['Layanan', LAYANAN_MEDIA[layananMediaKey(j)].e+' '+layananMediaLabel(j)],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', cetakRapikan(j.deskripsiPaket)||'-'],
       ['Add-On', j.addOn||'-'],
     ]},
     ...(detailAcaraRows(j).length ? [{title:'Detail Acara', rows:detailAcaraRows(j)}] : []),
     {title:'Status & Proses', rows:[
+      ['Status Acara', acaraStatusInfo(j).t + (j.acaraSelesaiAt ? ' · '+fmtJamWib(j.acaraSelesaiAt) : '')],
       ['Proses Edit', j.prosesEdit||'-'],
       ['Proses Cetak', j.prosesCetak||'-'],
       ['Pengiriman', j.pengiriman||'-'],
@@ -13909,7 +14047,7 @@ function openJobDetailModal(jobId){
   showModal(`
     <button type="button" class="close-x" id="closeModal">${ic('close')}</button>
     <h3 style="margin-bottom:2px;">Detail Job</h3>
-    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">#${getJobNo(j.id)} - ${escapeHtml(j.namaKlien||'Tanpa Nama')}</div>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">#${getJobNo(j.id)} - ${escapeHtml(j.namaKlien||'Tanpa Nama')} ${layananChipHtml(j)}</div>
     ${tagihanBoxHtml(j)}
     <div class="job-detail-card" id="jobDetailCard" style="${cardStyle}">
       <div class="jd-header">
@@ -13932,6 +14070,7 @@ function openJobDetailModal(jobId){
       </div>
       <div class="jd-bottom-bar"></div>
     </div>
+    ${isAdmin() ? acaraSelesaiBoxHtml(j) : ''}
     ${kwitansiStatusHtml(j)}
     ${waSelesaiBoxHtml(j)}
     ${waQuickSendHtml(j)}
@@ -15815,6 +15954,7 @@ function jobEventDetails(j){
   const location = lokasiSingkat;
   // Gabungkan nama paket & deskripsi paket menjadi catatan acara di Google Calendar / ICS
   const detailLines = [];
+  detailLines.push(`Layanan: ${layananMediaLabel(j)}`);
   if((j.paket||'').trim()) detailLines.push(`Paket: ${j.paket.trim()}`);
   if(deskripsiGabung(j)) detailLines.push(`Deskripsi Paket: ${deskripsiGabung(j)}`);
   if(j.namaKlien) detailLines.push(`Klien: ${j.namaKlien}`);
@@ -20847,6 +20987,11 @@ document.addEventListener('click', (e)=>{
   const openMapsBtn = e.target.closest('[data-open-maps]');
   if(openMapsBtn){ openJobMaps(openMapsBtn.dataset.openMaps); return; }
 
+  const acSelBtn = e.target.closest('[data-acara-selesai]');
+  if(acSelBtn){ if(isAdmin()) tandaiAcaraSelesai(acSelBtn.dataset.acaraSelesai, acSelBtn); return; }
+  const acBatalBtn = e.target.closest('[data-acara-batal]');
+  if(acBatalBtn){ if(isAdmin()) batalkanAcaraSelesai(acBatalBtn.dataset.acaraBatal); return; }
+
   const icsBtn = e.target.closest('[data-ics]');
   if(icsBtn){ downloadIcs(icsBtn.dataset.ics); return; }
 
@@ -25292,6 +25437,7 @@ window.jepiAfterRender=function(){
 #lh .lh-tag.soon{background:var(--lh-pink);color:#8A2B4D}
 #lh .lh-tag.dur{background:var(--lh-mint);color:#1F6B55}
 #lh .lh-tag.old{background:#EFE8D6;color:#8F8167}
+#lh .lh-tag.lm{background:#EFE8D6;color:#6b5a2a}#lh .lh-tag.lm-video{background:#DDEBFF;color:#1d4f91}#lh .lh-tag.lm-cinematic{background:#EADCFB;color:#5b2c97}#lh .lh-tag.lm-video_cinematic{background:linear-gradient(90deg,#DDEBFF,#EADCFB);color:#3b3a99}
 /* kosong / error / memuat */
 #lh .lh-empty{text-align:center;padding:30px 18px;border-radius:24px;background:#fff;box-shadow:inset 0 0 0 1.5px var(--lh-line);margin-top:14px}
 #lh .lh-empty .e{font-size:38px;line-height:1}
@@ -25337,6 +25483,7 @@ window.jepiAfterRender=function(){
     'Patuaekkon':{bg:'#F5E3C4',fg:'#7A5522',e:'\uD83C\uDF3F'},
     '_':{bg:'#FFE9A8',fg:'#7A5A00',e:'\uD83D\uDCF8'}
   };
+  var LMW={foto:['\uD83D\uDCF7','Foto saja'],video:['\uD83C\uDFA5','Foto + Video'],cinematic:['\uD83C\uDFAC','Foto + Cinematic'],video_cinematic:['\uD83C\uDFA5\uD83C\uDFAC','Foto + Video + Cinematic']};
   var S={jobs:[],tab:'akan',loading:true,error:false,stamp:null,today:null,booted:false,timer:null};
   function $(id){return document.getElementById(id)}
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
@@ -25367,13 +25514,15 @@ window.jepiAfterRender=function(){
       var dusun=String(j.dusun||'').trim(),desa=String(j.desa||'').trim(),kec=String(j.kecamatan||'').trim();
       if(dusun&&desa)lok.push('Dusun '+dusun+', '+desa);else if(dusun)lok.push('Dusun '+dusun);else if(desa)lok.push(desa);
       if(kec)lok.push(kec);
-      out.push({id:j.id,a:a,b:b,jam:String(j.jamAcara||'').trim(),jenis:j.jenisAcara||'',
+      var sel=j.acaraSelesaiAt?new Date(j.acaraSelesaiAt):null,eta=j.acaraEtaAt?new Date(j.acaraEtaAt):null;
+      if(sel&&isNaN(sel))sel=null;if(eta&&isNaN(eta))eta=null;
+      out.push({id:j.id,a:a,b:b,selesai:sel,eta:eta,lm:LMW[j.layananMedia]?j.layananMedia:'',jam:String(j.jamAcara||'').trim(),jenis:j.jenisAcara||'',
         judul:[jenis,String(j.namaKlien||'').trim()].filter(Boolean).join(' ')||'Tanpa nama',lok:lok.join(', ')});
     });
     out.sort(function(x,y){return x.a-y.a});
     return out;
   }
-  var BOLEH=['id','tanggalAcara','tanggalSelesai','durasiHari','jamAcara','jenisAcara','jenisAcaraLain','namaKlien','dusun','desa','kecamatan'];
+  var BOLEH=['id','tanggalAcara','tanggalSelesai','durasiHari','jamAcara','jenisAcara','jenisAcaraLain','namaKlien','dusun','desa','kecamatan','acaraSelesaiAt','acaraEtaAt','layananMedia'];
   /* Daftar putih: apa pun yang dikirim server, hanya kolom jadwal ini yang dipakai atau disimpan. */
   function aman(j){var o={};BOLEH.forEach(function(k){if(j&&j[k]!=null)o[k]=String(j[k])});return o}
   function warna(j){return WARNA[j.jenis]||WARNA._}
@@ -25384,6 +25533,7 @@ window.jepiAfterRender=function(){
   }
   function status(j){
     var t=todayStart(),ds=diff(j.a,t),de=diff(j.b,t);
+    if(j.selesai&&de>=0&&ds<=0)return{k:'old',t:'Selesai \u2713'};
     if(de<0)return{k:'old',t:de===-1?'Kemarin':(-de)+' hari lalu'};
     if(ds===0)return{k:'now',t:'Hari ini'};
     if(ds<0)return{k:'now',t:'Sedang berlangsung'};
@@ -25429,6 +25579,7 @@ window.jepiAfterRender=function(){
     for(i=0;i<parts.length;i++){if(parts[i].type==='hour')h=parseInt(parts[i].value,10)%24;if(parts[i].type==='minute')mi=parseInt(parts[i].value,10)}
     var menit=h*60+mi;
     if(h>=22)return{m:h>=23?'ngantuk':'sayang',t:jumlahTok(PSN_TIDUR)};
+    now=now.filter(function(x){return !x.selesai});
     if(now.length){
       var j=now[0],mulai=-1,m=/^(\d{1,2})[:.](\d{2})/.exec(j.jam||'');
       if(m)mulai=parseInt(m[1],10)*60+parseInt(m[2],10);
@@ -25582,6 +25733,7 @@ window.jepiAfterRender=function(){
     function metaOf(j){
       var m='';
       if(j.jam)m+='<div class="lh-pill">'+IC.clock+'<span>'+esc(jamTxt(j))+'</span></div>';
+      if(j.lm)m+='<div class="lh-pill"><span>'+LMW[j.lm][0]+' '+esc(LMW[j.lm][1])+'</span></div>';
       m+='<div class="lh-pill">'+IC.pin+'<span>'+esc(j.lok||'Lokasi belum diisi')+'</span></div>';
       return m;
     }
@@ -25619,7 +25771,7 @@ window.jepiAfterRender=function(){
     var info='<div class="lh-info"><div class="t"><i>'+w.e+'</i><span>'+esc(j.judul)+'</span></div>'
       +(j.jam?'<div class="lh-line">'+IC.clock+'<span>'+esc(jamTxt(j))+'</span></div>':'')
       +'<div class="lh-line'+(j.lok?'':' mut')+'">'+IC.pin+'<span>'+esc(j.lok||'Lokasi belum diisi')+'</span></div>'
-      +'<div class="lh-tags"><span class="lh-tag '+st.k+'">'+esc(st.t)+'</span>'+(multi?'<span class="lh-tag dur">'+durasi(j)+' hari</span>':'')+'</div></div>';
+      +'<div class="lh-tags"><span class="lh-tag '+st.k+'">'+esc(st.t)+'</span>'+(j.lm?'<span class="lh-tag lm lm-'+j.lm+'">'+LMW[j.lm][0]+' '+esc(LMW[j.lm][1])+'</span>':'')+(multi?'<span class="lh-tag dur">'+durasi(j)+' hari</span>':'')+'</div></div>';
     return '<article class="lh-card'+(past?' past':'')+'" style="--i:'+Math.min(i,10)+'" data-a="'+iso(j.a)+'" data-b="'+iso(j.b)+'">'+badge+info+'</article>';
   }
   function listHtml(list,past){
@@ -25684,7 +25836,7 @@ window.jepiAfterRender=function(){
       S.jobs=norm(arr.map(aman));S.error=false;S.stamp=new Date();
     }).catch(function(e){
       console.warn('Jadwal belum bisa dimuat',e);S.error=true;
-    }).then(function(){S.loading=false;paint();popBoot()});
+    }).then(function(){S.loading=false;paint();popSelesai();popBoot()});
   }
   /* Muat ulang total: hapus cache aplikasi (Cache Storage), minta service worker cek versi baru, lalu buka ulang dengan
      parameter anti-cache. Login, pesan, dan langganan notifikasi TIDAK dihapus. Dicek online dulu lewat berkas non-halaman
@@ -25737,7 +25889,7 @@ window.jepiAfterRender=function(){
     fab.addEventListener('click',bukaChat);document.body.appendChild(fab);
     root.addEventListener('click',onClick);
     popWatchChat();
-    if(opts.jobs){S.jobs=norm(opts.jobs);S.loading=false;S.stamp=S.today||new Date();paint();popBoot();return}
+    if(opts.jobs){S.jobs=norm(opts.jobs);S.loading=false;S.stamp=S.today||new Date();paint();popSelesai();popBoot();return}
     try{var c=JSON.parse(localStorage.getItem(KEY)||'null');if(Array.isArray(c)&&c.length){S.jobs=norm(c.map(aman));S.loading=false}}catch(e){}
     paint();load();
     document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')load()});
@@ -25872,6 +26024,7 @@ window.jepiAfterRender=function(){
       selesai=true;clearInterval(iv);
       document.removeEventListener('keydown',onKey,true);document.removeEventListener('focusin',onFocus,true);window.removeEventListener('popstate',onPop);
       ov.remove();S.pop=false;
+      if(o.onTutup){try{o.onTutup()}catch(e){}}
       if(jpOn){var rt=$('lh');if(rt)jepiMount(rt)}
       var st=popState(wib().d);st[o.jenis]=(st[o.jenis]||0)+1;popSimpan(st);
       if(!lewatBack){try{if(history.state&&history.state.lhPop)history.back()}catch(e){}}
@@ -25908,6 +26061,41 @@ window.jepiAfterRender=function(){
       S.popWait=false;if(S.pop)return;
       var j=js[0],info='<p class="job">'+esc(j.judul)+(j.jam?' \u00B7 '+esc(jamTxt(j)):'')+(js.length>1?' (+'+(js.length-1)+' job lain)':'')+'</p>';
       popTampil({jenis:'b',kunci:kunci,anim:true,em:v.em,judul:v.judul,tombol:v.tombol,html:popRakit(v,n,info,'lv')});
+    });
+  }
+  /* POP-UP KE-6: ACARA SUDAH SELESAI (dipicu tombol "Tandai Acara Selesai" di akun Admin).
+     Tidak termasuk hitungan maksimal 5x beranda; muncul sekali per penandaan, langsung bisa ditutup.
+     Estimasi tiba = waktu tempuh + 30 menit, sudah dihitung Admin saat menandai (j.eta). */
+  var PSEL='kaone_liaww_selesai_v1',POP_SELESAI_JAM=18;
+  function selDone(){try{return JSON.parse(localStorage.getItem(PSEL)||'{}')||{}}catch(e){return{}}}
+  function selTandai(j){var o=selDone();o[j.id]=j.selesai.toISOString();var k=Object.keys(o);if(k.length>60)k.sort(function(a,b){return o[a]<o[b]?-1:1}).slice(0,k.length-60).forEach(function(x){delete o[x]});try{localStorage.setItem(PSEL,JSON.stringify(o))}catch(e){}}
+  function jamWib(d){var p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(d).forEach(function(x){p[x.type]=x.value});return String(p.hour==='24'?'00':p.hour)+'.'+p.minute+' WIB'}
+  var PP_SELESAI=[
+    'Hai, sayangku, [nama liaww]. ❤️',
+    'Kabar baik dari lapangan: acaranya sudah selesai. Kameraku boleh beristirahat sekarang, tetapi hatiku tidak pernah berhenti berjalan ke arahmu.',
+    'Aku bersiap pulang ke rumah. Kalau semuanya lancar, aku perkirakan tiba sekitar pukul <b>[eta]</b>. Waktunya sudah kuhitung dengan perjalanan dan kutambah 30 menit, untuk jaga-jaga di jalan, merapikan peralatan, dan sekadar menarik napas lega.',
+    'Doakan aku selamat sampai rumah ya. Tunggu aku dengan senyum yang biasa, karena senyum itu obat lelahku yang paling manjur. Rinduku sudah tidak sabar bertemu denganmu.',
+    'Sebentar lagi aku pulang, dan pulangku selalu kamu.'
+  ];
+  function popSelesai(){
+    if(S.selOff)return;
+    var t=Date.now(),pick=null,done=selDone();
+    S.jobs.forEach(function(j){
+      if(!j.selesai||done[j.id]===j.selesai.toISOString())return;
+      if(t-j.selesai.getTime()>POP_SELESAI_JAM*3600000||j.selesai.getTime()-t>3600000)return;
+      if(!pick||j.selesai>pick.selesai)pick=j;
+    });
+    if(!pick)return;
+    if(S.pop||S.popWait){S.selTry=(S.selTry||0)+1;if(S.selTry<40)setTimeout(popSelesai,3000);return}
+    S.selTry=0;S.popWait=true;
+    popNama().then(function(n){
+      S.popWait=false;
+      if(S.pop){setTimeout(popSelesai,3000);return}
+      var j=pick,etaTxt=j.eta?jamWib(j.eta):'';
+      var info='<p class="job">'+esc(j.judul)+' · selesai '+esc(jamWib(j.selesai))+'</p>';
+      var v={p:PP_SELESAI.map(function(x){return x.replace(/\[eta\]/g,esc(etaTxt))})};
+      if(!etaTxt)v.p.splice(2,1,'Aku bersiap pulang ke rumah sekarang. Nanti kukabari lagi kalau sudah dekat ya.');
+      popTampil({jenis:'s',kunci:false,anim:true,em:'🏡',judul:'Acaranya sudah selesai, sayang',tombol:'Kutunggu di rumah 💛',html:popRakit(v,n,info,'lv'),onTutup:function(){selTandai(j);setTimeout(popBeranda,700)}});
     });
   }
   function popBoot(){

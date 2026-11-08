@@ -1005,7 +1005,7 @@
      yang mudah disentuh; layar lebar: dua kolom. */
   .da-wrap{margin-top:18px; display:grid; gap:16px;}
   /* Penanda layanan: Foto saja / + Video / + Cinematic */
-  .lm-chip{display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:800; line-height:1.4; white-space:nowrap; vertical-align:middle; margin:2px 0 0 6px; background:#EFE8D6; color:#6b5a2a; border:1px solid rgba(0,0,0,.06);}
+  .lm-chip{display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:999px; font-size:11px; font-weight:800; line-height:1.4; white-space:nowrap; vertical-align:middle; margin:2px 0 0 6px; gap:5px; background:#EFE8D6; color:#6b5a2a; border:1px solid rgba(0,0,0,.06);}
   .lm-chip.lm-video{background:#DDEBFF; color:#1d4f91;}
   .lm-chip.lm-cinematic{background:#EADCFB; color:#5b2c97;}
   .lm-chip.lm-video_cinematic{background:linear-gradient(90deg,#DDEBFF,#EADCFB); color:#3b3a99;}
@@ -13889,10 +13889,10 @@ function jdSectionHtml(sec, i){
    ditebak dari teks Add-On / Paket / Deskripsi Paket (kata "video" & "cinematic"); aturan yang sama dipakai di
    fungsi database kaone_chat_jadwal untuk akun lawan chat. */
 const LAYANAN_MEDIA = {
-  foto:            {l:'Foto saja',                 s:'Foto saja',            e:'📷'},
-  video:           {l:'Foto + Video',              s:'+ Video',              e:'🎥'},
-  cinematic:       {l:'Foto + Cinematic',          s:'+ Cinematic',          e:'🎬'},
-  video_cinematic: {l:'Foto + Video + Cinematic',  s:'+ Video & Cinematic',  e:'🎥🎬'}
+  foto:            {l:'Foto saja',                 s:'Foto saja',            e:'<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1.05em;height:1.05em;flex:none"><path d="M4 8h3l1.6-2.2h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></svg>'},
+  video:           {l:'Foto + Video',              s:'+ Video',              e:'<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1.05em;height:1.05em;flex:none"><rect x="2.5" y="6.5" width="13" height="11" rx="2.2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/></svg>'},
+  cinematic:       {l:'Foto + Cinematic',          s:'+ Cinematic',          e:'<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1.05em;height:1.05em;flex:none"><path d="M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 9l-.7-3.6 15.8-3.1.7 3.6L4 9z" transform="translate(0 1.2)"/><path d="M8 9l2.4 3M12.5 9l2.4 3"/></svg>'},
+  video_cinematic: {l:'Foto + Video + Cinematic',  s:'+ Video & Cinematic',  e:'<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1.05em;height:1.05em;flex:none"><rect x="2.5" y="6.5" width="13" height="11" rx="2.2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/></svg><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1.05em;height:1.05em;flex:none"><path d="M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 9l-.7-3.6 15.8-3.1.7 3.6L4 9z" transform="translate(0 1.2)"/><path d="M8 9l2.4 3M12.5 9l2.4 3"/></svg>'}
 };
 function layananMediaKey(j){
   const v = j && j.layananMedia;
@@ -13904,10 +13904,10 @@ function layananMediaKey(j){
 function layananMediaLabel(j){ return LAYANAN_MEDIA[layananMediaKey(j)].l; }
 function layananChipHtml(j){
   const k = layananMediaKey(j), m = LAYANAN_MEDIA[k];
-  return `<span class="lm-chip lm-${k}" title="${escapeHtml(m.l)}">${m.e} ${escapeHtml(m.s)}</span>`;
+  return `<span class="lm-chip lm-${k}" title="${escapeHtml(m.l)}">${m.e}<span>${escapeHtml(m.s)}</span></span>`;
 }
 function layananSelectOptions(sel){
-  return Object.keys(LAYANAN_MEDIA).map(k=>`<option value="${k}"${k===sel?' selected':''}>${LAYANAN_MEDIA[k].e} ${escapeHtml(LAYANAN_MEDIA[k].l)}</option>`).join('');
+  return Object.keys(LAYANAN_MEDIA).map(k=>`<option value="${k}"${k===sel?' selected':''}>${escapeHtml(LAYANAN_MEDIA[k].l)}</option>`).join('');
 }
 /* ---------- Tandai Acara Selesai (admin) ----------
    Mengubah status acara dari "sedang berjalan" menjadi "selesai". Menyimpan:
@@ -14018,7 +14018,7 @@ function openJobDetailModal(jobId){
       ['Perkiraan Waktu Tempuh', durasiTempuhTeksAwal, 'jdDurasiTempuhText'],
       ...(isAdmin() ? [['No. WhatsApp', j.noWhatsapp||'-']] : []),
       ...instagramDetailRows(j),
-      ['Layanan', LAYANAN_MEDIA[layananMediaKey(j)].e+' '+layananMediaLabel(j)],
+      ['Layanan', layananMediaLabel(j)],
       ['Paket', j.paket||'-'],
       ['Deskripsi Paket', cetakRapikan(j.deskripsiPaket)||'-'],
       ['Add-On', j.addOn||'-'],
@@ -19636,12 +19636,20 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.30.1'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.31.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.31.0',
+    tanggal: '8 November 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Detail Job punya kotak "Status Acara" dengan tombol Tandai Acara Selesai, untuk mengubah status acara dari sedang berjalan menjadi selesai. Aplikasi menampilkan jam selesai dan perkiraan tiba di rumah (waktu tempuh yang sudah ada ditambah 30 menit). Salah tekan? Ada tombol Batalkan tanda selesai.' },
+      { kategori: 'Fitur', teks: 'Setiap job kini punya penanda layanan dokumentasi: Foto saja, Foto + Video, Foto + Cinematic, atau Foto + Video + Cinematic. Pilih di form Input/Edit Job (Layanan Dokumentasi); penandanya berupa ikon kecil berwarna di daftar job, Detail Job, rincian tanggal di Kalender, dan hasil Salin Detail, sehingga kamu dan tim langsung tahu cakupan job. Job lama otomatis ditebak dari Add-On, Paket, atau Deskripsi Paket.' },
+    ]
+  },
   {
     version: '1.30.1',
     tanggal: '6 November 2026',
@@ -25437,7 +25445,7 @@ window.jepiAfterRender=function(){
 #lh .lh-tag.soon{background:var(--lh-pink);color:#8A2B4D}
 #lh .lh-tag.dur{background:var(--lh-mint);color:#1F6B55}
 #lh .lh-tag.old{background:#EFE8D6;color:#8F8167}
-#lh .lh-tag.lm{background:#EFE8D6;color:#6b5a2a}#lh .lh-tag.lm-video{background:#DDEBFF;color:#1d4f91}#lh .lh-tag.lm-cinematic{background:#EADCFB;color:#5b2c97}#lh .lh-tag.lm-video_cinematic{background:linear-gradient(90deg,#DDEBFF,#EADCFB);color:#3b3a99}
+#lh .lh-tag.lm{display:inline-flex;align-items:center;gap:4px;background:#EFE8D6;color:#6b5a2a}#lh .lh-tag.lm-video{background:#DDEBFF;color:#1d4f91}#lh .lh-tag.lm-cinematic{background:#EADCFB;color:#5b2c97}#lh .lh-tag.lm-video_cinematic{background:linear-gradient(90deg,#DDEBFF,#EADCFB);color:#3b3a99}
 /* kosong / error / memuat */
 #lh .lh-empty{text-align:center;padding:30px 18px;border-radius:24px;background:#fff;box-shadow:inset 0 0 0 1.5px var(--lh-line);margin-top:14px}
 #lh .lh-empty .e{font-size:38px;line-height:1}
@@ -25483,7 +25491,7 @@ window.jepiAfterRender=function(){
     'Patuaekkon':{bg:'#F5E3C4',fg:'#7A5522',e:'\uD83C\uDF3F'},
     '_':{bg:'#FFE9A8',fg:'#7A5A00',e:'\uD83D\uDCF8'}
   };
-  var LMW={foto:['\uD83D\uDCF7','Foto saja'],video:['\uD83C\uDFA5','Foto + Video'],cinematic:['\uD83C\uDFAC','Foto + Cinematic'],video_cinematic:['\uD83C\uDFA5\uD83C\uDFAC','Foto + Video + Cinematic']};
+  var LMW={foto:['<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1.05em;height:1.05em;flex:none"><path d="M4 8h3l1.6-2.2h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></svg>','Foto saja'],video:['<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1.05em;height:1.05em;flex:none"><rect x="2.5" y="6.5" width="13" height="11" rx="2.2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/></svg>','Foto + Video'],cinematic:['<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1.05em;height:1.05em;flex:none"><path d="M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 9l-.7-3.6 15.8-3.1.7 3.6L4 9z" transform="translate(0 1.2)"/><path d="M8 9l2.4 3M12.5 9l2.4 3"/></svg>','Foto + Cinematic'],video_cinematic:['<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1.05em;height:1.05em;flex:none"><rect x="2.5" y="6.5" width="13" height="11" rx="2.2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5"/></svg><svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:1.05em;height:1.05em;flex:none"><path d="M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 9l-.7-3.6 15.8-3.1.7 3.6L4 9z" transform="translate(0 1.2)"/><path d="M8 9l2.4 3M12.5 9l2.4 3"/></svg>','Foto + Video + Cinematic']};
   var S={jobs:[],tab:'akan',loading:true,error:false,stamp:null,today:null,booted:false,timer:null};
   function $(id){return document.getElementById(id)}
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
@@ -25533,7 +25541,7 @@ window.jepiAfterRender=function(){
   }
   function status(j){
     var t=todayStart(),ds=diff(j.a,t),de=diff(j.b,t);
-    if(j.selesai&&de>=0&&ds<=0)return{k:'old',t:'Selesai \u2713'};
+    if(j.selesai&&de>=0&&ds<=0)return{k:'old',t:'Selesai'};
     if(de<0)return{k:'old',t:de===-1?'Kemarin':(-de)+' hari lalu'};
     if(ds===0)return{k:'now',t:'Hari ini'};
     if(ds<0)return{k:'now',t:'Sedang berlangsung'};
@@ -25733,7 +25741,7 @@ window.jepiAfterRender=function(){
     function metaOf(j){
       var m='';
       if(j.jam)m+='<div class="lh-pill">'+IC.clock+'<span>'+esc(jamTxt(j))+'</span></div>';
-      if(j.lm)m+='<div class="lh-pill"><span>'+LMW[j.lm][0]+' '+esc(LMW[j.lm][1])+'</span></div>';
+      if(j.lm)m+='<div class="lh-pill">'+LMW[j.lm][0]+'<span>'+esc(LMW[j.lm][1])+'</span></div>';
       m+='<div class="lh-pill">'+IC.pin+'<span>'+esc(j.lok||'Lokasi belum diisi')+'</span></div>';
       return m;
     }
@@ -25771,7 +25779,7 @@ window.jepiAfterRender=function(){
     var info='<div class="lh-info"><div class="t"><i>'+w.e+'</i><span>'+esc(j.judul)+'</span></div>'
       +(j.jam?'<div class="lh-line">'+IC.clock+'<span>'+esc(jamTxt(j))+'</span></div>':'')
       +'<div class="lh-line'+(j.lok?'':' mut')+'">'+IC.pin+'<span>'+esc(j.lok||'Lokasi belum diisi')+'</span></div>'
-      +'<div class="lh-tags"><span class="lh-tag '+st.k+'">'+esc(st.t)+'</span>'+(j.lm?'<span class="lh-tag lm lm-'+j.lm+'">'+LMW[j.lm][0]+' '+esc(LMW[j.lm][1])+'</span>':'')+(multi?'<span class="lh-tag dur">'+durasi(j)+' hari</span>':'')+'</div></div>';
+      +'<div class="lh-tags"><span class="lh-tag '+st.k+'">'+esc(st.t)+'</span>'+(j.lm?'<span class="lh-tag lm lm-'+j.lm+'">'+LMW[j.lm][0]+'<span>'+esc(LMW[j.lm][1])+'</span></span>':'')+(multi?'<span class="lh-tag dur">'+durasi(j)+' hari</span>':'')+'</div></div>';
     return '<article class="lh-card'+(past?' past':'')+'" style="--i:'+Math.min(i,10)+'" data-a="'+iso(j.a)+'" data-b="'+iso(j.b)+'">'+badge+info+'</article>';
   }
   function listHtml(list,past){
@@ -26095,7 +26103,7 @@ window.jepiAfterRender=function(){
       var info='<p class="job">'+esc(j.judul)+' · selesai '+esc(jamWib(j.selesai))+'</p>';
       var v={p:PP_SELESAI.map(function(x){return x.replace(/\[eta\]/g,esc(etaTxt))})};
       if(!etaTxt)v.p.splice(2,1,'Aku bersiap pulang ke rumah sekarang. Nanti kukabari lagi kalau sudah dekat ya.');
-      popTampil({jenis:'s',kunci:false,anim:true,em:'🏡',judul:'Acaranya sudah selesai, sayang',tombol:'Kutunggu di rumah 💛',html:popRakit(v,n,info,'lv'),onTutup:function(){selTandai(j);setTimeout(popBeranda,700)}});
+      popTampil({jenis:'s',kunci:false,anim:true,em:'<svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color:#B5456B"><path d="M3.5 11L12 4l8.5 7"/><path d="M5.5 9.8V20h13V9.8"/><path d="M10 20v-5.5h4V20"/></svg>',judul:'Acaranya sudah selesai, sayang',tombol:'Kutunggu di rumah',html:popRakit(v,n,info,'lv'),onTutup:function(){selTandai(j);setTimeout(popBeranda,700)}});
     });
   }
   function popBoot(){

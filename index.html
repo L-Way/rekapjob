@@ -621,7 +621,7 @@
   .bb-amt{font-size:13px; font-weight:700; color:var(--ink); white-space:nowrap; line-height:1.35;}
   .bb-item.r .bb-amt{color:var(--ok);}
   .bb-empty{font-size:12px; color:var(--ink-soft); margin-top:8px;}
-  /* Angka utama = bonus yang masih bisa diklaim; total keseluruhan hanya rujukan di bawahnya */
+  /* Angka utama = total bonus yang belum diklaim (siap diklaim + masa tunggu); rincian di bawahnya */
   .task-bonus-amount.bb-main-amt{font-size:30px; line-height:1.15; margin-top:2px;}
   @media(max-width:640px){ .task-bonus-amount.bb-main-amt{font-size:28px;} }
   .bb-main-cap{display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:600; color:var(--ok); margin-top:3px;}
@@ -8785,7 +8785,8 @@ function userBonusBreakdown(userId){
     .filter(b=>!isBulanSudahSelesai(b) && userTotalBonusHoursBulan(userId,b)>0)
     .map(b=>({ label: fmtBulanLabel(b), mulai: tanggalMulaiBolehKlaim(b),
                rp: Math.round(Math.max(0,userTotalBonusHoursBulan(userId,b)) * BONUS_PER_JAM) }));
-  return { total, claimed, ready, pendingRp, waiting, waitMonths,
+  const unclaimed = Math.max(0, total - claimed); // total bonus selain yang sudah diklaim (siap diklaim + masa tunggu)
+  return { total, claimed, ready, unclaimed, pendingRp, waiting, waitMonths,
            taskHrs: userTaskHours(userId), adjHrs: userBonusAdjustHours(userId),
            totalHrs: Math.max(0, userTotalBonusHours(userId)) };
 }
@@ -8798,7 +8799,7 @@ function teamBonusBreakdown(people){
     const e = months[m.label] || (months[m.label] = {label:m.label, mulai:m.mulai, rp:0});
     e.rp += m.rp;
   }));
-  return { total:sum('total'), claimed:sum('claimed'), ready:sum('ready'), pendingRp:sum('pendingRp'), waiting:sum('waiting'),
+  return { total:sum('total'), claimed:sum('claimed'), ready:sum('ready'), unclaimed:sum('unclaimed'), pendingRp:sum('pendingRp'), waiting:sum('waiting'),
            waitMonths:Object.values(months), taskHrs:sum('taskHrs'), adjHrs:sum('adjHrs'), totalHrs:sum('totalHrs'),
            readyAccounts:list.filter(x=>x.ready>0).length, accounts:list.length };
 }
@@ -8834,8 +8835,8 @@ function renderTeamBonusCard(people, pendingList){
       <div class="task-bonus-row">
         <div>
           <div class="task-bonus-label bb-label">${ic('money')} Bonus Tim</div>
-          <div class="task-bonus-amount bb-main-amt">${fmtRp(b.ready)}</div>
-          ${bonusHeadCaption(b.ready)}
+          <div class="task-bonus-amount bb-main-amt">${fmtRp(b.unclaimed)}</div>
+          ${bonusHeadCaption(b.ready, false, Math.max(0, b.unclaimed - b.ready))}
         </div>
         <button type="button" class="bonus-adjust-btn" id="btnEditBonusRate">${ic('edit')} Atur Tarif</button>
       </div>
@@ -8853,13 +8854,17 @@ function renderTeamBonusCard(people, pendingList){
 // Syarat minimal klaim terkecil (1 WDP atau tunai, mana yang lebih kecil).
 function klaimMinimal(){ return Math.min(MIN_KLAIM_TUNAI, MIN_KLAIM_WDP); }
 // cekMin = true untuk tampilan SATU akun: kalau saldo ada tapi belum mencapai minimal klaim, jangan bilang "siap diklaim".
-function bonusHeadCaption(ready, cekMin){
+// wait (opsional) = bonus masa tunggu. Kalau diisi, angka utama kartu = TOTAL belum diklaim,
+// jadi keterangan menyebut nominal yang siap diklaim & yang masih masa tunggu.
+function bonusHeadCaption(ready, cekMin, wait){
+  const adaTotal = typeof wait === 'number';
+  const tunggu = (adaTotal && wait>0) ? `<div class="bb-main-cap off">${ic('clock')} ${fmtRp(wait)} masih masa tunggu</div>` : '';
   if(ready>0 && cekMin && ready<klaimMinimal()){
-    return `<div class="bb-main-cap low">${ic('clock')} <span>Belum bisa diklaim, minimal ${fmtRp(klaimMinimal())}. Kurang ${fmtRp(klaimMinimal()-ready)} lagi.</span></div>`;
+    return `<div class="bb-main-cap low">${ic('clock')} <span>${adaTotal?fmtRp(ready)+' belum bisa diklaim, minimal ':'Belum bisa diklaim, minimal '}${fmtRp(klaimMinimal())}. Kurang ${fmtRp(klaimMinimal()-ready)} lagi.</span></div>${tunggu}`;
   }
-  return ready>0
-    ? `<div class="bb-main-cap">${ic('check-circle')} Siap diklaim sekarang</div>`
-    : `<div class="bb-main-cap off">Belum ada yang bisa diklaim</div>`;
+  return (ready>0
+    ? `<div class="bb-main-cap">${ic('check-circle')} ${adaTotal ? fmtRp(ready)+' siap diklaim sekarang' : 'Siap diklaim sekarang'}</div>`
+    : `<div class="bb-main-cap off">Belum ada yang bisa diklaim</div>`) + tunggu;
 }
 // Nama bulan singkat + waktu untuk riwayat klaim, mis. "2 Okt 2026, 14.30".
 function fmtWaktuKlaim(ts){
@@ -16283,8 +16288,8 @@ function viewTugas(){
         <div class="task-bonus-row">
           <div>
             <div class="task-bonus-label bb-label">${ic('money')} Bonus Tim</div>
-            <div class="task-bonus-amount bb-main-amt">${fmtRp(claimableRp)}</div>
-            ${bonusHeadCaption(claimableRp, true)}
+            <div class="task-bonus-amount bb-main-amt">${fmtRp(Math.max(0, bonusRp - claimedRp))}</div>
+            ${bonusHeadCaption(claimableRp, true, Math.max(0, Math.max(0, bonusRp - claimedRp) - claimableRp))}
           </div>
           <button type="button" class="bonus-adjust-btn" data-bonus-adjust="${escapeHtml(a.id)}">${ic('settings')} Atur Bonus</button>
         </div>
@@ -19654,6 +19659,7 @@ const CHANGELOG = [
     items: [
       { kategori: 'Fitur', teks: 'Detail Job punya kotak "Status Acara" dengan tombol Tandai Acara Selesai, untuk mengubah status acara dari sedang berjalan menjadi selesai. Aplikasi menampilkan jam selesai dan perkiraan tiba di rumah (waktu tempuh yang sudah ada ditambah 30 menit). Kartu Job berikutnya di Beranda ikut berubah dari Sedang berlangsung menjadi Selesai. Salah tekan? Ada tombol Batalkan tanda selesai.' },
       { kategori: 'Fitur', teks: 'Setiap job kini punya penanda layanan dokumentasi: Foto saja, Foto + Video, Foto + Cinematic, atau Foto + Video + Cinematic. Pilih di form Input/Edit Job (Layanan Dokumentasi); penandanya berupa ikon kecil berwarna di kartu Job berikutnya di Beranda, daftar job, Detail Job, rincian tanggal di Kalender, dan hasil Salin Detail, sehingga kamu dan tim langsung tahu cakupan job. Job lama otomatis ditebak dari Add-On, Paket, atau Deskripsi Paket.' },
+      { kategori: 'Peningkatan', teks: 'Angka besar di kartu Bonus Tim (dan kartu bonus tiap akun di menu Tugas) kini menunjukkan total bonus yang belum diklaim, termasuk yang masih masa tunggu. Di bawahnya tertulis berapa yang sudah siap diklaim sekarang dan berapa yang masih menunggu.' },
     ]
   },
   {

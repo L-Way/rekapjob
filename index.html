@@ -16225,6 +16225,7 @@ function viewTugas(){
   // serta info bulan berikutnya yang masih menunggu (kalau ada) - dipakai supaya tombol
   // "Klaim Bonus" hanya tampil kalau memang sudah ada yang bisa diajukan.
   const myClaimableRp = (mine && currentUserId) ? userClaimableBonusRupiah(currentUserId) : 0;
+  const myUnclaimedRp = (mine && currentUserId) ? Math.max(0, userBonusRupiah(currentUserId) - userClaimedTotalRupiah(currentUserId)) : 0; // total belum diklaim (siap + masa tunggu)
   const myNextClaim = (mine && currentUserId) ? userNextClaimInfo(currentUserId) : null;
   const myClaimedTotal = (mine && currentUserId) ? userClaimedTotalRupiah(currentUserId) : 0;
   // Tile "Bonus Siap Diklaim": Admin = gabungan seluruh akun Tim, Tim = miliknya sendiri.
@@ -16329,8 +16330,8 @@ function viewTugas(){
       <div class="task-bonus-row">
         <div>
           <div class="task-bonus-label bb-label">${ic('money')} Bonus Saya</div>
-          <div class="task-bonus-amount bb-main-amt">${fmtRp(myClaimableRp)}</div>
-          ${bonusHeadCaption(myClaimableRp, true)}
+          <div class="task-bonus-amount bb-main-amt">${fmtRp(myUnclaimedRp)}</div>
+          ${bonusHeadCaption(myClaimableRp, true, Math.max(0, myUnclaimedRp - myClaimableRp))}
         </div>
         <button type="button" class="bonus-claim-btn" id="btnClaimBonus" ${myClaimableRp>=Math.min(MIN_KLAIM_TUNAI,MIN_KLAIM_WDP)?'':'disabled'} title="${escapeHtml(claimButtonTitle(myClaimableRp, myNextClaim))}">${ic('phone')} Klaim Bonus</button>
       </div>
@@ -19659,7 +19660,7 @@ const CHANGELOG = [
     items: [
       { kategori: 'Fitur', teks: 'Detail Job punya kotak "Status Acara" dengan tombol Tandai Acara Selesai, untuk mengubah status acara dari sedang berjalan menjadi selesai. Aplikasi menampilkan jam selesai dan perkiraan tiba di rumah (waktu tempuh yang sudah ada ditambah 30 menit). Kartu Job berikutnya di Beranda ikut berubah dari Sedang berlangsung menjadi Selesai. Salah tekan? Ada tombol Batalkan tanda selesai.' },
       { kategori: 'Fitur', teks: 'Setiap job kini punya penanda layanan dokumentasi: Foto saja, Foto + Video, Foto + Cinematic, atau Foto + Video + Cinematic. Pilih di form Input/Edit Job (Layanan Dokumentasi); penandanya berupa ikon kecil berwarna di kartu Job berikutnya di Beranda, daftar job, Detail Job, rincian tanggal di Kalender, dan hasil Salin Detail, sehingga kamu dan tim langsung tahu cakupan job. Job lama otomatis ditebak dari Add-On, Paket, atau Deskripsi Paket.' },
-      { kategori: 'Peningkatan', teks: 'Angka besar di kartu Bonus Tim (dan kartu bonus tiap akun di menu Tugas) kini menunjukkan total bonus yang belum diklaim, termasuk yang masih masa tunggu. Di bawahnya tertulis berapa yang sudah siap diklaim sekarang dan berapa yang masih menunggu.' },
+      { kategori: 'Peningkatan', teks: 'Angka besar di kartu Bonus Tim, kartu bonus tiap akun, dan Bonus Saya di menu Tugas kini menunjukkan total bonus yang belum diklaim, termasuk yang masih masa tunggu. Di bawahnya tertulis berapa yang sudah siap diklaim sekarang dan berapa yang masih menunggu.' },
     ]
   },
   {

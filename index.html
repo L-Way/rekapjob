@@ -5126,6 +5126,24 @@ async function kaoneAturPassword(id){
   if(error){ alert('Gagal mengatur sandi.'); return; }
   toast('Sandi diperbarui. Sampaikan sandi baru ke pemilik akun.');
 }
+/* Ubah username akun lain (admin saja). Akun itu harus login pakai username baru setelah ini;
+   username lama langsung tidak berlaku. */
+async function kaoneUbahUsername(id, usernameLama){
+  if(!isAdmin()) return;
+  const baru = prompt('Username baru untuk akun ini (3-40 karakter):', usernameLama || '');
+  if(baru===null) return;
+  const v = baru.trim();
+  if(v.length < 3 || v.length > 40){ alert('Username harus 3-40 karakter.'); return; }
+  const { data, error } = await supabaseClient.rpc('kaone_admin_ubah_username', { p_id:id, p_username:v });
+  if(error || !data || data.ok !== true){
+    const reason = data && data.reason;
+    if(reason === 'taken') alert('Username itu sudah dipakai akun lain.');
+    else alert('Gagal mengubah username.');
+    return;
+  }
+  toast('Username diperbarui menjadi "' + v + '". Sampaikan ke pemilik akun untuk login pakai username baru.');
+  pullAkunFromCloud();
+}
 /* Cabut semua sesi login akun lain (admin saja). Akun itu akan otomatis ter-logout di semua perangkat
    di mana ia sedang login, dan harus login ulang. */
 async function kaoneCabutSesi(id){
@@ -5148,7 +5166,7 @@ async function pullAkunFromCloud(){
   try{
     const { data, error } = await supabaseClient
       .from('kaone_profiles')
-      .select('id,username,role,nama_lengkap,disetujui,created_at')
+      .select('id,username,role,nama_lengkap,disetujui,created_at,hanya_chat')
       .order('created_at', { ascending:true });
     if(error) throw error;
     const berubah = !akunSudahMuat || JSON.stringify(data||[]) !== JSON.stringify(akunList);
@@ -8343,7 +8361,7 @@ async function pullTeamAccountsPublic(){
   try{
     const { data, error } = await supabaseClient.rpc('daftar_tim');
     if(error) throw error;
-    teamAccountsPublic = (data || []).filter(a=>!isHanyaChatUsername(a.username)); // akun hanya-chat bukan anggota Tim
+    teamAccountsPublic = (data || []).filter(a=>!a.hanya_chat); // akun hanya-chat bukan anggota Tim
     if(currentView==='laporan') render();
     if(document.getElementById('honorTimSection')) refreshHonorTimSection();
     return true;
@@ -15903,7 +15921,7 @@ function downloadIcs(jobId){
    PEMBAGIAN TUGAS TIM
 ========================================================= */
 function taskEligibleAccounts(){
-  return (akunList||[]).filter(a=>a.role==='tim' && a.disetujui!==false && !isHanyaChatUsername(a.username));
+  return (akunList||[]).filter(a=>a.role==='tim' && a.disetujui!==false && !a.hanya_chat);
 }
 function taskJobOptions(){
   return [...jobs].sort((a,b)=>{
@@ -18675,15 +18693,16 @@ function viewPengaturan(){
       <table class="rekaptable akun-table">
         <thead><tr><th>Nama Lengkap</th><th>Username</th><th>Status</th><th>Peran</th><th>Terdaftar</th><th>Aksi</th></tr></thead>
         <tbody>
-          ${akunList.filter(a=>!isHanyaChatUsername(a.username)).length ? akunList.filter(a=>!isHanyaChatUsername(a.username)).map(a=>`
+          ${akunList.filter(a=>!a.hanya_chat).length ? akunList.filter(a=>!a.hanya_chat).map(a=>`
             <tr class="${a.id===currentUserId ? 'akun-me' : ''}">
               <td>${escapeHtml(a.nama_lengkap || '-')}</td>
               <td>${escapeHtml(a.username)}${a.id===currentUserId?' <span class="pill">Kamu</span>':''}</td>
               <td>${a.disetujui ? 'Aktif' : '<b>Menunggu persetujuan</b>'}</td>
-              <td>${a.role==='admin' ? 'Admin' : (isHanyaChatUsername(a.username) ? 'Hanya Chat' : 'Tim')}</td>
+              <td>${a.role==='admin' ? 'Admin' : (a.hanya_chat ? 'Hanya Chat' : 'Tim')}</td>
               <td>${a.created_at ? new Date(a.created_at).toLocaleDateString('id-ID') : '-'}</td>
               <td>${a.id===currentUserId ? '-' : `
                 <button type="button" class="btn btn-outline" onclick="kaoneSetujuiAkun('${a.id}', ${a.disetujui?'false':'true'})">${a.disetujui?'Nonaktifkan':'Setujui'}</button>
+                <button type="button" class="btn btn-outline" onclick="kaoneUbahUsername('${a.id}', '${escapeHtml(a.username).replace(/'/g,"\\'")}')">Ubah Username</button>
                 <button type="button" class="btn btn-outline" onclick="kaoneAturPassword('${a.id}')">Atur Sandi</button>
                 <button type="button" class="btn btn-outline" onclick="kaoneCabutSesi('${a.id}')">Cabut Sesi</button>`}</td>
             </tr>
@@ -23420,9 +23439,9 @@ window.addEventListener('scroll', function(){ window.__kmLastScroll = Date.now()
     var body = document.getElementById('kakunb'); if(!body) return;
     body.textContent = 'Memuat…';
     try{
-      var r = await supabaseClient.from('kaone_profiles').select('id,username,nama_lengkap,disetujui');
+      var r = await supabaseClient.from('kaone_profiles').select('id,username,nama_lengkap,disetujui,hanya_chat');
       if(r.error) throw r.error;
-      var list = (r.data||[]).filter(function(a){ return isHanyaChatUsername(a.username); });
+      var list = (r.data||[]).filter(function(a){ return a.hanya_chat; });
       body.innerHTML = '';
       if(!list.length){ body.textContent = 'Belum ada akun khusus chat yang terdaftar.'; return; }
       list.forEach(function(a){
@@ -23440,7 +23459,10 @@ window.addEventListener('scroll', function(){ window.__kmLastScroll = Date.now()
         var b3 = document.createElement('button'); b3.type='button'; b3.className='it';
         b3.textContent = 'Cabut sesi login';
         b3.addEventListener('click', function(){ kaoneCabutSesi(a.id); });
-        box.appendChild(b1); box.appendChild(b2); box.appendChild(b3); body.appendChild(box);
+        var b4 = document.createElement('button'); b4.type='button'; b4.className='it';
+        b4.textContent = 'Ubah username';
+        b4.addEventListener('click', async function(){ await kaoneUbahUsername(a.id, a.username); muat(); });
+        box.appendChild(b1); box.appendChild(b2); box.appendChild(b3); box.appendChild(b4); body.appendChild(box);
       });
     }catch(e){ body.textContent = 'Gagal memuat akun. Pastikan koneksi internet aktif.'; }
   }

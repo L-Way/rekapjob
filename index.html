@@ -3262,6 +3262,9 @@
   .dash-det .ic{width:16px; height:16px; flex:none; margin-top:1px; color:var(--dash-gold-ink);}
   .dash-det li > span{min-width:0; overflow-wrap:anywhere;}
   .dash-det .mut{color:var(--dash-muted);}
+  .dash-det .lm-ic{display:inline-flex; gap:3px; flex:none; margin-top:1px; color:var(--dash-gold-ink);}
+  .dash-det .lm-ic svg{width:16px!important; height:16px!important;}
+  .dash-next .dash-det .lm-ic{color:#5c4500;}
   .pay-pill{display:inline-block; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:700; background:var(--dash-chip); color:var(--dash-gold-ink);}
   .pay-pill.ok{background:#e5f5e6; color:var(--ok);}
   .pay-pill.no{background:#fdecea; color:var(--danger);}
@@ -10715,6 +10718,7 @@ function viewBeranda(){
     const rows = [
       `<li>${ic('calendar')}<span>${escapeHtml(namaHariID(startOf(nextJob)))}, ${escapeHtml(fmtTglJob(nextJob))}${dur>1?` <span class="mut">· ${dur} hari</span>`:''}</span></li>`,
       jam ? `<li>${ic('clock')}<span>${escapeHtml(jam.replace(':','.'))} WIB</span></li>` : '',
+      `<li><span class="lm-ic">${LAYANAN_MEDIA[layananMediaKey(nextJob)].e}</span><span>${escapeHtml(layananMediaLabel(nextJob))}</span></li>`,
       `<li>${ic('map-pin')}<span class="${lok?'':'mut'}">${lok ? escapeHtml(lok) : 'Lokasi belum diisi'}</span></li>`,
       `<li>${ic('money')}<span><span class="pay-pill ${bayarTone(nextJob)}">${escapeHtml(bayarLabel(nextJob))}</span>${sisa>0 && isAdmin() ? ` <span class="mut">· Sisa ${escapeHtml(fmtRp(sisa))}</span>` : ''}</span></li>`,
       namaTimKartu ? `<li>${ic('user')}<span>Tim: ${escapeHtml(namaTimKartu)}</span></li>`
@@ -19647,7 +19651,7 @@ const CHANGELOG = [
     tanggal: '8 November 2026',
     items: [
       { kategori: 'Fitur', teks: 'Detail Job punya kotak "Status Acara" dengan tombol Tandai Acara Selesai, untuk mengubah status acara dari sedang berjalan menjadi selesai. Aplikasi menampilkan jam selesai dan perkiraan tiba di rumah (waktu tempuh yang sudah ada ditambah 30 menit). Salah tekan? Ada tombol Batalkan tanda selesai.' },
-      { kategori: 'Fitur', teks: 'Setiap job kini punya penanda layanan dokumentasi: Foto saja, Foto + Video, Foto + Cinematic, atau Foto + Video + Cinematic. Pilih di form Input/Edit Job (Layanan Dokumentasi); penandanya berupa ikon kecil berwarna di daftar job, Detail Job, rincian tanggal di Kalender, dan hasil Salin Detail, sehingga kamu dan tim langsung tahu cakupan job. Job lama otomatis ditebak dari Add-On, Paket, atau Deskripsi Paket.' },
+      { kategori: 'Fitur', teks: 'Setiap job kini punya penanda layanan dokumentasi: Foto saja, Foto + Video, Foto + Cinematic, atau Foto + Video + Cinematic. Pilih di form Input/Edit Job (Layanan Dokumentasi); penandanya berupa ikon kecil berwarna di kartu Job berikutnya di Beranda, daftar job, Detail Job, rincian tanggal di Kalender, dan hasil Salin Detail, sehingga kamu dan tim langsung tahu cakupan job. Job lama otomatis ditebak dari Add-On, Paket, atau Deskripsi Paket.' },
     ]
   },
   {

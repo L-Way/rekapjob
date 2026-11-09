@@ -10518,6 +10518,15 @@ function namaTimLengkap(j, lain){
   const dikenal = [adm, currentNamaLengkap, currentUsername].map(x=>String(x||'').trim().toLowerCase()).filter(Boolean);
   return formatNamaTim([adm, ...arr.filter(x=>!dikenal.includes(x.toLowerCase()))]);
 }
+/* Baris "Tim/Freelancer" hanya dipakai kalau ada anggota tim SELAIN saya. Kalau timnya cuma saya (atau kosong), baris disembunyikan. */
+function timLainSaya(j){
+  const arr = String(Array.isArray(j&&j.timFreelancer)?j.timFreelancer.join(','):(j&&j.timFreelancer)||'').split(/\s*[,;&+\n]\s*|\s+dan\s+/i).map(x=>x.trim()).filter(Boolean);
+  const dikenal = [namaAdminUntukTim(), currentNamaLengkap, currentUsername, String(currentNamaLengkap||'').trim().split(/\s+/)[0]].map(x=>String(x||'').trim().toLowerCase()).filter(Boolean);
+  return arr.filter(x=>!dikenal.includes(x.toLowerCase()));
+}
+function rowsTim(j, fn){
+  return timLainSaya(j).length ? [['Tim/Freelancer', (fn||namaTimLengkap)(j, j.timFreelancer)||'-']] : [];
+}
 function formatNamaTim(v){
   let a = Array.isArray(v) ? v : String(v||'').split(/\s*[,;&+\n]\s*|\s+dan\s+/i);
   a = a.map(x=>String(x).replace(/\s+/g,' ').trim()).filter(Boolean);
@@ -13440,7 +13449,7 @@ function openDateModal(dateIso){
         ${(j.addOn||'').trim() ? `<div class="mj-row"><span>Add-On</span><span style="text-align:right;white-space:normal;word-break:break-word;max-width:65%;">${escapeHtml(j.addOn.trim())}</span></div>` : ''}
         ${isAdmin() ? `<div class="mj-row"><span>WhatsApp</span><span>${escapeHtml(j.noWhatsapp||'-')}</span></div>` : ''}
         <div class="mj-row"><span>Vendor</span><span>${escapeHtml(vendorDisplay(j))}</span></div>
-        <div class="mj-row"><span>Tim/Freelancer</span><span>${escapeHtml(namaTimLengkap(j, j.timFreelancer)||'-')}</span></div>
+        ${timLainSaya(j).length?`<div class="mj-row"><span>Tim/Freelancer</span><span>${escapeHtml(namaTimLengkap(j, j.timFreelancer)||'-')}</span></div>`:''}
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" data-open-maps="${j.id}">${ic('map')} Buka di Maps</button>
           <button type="button" class="btn btn-outline" data-gcal="${j.id}">${ic('calendar')} Tambah ke Google Calendar</button>
@@ -14044,7 +14053,7 @@ function openJobDetailModal(jobId){
       ...(pengirimanMetode(j.pengiriman)==='diantar' && j.linkMapsAntar ? [['Link Maps Antar', j.linkMapsAntar]] : []),
       ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
-      ['Tim/Freelancer', namaTimLengkap(j, j.timFreelancer)||'-'],
+      ...rowsTim(j),
     ]},
     {title:'Keuangan', rows:keuanganRowsUntukRole(j)},
     {title:'Catatan', rows:[
@@ -14215,7 +14224,7 @@ function buildJobPosterHtml(j){
       ...(isAdmin() && pengirimanDiantarPasti(j.pengiriman) ? [['Ongkos Antar', fmtRp(j.ongkirAntar)]] : []),
       ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
-      ['Tim/Freelancer', namaTimLengkap(j, j.timFreelancer)||'-'],
+      ...rowsTim(j),
     ]},
     {title:'Keuangan', rows:keuanganRowsUntukRole(j), highlightLast:isAdmin()},
     {title:'Catatan', rows:[
@@ -14441,7 +14450,7 @@ function copyJobDetails(jobId){
       ...(pengirimanMetode(j.pengiriman)==='diantar' && j.linkMapsAntar ? [['Link Maps Antar', j.linkMapsAntar]] : []),
       ...(isAdmin() ? [['Status Pembayaran', j.statusPembayaran||'-']] : []),
       ['Vendor', vendorDisplay(j)],
-      ['Tim/Freelancer', formatNamaTim(j.timFreelancer)||'-'],
+      ...rowsTim(j, (x,t)=>formatNamaTim(t)),
     ]},
     {title:ic('money')+' Keuangan', rows:keuanganRowsUntukRole(j)},
   ];
@@ -23417,7 +23426,7 @@ var rs=await Promise.all(ids.map(function(id){return kcTarik(id)}));draw();if(rs
 function pkPickB(e,el){if(kBusy)return;kBusy=true;el.classList.add('go');try{navigator.vibrate&&navigator.vibrate(10)}catch(x){}setTimeout(function(){kBusy=false;selClear();pkPick(e)},320)}
 (function(){var h=document.querySelector('#kc .h'),d=document.createElement('div');d.id='ksel';
 d.innerHTML='<button id="ksx" aria-label="Batal">'+ic('back')+'</button><b id="ksn"></b><button id="ksd" aria-label="Hapus pesan">'+ic('trash')+'</button>';h.appendChild(d);
-$('ksx').onclick=selClear;$('ksd').onclick=selDel;var kse=document.createElement('style');kse.textContent="#kc #ksel{z-index:6;pointer-events:auto;gap:10px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}#kc #ksel button{all:unset;box-sizing:border-box;cursor:pointer;flex:none;display:inline-flex!important;align-items:center;justify-content:center;gap:6px;min-width:44px;height:44px;border-radius:22px;color:#fff!important;font-size:22px;line-height:1;-webkit-tap-highlight-color:transparent;visibility:visible!important;opacity:1!important}#kc #ksel button svg{display:block!important;width:24px!important;height:24px!important;stroke:#fff!important;fill:none!important}#kc #ksel #ksd{padding:0 16px 0 12px;background:#e5484d;font-size:14px;font-weight:700}#kc #ksel #ksd::after{content:'Hapus'}#kc #ksel #ksx:active{background:#fff3}#kc #ksel #ksd:active{filter:brightness(.85)}#kc #ksel b{flex:1;min-width:0;color:#fff;font-size:16px}";document.head.appendChild(kse);
+$('ksx').onclick=selClear;$('ksd').onclick=selDel;var kse=document.createElement('style');kse.textContent="#kc .h>#ksel{position:absolute;inset:0;box-sizing:border-box;width:auto;max-width:100%;margin:0;overflow:hidden}#kc #ksel{z-index:6;pointer-events:auto;gap:10px;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}#kc #ksel button{all:unset;box-sizing:border-box;cursor:pointer;flex:none;display:inline-flex!important;align-items:center;justify-content:center;gap:6px;min-width:44px;height:44px;border-radius:22px;color:#fff!important;font-size:22px;line-height:1;-webkit-tap-highlight-color:transparent;visibility:visible!important;opacity:1!important}#kc #ksel button svg{display:block!important;width:24px!important;height:24px!important;stroke:#fff!important;fill:none!important}#kc #ksel #ksd{padding:0 16px 0 12px;background:#e5484d;font-size:14px;font-weight:700}#kc #ksel #ksd::after{content:'Hapus'}#kc #ksel #ksx:active{background:#fff3}#kc #ksel #ksd:active{filter:brightness(.85)}#kc #ksel b{flex:1;min-width:0;color:#fff;font-size:16px}";document.head.appendChild(kse);
 var st=document.createElement('style');st.textContent='#kc .h{position:relative}#ksel{position:absolute;inset:0;display:none;align-items:center;gap:8px;padding:env(safe-area-inset-top) 12px 0;background:var(--kh);color:#fff;border-radius:inherit;z-index:2}#kc.sm #ksel{display:flex;animation:kDrop .45s cubic-bezier(.2,1.6,.4,1) both}#ksel b{flex:1;font-size:16px}#ksel button{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;transition:transform .15s}#ksel button:active{transform:scale(.85);background:#fff3}@keyframes kDrop{0%{transform:translateY(-100%)}60%{transform:translateY(6%)}100%{transform:none}}'
 +'#kc .rw2.sel .b{box-shadow:0 0 0 3px var(--ka);animation:kSel .4s cubic-bezier(.2,1.7,.4,1)}#kc .rw2.sel .b::after{content:"\\2713";position:absolute;top:-9px;left:-9px;width:20px;height:20px;border-radius:50%;background:var(--ka);color:var(--kac,#fff);font-size:12px;font-weight:700;display:grid;place-items:center;animation:kBnc .4s cubic-bezier(.2,1.8,.4,1) both}#kc .rw2.me.sel .b::after{left:auto;right:-9px}#kc .b:has(.md.pv){padding:4px 4px 3px}#kc .b:has(.md.pv) .t{padding:0 5px}#kc .md.pv{padding:0;background:none;gap:4px;width:min(240px,66vw);max-width:100%;cursor:pointer}#kc .md.pv .pw{width:100%;max-width:100%;background:none;border-radius:11px;max-height:none;overflow:hidden}#kc .md.pv .pw img{display:block;filter:none!important;transform:none!important;width:100%!important;max-width:100%!important;min-width:0!important;height:auto;border-radius:11px;background:none}#kc .md.pv .cap{padding:0 5px}#kc .rw2 .ac svg{transform:none!important}#kc .md.pv .eye{display:none}#kc .md.ph{min-width:min(200px,56vw);min-height:130px;justify-content:center;flex-direction:column;text-align:center}#kc .md.ph svg{width:34px;height:34px}@keyframes kSel{0%{transform:scale(1)}40%{transform:scale(.94)}100%{transform:scale(1)}}'
 +'@keyframes kBnc{0%{transform:translateY(16px) scale(.3);opacity:0}55%{transform:translateY(-8px) scale(1.25);opacity:1}78%{transform:translateY(2px) scale(.94)}100%{transform:none;opacity:1}}@keyframes kBnc2{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.07);opacity:1}80%{transform:scale(.97)}100%{transform:none;opacity:1}}@keyframes kGo{0%{transform:scale(1)}45%{transform:scale(1.9) translateY(-14px)}100%{transform:scale(1.5) translateY(-30px);opacity:0}}'

@@ -22179,11 +22179,54 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 #kc #kcm #kcmc:active i{transform:scale(.86)}
 #kc #kcm #kcmg{position:absolute;left:20px;bottom:calc(max(22px,env(safe-area-inset-bottom)) + 13px);width:50px;height:50px;border-radius:50%;background:#0006;border:2px solid #fff6;display:grid;place-items:center;padding:0;font-size:24px}#kc #kcm #kcmg:active{background:#fff3}
 #kc #kcm .kcm2 button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border:0;border-radius:25px;font:inherit;font-weight:700;font-size:16px;cursor:pointer;background:#fff3;color:#fff;-webkit-tap-highlight-color:transparent}
-#kc #kcm .kcm2 #kcms{background:var(--ka);color:var(--kac,#fff)}
+#kc #kcm .kcm2 #kcms{background:var(--ka,#2f7cf6);color:var(--kac,#fff)}
 #kc #kcm .kcm2 button[disabled]{opacity:.6;pointer-events:none}
 #kc #kcm .kcm2 svg{width:20px;height:20px}
 #kc #kcm .kcmn{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:10px 16px;border-radius:14px;background:#0008;font-size:14px;text-align:center;max-width:80%;display:none;z-index:1}
 #kc #kcm.er .kcmn{display:block}
+/* --- Penyempurnaan tampilan kamera --- */
+#kc #kcm{touch-action:none;-webkit-user-select:none;user-select:none}
+#kc #kcm .kcmt{align-items:center;background:linear-gradient(rgba(0,0,0,.55),transparent);padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+#kc #kcm .kcmtr{display:flex;gap:10px}
+#kc #kcm.pv .kcmtr{visibility:hidden}
+#kc #kcm .kcmt button{width:44px;height:44px;background:rgba(24,24,24,.42);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 4px 14px rgba(0,0,0,.25);transition:transform .12s ease,background .2s ease}
+#kc #kcm .kcmt button svg{width:22px;height:22px;transform:none}
+#kc #kcm .kcmt button:active{transform:scale(.92);background:rgba(255,255,255,.28)}
+#kc #kcm .kcmt button[aria-pressed=true]{background:#FFD42E;color:#1b1500}
+#kc #kcm #kcmfx{display:none}#kc #kcm.hf #kcmfx{display:grid}
+#kc #kcm .kcmgrid{position:absolute;inset:0;pointer-events:none;display:none;z-index:1;background:
+ linear-gradient(to right,transparent calc(33.333% - .5px),rgba(255,255,255,.34) calc(33.333% - .5px),rgba(255,255,255,.34) calc(33.333% + .5px),transparent calc(33.333% + .5px),transparent calc(66.666% - .5px),rgba(255,255,255,.34) calc(66.666% - .5px),rgba(255,255,255,.34) calc(66.666% + .5px),transparent calc(66.666% + .5px)),
+ linear-gradient(to bottom,transparent calc(33.333% - .5px),rgba(255,255,255,.34) calc(33.333% - .5px),rgba(255,255,255,.34) calc(33.333% + .5px),transparent calc(33.333% + .5px),transparent calc(66.666% - .5px),rgba(255,255,255,.34) calc(66.666% - .5px),rgba(255,255,255,.34) calc(66.666% + .5px),transparent calc(66.666% + .5px))}
+#kc #kcm.gr:not(.pv):not(.er):not(.ld) .kcmgrid{display:block}
+#kc #kcm .kcmfo{position:absolute;width:76px;height:76px;margin:-38px 0 0 -38px;border:2px solid #FFD42E;border-radius:50%;opacity:0;pointer-events:none;z-index:2;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+#kc #kcm .kcmfo.on{animation:kCmFo 1.1s ease both}
+@keyframes kCmFo{0%{opacity:0;transform:scale(1.45)}18%{opacity:1;transform:scale(1)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.94)}}
+#kc #kcm .kcmld{position:absolute;inset:0;display:none;place-items:center;pointer-events:none;z-index:1}
+#kc #kcm.ld .kcmld{display:grid}
+#kc #kcm .kcmld span{width:44px;height:44px;border-radius:50%;border:3px solid rgba(255,255,255,.22);border-top-color:#fff;animation:kCmSp .8s linear infinite}
+@keyframes kCmSp{to{transform:rotate(360deg)}}
+#kc #kcm .kcmfl{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4}
+#kc #kcm .kcmfl.on{animation:kCmFl .36s ease-out both}
+@keyframes kCmFl{0%{opacity:.85}100%{opacity:0}}
+#kc #kcm.pv #kcmp{animation:kCmIn .3s cubic-bezier(.2,.9,.3,1) both}
+@keyframes kCmIn{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
+#kc #kcm .kcmz{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(22px,env(safe-area-inset-bottom)) + 108px);display:none;gap:4px;padding:4px;border-radius:999px;background:rgba(24,24,24,.42);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);z-index:3}
+#kc #kcm.hz:not(.pv):not(.er):not(.ld) .kcmz{display:flex}
+#kc #kcm .kcmz button{min-width:40px;height:34px;padding:0 9px;border:0;border-radius:999px;background:none;color:#fff;font:inherit;font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s ease,color .15s ease}
+#kc #kcm .kcmz button.on{background:rgba(255,255,255,.92);color:#111}
+#kc #kcm .kcmb{background:linear-gradient(transparent,rgba(0,0,0,.62))}
+#kc #kcm #kcmc{width:78px;height:78px;border:4px solid rgba(255,255,255,.95);box-shadow:0 4px 18px rgba(0,0,0,.35);-webkit-tap-highlight-color:transparent}
+#kc #kcm #kcmc i{width:60px;height:60px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+#kc #kcm.sh #kcmc{pointer-events:none}#kc #kcm.sh #kcmc i{transform:scale(.8)}
+#kc #kcm #kcmg{background:rgba(24,24,24,.42);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+#kc #kcm #kcmg svg{width:23px;height:23px;transform:none}
+#kc #kcm .kcm2 button{height:52px;border-radius:26px;background:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);transition:transform .12s ease}
+#kc #kcm .kcm2 button:active{transform:scale(.97)}
+#kc #kcm .kcmn{display:none;flex-direction:column;align-items:center;gap:12px;padding:16px 20px;border-radius:18px;background:rgba(24,24,24,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);line-height:1.45;max-width:min(80%,320px);z-index:3}
+#kc #kcm.er .kcmn{display:flex}
+#kc #kcm .kcmn button{border:0;border-radius:999px;padding:9px 20px;font:inherit;font-weight:800;font-size:14px;background:#fff;color:#111;cursor:pointer}
+@media (orientation:landscape) and (max-height:520px){#kc #kcm .kcmz{bottom:14px;left:auto;right:calc(max(16px,env(safe-area-inset-right)) + 96px);transform:none}}
+@media (prefers-reduced-motion:reduce){#kc #kcm .kcmfo.on,#kc #kcm .kcmfl.on,#kc #kcm.pv #kcmp{animation:none}}
 
 @keyframes kPop{0%{opacity:0;transform:translateY(16px) scale(.9)}55%{opacity:1;transform:translateY(-2px) scale(1.02)}100%{opacity:1;transform:none}}
 @keyframes kPopMe{0%{opacity:0;transform:translate(14px,16px) scale(.9)}55%{opacity:1;transform:translate(-1px,-2px) scale(1.02)}100%{opacity:1;transform:none}}
@@ -22241,7 +22284,7 @@ html:has(#kc.on),body:has(#kc.on){overflow-x:hidden;max-width:100%}
 <div class="rw"><button type="button" id="kpwx">Batal</button><button type="button" id="kpws" class="pri">Simpan sandi</button></div></div></div>
 <div id="kpk"><div id="kpkb"><div id="kpke" class="pkb"></div><button id="kpksal" class="pkb"><span data-i="copy"></span> Salin teks</button></div></div>
 <input type="file" id="kpfile" accept="image/*" hidden>
-<input type="file" id="kf" accept="image/*" hidden><input type="file" id="kfcam" accept="image/*" capture="environment" hidden><div id="kcm" role="dialog" aria-modal="true" aria-label="Kamera"><video id="kcmv" autoplay playsinline muted></video><img id="kcmp" alt="Hasil foto"><div class="kcmn" id="kcmn"></div><div class="kcmt"><button type="button" id="kcmx" data-i="close" aria-label="Tutup kamera"></button><button type="button" id="kcmw" data-i="flip" aria-label="Balik kamera"></button></div><div class="kcmb"><div class="kcm1"><button type="button" id="kcmg" data-i="image" aria-label="Kirim foto dari galeri" title="Kirim foto dari galeri"></button><button type="button" id="kcmc" aria-label="Ambil foto"><i></i></button></div><div class="kcm2"><button type="button" id="kcmr"><span data-i="back"></span>Ulangi</button><button type="button" id="kcms"><span data-i="send"></span>Kirim</button></div></div></div></div>
+<input type="file" id="kf" accept="image/*" hidden><input type="file" id="kfcam" accept="image/*" capture="environment" hidden><div id="kcm" role="dialog" aria-modal="true" aria-label="Kamera"><video id="kcmv" autoplay playsinline muted></video><img id="kcmp" alt="Hasil foto"><div class="kcmgrid" id="kcmgrid"></div><div class="kcmfo" id="kcmfo"></div><div class="kcmld" id="kcmld"><span></span></div><div class="kcmfl" id="kcmfl"></div><div class="kcmn" id="kcmn"></div><div class="kcmt"><button type="button" id="kcmx" data-i="close" aria-label="Tutup kamera"></button><div class="kcmtr"><button type="button" id="kcmgb" aria-label="Garis bantu" aria-pressed="false"></button><button type="button" id="kcmfx" aria-label="Lampu kilat" aria-pressed="false"></button><button type="button" id="kcmw" data-i="flip" aria-label="Balik kamera"></button></div></div><div class="kcmz" id="kcmz" role="group" aria-label="Zoom"></div><div class="kcmb"><div class="kcm1"><button type="button" id="kcmg" data-i="image" aria-label="Kirim foto dari galeri" title="Kirim foto dari galeri"></button><button type="button" id="kcmc" aria-label="Ambil foto"><i></i></button></div><div class="kcm2"><button type="button" id="kcmr"><span data-i="back"></span>Ulangi</button><button type="button" id="kcms"><span data-i="send"></span>Kirim</button></div></div></div></div>
 <div id="kcv"><div id="kvb"></div><button id="kvd" hidden>Unduh foto</button><button id="kvx">Tutup</button><small id="kvs"></small></div>
 <div id="kcc" role="dialog" aria-modal="true" aria-label="Panggilan"><div class="bg"></div><video id="kr" autoplay playsinline></video><div class="sc1"></div><div class="sc2"></div><video id="kl" autoplay playsinline muted></video>
 <div class="top"><button type="button" id="kkz" data-i="chevd" aria-label="Kecilkan panggilan"></button><div class="who"><b id="kkn">Chat</b><span id="kcs">Memanggil…</span><i class="lk"><em data-i="lock"></em>Panggilan rahasia</i></div><span class="sp"></span></div>
@@ -22849,7 +22892,7 @@ var r=(await sb.from('kaone_chat_status').select('*'));(r.data||[]).forEach(func
 await pfLoad();st();
 try{kkTurnLoad(1)}catch(e){}await load();bellRead();conn();setTimeout(kNotifAsk,1500);kPingRpc(sb);sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}});kcBersih();clearInterval(kcTk);kcTk=setInterval(kcTick,1000);var bn=0;bt=setInterval(function(){kcSweep();st();kPingRpc(sb);kPoll();if(++bn%5==0)sb.functions.invoke('kaone-chat',{body:{aksi:'bersih'}})},60000)}
 function bellRead(){try{var b=kcBellGet();if(b&&b.id)markNotifRead('chat_'+b.id)}catch(e){}}
-function close(){try{kkAbort()}catch(e){}if(rcS)recStop(false);kPingRpc(sb);pkClose();selClear();dn={};dr0=false;kUnSet=false;kUnId=null;kUnN=0;if(lo)lo.k=0;$('kc').classList.remove('on');clearInterval(bt);clearInterval(kcTk);if(db)sb.removeChannel(db);if(rm)sb.removeChannel(rm);db=rm=null}
+function close(){try{kvStop()}catch(e){}try{kkAbort()}catch(e){}if(rcS)recStop(false);kPingRpc(sb);pkClose();selClear();dn={};dr0=false;kUnSet=false;kUnId=null;kUnN=0;if(lo)lo.k=0;$('kc').classList.remove('on');clearInterval(bt);clearInterval(kcTk);if(db)sb.removeChannel(db);if(rm)sb.removeChannel(rm);db=rm=null}
 async function load(){var r=await sb.from('kaone_chat_pesan').select('*').order('dikirim_at');msgs={};(r.data||[]).forEach(function(m){msgs[m.id]=m});
 if(!kUnSet){kUnSet=true;var un=Object.keys(msgs).map(function(k){return msgs[k]}).filter(function(m){return m.pengirim!=me&&!m.dilihat_at&&!m.dihapus_at&&!m.ditarik_at&&!kNmDec(m)}).sort(function(x,y){return x.dikirim_at<y.dikirim_at?-1:1});kUnId=un.length?un[0].id:null;kUnN=un.length}
 draw();
@@ -22940,10 +22983,53 @@ else if(m.tipe=='panggilan')c=kcCard(m,own);
 else{var lim=!own&&peran=='lawan'&&m.jumlah_lihat>=5,ik={foto:ic('image')+' Foto',video:ic('film')+' Video',suara:ic('wave')+' Pesan suara '+(m.media_durasi||0)+'d'}[m.tipe];
 var sisa=(!own&&peran=='lawan'?' <span class="kcw">· sisa '+(5-m.jumlah_lihat)+'x</span>':'')+kcCap(m,own);
 if(lim)c='<div class="md">Media sudah habis dilihat</div>';
-else if(m.tipe=='foto'&&(pvx=pvOf(m)))c='<div class="md pv" data-o="'+m.id+'"><div class="pw"><img alt="" src="'+pvx+'"></div><div class="cap">'+ic('image')+'<span class="kct">Foto'+sisa+'</span></div></div>';
+else if(m.tipe=='suara')c=kvHtml(m,sisa);
+else if(m.tipe=='foto')c='<div class="md pv hid" data-o="'+m.id+'" role="button" tabindex="0" aria-label="Foto tersembunyi, ketuk untuk melihat"><div class="pw hv" aria-hidden="true"><span class="hv-ic">'+ic('eyeoff')+'</span><span class="hv-t">Ketuk untuk melihat</span></div><div class="cap">'+ic('image')+'<span class="kct">Foto'+sisa+'</span></div></div>';
 else c='<div class="md'+(m.tipe=='foto'?' ph':'')+'" data-o="'+m.id+'"><span class="kct">'+ik+sisa+'</span></div>'}
 var tk=own?'<i class="'+(m.dilihat_at?'r':'')+'">'+ic(m.diterima_at||m.dilihat_at?'check2':'check')+'</i>':'';
-var rx=chips(m);return '<div class="rw2'+(own?' me':'')+(rx?' hr':'')+(kS[m.id]?' sel':'')+(dr0&&!dn[m.id]?' pop':'')+'" data-mid="'+m.id+'"><div class="b'+(own?' me':'')+(kIsStk(m)?' stk':'')+(kGifId(m)?' gf':'')+'">'+(x?'<div class="q">'+E(x.dihapus_at||(x.ditarik_at&&x.pengirim==me)?'Pesan ini sudah dihapus':x.tipe=='teks'?kPlain(x):'['+x.tipe+']')+'</div>':'')+c+(m.ditarik_at&&!own?'<div class="kdl">'+ic('ban')+' Dihapus oleh '+E(kAlWho())+'</div>':'')+'<div class="t">'+tm(m.dikirim_at)+tk+'</div>'+rx+'</div></div>'}
+var rx=chips(m);return '<div class="rw2'+(own?' me':'')+(rx?' hr':'')+(kS[m.id]?' sel':'')+(dr0&&!dn[m.id]?' pop':'')+'" data-mid="'+m.id+'"><div class="b'+(own?' me':'')+(kIsStk(m)?' stk':'')+(kGifId(m)?' gf':'')+'">'+(x?'<div class="q" data-q="'+E(String(x.id))+'" role="button" tabindex="0" title="Lihat pesan asli">'+kQTxt(x)+'</div>':'')+c+(m.ditarik_at&&!own?'<div class="kdl">'+ic('ban')+' Dihapus oleh '+E(kAlWho())+'</div>':'')+'<div class="t">'+tm(m.dikirim_at)+tk+'</div>'+rx+'</div></div>'}
+/* ===== PESAN SUARA: pemutar langsung di gelembung (tombol play, gelombang yang bisa digeser, kecepatan 1x/1.5x/2x) =====
+   Link media diminta ke server SEKALI per pesan (dihitung 1x lihat, seperti sebelumnya) lalu dipakai ulang
+   ±4 menit, jadi memutar ulang / menjeda tidak menghabiskan batas lihat. Hanya satu pesan suara diputar sekali waktu. */
+I.play='<path d="M8 5.5v13l11-6.5z" fill="currentColor"/>';
+I.pause='<rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/>';
+var kvA=null,kvU={},kvRate=1,KV_N=34;
+function kvFmt(s){s=Math.max(0,Math.round(+s||0));return Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60)}
+function kvSel(id){return '#km .md.vn[data-vn="'+String(id).replace(/[^\w-]/g,'')+'"]'}
+function kvBars(id,pct){var h='',x=0,i,n=String(id),w,v;for(i=0;i<n.length;i++)x=(x*31+n.charCodeAt(i))>>>0;for(i=0;i<KV_N;i++){x=(x*1664525+1013904223)>>>0;v=.3+((x>>>8)%100)/100*.7;w=Math.sin((i+.5)/KV_N*Math.PI);v=Math.max(.2,Math.min(1,v*(.5+.5*w)));h+='<i'+(i/KV_N<pct?' class="on"':'')+' style="height:'+Math.round(v*100)+'%"></i>'}return h}
+function kvHtml(m,sisa){var pl=kvA&&kvA.id==m.id,el=pl&&kvA.el,run=!!el&&!el.paused,pct=el&&el.duration?el.currentTime/el.duration:0,sid=E(String(m.id));
+return '<div class="md vn'+(run?' pl':'')+'" data-vn="'+sid+'"><button type="button" class="vp" data-vp="1" aria-label="'+(run?'Jeda':'Putar')+' pesan suara">'+ic(run?'pause':'play')+'</button><div class="vw"><div class="vb" role="slider" aria-label="Posisi pesan suara" tabindex="0">'+kvBars(m.id,pct)+'</div><div class="vi"><span class="vt">'+kvFmt(el&&el.currentTime>0?el.currentTime:m.media_durasi)+'</span>'+(sisa||'')+'<button type="button" class="vx" data-vx="1" aria-label="Kecepatan putar">'+kvRate+'×</button></div></div></div>'}
+function kvUi(id){var r=document.querySelector(kvSel(id));if(!r)return;var a=kvA&&kvA.id==id?kvA.el:null,run=!!a&&!a.paused,pct=a&&a.duration?a.currentTime/a.duration:0,n=Math.round(pct*KV_N),b=r.querySelector('.vp'),t=r.querySelector('.vt'),m=msgs[id];
+r.classList.toggle('pl',run);r.classList.toggle('ld',!!(kvA&&kvA.id==id&&kvA.ld));if(b){b.innerHTML=ic(run?'pause':'play');b.setAttribute('aria-label',(run?'Jeda':'Putar')+' pesan suara')}
+r.querySelectorAll('.vb i').forEach(function(x,i){x.classList.toggle('on',i<n)});if(t)t.textContent=kvFmt(a&&a.currentTime>0?a.currentTime:(m&&m.media_durasi))}
+function kvStop(){var a=kvA;kvA=null;if(a){try{a.el.pause();a.el.removeAttribute('src');a.el.load()}catch(e){}kvUi(a.id)}}
+async function kvPlay(id,from){var mm=msgs[id];if(!mm||mm.tipe!='suara')return;
+if(kvA&&kvA.id==id&&kvA.el){var e0=kvA.el;if(e0.paused){var pp=e0.play();if(pp&&pp.catch)pp.catch(function(){})}else e0.pause();return}
+kvStop();var me0={id:id,el:new Audio(),ld:1};kvA=me0;kvUi(id);
+var u=kvU[id];
+if(!u||Date.now()-u.t>240000){var r;try{r=await sb.functions.invoke('kaone-chat',{body:{aksi:'lihat',id:id}})}catch(e){r=null}var d=r&&r.data;
+if(kvA!==me0)return;if(!d||!d.ok){kvStop();toast(d&&d.reason=='batas'?'Batas lihat habis':'Pesan suara tidak tersedia');return}
+u=kvU[id]={url:d.url,t:Date.now()};if(d.sisa!=null&&peran=='lawan'&&mm.pengirim!=me){mm.jumlah_lihat=Math.max(0,5-d.sisa);var cw=document.querySelector(kvSel(id)+' .kcw');if(cw)cw.textContent='· sisa '+d.sisa+'x'}}
+var el=me0.el;el.preload='auto';el.playbackRate=kvRate;el.src=u.url;
+el.addEventListener('loadedmetadata',function(){if(from>0&&isFinite(el.duration))el.currentTime=from*el.duration});
+el.addEventListener('timeupdate',function(){if(kvA===me0)kvUi(id)});
+el.addEventListener('play',function(){if(kvA===me0){me0.ld=0;kvUi(id)}});el.addEventListener('playing',function(){if(kvA===me0){me0.ld=0;kvUi(id)}});el.addEventListener('pause',function(){if(kvA===me0)kvUi(id)});
+el.addEventListener('waiting',function(){if(kvA===me0){me0.ld=1;kvUi(id)}});
+el.addEventListener('ended',function(){if(kvA===me0)kvStop()});
+el.addEventListener('error',function(){if(kvA!==me0)return;delete kvU[id];kvStop();toast('Pesan suara gagal diputar, coba lagi')});
+try{await el.play()}catch(e){if(kvA===me0&&e&&e.name!='AbortError'){kvStop();toast('Pesan suara tidak bisa diputar')}}}
+document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('#kc .md.vn');if(!t||Object.keys(kS).length)return;var id=t.getAttribute('data-vn');
+if(e.target.closest('.vx')){e.preventDefault();e.stopImmediatePropagation();kvRate=kvRate==1?1.5:kvRate==1.5?2:1;if(kvA&&kvA.el)kvA.el.playbackRate=kvRate;document.querySelectorAll('#km .vx').forEach(function(x){x.textContent=kvRate+'×'});return}
+var bar=e.target.closest('.vb');if(bar){e.preventDefault();e.stopImmediatePropagation();var rc=bar.getBoundingClientRect(),f=Math.max(0,Math.min(1,(e.clientX-rc.left)/Math.max(1,rc.width)));
+if(kvA&&kvA.id==id&&kvA.el&&isFinite(kvA.el.duration)){kvA.el.currentTime=f*kvA.el.duration;kvUi(id);if(kvA.el.paused){var pq=kvA.el.play();if(pq&&pq.catch)pq.catch(function(){})}}else kvPlay(id,f);return}
+if(e.target.closest('.vp')){e.preventDefault();e.stopImmediatePropagation();kvPlay(id)}},true);
+document.addEventListener('visibilitychange',function(){if(document.visibilityState=='hidden'&&kvA&&kvA.el&&!kvA.el.paused)kvA.el.pause()});
+/* Isi kutipan: teks biasa, atau ikon + nama jenis media (foto tidak pernah menampilkan pratinjau). */
+function kQTxt(x){if(x.dihapus_at||(x.ditarik_at&&x.pengirim==me))return '<span class="qt">Pesan ini sudah dihapus</span>';if(x.tipe=='teks')return '<span class="qt">'+E(kPlain(x))+'</span>';var n={foto:['image','Foto'],video:['film','Video'],suara:['wave','Pesan suara']}[x.tipe];return n?ic(n[0])+'<span class="qt">'+n[1]+'</span>':'<span class="qt">['+E(x.tipe)+']</span>'}
+/* Klik kutipan -> gulir ke pesan aslinya dan beri tanda sebentar. */
+function kQJump(id){var el=document.querySelector('#km .rw2[data-mid="'+String(id).replace(/[^\w-]/g,'')+'"]');if(!el){toast('Pesan asli tidak ditemukan');return}try{el.scrollIntoView({behavior:'smooth',block:'center'})}catch(e){el.scrollIntoView()}el.classList.remove('kflash');void el.offsetWidth;el.classList.add('kflash');setTimeout(function(){el.classList.remove('kflash')},1900)}
+document.addEventListener('click',function(e){var q=e.target.closest&&e.target.closest('#kc .q[data-q]');if(!q||Object.keys(kS).length)return;e.preventDefault();kQJump(q.getAttribute('data-q'))});
+document.addEventListener('keydown',function(e){if(e.key!='Enter'&&e.key!=' ')return;var q=e.target.closest&&e.target.closest('#kc .q[data-q]');if(q){e.preventDefault();kQJump(q.getAttribute('data-q'))}});
 var kUnId=null,kUnN=0,kUnSet=false;
 function kDayLabel(d){var n=new Date(),t0=new Date(n.getFullYear(),n.getMonth(),n.getDate()),d0=new Date(d.getFullYear(),d.getMonth(),d.getDate()),dd=Math.round((t0-d0)/864e5);
 if(dd<=0)return 'Hari ini';if(dd==1)return 'Kemarin';
@@ -22963,7 +23049,7 @@ var c={};ks.forEach(function(k){c[r[k]]=(c[r[k]]||0)+1});var sig=ks.map(function
 return '<div class="rx'+(dr0&&rg[m.id]!==sig?' pop':'')+'">'+Object.keys(c).map(function(e){return '<span>'+E(e)+'</span>'+(c[e]>1?'<small>'+c[e]+'</small>':'')}).join('')+'</div>'}
 async function put(o){o.pengirim=me;var r=await sb.from('kaone_chat_pesan').insert(o).select().single();if(r.data){msgs[r.data.id]=r.data;draw();if(!(lo&&lo.on))cpush(r.data.id)}else toast('Gagal kirim')}
 async function kirim(){var v=$('ki').value.trim();if(!v)return;kBurst();$('ki').value='';kGrow();kSync();var o={tipe:'teks',isi:v};if(rep)o.balas_ke=rep;rp(null);await put(o)}
-function rp(id){rep=id;$('krp').classList.toggle('on',!!id);if(id){var m=msgs[id];$('krt').textContent=m.tipe=='teks'?kPlain(m):'['+m.tipe+']'}}
+function rp(id){rep=id;$('krp').classList.toggle('on',!!id);if(id){var m=msgs[id];$('krt').textContent=m.tipe=='teks'?kPlain(m):({foto:'Foto',video:'Video',suara:'Pesan suara'}[m.tipe]||'['+m.tipe+']')}}
 function thumb(blob,big){return new Promise(function(res){try{var im=new Image(),u=URL.createObjectURL(blob);
 im.onload=function(){try{var W=im.naturalWidth,H=im.naturalHeight,L=Math.max(W,H),out=null,
 st=big?[[900,.88]]:[[600,.8],[560,.7],[520,.62],[480,.56],[440,.5],[400,.46],[360,.42],[320,.4],[260,.4]];
@@ -23023,14 +23109,31 @@ if(kkTD&&kkTD.length){a=a.concat(kkTD);t=1}
 if(!t&&window.KAONE_TURN_PUBLIK!==false)a=a.concat([{urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp','turns:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'}]);
 return a}
 function kkCT(){clearTimeout(kk.ct);kk.ct=setTimeout(function(){if(kk.st=='live'&&!kk.conn){try{send({t:'end'})}catch(e){}kkFinish('selesai');kkS('Koneksi gagal');toast('Koneksi gagal: jaringan tidak mengizinkan panggilan langsung')}},25000)}
+/* ---- Sambung ulang otomatis (pindah Wi-Fi <-> seluler, sinyal hilang sebentar) ----
+   Penelepon membuat offer baru dengan iceRestart; penerima menjawab. Kalau 35 dtk tak tersambung baru diakhiri. */
+function kkRecoOk(){clearTimeout(kk.rcT);clearTimeout(kk.rcD);kk.rcN=0;kk.rcT=0;kk.rcD=0}
+function kkReco(ms,force){if(!pc||kk.st!='live'||!kk.conn)return;
+if(!kk.rcD)kk.rcD=setTimeout(function(){kk.rcD=0;if(kk.st=='live'&&pc&&pc.connectionState!='connected'){try{send({t:'end'})}catch(e){}kkFinish('selesai');toast('Koneksi terputus')}},35000);
+clearTimeout(kk.rcT);kk.rcT=setTimeout(async function(){kk.rcT=0;var p=pc;if(!p||kk.st!='live'||(p.connectionState=='connected'&&!force))return;
+if(kk.role=='out'){if((kk.rcN||0)>=5)return;kk.rcN=(kk.rcN||0)+1;try{var o=await p.createOffer({iceRestart:true});if(pc!==p)return;await p.setLocalDescription(o);send({t:'roffer',s:o})}catch(e){}if(pc===p&&p.connectionState!='connected')kkReco(6000)}
+else{send({t:'reco'});kkReco(8000)}},ms)}
+/* ---- layar tetap menyala selama panggilan ---- */
+var kkWL=null;
+function kkWake(on){try{if(!on){if(kkWL){kkWL.release&&kkWL.release();kkWL=null}return}if(!navigator.wakeLock||kkWL)return;navigator.wakeLock.request('screen').then(function(l){kkWL=l;l.addEventListener('release',function(){if(kkWL===l)kkWL=null})}).catch(function(){})}catch(e){}}
+document.addEventListener('visibilitychange',function(){if(document.visibilityState=='visible'&&pc&&kk.conn&&kk.st=='live')kkWake(1)});
+/* ---- batas bitrate supaya stabil di jaringan seluler ---- */
+function kkBitrate(){try{if(!pc)return;pc.getSenders().forEach(function(x){if(!x.track||!x.getParameters)return;var p=x.getParameters();if(!p.encodings||!p.encodings.length)p.encodings=[{}];if(x.track.kind=='video'){p.encodings[0].maxBitrate=1500000;p.encodings[0].maxFramerate=30}else p.encodings[0].maxBitrate=48000;x.setParameters(p).catch(function(){})})}catch(e){}}
+/* ---- pesan galat yang jelas ---- */
+function kkErr(e){var n=e&&e.name;if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return 'Panggilan butuh koneksi aman (https)';if(n=='NotAllowedError'||n=='SecurityError')return 'Izin kamera/mikrofon ditolak. Aktifkan di pengaturan browser';if(n=='NotFoundError'||n=='OverconstrainedError')return 'Mikrofon/kamera tidak ditemukan di perangkat ini';if(n=='NotReadableError'||n=='AbortError')return 'Mikrofon/kamera sedang dipakai aplikasi lain';return 'Panggilan gagal tersambung, coba lagi'}
 function mk(){var px=pc=new RTCPeerConnection({iceServers:kkIceServers()});kk.ib=[];kk.itp=0;clearTimeout(kk.it);px.onicecandidate=function(e){if(pc!==px)return;if(e.candidate){kk.ib.push(e.candidate);if(!kk.itp){kk.itp=1;kk.it=setTimeout(kkIceFlush,150)}}else kkIceFlush()};
-px.ontrack=function(e){$('kr').srcObject=e.streams[0]};
+px.ontrack=function(e){var r=$('kr'),st=e.streams&&e.streams[0];if(!st){st=r.srcObject instanceof MediaStream?r.srcObject:new MediaStream();if(st.getTracks().indexOf(e.track)<0)st.addTrack(e.track)}if(r.srcObject!==st)r.srcObject=st;var pl=r.play&&r.play();if(pl&&pl.catch)pl.catch(function(){})};
 px.onconnectionstatechange=function(){if(pc!==px)return;var s=px.connectionState;
-if(s=='connected'){if(!kk.conn){kk.conn=1;kk.t0=Date.now();clearInterval(kk.tm);kk.tm=setInterval(kkTick,1000);try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}send({t:'media',m:kk.mute?1:0,c:kk.cam?1:0})}kkTick();kkCls()}
-else if(s=='disconnected'){if(kk.conn)kkS('Menyambung kembali…')}
-else if(s=='failed'||s=='closed')kkFinish('selesai')}}
-async function med(v){var au={echoCancellation:true,noiseSuppression:true};try{ls=await navigator.mediaDevices.getUserMedia({audio:au,video:v?{facingMode:fm}:false})}catch(e1){if(!v)throw e1;try{ls=await navigator.mediaDevices.getUserMedia({audio:au,video:true})}catch(e2){ls=await navigator.mediaDevices.getUserMedia({audio:au,video:false});kk.cam=0;toast('Kamera tidak bisa dipakai, lanjut suara saja')}}$('kl').srcObject=ls;$('kl').classList.toggle('mir',fm=='user');ls.getTracks().forEach(function(t){pc.addTrack(t,ls)});kkCls()}
-function kkStop(){clearTimeout(kk.tout);clearTimeout(kk.ct);clearTimeout(kk.it);kk.itp=0;kk.ib=[];clearInterval(kk.tm);kkRing(0);kkNotifOff();var p=pc;pc=null;if(p){try{p.close()}catch(e){}}if(ls){ls.getTracks().forEach(function(t){t.stop()});ls=null}$('kl').srcObject=null;$('kr').srcObject=null;inc=null;q=[]}
+if(s=='connected'){if(!kk.conn){kk.conn=1;kk.t0=Date.now();clearInterval(kk.tm);kk.tm=setInterval(kkTick,1000);try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}send({t:'media',m:kk.mute?1:0,c:kk.cam?1:0})}kkRecoOk();kkTick();kkCls();kkBitrate();kkWake(1)}
+else if(s=='disconnected'){if(kk.conn){kkS('Menyambung kembali…');kkReco(4000)}}
+else if(s=='failed'){if(kk.conn){kkS('Menyambung kembali…');kkReco(0)}else kkFinish('selesai')}
+else if(s=='closed')kkFinish('selesai')}}
+async function med(v){var au={echoCancellation:true,noiseSuppression:true,autoGainControl:true};try{ls=await navigator.mediaDevices.getUserMedia({audio:au,video:v?{facingMode:fm,width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30,max:30}}:false})}catch(e1){if(!v)throw e1;try{ls=await navigator.mediaDevices.getUserMedia({audio:au,video:true})}catch(e2){ls=await navigator.mediaDevices.getUserMedia({audio:au,video:false});kk.cam=0;toast('Kamera tidak bisa dipakai, lanjut suara saja')}}$('kl').srcObject=ls;$('kl').classList.toggle('mir',fm=='user');ls.getTracks().forEach(function(t){pc.addTrack(t,ls)});kkCls()}
+function kkStop(){kkRecoOk();kkWake(0);clearTimeout(kk.tout);clearTimeout(kk.ct);clearTimeout(kk.it);kk.itp=0;kk.ib=[];clearInterval(kk.tm);kkRing(0);kkNotifOff();var p=pc;pc=null;if(p){try{p.close()}catch(e){}}if(ls){ls.getTracks().forEach(function(t){t.stop()});ls=null}$('kl').srcObject=null;$('kr').srcObject=null;inc=null;q=[]}
 function kkTeardown(){clearTimeout(kk.et);kkStop();kk.st='idle';kk.conn=0;kk.mini=0;kkCls()}
 /* akhiri panggilan + tulis riwayat (hanya penelepon) + tampilkan keterangan singkat */
 function kkFinish(res){if(kk.st!='out'&&kk.st!='live')return;var role=kk.role,v=kk.v,dur=kk.conn?kkDur():0;if(role=='out'&&res=='selesai'&&!kk.conn)res='tak';
@@ -23047,20 +23150,24 @@ async function call(v){if((kk.st!='idle'&&kk.st!='end')||pc)return;if(!rm){toast
 kkInit('out',v);kkS('Memanggil…');kkAC();
 try{await kkTurnLoad(2000);if(kk.st!='out')return;mk();await med(v);var o=await pc.createOffer();await pc.setLocalDescription(o);send({t:'offer',v:v,s:o});if(!(lo&&lo.on))cpush('panggilan');kkRing(1);
 kk.tout=setTimeout(function(){if(kk.st=='out'){send({t:'end'});kkFinish('tak')}},45000)}
-catch(e){kkTeardown();toast(e&&e.name=='NotAllowedError'?'Izin kamera/mikrofon ditolak':'Panggilan gagal tersambung, coba lagi')}}
+catch(e){kkTeardown();toast(kkErr(e))}}
 async function sig(p){if(!p)return;
-if(p.t=='offer'){if((kk.st!='idle'&&kk.st!='end')||pc){send({t:'sibuk'});return}kkInit('in',p.v?1:0);inc=p;send({t:'ring'});var tx='Panggilan '+(p.v?'video':'suara')+' masuk';kkS(tx);kkRing(2);kkNotif(tx);
+if(p.t=='offer'){if(kk.st=='out'&&!kk.ans&&pc){if(peran=='lawan'){kkStop();kk.st='idle';kkCls()}else return}
+if((kk.st!='idle'&&kk.st!='end')||pc){send({t:'sibuk'});return}kkInit('in',p.v?1:0);inc=p;send({t:'ring'});var tx='Panggilan '+(p.v?'video':'suara')+' masuk';kkS(tx);kkRing(2);kkNotif(tx);
 kk.tout=setTimeout(function(){if(kk.st=='ring-in'){kkTeardown()}},60000)}
 else if(p.t=='ring'){if(kk.st=='out'&&!kk.ans)kkS('Berdering…')}
-else if(p.t=='answer'&&pc&&kk.role=='out'&&kk.st=='out'){kk.ans=1;kk.st='live';clearTimeout(kk.tout);kkRing(0);kkS('Menghubungkan…');kkCT();kkCls();await pc.setRemoteDescription(p.s);q.forEach(function(c){pc.addIceCandidate(c)});q=[]}
-else if(p.t=='ice'){(Array.isArray(p.c)?p.c:[p.c]).forEach(function(c){if(pc&&pc.remoteDescription)pc.addIceCandidate(c).catch(function(){});else q.push(c)})}
+else if(p.t=='answer'&&pc&&kk.role=='out'&&kk.st=='out'){kk.ans=1;kk.st='live';clearTimeout(kk.tout);kkRing(0);kkS('Menghubungkan…');kkCT();kkCls();await pc.setRemoteDescription(p.s);q.forEach(function(c){pc.addIceCandidate(c).catch(function(){})});q=[]}
+else if(p.t=='ice'){(Array.isArray(p.c)?p.c:[p.c]).forEach(function(c){if(pc&&pc.remoteDescription){var px=pc;px.addIceCandidate(c).catch(function(){setTimeout(function(){if(pc===px)px.addIceCandidate(c).catch(function(){})},500)})}else q.push(c)})}
+else if(p.t=='roffer'){if(pc&&kk.st=='live'&&kk.role=='in'){var rp0=pc;try{await rp0.setRemoteDescription(p.s);var ra=await rp0.createAnswer();if(pc!==rp0)return;await rp0.setLocalDescription(ra);send({t:'ranswer',s:ra})}catch(e){}}}
+else if(p.t=='ranswer'){if(pc&&kk.st=='live'&&kk.role=='out'){try{await pc.setRemoteDescription(p.s)}catch(e){}}}
+else if(p.t=='reco'){if(pc&&kk.st=='live'&&kk.role=='out')kkReco(0,1)}
 else if(p.t=='tolak'){if(kk.st=='out')kkFinish('tolak')}
 else if(p.t=='sibuk'){if(kk.st=='out')kkFinish('sibuk')}
 else if(p.t=='media'){kk.rm=p.m?1:0;kk.rc=p.c===0?0:1;kkCls()}
 else if(p.t=='end'){if(kk.st=='ring-in'){kkTeardown();toast('Panggilan tak terjawab')}else if(kk.st=='out')kkFinish('tak');else if(kk.st=='live')kkFinish('selesai')}}
 async function jawab(){if(!inc||kk.st!='ring-in')return;var o=inc;clearTimeout(kk.tout);kkRing(0);kkNotifOff();kkAC();kk.st='live';kkS('Menghubungkan…');kkCT();kkCls();
-try{await kkTurnLoad(1500);if(kk.st!='live')return;mk();await med(o.v);await pc.setRemoteDescription(o.s);q.forEach(function(c){pc.addIceCandidate(c)});q=[];var a=await pc.createAnswer();await pc.setLocalDescription(a);send({t:'answer',s:a});inc=null}
-catch(e){send({t:'end'});kkTeardown();toast(e&&e.name=='NotAllowedError'?'Izin kamera/mikrofon ditolak':'Panggilan gagal tersambung, coba lagi')}}
+try{await kkTurnLoad(1500);if(kk.st!='live')return;mk();await med(o.v);await pc.setRemoteDescription(o.s);q.forEach(function(c){pc.addIceCandidate(c).catch(function(){})});q=[];var a=await pc.createAnswer();await pc.setLocalDescription(a);send({t:'answer',s:a});inc=null}
+catch(e){send({t:'end'});kkTeardown();toast(kkErr(e))}}
 async function flip(){if(!ls||!pc||!kk.v)return;fm=fm=='user'?'environment':'user';try{var s=await navigator.mediaDevices.getUserMedia({video:{facingMode:fm}}),n=s.getVideoTracks()[0],snd0=pc.getSenders().find(function(x){return x.track&&x.track.kind=='video'});n.enabled=!!kk.cam;if(snd0){snd0.replaceTrack(n);ls.getVideoTracks().forEach(function(t){t.stop()});ls=new MediaStream([n].concat(ls.getAudioTracks()));$('kl').srcObject=ls;$('kl').classList.toggle('mir',fm=='user')}}catch(e){fm=fm=='user'?'environment':'user';toast('Kamera tidak bisa dibalik')}}
 /* kartu riwayat panggilan di chat */
 function kcInfo(m){var s=String(m.isi||''),p=s.split('|');if(p[0]=='v1')return{v:p[1]=='video'?1:0,r:p[2]||'selesai',d:+p[3]||0};return{v:/^video/i.test(s)?1:0,r:'selesai',d:0}}
@@ -23123,39 +23230,61 @@ $('ki').addEventListener('keydown',function(e){if(e.key=='Enter'&&!e.shiftKey&&!
 var tk0=0;$('ki').addEventListener('input',function(){if($('ki').value&&Date.now()-tk0>1200){tk0=Date.now();rm&&rm.send({type:'broadcast',event:'ketik',payload:{}})}});
 $('kf').addEventListener('change',function(){var f=this.files[0];this.value='';if(!f)return;if(f.type&&f.type.indexOf('image/')!=0){toast('Pilih file foto');return}if($('kcm').classList.contains('on'))cmClose();up(f,'foto',f.type||'image/jpeg')});
 /* ---- KAMERA DI KOLOM PESAN: ambil foto langsung dari kamera, lihat dulu, lalu kirim ---- */
-var cmS=null,cmFm='environment',cmBlob=null,cmUrl='',cmTok=0;
-function cmStop(){if(cmS){try{cmS.getTracks().forEach(function(t){t.stop()})}catch(e){}cmS=null}var v=$('kcmv');if(v)v.srcObject=null}
-function cmReset(){cmBlob=null;if(cmUrl){try{URL.revokeObjectURL(cmUrl)}catch(e){}cmUrl=''}$('kcmp').removeAttribute('src');$('kcm').classList.remove('pv');$('kcms').disabled=false}
-function cmClose(){cmTok++;cmStop();cmReset();$('kcm').classList.remove('on','er')}
+var cmS=null,cmT=null,cmCap={},cmFm='environment',cmBlob=null,cmUrl='',cmTok=0,cmZ=1,cmTorch=false,cmBusy=false,cmGrid=false,cmPi=null,cmZq=0,cmFt=0;
+try{cmGrid=localStorage.getItem('kcCamGrid')=='1'}catch(e){}
+I.flash='<path d="M13 2.5L5 13.5h6.2L10.4 21.5 19 10.5h-6.3z"/>';
+I.flashoff='<path d="M13 2.5L5 13.5h6.2L10.4 21.5 19 10.5h-6.3z" opacity=".55"/><path d="M3.5 3.5l17 17"/>';
+I.grid='<rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M9.2 3.5v17M14.8 3.5v17M3.5 9.2h17M3.5 14.8h17"/>';
+function cmIcons(){$('kcmgb').innerHTML=ic('grid');$('kcmfx').innerHTML=ic(cmTorch?'flash':'flashoff');$('kcmgb').setAttribute('aria-pressed',cmGrid?'true':'false');$('kcmfx').setAttribute('aria-pressed',cmTorch?'true':'false');$('kcm').classList.toggle('gr',cmGrid)}
+function cmStop(){if(cmS){try{cmS.getTracks().forEach(function(t){t.stop()})}catch(e){}cmS=null}cmT=null;cmTorch=false;var v=$('kcmv');if(v)v.srcObject=null}
+function cmReset(){cmBlob=null;cmBusy=false;if(cmUrl){try{URL.revokeObjectURL(cmUrl)}catch(e){}cmUrl=''}$('kcmp').removeAttribute('src');$('kcm').classList.remove('pv','sh');$('kcms').disabled=false}
+function cmClose(){cmTok++;cmStop();cmReset();$('kcm').classList.remove('on','er','ld','hz','hf')}
 function cmFallback(){cmClose();$('kfcam').click()}
+function cmErr(t){var n=$('kcmn');n.innerHTML='<div></div><button type="button" id="kcmre">Coba lagi</button>';n.firstChild.textContent=t;$('kcm').classList.remove('ld');$('kcm').classList.add('er')}
+/* zoom (bila perangkat mendukung) */
+function cmZoomLabel(v){return (Math.round(v*10)/10).toString().replace('.',',')+'×'}
+function cmZoomUi(){var z=$('kcmz'),bs=z.querySelectorAll('button');if(!bs.length)return;var best=0,bd=1e9;bs.forEach(function(x,i){var d=Math.abs(+x.dataset.z-cmZ);if(d<bd){bd=d;best=i}});bs.forEach(function(x,i){var on=i==best;x.classList.toggle('on',on);x.textContent=cmZoomLabel(on?cmZ:+x.dataset.z).replace(/^0,/,',')})}
+function cmZoom(v){if(!cmT||!cmCap.zoom)return;v=Math.max(cmCap.zoom.min,Math.min(cmCap.zoom.max,v));cmZ=v;cmZoomUi();if(cmZq)return;cmZq=requestAnimationFrame(function(){cmZq=0;try{cmT&&cmT.applyConstraints({advanced:[{zoom:cmZ}]}).catch(function(){})}catch(e){}})}
+function cmCaps(){cmCap={};try{cmCap=(cmT&&cmT.getCapabilities&&cmT.getCapabilities())||{}}catch(e){}
+var box=$('kcm'),zm=cmCap.zoom,hz=!!(zm&&zm.max>zm.min*1.15),z=$('kcmz');box.classList.toggle('hz',hz);box.classList.toggle('hf',!!cmCap.torch&&cmFm!='user');z.innerHTML='';cmTorch=false;cmZ=hz?Math.max(zm.min,Math.min(zm.max,1)):1;
+if(hz){var vs=[];[zm.min<.95?zm.min:null,1,2,3,5].forEach(function(x){if(x!=null&&x>=zm.min-.001&&x<=zm.max+.001&&vs.indexOf(x)<0)vs.push(x)});if(vs.length<2)vs=[zm.min,zm.max];vs.forEach(function(x){var b=document.createElement('button');b.type='button';b.dataset.z=x;z.appendChild(b)});cmZoomUi();try{cmT.applyConstraints({advanced:[{zoom:cmZ}]}).catch(function(){})}catch(e){}}cmIcons()}
 async function cmStart(){
- var tok=++cmTok,box=$('kcm');cmStop();box.classList.remove('er');
+ var tok=++cmTok,box=$('kcm');cmStop();box.classList.remove('er','hz','hf');box.classList.add('ld');cmIcons();
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){cmFallback();return}
  var st;
  try{st=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:cmFm},width:{ideal:1920},height:{ideal:1080}}})}
  catch(e){
   if(tok!=cmTok)return;
-  if(e&&(e.name=='NotAllowedError'||e.name=='SecurityError')){$('kcmn').textContent='Izin kamera ditolak. Aktifkan izin kamera di pengaturan browser, lalu coba lagi.';box.classList.add('er');return}
+  if(e&&(e.name=='NotAllowedError'||e.name=='SecurityError')){cmErr('Izin kamera ditolak. Aktifkan izin kamera di pengaturan browser, lalu coba lagi.');return}
+  if(e&&e.name=='NotReadableError'){cmErr('Kamera sedang dipakai aplikasi lain. Tutup aplikasi itu, lalu coba lagi.');return}
   cmFallback();return}
  if(tok!=cmTok){st.getTracks().forEach(function(t){t.stop()});return}
- cmS=st;var v=$('kcmv');v.srcObject=st;v.classList.toggle('mir',cmFm=='user');
+ cmS=st;cmT=st.getVideoTracks()[0]||null;var v=$('kcmv');v.srcObject=st;v.classList.toggle('mir',cmFm=='user');
  try{await v.play()}catch(e){}
- try{var ds=await navigator.mediaDevices.enumerateDevices();box.classList.toggle('nsw',ds.filter(function(d){return d.kind=='videoinput'}).length<2)}catch(e){}
+ if(tok!=cmTok)return;box.classList.remove('ld');cmCaps();
+ try{var ds=await navigator.mediaDevices.enumerateDevices();if(tok==cmTok)box.classList.toggle('nsw',ds.filter(function(d){return d.kind=='videoinput'}).length<2)}catch(e){}
 }
 function cmOpen(){
  if(kk.st!='idle'){toast('Kamera tidak bisa dibuka saat panggilan');return}
  cmReset();cmFm='environment';$('kcm').classList.add('on');cmStart()}
 function cmShot(){
- var v=$('kcmv');if(!cmS||!v.videoWidth)return;
+ var v=$('kcmv');if(cmBusy)return;if(!cmS||!v.videoWidth||v.readyState<2){toast('Kamera belum siap');return}
+ cmBusy=true;
  var W=v.videoWidth,H=v.videoHeight,k=Math.min(1,1920/Math.max(W,H)),w=Math.round(W*k),h=Math.round(H*k),c=document.createElement('canvas');
  c.width=w;c.height=h;var x=c.getContext('2d');
  if(cmFm=='user'){x.translate(w,0);x.scale(-1,1)}
  x.drawImage(v,0,0,w,h);vib(15);
- c.toBlob(function(b){if(!b){toast('Gagal mengambil foto');return}
-  cmBlob=b;cmUrl=URL.createObjectURL(b);$('kcmp').src=cmUrl;$('kcm').classList.add('pv');cmStop()},'image/jpeg',.88)}
+ var fl=$('kcmfl');fl.classList.remove('on');void fl.offsetWidth;fl.classList.add('on');$('kcm').classList.add('sh');
+ c.toBlob(function(b){$('kcm').classList.remove('sh');if(!b){cmBusy=false;toast('Gagal mengambil foto');return}
+  cmBlob=b;cmUrl=URL.createObjectURL(b);$('kcmp').src=cmUrl;$('kcm').classList.add('pv');cmStop();cmBusy=false},'image/jpeg',.9)}
 async function cmSend(){
  if(!cmBlob)return;var b=cmBlob;$('kcms').disabled=true;
  cmClose();toast('Mengirim foto…');await up(b,'foto','image/jpeg')}
+function cmTorchTog(){if(!cmT||!cmCap.torch)return;var nv=!cmTorch;try{cmT.applyConstraints({advanced:[{torch:nv}]}).then(function(){cmTorch=nv;cmIcons();vib(8)}).catch(function(){toast('Lampu kilat tidak bisa dinyalakan')})}catch(e){toast('Lampu kilat tidak bisa dinyalakan')}}
+function cmFocus(e){var box=$('kcm');if(!cmT||box.classList.contains('pv')||box.classList.contains('er')||box.classList.contains('ld')||e.target.closest('button,.kcmz,.kcmb,.kcmt'))return;
+var r=box.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top,f=$('kcmfo');f.style.left=px+'px';f.style.top=py+'px';f.classList.remove('on');void f.offsetWidth;f.classList.add('on');
+try{if(cmCap.focusMode||cmCap.pointsOfInterest!==undefined)cmT.applyConstraints({advanced:[{pointsOfInterest:[{x:Math.max(0,Math.min(1,px/r.width)),y:Math.max(0,Math.min(1,py/r.height))}]}]}).catch(function(){})}catch(x){}}
+function cmDist(t){var dx=t[0].clientX-t[1].clientX,dy=t[0].clientY-t[1].clientY;return Math.sqrt(dx*dx+dy*dy)||1}
 $('kcam').addEventListener('click',cmOpen);
 $('kcmg').addEventListener('click',function(){$('kf').click()});
 $('kcmx').addEventListener('click',cmClose);
@@ -23163,6 +23292,14 @@ $('kcmc').addEventListener('click',cmShot);
 $('kcmr').addEventListener('click',function(){cmReset();cmStart()});
 $('kcms').addEventListener('click',cmSend);
 $('kcmw').addEventListener('click',function(){cmFm=cmFm=='user'?'environment':'user';cmStart()});
+$('kcmfx').addEventListener('click',cmTorchTog);
+$('kcmgb').addEventListener('click',function(){cmGrid=!cmGrid;try{localStorage.setItem('kcCamGrid',cmGrid?'1':'0')}catch(e){}cmIcons()});
+$('kcmz').addEventListener('click',function(e){var b=e.target.closest('button');if(b)cmZoom(+b.dataset.z)});
+$('kcmn').addEventListener('click',function(e){if(e.target.closest('#kcmre'))cmStart()});
+$('kcm').addEventListener('click',cmFocus);
+$('kcm').addEventListener('touchstart',function(e){if(e.touches.length==2&&cmT&&cmCap.zoom&&!$('kcm').classList.contains('pv'))cmPi={d:cmDist(e.touches),z:cmZ}},{passive:true});
+$('kcm').addEventListener('touchmove',function(e){if(cmPi&&e.touches.length==2)cmZoom(cmPi.z*cmDist(e.touches)/cmPi.d)},{passive:true});
+$('kcm').addEventListener('touchend',function(e){if(e.touches.length<2)cmPi=null},{passive:true});
 $('kfcam').addEventListener('change',function(){var f=this.files[0];this.value='';if(f)up(f,'foto',f.type||'image/jpeg')});
 document.addEventListener('keydown',function(e){if(e.key=='Escape'&&$('kcm').classList.contains('on'))cmClose()});
 document.addEventListener('visibilitychange',function(){if(document.hidden&&$('kcm').classList.contains('on')&&!$('kcm').classList.contains('pv'))cmClose()});
@@ -23792,6 +23929,43 @@ html.kc-open{background:var(--kb)}
 #kc .md{border-radius:12px;background:rgba(127,127,127,.14)}
 #kc .md.pv{border-radius:14px;padding:5px}
 #kc .md.pv .pw{border-radius:10px}
+/* Foto tersembunyi: kartu penutup (gambar asli baru muncul saat diketuk) */
+#kc .md.pv.hid{position:relative;-webkit-tap-highlight-color:transparent;transition:transform .16s ease}
+#kc .md.pv.hid:active{transform:scale(.975)}
+#kc .md.pv .pw.hv{display:grid;place-items:center;position:relative;isolation:isolate;aspect-ratio:4/3;width:min(240px,66vw);max-height:none;border-radius:11px;overflow:hidden;
+  background:linear-gradient(145deg,rgba(127,127,127,.42),rgba(127,127,127,.18));
+  background:radial-gradient(120% 90% at 10% 6%,rgba(255,255,255,.38),transparent 55%),radial-gradient(95% 85% at 94% 104%,color-mix(in srgb,var(--ka) 62%,transparent),transparent 72%),linear-gradient(145deg,rgba(127,127,127,.42),rgba(127,127,127,.16));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),inset 0 -18px 30px rgba(0,0,0,.08)}
+#kc .md.pv .pw.hv::before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(135deg,rgba(255,255,255,.075) 0 2px,transparent 2px 13px)}
+#kc .md.pv .pw.hv::after{content:"";position:absolute;top:-20%;bottom:-20%;left:-60%;width:42%;z-index:-1;background:linear-gradient(100deg,transparent,rgba(255,255,255,.26),transparent);transform:skewX(-18deg);animation:kHvSheen 4.6s ease-in-out infinite}
+@keyframes kHvSheen{0%,58%{left:-60%}100%{left:130%}}
+#kc .hv-ic{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;color:#fff;background:rgba(255,255,255,.22);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 6px 16px rgba(0,0,0,.2),inset 0 0 0 1px rgba(255,255,255,.4);margin-bottom:14px}
+#kc .hv-ic svg{width:26px;height:26px;transform:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25))}
+#kc .hv-t{position:absolute;left:50%;bottom:11px;transform:translateX(-50%);padding:4px 12px;border-radius:999px;background:rgba(0,0,0,.36);color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.02em;white-space:nowrap;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+@media (prefers-reduced-motion:reduce){#kc .md.pv .pw.hv::after{animation:none;display:none}}
+/* Kutipan yang bisa diklik + penanda sebentar pada pesan asli */
+#kc .q[data-q]{cursor:pointer;display:flex;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent;transition:background .15s ease}
+#kc .q[data-q] svg{width:14px;height:14px;flex:none;opacity:.8;transform:none}
+#kc .q[data-q] .qt{min-width:0;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#kc .q[data-q]:active{background:rgba(127,127,127,.3)}
+@keyframes kFlash{0%{box-shadow:0 0 0 0 var(--ka);filter:brightness(1)}14%{box-shadow:0 0 0 4px var(--ka),0 8px 22px rgba(0,0,0,.25);filter:brightness(1.16)}68%{box-shadow:0 0 0 4px var(--ka),0 8px 22px rgba(0,0,0,.2);filter:brightness(1.1)}100%{box-shadow:0 0 0 0 transparent;filter:brightness(1)}}
+#kc .rw2.kflash .b{animation:kFlash 1.8s ease both}
+/* Pemutar pesan suara */
+#kc .md.vn{display:flex;flex-direction:row;align-items:center;gap:10px;width:min(268px,68vw);padding:2px 0;background:none;cursor:default}
+#kc .vp{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;padding:0;color:inherit;background:color-mix(in srgb,currentColor 14%,transparent);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,currentColor 32%,transparent);transition:transform .12s ease,background .2s ease}
+#kc .vp svg{width:22px;height:22px;transform:none}
+#kc .vp:active{transform:scale(.92)}
+#kc .md.vn.pl .vp{background:color-mix(in srgb,currentColor 22%,transparent)}
+#kc .md.vn.ld .vp svg{animation:kVld 1s ease-in-out infinite}
+@keyframes kVld{50%{opacity:.35}}
+#kc .vw{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+#kc .vb{display:flex;align-items:center;gap:2px;height:30px;cursor:pointer;touch-action:pan-y;padding:2px 0}
+#kc .vb i{flex:1;min-width:2px;border-radius:2px;background:currentColor;opacity:.3;transition:opacity .15s ease}
+#kc .vb i.on{opacity:.95}
+#kc .vi{display:flex;align-items:center;gap:8px;font-size:11.5px;font-variant-numeric:tabular-nums}
+#kc .vi .vt{font-weight:700;opacity:.8}
+#kc .vi .kcw{opacity:.7}
+#kc .vx{margin-left:auto;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:800;color:inherit;background:color-mix(in srgb,currentColor 14%,transparent);min-width:34px}
 #kc .nt{border-radius:999px;padding:6px 14px;font-weight:600;border:1px solid var(--kln)}
 #kc .rx{border-radius:999px;padding:1px 7px;box-shadow:0 2px 6px rgba(0,0,0,.22),0 0 0 2px var(--kb)}
 #kc .del{opacity:.7}

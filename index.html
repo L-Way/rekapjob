@@ -1024,7 +1024,9 @@
   .as-btn.ghost{background:#fff; color:#7a4a06; border:1px solid #e6d79a; min-height:42px; font-size:13px;}
   .as-st-run{color:#b45309; font-weight:700;} .as-st-done{color:#15803d; font-weight:700;}
   .dash-det .hh-ber b{font-weight:800; font-variant-numeric:tabular-nums;}
-  .dash-det .hh-wx{display:inline-flex; align-items:center; gap:4px; white-space:nowrap;}
+  .dash-det .hh-ber > span{display:flex; flex-wrap:wrap; align-items:center; gap:2px 7px; line-height:1.45;}
+  .dash-det .hh-ber .hh-sep{font-style:normal; opacity:.55; line-height:1;}
+  .dash-det .hh-wx{display:inline-flex; align-items:center; gap:4px; white-space:nowrap; line-height:1.45;}
   .dash-det .hh-wx svg{width:15px; height:15px;}
   /* Briefing Hari-H */
   .hh-box{margin-top:14px; border:1.5px solid #e6d79a; background:linear-gradient(180deg,#fffdf3,#fff); border-radius:16px; padding:14px; box-shadow:0 6px 18px -10px rgba(122,74,6,.35);}
@@ -13959,8 +13961,10 @@ function layananSelectOptions(sel){
      - Prakiraan cuaca di lokasi (Open-Meteo, gratis tanpa kunci) pada jam acara, plus saran perlengkapan
      - Matahari terbit, golden hour, dan terbenam (dihitung langsung di perangkat, tanpa internet)
    Semua gagal dengan tenang: kalau data kurang atau offline, bagian itu menampilkan petunjuk, bukan error. */
-const HH_BUF_KEY='kaoneHHBuf', HH_CUACA_KEY='kaoneHHCuaca_v1', HH_BUF_PILIHAN=[15,30,45,60,90];
-function hhBuf(){ try{ const v=parseInt(localStorage.getItem(HH_BUF_KEY),10); return HH_BUF_PILIHAN.includes(v)?v:45; }catch(e){ return 45; } }
+const HH_BUF_KEY='kaoneHHTiba', HH_CUACA_KEY='kaoneHHCuaca_v1', HH_BUF_PILIHAN=[330,360,390,420];   // jam tiba di lokasi (menit sejak 00.00): 05.30, 06.00, 06.30, 07.00
+function hhTibaPilih(){ try{ const v=parseInt(localStorage.getItem(HH_BUF_KEY),10); return HH_BUF_PILIHAN.includes(v)?v:390; }catch(e){ return 390; } }
+/* Jam tiba di lokasi: default pukul 06.30. Acara pagi sebelum 07.00 tetap tiba 15 menit lebih awal; acara siang/sore (mulai 12.00 ke atas) tiba 60 menit lebih awal. */
+function hhTiba(jamM){ return jamM>=720 ? jamM-60 : Math.min(hhTibaPilih(), jamM-15); }
 function hhPad(n){ return String(n).padStart(2,'0'); }
 function hhHariIni(){ const t=new Date(); return t.getFullYear()+'-'+hhPad(t.getMonth()+1)+'-'+hhPad(t.getDate()); }
 function hhSelisih(tgl){ return Math.round((Date.parse(tgl+'T00:00:00')-Date.parse(hhHariIni()+'T00:00:00'))/864e5); }
@@ -14038,7 +14042,7 @@ function hhBoxHtml(j){
   const tg=hhTarget(j); if(!tg) return '';
   const c=parseCoordString(j.koordinat);
   const d=hhSelisih(tg.tgl);
-  const bufBtn=HH_BUF_PILIHAN.map(m=>`<button type="button" class="hh-chip${m===hhBuf()?' on':''}" data-hh-buf="${m}" aria-pressed="${m===hhBuf()}">${m}</button>`).join('');
+  const bufBtn=HH_BUF_PILIHAN.map(m=>`<button type="button" class="hh-chip${m===hhTibaPilih()?' on':''}" data-hh-buf="${m}" aria-pressed="${m===hhTibaPilih()}">${hhJam(m)}</button>`).join('');
   if(!c){
     return `<div class="hh-box" id="hhBox" data-job="${j.id}"><div class="hh-head">${ic('clock')} Briefing Hari-H<span class="hh-when">${escapeHtml(hhLabelHari(d))}</span></div>
       <p class="hh-hint">Isi <b>Titik Koordinat</b> lokasi di Edit Job untuk melihat jam berangkat, cuaca, dan jam golden hour.</p></div>`;
@@ -14046,7 +14050,7 @@ function hhBoxHtml(j){
   return `<div class="hh-box" id="hhBox" data-job="${j.id}">
     <div class="hh-head">${ic('clock')} Briefing Hari-H<span class="hh-when">${escapeHtml(hhLabelHari(d))}</span></div>
     <div class="hh-row"><div class="hh-ic hh-ic-go">${ic('clock')}</div><div class="hh-tx"><small>Berangkat</small><b id="hhGo">Menghitung…</b><span id="hhGoSub"></span></div></div>
-    ${tg.awal?`<div class="hh-buf" role="group" aria-label="Tiba lebih awal (menit)"><span>Tiba lebih awal (menit)</span>${bufBtn}</div>`:''}
+    ${tg.awal?`<div class="hh-buf" role="group" aria-label="Tiba di lokasi pukul"><span>Tiba di lokasi pukul</span>${bufBtn}</div>`:''}
     <div class="hh-row"><div class="hh-ic hh-ic-wx" id="hhWxIc">${hhSvg('cloud')}</div><div class="hh-tx"><small>Cuaca di lokasi</small><b id="hhWx">Memuat…</b><span id="hhWxSub"></span></div></div>
     <div class="hh-row"><div class="hh-ic hh-ic-sun">${hhSvg('sun')}</div><div class="hh-tx"><small>Cahaya</small><b id="hhSun">-</b><span id="hhSunSub"></span></div></div>
     <button type="button" class="hh-copy" data-hh-salin="${j.id}">${ic('clipboard')} Salin Briefing</button>
@@ -14075,9 +14079,9 @@ async function hhIsi(jobId){
     let r=getCachedJarakTempuh(j); if(!r){ try{ r=await fetchJarakTempuh(j); }catch(e){ r=null; } }
     if(!live()) return;
     if(!r||typeof r.durMin!=='number'){ $('hhGo').textContent='Waktu tempuh belum tersedia'; $('hhGoSub').textContent='Cek koneksi internet lalu buka kembali Detail Job.'; return; }
-    const buf=hhBuf(), tempuh=Math.max(5,Math.round(r.durMin/5)*5), tiba=jamM-buf, go=Math.floor((tiba-tempuh)/5)*5, kemarin=go<0;
+    const tempuh=Math.max(5,Math.round(r.durMin/5)*5), tiba=hhTiba(jamM), go=Math.floor((tiba-tempuh)/5)*5, kemarin=go<0;
     $('hhGo').textContent=hhJam(go)+' WIB'+(kemarin?' (hari sebelumnya)':'');
-    $('hhGoSub').textContent='Acara '+hhJam(jamM)+' · tiba '+hhJam(tiba)+' ('+buf+' mnt lebih awal) · perjalanan '+hhDurasi(tempuh);
+    $('hhGoSub').textContent='Acara '+hhJam(jamM)+' · tiba di lokasi '+hhJam(tiba)+' · perjalanan '+hhDurasi(tempuh);
     R.go='Berangkat: '+hhJam(go)+' WIB'+(kemarin?' (hari sebelumnya)':'')+' (acara '+hhJam(jamM)+', tiba '+hhJam(tiba)+', perjalanan '+hhDurasi(tempuh)+')';
   })();
   /* 3) Cuaca */
@@ -14112,7 +14116,7 @@ function hhBerangkatInfo(j){
   if(!/^\d{2}:\d{2}$/.test(j.jamAcara||'')) return null;
   if(!parseCoordString(j.koordinat)) return null;
   const r=getCachedJarakTempuh(j); if(!r||typeof r.durMin!=='number') return null;   // hanya dari cache; tidak memicu jaringan
-  const jamM=parseInt(j.jamAcara.slice(0,2),10)*60+parseInt(j.jamAcara.slice(3),10), buf=hhBuf();
+  const jamM=parseInt(j.jamAcara.slice(0,2),10)*60+parseInt(j.jamAcara.slice(3),10), buf=jamM-hhTiba(jamM);
   const tempuh=Math.max(5,Math.round(r.durMin/5)*5), go=Math.floor((jamM-buf-tempuh)/5)*5, base=Date.parse(tg.tgl+'T00:00:00');
   return { go, jamM, tempuh, buf, tgl:tg.tgl, goTs:base+go*60000, startTs:base+jamM*60000 };
 }
@@ -14127,7 +14131,7 @@ async function hhBerandaIsi(){
   const ada=()=>li.isConnected;
   const jamOk=/^\d{2}:\d{2}$/.test(j.jamAcara||''), jamH=jamOk?parseInt(j.jamAcara.slice(0,2),10):null;
   let go='', wx='';
-  const paint=()=>{ const t=[go,wx].filter(Boolean).join(' · '); if(!t) return; li.innerHTML=ic('clock')+'<span>'+t+'</span>'; li.hidden=false; };
+  const paint=()=>{ const t=[go,wx].filter(Boolean).join('<i class="hh-sep">·</i>'); if(!t) return; li.innerHTML=ic('clock')+'<span>'+t+'</span>'; li.hidden=false; };
   if(jamOk){
     if(!getCachedJarakTempuh(j)){ try{ await fetchJarakTempuh(j); }catch(e){} if(!ada()) return; }
     const bi=hhBerangkatInfo(j); if(bi){ go='Berangkat <b>'+hhJam(bi.go)+'</b> WIB'+(bi.go<0?' (hari sebelumnya)':''); paint(); }
@@ -19903,7 +19907,7 @@ const CHANGELOG = [
     version: '1.31.0',
     tanggal: '8 November 2026',
     items: [
-      { kategori: 'Fitur', teks: 'Detail Job punya kotak baru "Briefing Hari-H" untuk acara yang belum selesai. Isinya jam berangkat (Jam Acara dikurangi waktu tempuh dan waktu tiba lebih awal yang bisa kamu pilih 15 sampai 90 menit), prakiraan cuaca di lokasi lengkap dengan peluang hujan, suhu, dan saran perlengkapan, serta jam matahari terbit, golden hour, dan terbenam. Jam berangkat dan ringkasan cuaca juga tampil di kartu Job berikutnya di Beranda, dan aplikasi mengingatkan 30 menit sebelum jam berangkat (saat aplikasi terbuka atau berjalan di latar belakang). Ada tombol Salin Briefing untuk dikirim ke tim. Kotak ini butuh Titik Koordinat lokasi dan Jam Acara di Edit Job, dan prakiraan cuaca tersedia sekitar 15 hari sebelum acara.' },
+      { kategori: 'Fitur', teks: 'Detail Job punya kotak baru "Briefing Hari-H" untuk acara yang belum selesai. Isinya jam berangkat (jam tiba di lokasi, awalnya pukul 06.30 dan bisa kamu ganti, dikurangi waktu tempuh), prakiraan cuaca di lokasi lengkap dengan peluang hujan, suhu, dan saran perlengkapan, serta jam matahari terbit, golden hour, dan terbenam. Jam berangkat dan ringkasan cuaca juga tampil di kartu Job berikutnya di Beranda, dan kamu diingatkan sekitar 30 menit sebelum jam berangkat lewat notifikasi, bahkan saat aplikasi sedang tertutup (butuh notifikasi diaktifkan). Ada tombol Salin Briefing untuk dikirim ke tim. Kotak ini butuh Titik Koordinat lokasi dan Jam Acara di Edit Job, dan prakiraan cuaca tersedia sekitar 15 hari sebelum acara.' },
       { kategori: 'Perbaikan', teks: 'Bagian "7 hari ke depan" tidak lagi berkedip. Animasi masuknya kini diputar sekali saja saat pertama terlihat, dan tidak diulang setiap Beranda dimuat ulang oleh sinkronisasi data.' },
       { kategori: 'Fitur', teks: 'Detail Job punya kotak "Status Acara" dengan tombol Tandai Acara Selesai, untuk mengubah status acara dari sedang berjalan menjadi selesai. Aplikasi menampilkan jam selesai dan perkiraan tiba di rumah (waktu tempuh yang sudah ada ditambah 30 menit). Kartu Job berikutnya di Beranda ikut berubah dari Sedang berlangsung menjadi Selesai. Salah tekan? Ada tombol Batalkan tanda selesai.' },
       { kategori: 'Fitur', teks: 'Setiap job kini punya penanda layanan dokumentasi: Foto, Foto + Video, Foto + Cinematic, atau Foto + Video + Cinematic. Pilih di form Input/Edit Job (Layanan Dokumentasi); penandanya berupa ikon kecil berwarna di kartu Job berikutnya di Beranda, daftar job, Detail Job, rincian tanggal di Kalender, dan hasil Salin Detail, sehingga kamu dan tim langsung tahu cakupan job. Job lama otomatis ditebak dari Add-On, Paket, atau Deskripsi Paket.' },

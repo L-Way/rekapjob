@@ -1023,6 +1023,31 @@
   .as-btn[disabled]{opacity:.6; cursor:wait;}
   .as-btn.ghost{background:#fff; color:#7a4a06; border:1px solid #e6d79a; min-height:42px; font-size:13px;}
   .as-st-run{color:#b45309; font-weight:700;} .as-st-done{color:#15803d; font-weight:700;}
+  .dash-det .hh-ber b{font-weight:800; font-variant-numeric:tabular-nums;}
+  .dash-det .hh-wx{display:inline-flex; align-items:center; gap:4px; white-space:nowrap;}
+  .dash-det .hh-wx svg{width:15px; height:15px;}
+  /* Briefing Hari-H */
+  .hh-box{margin-top:14px; border:1.5px solid #e6d79a; background:linear-gradient(180deg,#fffdf3,#fff); border-radius:16px; padding:14px; box-shadow:0 6px 18px -10px rgba(122,74,6,.35);}
+  .hh-head{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px;}
+  .hh-head .ic{width:15px; height:15px;}
+  .hh-when{margin-left:auto; text-transform:none; letter-spacing:0; font-size:12px; font-weight:800; color:#7a4a06; background:#FFE98A; border-radius:99px; padding:3px 10px;}
+  .hh-row{display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-top:1px dashed #eadfb0;}
+  .hh-row:first-of-type{border-top:0; padding-top:2px;}
+  .hh-ic{flex:none; width:40px; height:40px; border-radius:12px; display:grid; place-items:center; font-size:22px;}
+  .hh-ic .ic,.hh-ic svg{width:22px; height:22px;}
+  .hh-ic-go{background:#241c06; color:#FFD42E;} .hh-ic-wx{background:#E3F0FF; color:#1d5fb8;} .hh-ic-sun{background:#FFE9C7; color:#c25e00;}
+  .hh-tx{min-width:0; flex:1;}
+  .hh-tx small{display:block; font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:var(--ink-soft);}
+  .hh-tx b{display:block; font-size:19px; font-weight:800; color:var(--ink); line-height:1.25; margin-top:1px; font-variant-numeric:tabular-nums;}
+  .hh-tx span{display:block; font-size:12.5px; line-height:1.5; color:var(--ink-soft); margin-top:2px;}
+  .hh-buf{display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:0 0 4px 52px; font-size:12px; color:var(--ink-soft);}
+  .hh-chip{border:1px solid #e6d79a; background:#fff; color:#7a4a06; font:700 12.5px inherit; font-family:inherit; min-width:38px; height:30px; border-radius:99px; cursor:pointer; transition:background .15s,color .15s,transform .1s;}
+  .hh-chip.on{background:#241c06; color:#FFD42E; border-color:#241c06;}
+  .hh-chip:active{transform:scale(.94);}
+  .hh-hint{font-size:13px; line-height:1.55; color:var(--ink-soft); margin:0;}
+  .hh-link{all:unset; cursor:pointer; color:#1d5fb8; font-weight:700; text-decoration:underline;}
+  .hh-copy{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:44px; margin-top:6px; border:1px solid #e6d79a; border-radius:12px; background:#fff; color:#7a4a06; font:700 13.5px inherit; font-family:inherit; cursor:pointer;}
+  .hh-copy .ic{width:17px; height:17px;} .hh-copy:active{transform:scale(.98);}
   .da-group{animation:thRise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i,0)*80ms + 200ms);}
   .da-glabel{display:flex; align-items:center; gap:10px; margin:0 2px 9px; font-size:11px; font-weight:800; letter-spacing:1.4px; text-transform:uppercase; color:var(--ink-soft);}
   .da-glabel::after{content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--line),rgba(240,225,160,0));}
@@ -10470,7 +10495,7 @@ function render(){
   // status yang terlihat selalu yang terbaru.
   autoUpdateTaskStatuses();
   const app = document.getElementById('app');
-  if(currentView==='beranda') app.innerHTML = viewBeranda();
+  if(currentView==='beranda'){ app.innerHTML = viewBeranda(); setTimeout(()=>{ try{ hhBerandaIsi(); }catch(e){} },0); }
   else if(currentView==='form') app.innerHTML = viewForm();
   else if(currentView==='daftar') app.innerHTML = viewDaftar();
   else if(currentView==='kalender') app.innerHTML = viewKalender();
@@ -10732,6 +10757,7 @@ function viewBeranda(){
     const rows = [
       `<li>${ic('calendar')}<span>${escapeHtml(namaHariID(startOf(nextJob)))}, ${escapeHtml(fmtTglJob(nextJob))}${dur>1?` <span class="mut">· ${dur} hari</span>`:''}</span></li>`,
       jam ? `<li>${ic('clock')}<span>${escapeHtml(jam.replace(':','.'))} WIB</span></li>` : '',
+      hhBerandaRow(nextJob),
       `<li><span class="lm-ic">${LAYANAN_MEDIA[layananMediaKey(nextJob)].e}</span><span>${escapeHtml(layananMediaLabel(nextJob))}</span></li>`,
       `<li>${ic('map-pin')}<span class="${lok?'':'mut'}">${lok ? escapeHtml(lok) : 'Lokasi belum diisi'}</span></li>`,
       `<li>${ic('money')}<span><span class="pay-pill ${bayarTone(nextJob)}">${escapeHtml(bayarLabel(nextJob))}</span>${sisa>0 && isAdmin() ? ` <span class="mut">· Sisa ${escapeHtml(fmtRp(sisa))}</span>` : ''}</span></li>`,
@@ -13927,6 +13953,214 @@ function layananChipHtml(j){
 function layananSelectOptions(sel){
   return Object.keys(LAYANAN_MEDIA).map(k=>`<option value="${k}"${k===sel?' selected':''}>${escapeHtml(LAYANAN_MEDIA[k].l)}</option>`).join('');
 }
+/* ========== Briefing Hari-H (Detail Job) ==========
+   Satu kotak yang menjawab "kapan harus berangkat, cuacanya bagaimana, dan kapan cahaya terbaik":
+     - Jam berangkat = Jam Acara - waktu tiba lebih awal (pilihan) - waktu tempuh (OSRM, sudah ada di aplikasi)
+     - Prakiraan cuaca di lokasi (Open-Meteo, gratis tanpa kunci) pada jam acara, plus saran perlengkapan
+     - Matahari terbit, golden hour, dan terbenam (dihitung langsung di perangkat, tanpa internet)
+   Semua gagal dengan tenang: kalau data kurang atau offline, bagian itu menampilkan petunjuk, bukan error. */
+const HH_BUF_KEY='kaoneHHBuf', HH_CUACA_KEY='kaoneHHCuaca_v1', HH_BUF_PILIHAN=[15,30,45,60,90];
+function hhBuf(){ try{ const v=parseInt(localStorage.getItem(HH_BUF_KEY),10); return HH_BUF_PILIHAN.includes(v)?v:45; }catch(e){ return 45; } }
+function hhPad(n){ return String(n).padStart(2,'0'); }
+function hhHariIni(){ const t=new Date(); return t.getFullYear()+'-'+hhPad(t.getMonth()+1)+'-'+hhPad(t.getDate()); }
+function hhSelisih(tgl){ return Math.round((Date.parse(tgl+'T00:00:00')-Date.parse(hhHariIni()+'T00:00:00'))/864e5); }
+function hhJam(menit){ const m=((Math.round(menit)%1440)+1440)%1440; return hhPad(Math.floor(m/60))+'.'+hhPad(m%60); }
+function hhDurasi(menit){ const m=Math.round(menit), h=Math.floor(m/60), r=m%60; return h?(r?`${h} j ${r} m`:`${h} jam`):`${r} menit`; }
+function hhTarget(j){
+  /* Tanggal yang dibahas: tanggal acara, atau hari ini kalau acara multi-hari sedang berjalan. null kalau sudah lewat/selesai. */
+  if(!j || j.acaraSelesaiAt) return null;
+  const a=j.tanggalAcara||'', b=j.tanggalSelesai||a, now=hhHariIni();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(a)) return null;
+  if(a>=now) return {tgl:a, awal:true};
+  if(b>=now) return {tgl:now, awal:false};
+  return null;
+}
+/* Posisi matahari (rumus NOAA ringkas). Hasil: menit sejak tengah malam WIB; null bila matahari tidak terbit/terbenam. */
+function hhSurya(lat,lng,tgl){
+  const [Y,Mo,D]=tgl.split('-').map(Number), R=Math.PI/180, tz=7;
+  const jd=Date.UTC(Y,Mo-1,D,12)/864e5+2440587.5, n=Math.round(jd-2451545.0), Js=n-lng/360;
+  const M=(357.5291+0.98560028*Js)%360, C=1.9148*Math.sin(M*R)+0.02*Math.sin(2*M*R)+0.0003*Math.sin(3*M*R);
+  const lam=(M+C+180+102.9372)%360, Jt=2451545.0+Js+0.0053*Math.sin(M*R)-0.0069*Math.sin(2*lam*R);
+  const dec=Math.asin(Math.sin(lam*R)*Math.sin(23.44*R));
+  const ha=el=>{ const c=(Math.sin(el*R)-Math.sin(lat*R)*Math.sin(dec))/(Math.cos(lat*R)*Math.cos(dec)); return (c<-1||c>1)?null:Math.acos(c)/R; };
+  const mnt=jul=>(jul-2440587.5)*1440+tz*60-Date.UTC(Y,Mo-1,D)/60000;
+  const at=(el,sign)=>{ const h=ha(el); return h===null?null:mnt(Jt+sign*h/360); };
+  return { terbit:at(-0.833,-1), terbenam:at(-0.833,1), golPagiAkhir:at(6,-1), golSoreAwal:at(6,1) };
+}
+/* Cuaca */
+const HH_WX={
+  0:['Cerah','sun',0],1:['Cerah berawan','csun',1],2:['Berawan sebagian','csun',2],3:['Mendung','cloud',3],45:['Berkabut','fog',4],48:['Berkabut','fog',4],
+  51:['Gerimis','rain',5],53:['Gerimis','rain',5],55:['Gerimis lebat','rain',6],56:['Gerimis','rain',5],57:['Gerimis','rain',6],
+  61:['Hujan ringan','rain',7],63:['Hujan','rain',8],65:['Hujan lebat','rain',9],66:['Hujan','rain',8],67:['Hujan lebat','rain',9],
+  80:['Hujan sesaat','rain',7],81:['Hujan sesaat','rain',8],82:['Hujan lebat','rain',9],95:['Badai petir','bolt',10],96:['Badai petir','bolt',10],99:['Badai petir','bolt',10]
+};
+const HH_SVG={
+  sun:'<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/>',
+  csun:'<circle cx="8.5" cy="8.5" r="3"/><path d="M8.5 2.5v1.4M2.5 8.5h1.4M4.3 4.3l1 1M12.7 4.3l-1 1"/><path d="M8 19h9.2a3.8 3.8 0 0 0 .5-7.6A5.4 5.4 0 0 0 7.4 12.6 3.2 3.2 0 0 0 8 19z"/>',
+  cloud:'<path d="M7 18.5h10.2a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 12 3.3 3.3 0 0 0 7 18.5z"/>',
+  fog:'<path d="M5 10h14M3 14h18M6 18h12M8 6h8"/>',
+  rain:'<path d="M7 15h10.2a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 8.5 3.3 3.3 0 0 0 7 15z"/><path d="M8.5 18.2l-1 2.3M12.5 18.2l-1 2.3M16.5 18.2l-1 2.3"/>',
+  bolt:'<path d="M7 14.5h-.2A3.3 3.3 0 0 1 6.2 8 6 6 0 0 1 17.8 8.6a3.9 3.9 0 0 1-.6 7.9H15"/><path d="M12.8 11l-3 5h3l-1 4.5 4-6h-3z"/>'
+};
+function hhSvg(k){ return `<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${HH_SVG[k]||HH_SVG.cloud}</svg>`; }
+async function hhAmbilCuaca(lat,lng,tgl){
+  const key=lat.toFixed(2)+','+lng.toFixed(2)+','+tgl;
+  let cache={}; try{ cache=JSON.parse(localStorage.getItem(HH_CUACA_KEY)||'{}')||{}; }catch(e){}
+  const c=cache[key]; if(c && Date.now()-c.ts<45*60000) return c.data;
+  const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),9000);
+  try{
+    const url='https://api.open-meteo.com/v1/forecast?latitude='+lat.toFixed(4)+'&longitude='+lng.toFixed(4)+'&hourly=precipitation_probability,precipitation,temperature_2m,weathercode&timezone=Asia%2FJakarta&start_date='+tgl+'&end_date='+tgl;
+    const r=await fetch(url,{signal:ctl.signal}); if(!r.ok) return null;
+    const d=await r.json(), h=d&&d.hourly; if(!h||!Array.isArray(h.time)) return null;
+    const data=h.time.map((t,i)=>({jam:parseInt(String(t).slice(11,13),10), p:h.precipitation_probability?h.precipitation_probability[i]:null, mm:h.precipitation?h.precipitation[i]:null, t:h.temperature_2m?h.temperature_2m[i]:null, c:h.weathercode?h.weathercode[i]:null}));
+    const keys=Object.keys(cache); if(keys.length>40) delete cache[keys[0]];
+    cache[key]={ts:Date.now(),data}; try{ localStorage.setItem(HH_CUACA_KEY,JSON.stringify(cache)); }catch(e){}
+    return data;
+  }catch(e){ return null; }finally{ clearTimeout(tm); }
+}
+function hhRingkasCuaca(data,jamMulai){
+  const a=jamMulai!=null?Math.max(0,jamMulai-1):6, b=jamMulai!=null?Math.min(23,jamMulai+4):18;
+  const w=data.filter(x=>x.jam>=a&&x.jam<=b); if(!w.length) return null;
+  const nums=k=>w.map(x=>x[k]).filter(v=>typeof v==='number'&&isFinite(v));
+  const p=nums('p'), mm=nums('mm'), t=nums('t');
+  let worst=null; w.forEach(x=>{ const m=HH_WX[x.c]; if(m && (!worst || m[2]>worst[2])) worst=m; });
+  const pmax=p.length?Math.max(...p):null, mmSum=mm.reduce((s,v)=>s+v,0);
+  return { label:worst?worst[0]:'Berawan', ikon:worst?worst[1]:'cloud', rank:worst?worst[2]:3, pmax, mm:mmSum, tmin:t.length?Math.min(...t):null, tmax:t.length?Math.max(...t):null, a, b };
+}
+function hhSaran(c){
+  if(c.rank>=10 || (c.pmax!=null&&c.pmax>=70)) return 'Besar kemungkinan hujan. Siapkan jas hujan, rain cover kamera, dan tas anti air, serta lokasi berteduh cadangan.';
+  if(c.pmax!=null&&c.pmax>=40 || c.rank>=7) return 'Ada kemungkinan hujan. Bawa rain cover dan payung cadangan.';
+  if(c.tmax!=null&&c.tmax>=33) return 'Cuaca panas. Siapkan air minum dan pelindung matahari untuk tim.';
+  return 'Cuaca mendukung. Tetap bawa lap lensa dan baterai cadangan.';
+}
+function hhLabelHari(d){ return d===0?'Hari ini':d===1?'Besok':d>1?d+' hari lagi':''; }
+function hhBoxHtml(j){
+  const tg=hhTarget(j); if(!tg) return '';
+  const c=parseCoordString(j.koordinat);
+  const d=hhSelisih(tg.tgl);
+  const bufBtn=HH_BUF_PILIHAN.map(m=>`<button type="button" class="hh-chip${m===hhBuf()?' on':''}" data-hh-buf="${m}" aria-pressed="${m===hhBuf()}">${m}</button>`).join('');
+  if(!c){
+    return `<div class="hh-box" id="hhBox" data-job="${j.id}"><div class="hh-head">${ic('clock')} Briefing Hari-H<span class="hh-when">${escapeHtml(hhLabelHari(d))}</span></div>
+      <p class="hh-hint">Isi <b>Titik Koordinat</b> lokasi di Edit Job untuk melihat jam berangkat, cuaca, dan jam golden hour.</p></div>`;
+  }
+  return `<div class="hh-box" id="hhBox" data-job="${j.id}">
+    <div class="hh-head">${ic('clock')} Briefing Hari-H<span class="hh-when">${escapeHtml(hhLabelHari(d))}</span></div>
+    <div class="hh-row"><div class="hh-ic hh-ic-go">${ic('clock')}</div><div class="hh-tx"><small>Berangkat</small><b id="hhGo">Menghitung…</b><span id="hhGoSub"></span></div></div>
+    ${tg.awal?`<div class="hh-buf" role="group" aria-label="Tiba lebih awal (menit)"><span>Tiba lebih awal (menit)</span>${bufBtn}</div>`:''}
+    <div class="hh-row"><div class="hh-ic hh-ic-wx" id="hhWxIc">${hhSvg('cloud')}</div><div class="hh-tx"><small>Cuaca di lokasi</small><b id="hhWx">Memuat…</b><span id="hhWxSub"></span></div></div>
+    <div class="hh-row"><div class="hh-ic hh-ic-sun">${hhSvg('sun')}</div><div class="hh-tx"><small>Cahaya</small><b id="hhSun">-</b><span id="hhSunSub"></span></div></div>
+    <button type="button" class="hh-copy" data-hh-salin="${j.id}">${ic('clipboard')} Salin Briefing</button>
+  </div>`;
+}
+const HH_RINGKAS={};
+async function hhIsi(jobId){
+  const j=jobs.find(x=>String(x.id)===String(jobId)), box=document.getElementById('hhBox'); if(!j||!box) return;
+  const tg=hhTarget(j), c=parseCoordString(j.koordinat); if(!tg||!c) return;
+  const $=id=>document.getElementById(id), live=()=>document.getElementById('hhBox')===box;
+  const R={go:'',cuaca:'',cahaya:''}; HH_RINGKAS[jobId]=R;
+  const jamM=/^\d{2}:\d{2}$/.test(j.jamAcara||'')?(parseInt(j.jamAcara.slice(0,2),10)*60+parseInt(j.jamAcara.slice(3),10)):null;
+  /* 1) Cahaya (lokal, langsung) */
+  try{
+    const su=hhSurya(c.lat,c.lng,tg.tgl), f=v=>v==null?'-':hhJam(v);
+    $('hhSun').textContent='Terbenam '+f(su.terbenam)+' WIB';
+    let sub='Terbit '+f(su.terbit)+' · Golden hour pagi '+f(su.terbit)+'–'+f(su.golPagiAkhir)+' · sore '+f(su.golSoreAwal)+'–'+f(su.terbenam);
+    if(jamM!=null && su.golSoreAwal!=null && su.terbenam!=null && tg.awal && jamM>=su.golSoreAwal-45 && jamM<=su.terbenam) sub+='. Acara bertepatan dengan golden hour sore.';
+    else if(jamM!=null && su.terbit!=null && su.golPagiAkhir!=null && tg.awal && jamM>=su.terbit-30 && jamM<=su.golPagiAkhir) sub+='. Acara bertepatan dengan golden hour pagi.';
+    $('hhSunSub').textContent=sub; R.cahaya='Cahaya: terbit '+f(su.terbit)+', golden hour sore '+f(su.golSoreAwal)+'–'+f(su.terbenam)+', terbenam '+f(su.terbenam)+' WIB';
+  }catch(e){ $('hhSun').textContent='-'; }
+  /* 2) Jam berangkat (butuh Jam Acara + waktu tempuh) */
+  const goP=(async()=>{
+    if(!tg.awal){ $('hhGo').textContent='Acara sedang berlangsung'; $('hhGoSub').textContent='Jam berangkat hanya dihitung untuk hari pertama acara.'; return; }
+    if(jamM==null){ $('hhGo').textContent='Jam Acara belum diisi'; $('hhGoSub').textContent='Isi Jam Acara di Edit Job supaya jam berangkat bisa dihitung.'; return; }
+    let r=getCachedJarakTempuh(j); if(!r){ try{ r=await fetchJarakTempuh(j); }catch(e){ r=null; } }
+    if(!live()) return;
+    if(!r||typeof r.durMin!=='number'){ $('hhGo').textContent='Waktu tempuh belum tersedia'; $('hhGoSub').textContent='Cek koneksi internet lalu buka kembali Detail Job.'; return; }
+    const buf=hhBuf(), tempuh=Math.max(5,Math.round(r.durMin/5)*5), tiba=jamM-buf, go=Math.floor((tiba-tempuh)/5)*5, kemarin=go<0;
+    $('hhGo').textContent=hhJam(go)+' WIB'+(kemarin?' (hari sebelumnya)':'');
+    $('hhGoSub').textContent='Acara '+hhJam(jamM)+' · tiba '+hhJam(tiba)+' ('+buf+' mnt lebih awal) · perjalanan '+hhDurasi(tempuh);
+    R.go='Berangkat: '+hhJam(go)+' WIB'+(kemarin?' (hari sebelumnya)':'')+' (acara '+hhJam(jamM)+', tiba '+hhJam(tiba)+', perjalanan '+hhDurasi(tempuh)+')';
+  })();
+  /* 3) Cuaca */
+  const wxP=(async()=>{
+    if(d_(tg.tgl)>15){ $('hhWx').textContent='Belum tersedia'; $('hhWxSub').textContent='Prakiraan cuaca baru tersedia sekitar 15 hari sebelum acara.'; return; }
+    const data=await hhAmbilCuaca(c.lat,c.lng,tg.tgl); if(!live()) return;
+    if(!data){ $('hhWx').textContent='Belum bisa dimuat'; $('hhWxSub').innerHTML='Periksa koneksi internet. <button type="button" class="hh-link" data-hh-ulang="'+jobId+'">Coba lagi</button>'; return; }
+    const w=hhRingkasCuaca(data,tg.awal?jamM==null?null:Math.floor(jamM/60):null); if(!w){ $('hhWx').textContent='Tidak ada data'; return; }
+    $('hhWxIc').innerHTML=hhSvg(w.ikon);
+    const f=v=>Math.round(v);
+    $('hhWx').textContent=w.label+(w.pmax!=null?' · peluang hujan '+f(w.pmax)+'%':'')+(w.tmin!=null?' · '+f(w.tmin)+(f(w.tmax)!==f(w.tmin)?'–'+f(w.tmax):'')+'°C':'');
+    $('hhWxSub').textContent=hhSaran(w)+' (jam '+hhPad(w.a)+'.00–'+hhPad(w.b)+'.00)';
+    R.cuaca='Cuaca: '+$('hhWx').textContent+'. '+hhSaran(w);
+  })();
+  function d_(t){ return hhSelisih(t); }
+  await Promise.all([goP,wxP]);
+}
+function hhSalin(jobId){
+  const j=jobs.find(x=>String(x.id)===String(jobId)); if(!j) return;
+  const R=HH_RINGKAS[jobId]||{}, tg=hhTarget(j), c=parseCoordString(j.koordinat);
+  const jenis=j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Acara'):(j.jenisAcara||'Acara');
+  const baris=['*Briefing Hari-H*', jenis+' - '+(j.namaKlien||'-'), 'Tanggal: '+fmtTglJob(j)+(j.jamAcara?', jam '+j.jamAcara.replace(':','.')+' WIB':'')];
+  if(c) baris.push('Lokasi: https://www.google.com/maps?q='+c.lat+','+c.lng);
+  [R.go,R.cuaca,R.cahaya].forEach(x=>{ if(x) baris.push(x); });
+  copyToClipboard(baris.join('\n'),'Briefing disalin');
+}
+
+/* ----- Briefing Hari-H di Beranda + pengingat berangkat ----- */
+function hhJudul(j){ const jn=j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Acara'):(j.jenisAcara||''); return [jn,j.namaKlien].filter(Boolean).join(' ')||'Tanpa Nama'; }
+function hhBerangkatInfo(j){
+  const tg=hhTarget(j); if(!tg||!tg.awal) return null;
+  if(!/^\d{2}:\d{2}$/.test(j.jamAcara||'')) return null;
+  if(!parseCoordString(j.koordinat)) return null;
+  const r=getCachedJarakTempuh(j); if(!r||typeof r.durMin!=='number') return null;   // hanya dari cache; tidak memicu jaringan
+  const jamM=parseInt(j.jamAcara.slice(0,2),10)*60+parseInt(j.jamAcara.slice(3),10), buf=hhBuf();
+  const tempuh=Math.max(5,Math.round(r.durMin/5)*5), go=Math.floor((jamM-buf-tempuh)/5)*5, base=Date.parse(tg.tgl+'T00:00:00');
+  return { go, jamM, tempuh, buf, tgl:tg.tgl, goTs:base+go*60000, startTs:base+jamM*60000 };
+}
+function hhBerandaRow(j){
+  const tg=hhTarget(j); if(!tg||!tg.awal||!parseCoordString(j.koordinat)) return '';
+  return `<li class="hh-ber" data-hh-ber="${escapeHtml(String(j.id))}" hidden></li>`;
+}
+async function hhBerandaIsi(){
+  const li=document.querySelector('[data-hh-ber]'); if(!li) return;
+  const j=jobs.find(x=>String(x.id)===li.getAttribute('data-hh-ber')); if(!j) return;
+  const tg=hhTarget(j), c=parseCoordString(j.koordinat); if(!tg||!c) return;
+  const ada=()=>li.isConnected;
+  const jamOk=/^\d{2}:\d{2}$/.test(j.jamAcara||''), jamH=jamOk?parseInt(j.jamAcara.slice(0,2),10):null;
+  let go='', wx='';
+  const paint=()=>{ const t=[go,wx].filter(Boolean).join(' · '); if(!t) return; li.innerHTML=ic('clock')+'<span>'+t+'</span>'; li.hidden=false; };
+  if(jamOk){
+    if(!getCachedJarakTempuh(j)){ try{ await fetchJarakTempuh(j); }catch(e){} if(!ada()) return; }
+    const bi=hhBerangkatInfo(j); if(bi){ go='Berangkat <b>'+hhJam(bi.go)+'</b> WIB'+(bi.go<0?' (hari sebelumnya)':''); paint(); }
+  }
+  if(hhSelisih(tg.tgl)<=15){
+    const data=await hhAmbilCuaca(c.lat,c.lng,tg.tgl); if(!ada()) return;
+    const w=data&&hhRingkasCuaca(data,jamH);
+    if(w){ wx='<span class="hh-wx">'+hhSvg(w.ikon)+' '+escapeHtml(w.label)+(w.pmax!=null?' '+Math.round(w.pmax)+'%':'')+'</span>'; paint(); }
+  }
+}
+const HH_ALERT_KEY='kaoneHHAlerted';
+function hhBerangkatCek(){
+  if(!Array.isArray(jobs)||!jobs.length) return;
+  let done={}; try{ done=JSON.parse(localStorage.getItem(HH_ALERT_KEY)||'{}')||{}; }catch(e){}
+  const now=Date.now(), items=[]; let changed=false, prefetch=0;
+  Object.keys(done).forEach(k=>{ if(now-done[k]>3*864e5){ delete done[k]; changed=true; } });
+  jobs.forEach(j=>{
+    const tg=hhTarget(j); if(!tg||!tg.awal) return;
+    const d=hhSelisih(tg.tgl);
+    if(d<=1 && prefetch<2 && /^\d{2}:\d{2}$/.test(j.jamAcara||'') && parseCoordString(j.koordinat) && !getCachedJarakTempuh(j)){ prefetch++; fetchJarakTempuh(j).catch(()=>{}); }
+    const bi=hhBerangkatInfo(j); if(!bi) return;
+    const key='berangkat_'+j.id+'_'+bi.tgl;
+    if(now>=bi.goTs-30*60000 && now<=bi.goTs+20*60000 && !done[key]){
+      done[key]=now; changed=true;
+      items.push({ id:key, title:'Siap-siap berangkat: '+hhJudul(j), desc:'Berangkat pukul '+hhJam(bi.go)+' WIB. Acara '+hhJam(bi.jamM)+', perjalanan '+hhDurasi(bi.tempuh)+'.', view:null });
+    }
+  });
+  if(changed){ try{ localStorage.setItem(HH_ALERT_KEY,JSON.stringify(done)); }catch(e){} }
+  if(items.length){ try{ renderNotifBadge(); }catch(e){} try{ rtAlert(items); }catch(e){} }
+}
+setTimeout(()=>{ try{ hhBerangkatCek(); }catch(e){} }, 8000);
+setInterval(()=>{ if(!document.hidden){ try{ hhBerangkatCek(); }catch(e){} } }, 60000);
+
 /* ---------- Tandai Acara Selesai (admin) ----------
    Mengubah status acara dari "sedang berjalan" menjadi "selesai". Menyimpan:
      acaraSelesaiAt  = waktu (ISO) saat ditandai selesai
@@ -14090,6 +14324,7 @@ function openJobDetailModal(jobId){
       </div>
       <div class="jd-bottom-bar"></div>
     </div>
+    ${hhBoxHtml(j)}
     ${isAdmin() ? acaraSelesaiBoxHtml(j) : ''}
     ${kwitansiStatusHtml(j)}
     ${waSelesaiBoxHtml(j)}
@@ -14122,6 +14357,7 @@ function openJobDetailModal(jobId){
     </div>
   `);
 
+  try{ hhIsi(j.id); }catch(e){}
   // Kalau jarak jalan belum ada di cache, hitung sekarang (async) lalu suntikkan
   // hasilnya ke baris yang sudah tampil di modal - kalau modalnya sudah ditutup
   // duluan sebelum fetch selesai, elemen dengan id ini otomatis sudah tidak ada
@@ -19667,6 +19903,7 @@ const CHANGELOG = [
     version: '1.31.0',
     tanggal: '8 November 2026',
     items: [
+      { kategori: 'Fitur', teks: 'Detail Job punya kotak baru "Briefing Hari-H" untuk acara yang belum selesai. Isinya jam berangkat (Jam Acara dikurangi waktu tempuh dan waktu tiba lebih awal yang bisa kamu pilih 15 sampai 90 menit), prakiraan cuaca di lokasi lengkap dengan peluang hujan, suhu, dan saran perlengkapan, serta jam matahari terbit, golden hour, dan terbenam. Jam berangkat dan ringkasan cuaca juga tampil di kartu Job berikutnya di Beranda, dan aplikasi mengingatkan 30 menit sebelum jam berangkat (saat aplikasi terbuka atau berjalan di latar belakang). Ada tombol Salin Briefing untuk dikirim ke tim. Kotak ini butuh Titik Koordinat lokasi dan Jam Acara di Edit Job, dan prakiraan cuaca tersedia sekitar 15 hari sebelum acara.' },
       { kategori: 'Perbaikan', teks: 'Bagian "7 hari ke depan" tidak lagi berkedip. Animasi masuknya kini diputar sekali saja saat pertama terlihat, dan tidak diulang setiap Beranda dimuat ulang oleh sinkronisasi data.' },
       { kategori: 'Fitur', teks: 'Detail Job punya kotak "Status Acara" dengan tombol Tandai Acara Selesai, untuk mengubah status acara dari sedang berjalan menjadi selesai. Aplikasi menampilkan jam selesai dan perkiraan tiba di rumah (waktu tempuh yang sudah ada ditambah 30 menit). Kartu Job berikutnya di Beranda ikut berubah dari Sedang berlangsung menjadi Selesai. Salah tekan? Ada tombol Batalkan tanda selesai.' },
       { kategori: 'Fitur', teks: 'Setiap job kini punya penanda layanan dokumentasi: Foto, Foto + Video, Foto + Cinematic, atau Foto + Video + Cinematic. Pilih di form Input/Edit Job (Layanan Dokumentasi); penandanya berupa ikon kecil berwarna di kartu Job berikutnya di Beranda, daftar job, Detail Job, rincian tanggal di Kalender, dan hasil Salin Detail, sehingga kamu dan tim langsung tahu cakupan job. Job lama otomatis ditebak dari Add-On, Paket, atau Deskripsi Paket.' },
@@ -20561,6 +20798,22 @@ function buildNotificationsRaw(){
     });
   }
 
+  // 0) Pengingat berangkat (Briefing Hari-H): muncul 60 menit sebelum jam berangkat sampai acara dimulai
+  try{
+    const nowTs = Date.now();
+    jobs.forEach(j=>{
+      const bi = hhBerangkatInfo(j); if(!bi) return;
+      if(nowTs < bi.goTs - 60*60000 || nowTs > bi.startTs) return;
+      list.push({
+        id: 'berangkat_' + j.id + '_' + bi.tgl,
+        icon: ic('clock'),
+        title: 'Berangkat ' + hhJam(bi.go) + ' WIB: ' + hhJudul(j),
+        desc: 'Acara ' + hhJam(bi.jamM) + ', perjalanan ' + hhDurasi(bi.tempuh) + '. Cek cuaca di Detail Job.',
+        onClick: ()=>{ closeNotifPanel(); openJobDetailModal(j.id); }
+      });
+    });
+  }catch(e){}
+
   // 1) Pembaruan aplikasi (selalu tampil sebagai info, ID mengikuti versi)
   const latest = CHANGELOG[0];
   if(latest){
@@ -21018,6 +21271,13 @@ document.addEventListener('click', (e)=>{
   const openMapsBtn = e.target.closest('[data-open-maps]');
   if(openMapsBtn){ openJobMaps(openMapsBtn.dataset.openMaps); return; }
 
+  const hhBufBtn = e.target.closest('[data-hh-buf]');
+  if(hhBufBtn){ try{ localStorage.setItem(HH_BUF_KEY,hhBufBtn.dataset.hhBuf); }catch(_){}
+    const bx=document.getElementById('hhBox'); if(bx){ bx.querySelectorAll('[data-hh-buf]').forEach(b=>{ const on=b===hhBufBtn; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on); }); hhIsi(bx.dataset.job); } return; }
+  const hhSalinBtn = e.target.closest('[data-hh-salin]');
+  if(hhSalinBtn){ hhSalin(hhSalinBtn.dataset.hhSalin); return; }
+  const hhUlangBtn = e.target.closest('[data-hh-ulang]');
+  if(hhUlangBtn){ try{ localStorage.removeItem(HH_CUACA_KEY); }catch(_){} const w=document.getElementById('hhWx'); if(w) w.textContent='Memuat…'; hhIsi(hhUlangBtn.dataset.hhUlang); return; }
   const acSelBtn = e.target.closest('[data-acara-selesai]');
   if(acSelBtn){ if(isAdmin()) tandaiAcaraSelesai(acSelBtn.dataset.acaraSelesai, acSelBtn); return; }
   const acBatalBtn = e.target.closest('[data-acara-batal]');

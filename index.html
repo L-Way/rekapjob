@@ -982,7 +982,9 @@
   .jd-link:active{transform:scale(.96);}
   .jd-link.ig{color:#a02a63; background:#fdeef6; border-color:#f6cfe3; max-width:100%; min-width:0; white-space:nowrap;}
   .jd-link.ig .ic{flex:none;}
-  .jd-link.ig .jd-ig-t{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .jd-link.ig .jd-ig-t{min-width:0; overflow:hidden; text-overflow:clip; white-space:nowrap;}
+  .jd-link.ig .jd-ig-t.geser{overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;}
+  .jd-link.ig .jd-ig-t.geser::-webkit-scrollbar{display:none;}
   .jd-v:has(> .jd-link.ig){min-width:0;}
   .jd-link.ig:hover{background:#fbe0ee;}
   .jd-sec.money .jd-r{grid-template-columns:minmax(0,1fr) auto; align-items:baseline;}
@@ -14145,7 +14147,7 @@ function jdRowHtml(sec, label, raw, id){
   if(sec.title==='Keuangan'){
     if(label==='Sisa Pembayaran') cls.push('due');
     if(label==='Penghasilan Bersih') cls.push('net');
-  } else if(val.length>46 && !id) cls.push('long');
+  } else if((val.length>46 || (/^Instagram/i.test(label) && val.length>14)) && !id) cls.push('long');   // username IG panjang: baris ditumpuk supaya muat penuh
   return `<div class="${cls.join(' ')}"><div class="jd-k">${escapeHtml(label)}</div>${jdValueHtml(label, val, id)}</div>`;
 }
 function jdSectionHtml(sec, i){
@@ -14340,6 +14342,21 @@ function hhSalin(jobId){
   [R.go,R.cuaca,R.cahaya].forEach(x=>{ if(x) baris.push(x); });
   copyToClipboard(baris.join('\n'),'Briefing disalin');
 }
+
+/* Username Instagram: selalu satu baris DAN terbaca penuh. Huruf dikecilkan seperlunya (minimal 8px);
+   kalau masih belum muat, tulisannya bisa digeser ke samping. */
+function igMuat(root,ulang){
+  (root||document).querySelectorAll(ulang?'.jd-link.ig .jd-ig-t':'.jd-link.ig .jd-ig-t:not([data-muat])').forEach(t=>{
+    if(!t.clientWidth) return;
+    t.dataset.muat='1'; t.classList.remove('geser');
+    let f=12; t.style.fontSize=f+'px';
+    while(t.scrollWidth>t.clientWidth+1 && f>8){ f-=0.5; t.style.fontSize=f+'px'; }
+    if(t.scrollWidth>t.clientWidth+1) t.classList.add('geser');
+  });
+}
+try{ new MutationObserver(()=>{ if(document.querySelector('.jd-link.ig .jd-ig-t:not([data-muat])')){ requestAnimationFrame(()=>igMuat()); setTimeout(()=>igMuat(null,true),450); } }).observe(document.documentElement,{childList:true,subtree:true}); }catch(e){}
+window.addEventListener('resize',()=>igMuat(null,true));
+try{ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>igMuat(null,true)); }catch(e){}
 
 /* ========== Peringatan jadwal bentrok (Admin) ==========
    Dua job dianggap BENTROK kalau jam mulainya di hari yang sama berjarak kurang dari 3 jam, atau salah satunya
@@ -20235,7 +20252,7 @@ const CHANGELOG = [
       { kategori: 'Fitur', teks: 'Dua pesan WhatsApp baru untuk klien di Detail Job: "Pengingat Pelunasan" (muncul kalau masih ada sisa pembayaran, berisi total, DP, dan sisa) dan "Terima Kasih" (muncul mulai hari acara). Isinya bisa diubah di Pengaturan, Template Pesan WhatsApp.' },
       { kategori: 'Fitur', teks: 'Daftar perlengkapan hari-H di Detail Job, menyesuaikan jenis acara (baterai, kartu memori, lensa, flash, dan lainnya). Bisa dicentang satu per satu dan daftarnya bisa diubah Admin lewat tombol "Ubah daftar".' },
       { kategori: 'Fitur', teks: 'Beranda Admin punya kartu omzet bulan ini: total omzet dan laba bersih, progres menuju target bulanan yang bisa kamu atur sendiri, perbandingan dengan bulan lalu, dan grafik 6 bulan terakhir.' },
-      { kategori: 'Perbaikan', teks: 'Username Instagram di Detail Job sekarang selalu tampil satu baris. Kalau terlalu panjang, ujungnya dipotong dengan titik-titik, dan tombolnya tetap membuka akun yang benar.' },
+      { kategori: 'Perbaikan', teks: 'Username Instagram di Detail Job sekarang selalu tampil satu baris dan terbaca penuh: username panjang dipindah ke baris sendiri selebar kartu dan hurufnya dikecilkan seperlunya.' },
       { kategori: 'Perbaikan', teks: 'Tampilan Briefing Hari-H dirapikan: tulisan dikecilkan, baris "Berangkat" sejajar dengan ikon dan cuaca, dan jam tiba di lokasi kini memakai pilihan jam (awalnya pukul 06.30) bukan menit.' },
     ]
   },

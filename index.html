@@ -1028,22 +1028,59 @@
   .dash-det .hh-ber .hh-sep{font-style:normal; opacity:.55; line-height:1;}
   .dash-det .hh-wx{display:inline-flex; align-items:center; gap:4px; white-space:nowrap; line-height:1.45;}
   .dash-det .hh-wx svg{width:15px; height:15px;}
+  /* Bentrok jadwal, perlengkapan, target bulanan */
+  .bk-box{margin-top:14px; border:1.5px solid #f3c9a6; background:#fff7ef; border-radius:16px; padding:12px 14px;}
+  .bk-head{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:#9a4a00; margin-bottom:6px;}
+  .bk-head .ic{width:15px; height:15px;}
+  .bk-head small{margin-left:auto; font-size:11px; letter-spacing:0; text-transform:none; font-weight:700;}
+  .bk-item{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; font:inherit; font-size:12.5px; line-height:1.45; color:var(--ink); background:#fff; border:1px solid #f0d9c2; border-radius:12px; padding:8px 10px; margin-top:6px; cursor:pointer;}
+  .bk-item b{font-weight:800;}
+  .bk-item small{display:block; color:var(--ink-soft); font-size:11.5px; font-weight:400;}
+  .bk-tag{flex:none; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:99px; background:#fdecea; color:#b3261e;}
+  .bk-tag.ringan{background:#fff0cf; color:#8a5a00;}
+  .bk-hint{margin-top:6px; font-size:12px; line-height:1.5; color:#9a4a00; background:#fff7ef; border:1px solid #f3c9a6; border-radius:10px; padding:7px 10px;}
+  .bk-hint:empty{display:none;}
+  .bk-ber{margin:0 0 16px;}
+  .pl-box{margin-top:14px; border:1.5px solid #e6d79a; background:linear-gradient(180deg,#fffdf3,#fff); border-radius:16px; padding:14px;}
+  .pl-list{display:grid; gap:2px;}
+  .pl-it{display:flex; align-items:center; gap:10px; min-height:33px; font-size:12.5px; line-height:1.35; color:var(--ink); cursor:pointer; padding:2px 0;}
+  .pl-it input{flex:none; width:20px; height:20px; accent-color:#241c06; margin:0;}
+  .pl-it.on span{color:var(--ink-soft); text-decoration:line-through;}
+  .pl-act{display:flex; justify-content:space-between; gap:12px; margin-top:8px; font-size:12px;}
+  .tg-card{margin:0 0 16px; padding:16px; background:#fff; border:1px solid var(--dash-line); border-radius:24px;}
+  .tg-top{display:flex; align-items:baseline; justify-content:space-between; gap:10px;}
+  .tg-top b{font:700 15px 'Bricolage Grotesque',system-ui,sans-serif; color:var(--dash-ink);}
+  .tg-top small{font-size:12px; color:var(--dash-muted);}
+  .tg-val{margin-top:8px; font:700 22px/1.2 'Bricolage Grotesque',system-ui,sans-serif; color:var(--dash-ink);}
+  .tg-val small{font-size:12.5px; font-weight:500; color:var(--dash-muted);}
+  .tg-bar{height:10px; border-radius:99px; background:var(--dash-chip); overflow:hidden; margin-top:10px;}
+  .tg-bar u{display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#FFD42E,#f0a800); text-decoration:none;}
+  .tg-bar.done u{background:linear-gradient(90deg,#4cc36b,#2e9e4f);}
+  .tg-sub{margin-top:6px; font-size:12.5px; line-height:1.45; color:var(--dash-muted);}
+  .tg-sub .up{color:var(--ok); font-weight:700;} .tg-sub .dn{color:var(--danger); font-weight:700;}
+  .tg-chart{display:flex; align-items:flex-end; gap:6px; height:64px; margin-top:12px;}
+  .tg-col{flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:3px;}
+  .tg-col i{display:block; width:100%; border-radius:6px 6px 3px 3px; background:var(--dash-chip); min-height:3px;}
+  .tg-col.now i{background:#FFD42E;}
+  .tg-col span{font-size:10px; color:var(--dash-muted); line-height:1;}
+  .tg-act{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
   /* Briefing Hari-H */
   .hh-box{margin-top:14px; border:1.5px solid #e6d79a; background:linear-gradient(180deg,#fffdf3,#fff); border-radius:16px; padding:14px; box-shadow:0 6px 18px -10px rgba(122,74,6,.35);}
   .hh-head{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px;}
   .hh-head .ic{width:15px; height:15px;}
   .hh-when{margin-left:auto; text-transform:none; letter-spacing:0; font-size:12px; font-weight:800; color:#7a4a06; background:#FFE98A; border-radius:99px; padding:3px 10px;}
-  .hh-row{display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-top:1px dashed #eadfb0;}
+  .hh-row{display:flex; gap:11px; align-items:flex-start; padding:9px 0; border-top:1px dashed #eadfb0;}
   .hh-row:first-of-type{border-top:0; padding-top:2px;}
-  .hh-ic{flex:none; width:40px; height:40px; border-radius:12px; display:grid; place-items:center; font-size:22px;}
-  .hh-ic .ic,.hh-ic svg{width:22px; height:22px;}
+  .hh-ic{flex:none; width:34px; height:34px; border-radius:10px; display:grid; place-items:center; font-size:22px;}
+  .hh-ic .ic,.hh-ic svg{width:19px; height:19px;}
   .hh-ic-go{background:#241c06; color:#FFD42E;} .hh-ic-wx{background:#E3F0FF; color:#1d5fb8;} .hh-ic-sun{background:#FFE9C7; color:#c25e00;}
   .hh-tx{min-width:0; flex:1;}
-  .hh-tx small{display:block; font-size:11px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:var(--ink-soft);}
-  .hh-tx b{display:block; font-size:19px; font-weight:800; color:var(--ink); line-height:1.25; margin-top:1px; font-variant-numeric:tabular-nums;}
-  .hh-tx span{display:block; font-size:12.5px; line-height:1.5; color:var(--ink-soft); margin-top:2px;}
-  .hh-buf{display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:0 0 4px 52px; font-size:12px; color:var(--ink-soft);}
-  .hh-chip{border:1px solid #e6d79a; background:#fff; color:#7a4a06; font:700 12.5px inherit; font-family:inherit; min-width:38px; height:30px; border-radius:99px; cursor:pointer; transition:background .15s,color .15s,transform .1s;}
+  .hh-tx small{display:block; font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:var(--ink-soft);}
+  .hh-tx b{display:block; font-size:15px; font-weight:800; color:var(--ink); line-height:1.3; margin-top:1px; font-variant-numeric:tabular-nums;}
+  .hh-tx span{display:block; font-size:11.5px; line-height:1.45; color:var(--ink-soft); margin-top:2px;}
+  .hh-buf{display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:0 0 4px 45px; font-size:11.5px; color:var(--ink-soft);}
+  .hh-buf > span{flex-basis:100%;}
+  .hh-chip{border:1px solid #e6d79a; background:#fff; color:#7a4a06; font:700 12px inherit; font-family:inherit; min-width:48px; height:28px; border-radius:99px; cursor:pointer; transition:background .15s,color .15s,transform .1s;}
   .hh-chip.on{background:#241c06; color:#FFD42E; border-color:#241c06;}
   .hh-chip:active{transform:scale(.94);}
   .hh-hint{font-size:13px; line-height:1.55; color:var(--ink-soft); margin:0;}
@@ -5086,7 +5123,7 @@ async function attemptLogin(username, password){
 function kaoneBersihkanCacheTim(){
   if(currentUserRole==='admin') return;
   try{
-    [HARGA_CETAK_KEY, ONGKIR_ANTAR_KEY, PESAN_SELESAI_KEY, PESAN_BOOKING_KEY, PESAN_H1_KEY, CPB_FORMAT_KEY]
+    [HARGA_CETAK_KEY, ONGKIR_ANTAR_KEY, PESAN_SELESAI_KEY, PESAN_BOOKING_KEY, PESAN_H1_KEY, PESAN_LUNAS_KEY, PESAN_TERIMA_KEY, TARGET_KEY, CPB_FORMAT_KEY]
       .forEach(k=>localStorage.removeItem(k));
   }catch(e){}
 }
@@ -6127,18 +6164,186 @@ function pesanH1PanelHtml(){
     </div></div>`;
 }
 
+/* ---- 4) Pengingat Pelunasan ---- */
+const PESAN_LUNAS_KEY='kaoneMotret_pesanLunas_v1';
+const PESAN_LUNAS_DEFAULT='Halo Kak {nama},\n\nMengingatkan dengan ramah, pembayaran {acara} Kakak ({tanggal}) masih ada sisa yang belum diselesaikan ya 🙏\n\nPaket : {paket}\nTotal : {total}\nDP Diterima : {dp}\nSisa Pembayaran : {sisa}\n\nKalau sudah dibayar, boleh kirim bukti pembayarannya di sini ya, Kak. Terima kasih banyak 📸';
+let PESAN_LUNAS_TPL=(()=>{try{return localStorage.getItem(PESAN_LUNAS_KEY)||PESAN_LUNAS_DEFAULT;}catch(e){return PESAN_LUNAS_DEFAULT;}})();
+function simpanPesanLunas(){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah pesan ini.'); return; }
+  PESAN_LUNAS_TPL=(document.getElementById('pesanLunasTpl').value||'').trim()||PESAN_LUNAS_DEFAULT;
+  try{ localStorage.setItem(PESAN_LUNAS_KEY,PESAN_LUNAS_TPL); }catch(_){}
+  pushToCloud();
+  toast('Pesan WhatsApp disimpan');
+}
+function resetPesanLunas(){ document.getElementById('pesanLunasTpl').value=PESAN_LUNAS_DEFAULT; }
+function bangunPesanLunas(j){
+  const jenis=j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'acara') : (j.jenisAcara||'acara');
+  const t=tagihanHariH(j);
+  const map={nama:(j.namaKlien||'').trim(), mempelai:mempelaiTeks(j), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'-', total:fmtRp(t.harga), dp:fmtRp(j.dp), sisa:fmtRp(t.sisa), maps:mapsStudioLink()};
+  return renderWaTpl(PESAN_LUNAS_TPL,map);
+}
+function pesanLunasPanelHtml(){
+  return `<div class="wa-tpl-panel" data-wa-tpl-panel="lunas" style="display:none;">
+    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai untuk mengingatkan klien yang masih punya sisa pembayaran, lewat tombol "Pengingat Pelunasan" di Detail Job (hanya muncul kalau belum lunas). Isinya masih bisa diedit sebelum dikirim.</p>
+    <textarea id="pesanLunasTpl" rows="11" style="width:100%">${escapeHtml(PESAN_LUNAS_TPL)}</textarea>
+    <div class="field-hint" style="margin-top:8px;">Kode: {nama} {mempelai} {acara} {tanggal} {paket} {total} {dp} {sisa} {maps}</div>
+    <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
+      <button type="button" class="btn btn-primary" onclick="simpanPesanLunas()">Simpan pesan</button>
+      <button type="button" class="btn btn-outline" onclick="resetPesanLunas()">Kembalikan bawaan</button>
+    </div></div>`;
+}
+
+/* ---- 5) Terima Kasih setelah acara ---- */
+const PESAN_TERIMA_KEY='kaoneMotret_pesanTerima_v1';
+const PESAN_TERIMA_DEFAULT='Halo Kak {nama},\n\nTerima kasih banyak sudah mempercayakan {acara} Kakak ({tanggal}) kepada Kaone Motret 🙏📸\n\nSemoga acaranya berjalan lancar dan momennya menjadi kenangan yang indah. Kami akan mengabari lagi begitu fotonya selesai diproses.\n\nKalau Kakak berkenan, boleh ceritakan pengalaman Kakak bersama kami. Itu sangat berarti buat kami.';
+let PESAN_TERIMA_TPL=(()=>{try{return localStorage.getItem(PESAN_TERIMA_KEY)||PESAN_TERIMA_DEFAULT;}catch(e){return PESAN_TERIMA_DEFAULT;}})();
+function simpanPesanTerima(){
+  if(!isAdmin()){ alert('Hanya Admin yang bisa mengubah pesan ini.'); return; }
+  PESAN_TERIMA_TPL=(document.getElementById('pesanTerimaTpl').value||'').trim()||PESAN_TERIMA_DEFAULT;
+  try{ localStorage.setItem(PESAN_TERIMA_KEY,PESAN_TERIMA_TPL); }catch(_){}
+  pushToCloud();
+  toast('Pesan WhatsApp disimpan');
+}
+function resetPesanTerima(){ document.getElementById('pesanTerimaTpl').value=PESAN_TERIMA_DEFAULT; }
+function bangunPesanTerima(j){
+  const jenis=j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'acara') : (j.jenisAcara||'acara');
+  const map={nama:(j.namaKlien||'').trim(), mempelai:mempelaiTeks(j), acara:jenis, tanggal:fmtTglJob(j), paket:j.paket||'-', maps:mapsStudioLink()};
+  return renderWaTpl(PESAN_TERIMA_TPL,map);
+}
+function pesanTerimaPanelHtml(){
+  return `<div class="wa-tpl-panel" data-wa-tpl-panel="terima" style="display:none;">
+    <p style="color:var(--ink-soft);font-size:13.5px;">Dipakai untuk berterima kasih kepada klien setelah acara, lewat tombol "Terima Kasih" di Detail Job (muncul mulai hari acara). Isinya masih bisa diedit sebelum dikirim.</p>
+    <textarea id="pesanTerimaTpl" rows="9" style="width:100%">${escapeHtml(PESAN_TERIMA_TPL)}</textarea>
+    <div class="field-hint" style="margin-top:8px;">Kode: {nama} {mempelai} {acara} {tanggal} {paket} {maps}</div>
+    <div class="form-actions" style="justify-content:flex-start;margin-top:12px;">
+      <button type="button" class="btn btn-primary" onclick="simpanPesanTerima()">Simpan pesan</button>
+      <button type="button" class="btn btn-outline" onclick="resetPesanTerima()">Kembalikan bawaan</button>
+    </div></div>`;
+}
+
+/* ---- Daftar perlengkapan hari-H (per jenis acara) ---- */
+const PL_KEY='kaoneMotret_perlengkapan_v1', PL_CEK_KEY='kaoneMotret_plCek_v1';
+const PL_UMUM=['Baterai kamera terisi penuh','Baterai cadangan','Kartu memori kosong','Kartu memori cadangan','Lap lensa dan blower','Power bank'];
+const PL_DEFAULT={
+  pernikahan:[...PL_UMUM,'Lensa wide dan lensa tele','Flash atau lampu tambahan','Tripod atau monopod','Daftar momen dan keluarga inti dari klien'],
+  margondang:[...PL_UMUM,'Lensa wide dan lensa tele','Flash atau lampu tambahan','Pakaian rapi sesuai acara'],
+  mangayun:[...PL_UMUM,'Lensa cepat untuk ruangan','Flash atau lampu tambahan'],
+  wisuda:[...PL_UMUM,'Lensa tele','Daftar nama wisudawan'],
+  undangan:[...PL_UMUM,'Flash atau lampu tambahan'],
+  umum:[...PL_UMUM,'Lensa cadangan']
+};
+let PL_KUSTOM=(()=>{try{const v=JSON.parse(localStorage.getItem(PL_KEY)||'null'); return v&&typeof v==='object'&&!Array.isArray(v)?v:{};}catch(e){return {};}})();
+function plGrup(j){ return detailGrupAcara(j.jenisAcara,j.jenisAcaraLain)||'umum'; }
+function plDaftar(grup){ const k=PL_KUSTOM[grup]; return (Array.isArray(k)&&k.length)?k:(PL_DEFAULT[grup]||PL_DEFAULT.umum); }
+function plCekBaca(){ try{ const v=JSON.parse(localStorage.getItem(PL_CEK_KEY)||'{}'); return v&&typeof v==='object'?v:{}; }catch(e){ return {}; } }
+function plCekTulis(o){ try{ const ks=Object.keys(o); if(ks.length>40) ks.slice(0,ks.length-40).forEach(k=>delete o[k]); localStorage.setItem(PL_CEK_KEY,JSON.stringify(o)); }catch(e){} }
+function plBoxHtml(j){
+  if(!j||!hhTarget(j)) return '';
+  const grup=plGrup(j), daftar=plDaftar(grup), cek=plCekBaca()[j.id]||{};
+  const n=daftar.filter(x=>cek[x]).length;
+  const rows=daftar.map((x,i)=>`<label class="pl-it${cek[x]?' on':''}"><input type="checkbox" data-pl-cek="${escapeHtml(String(j.id))}" data-pl-i="${i}"${cek[x]?' checked':''}><span>${escapeHtml(x)}</span></label>`).join('');
+  return `<div class="pl-box" id="plBox"><div class="hh-head">${ic('check-circle')} Perlengkapan<span class="hh-when" id="plCount">${n}/${daftar.length} siap</span></div>
+    <div class="pl-list">${rows}</div>
+    <div class="pl-act">${isAdmin()?`<button type="button" class="hh-link" data-pl-ubah="${escapeHtml(grup)}" data-pl-job="${escapeHtml(String(j.id))}">Ubah daftar</button>`:'<span></span>'}<button type="button" class="hh-link" data-pl-reset="${escapeHtml(String(j.id))}">Kosongkan centang</button></div></div>`;
+}
+function plUbahModal(grup,jobId){
+  const label=(typeof DETAIL_GRUP_LABEL!=='undefined'&&DETAIL_GRUP_LABEL[grup])||'Umum';
+  showModal(`<button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('check-circle')} Daftar Perlengkapan: ${escapeHtml(label)}</h3>
+    <div class="field-hint" style="margin-bottom:8px;">Satu baris satu barang. Daftar ini dipakai untuk semua job jenis ${escapeHtml(label)} dan tersimpan di akun Admin.</div>
+    <textarea id="plUbahTa" rows="12" style="width:100%">${escapeHtml(plDaftar(grup).join('\n'))}</textarea>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" onclick="plUbahReset('${escapeHtml(grup)}','${escapeHtml(jobId)}')">Kembalikan bawaan</button>
+      <button type="button" class="btn btn-primary" onclick="plUbahSimpan('${escapeHtml(grup)}','${escapeHtml(jobId)}')">Simpan</button>
+    </div>`);
+}
+function plUbahTutup(jobId){ if(jobId && jobs.some(x=>String(x.id)===String(jobId))) openJobDetailModal(jobId); else closeModal(); }
+function plUbahSimpan(grup,jobId){
+  if(!isAdmin()) return;
+  const arr=(document.getElementById('plUbahTa')?.value||'').split('\n').map(x=>x.trim().slice(0,70)).filter(Boolean).slice(0,30);
+  if(!arr.length){ toast('Isi minimal satu barang, atau pilih Kembalikan bawaan'); return; }
+  PL_KUSTOM[grup]=arr;
+  try{ localStorage.setItem(PL_KEY,JSON.stringify(PL_KUSTOM)); }catch(_){}
+  pushToCloud(); toast('Daftar perlengkapan disimpan'); plUbahTutup(jobId);
+}
+function plUbahReset(grup,jobId){
+  if(!isAdmin()) return;
+  delete PL_KUSTOM[grup];
+  try{ localStorage.setItem(PL_KEY,JSON.stringify(PL_KUSTOM)); }catch(_){}
+  pushToCloud(); toast('Daftar dikembalikan ke bawaan'); plUbahTutup(jobId);
+}
+
+/* ---- Target omzet bulanan (Admin) ---- */
+const TARGET_KEY='kaoneMotret_targetBulanan_v1';
+let TARGET_BULAN=(()=>{try{const v=JSON.parse(localStorage.getItem(TARGET_KEY)||'null'); return {omzet:(v&&Number(v.omzet)>0)?Math.round(Number(v.omzet)):0};}catch(e){return {omzet:0};}})();
+function tgRp(v){ v=Number(v)||0; const s=v<0?'-':'', x=Math.abs(v), dec=a=>(Math.round(a*10)/10).toString().replace('.',','); return s+'Rp '+(x>=1e9?dec(x/1e9)+' M':x>=1e6?dec(x/1e6)+' jt':x>=1e3?Math.round(x/1e3)+' rb':x); }
+function tgData(){
+  const now=new Date(), months=[], idx={};
+  for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(), now.getMonth()-i, 1); const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); idx[key]=months.length; months.push({key, nama:MONTH_NAMES[d.getMonth()], omzet:0, bersih:0, n:0}); }
+  (jobs||[]).forEach(j=>{ const k=String(j.tanggalAcara||'').slice(0,7); if(k in idx){ const m=months[idx[k]]; m.omzet+=hitungOmzet(j); m.bersih+=hitungBersih(j); m.n++; } });
+  return months;
+}
+function tgBerandaHtml(){
+  if(!isAdmin()) return '';
+  const ms=tgData(), cur=ms[5], prev=ms[4], T=TARGET_BULAN.omzet;
+  const pct=T?Math.min(100,Math.round(cur.omzet/T*100)):0, done=T>0&&cur.omzet>=T;
+  let sub;
+  if(!T) sub='Belum ada target bulan ini. Atur target supaya kemajuannya terlihat.';
+  else if(done) sub='Target tercapai 🎉';
+  else sub=`${pct}% dari target ${escapeHtml(tgRp(T))} · kurang ${escapeHtml(tgRp(T-cur.omzet))}`;
+  let banding;
+  if(prev.omzet>0){ const d=Math.round((cur.omzet-prev.omzet)/prev.omzet*100); banding=`<span class="${d>=0?'up':'dn'}">${d>=0?'▲':'▼'} ${Math.abs(d)}%</span> dibanding ${escapeHtml(prev.nama)} (${escapeHtml(tgRp(prev.omzet))})`; }
+  else banding=`${escapeHtml(prev.nama)} belum ada omzet sebagai pembanding`;
+  const mx=Math.max(1,...ms.map(m=>m.omzet));
+  const chart=ms.map((m,i)=>`<div class="tg-col${i===5?' now':''}" title="${escapeHtml(m.nama+': '+tgRp(m.omzet)+' · '+m.n+' job')}"><i style="height:${Math.max(3,Math.round(m.omzet/mx*48))}px"></i><span>${escapeHtml(m.nama.slice(0,3))}</span></div>`).join('');
+  return `<div class="tg-card" id="tgCard">
+    <div class="tg-top"><b>Omzet ${escapeHtml(cur.nama)} ${new Date().getFullYear()}</b><small>${cur.n} job</small></div>
+    <div class="tg-val">${escapeHtml(tgRp(cur.omzet))} <small>laba bersih ${escapeHtml(tgRp(cur.bersih))}</small></div>
+    ${T?`<div class="tg-bar${done?' done':''}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><u style="width:${pct}%"></u></div>`:''}
+    <div class="tg-sub">${sub}</div>
+    <div class="tg-sub">${banding}</div>
+    <div class="tg-chart" aria-label="Omzet 6 bulan terakhir">${chart}</div>
+    <div class="tg-sub" style="margin-top:8px;">Dihitung dari tanggal acara, termasuk job yang masih dijadwalkan bulan ini.</div>
+    <div class="tg-act"><button type="button" class="dash-btn line" data-tgt-atur="1">${T?'Ubah target':'Atur target'}</button><button type="button" class="dash-btn line" data-goto="statistik">Lihat statistik</button></div>
+  </div>`;
+}
+function tgAturModal(){
+  showModal(`<button type="button" class="close-x" id="closeModal">${ic('close')}</button>
+    <h3>${ic('chart')} Target Omzet Bulanan</h3>
+    <div class="field-hint" style="margin-bottom:8px;">Isi target omzet per bulan. Progresnya tampil di Beranda dan dihitung dari omzet semua job pada bulan berjalan.</div>
+    <div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" pattern="[0-9.]*" autocomplete="off" class="money-input" id="tgInput" value="${TARGET_BULAN.omzet?escapeHtml(fmtRibuan(TARGET_BULAN.omzet)):''}"></div>
+    <div class="modal-actions">
+      ${TARGET_BULAN.omzet?`<button type="button" class="btn btn-outline" onclick="tgSimpan(true)">Hapus target</button>`:''}
+      <button type="button" class="btn btn-primary" onclick="tgSimpan()">Simpan</button>
+    </div>`);
+  setTimeout(()=>{ try{ document.getElementById('tgInput')?.focus(); }catch(e){} },50);
+}
+function tgSimpan(hapus){
+  if(!isAdmin()) return;
+  const v=parseRibuan(document.getElementById('tgInput')?.value);
+  if(!hapus && !(v>0)){ toast('Isi nominal target dulu'); return; }
+  TARGET_BULAN={omzet:hapus?0:Math.round(v)};
+  try{ localStorage.setItem(TARGET_KEY,JSON.stringify(TARGET_BULAN)); }catch(_){}
+  pushToCloud(); closeModal(); toast(hapus?'Target dihapus':'Target disimpan');
+  if(currentView==='beranda') render();
+}
+
 /* ---- Kartu gabungan (tab) untuk Pengaturan ---- */
 function templateWaCardHtml(){
   return `<div class="card"><h2 style="margin-top:0;">${ic('phone')} Template Pesan WhatsApp</h2>
-    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Tiga pesan siap pakai untuk klien. Perubahan tersimpan otomatis.</p>
+    <p style="color:var(--ink-soft);font-size:13.5px;margin-top:-4px;">Lima pesan siap pakai untuk klien. Perubahan tersimpan otomatis.</p>
     <div class="wa-tpl-tabs">
       <button type="button" class="wa-tpl-tab active" data-wa-tpl-tab="selesai" onclick="switchWaTplTab('selesai')">Foto Selesai</button>
       <button type="button" class="wa-tpl-tab" data-wa-tpl-tab="booking" onclick="switchWaTplTab('booking')">Booking / DP Diterima</button>
       <button type="button" class="wa-tpl-tab" data-wa-tpl-tab="h1" onclick="switchWaTplTab('h1')">Pengingat H-1</button>
+      <button type="button" class="wa-tpl-tab" data-wa-tpl-tab="lunas" onclick="switchWaTplTab('lunas')">Pelunasan</button>
+      <button type="button" class="wa-tpl-tab" data-wa-tpl-tab="terima" onclick="switchWaTplTab('terima')">Terima Kasih</button>
     </div>
     ${pesanSelesaiPanelHtml()}
     ${pesanBookingPanelHtml()}
     ${pesanH1PanelHtml()}
+    ${pesanLunasPanelHtml()}
+    ${pesanTerimaPanelHtml()}
   </div>`;
 }
 function switchWaTplTab(key){
@@ -6164,14 +6369,19 @@ const WA_TPL_META = {
   selesai: { label:'Foto Selesai', builder:bangunPesanSelesai, sentField:'waSelesaiAt', modalTitle:'Kabari Klien: Foto Sudah Selesai' },
   booking: { label:'Konfirmasi Booking/DP', builder:bangunPesanBooking, sentField:'waBookingAt', modalTitle:'Konfirmasi Booking &amp; DP Diterima' },
   h1:      { label:'Pengingat H-1', builder:bangunPesanH1, sentField:'waH1At', modalTitle:'Pengingat H-1 ke Klien' },
+  lunas:   { label:'Pengingat Pelunasan', builder:bangunPesanLunas, sentField:'waLunasAt', modalTitle:'Pengingat Pelunasan ke Klien' },
+  terima:  { label:'Terima Kasih', builder:bangunPesanTerima, sentField:'waTerimaAt', modalTitle:'Ucapan Terima Kasih ke Klien' },
 };
 function waQuickSendHtml(j){
   if(!isAdmin()) return ''; // mengirim pesan ke klien: khusus Admin
   const adaNo=!!waDigits(j.noWhatsapp);
   const items=['booking','h1'];
+  { const tg0=tagihanHariH(j), n0=new Date(), iso0=n0.getFullYear()+'-'+String(n0.getMonth()+1).padStart(2,'0')+'-'+String(n0.getDate()).padStart(2,'0');
+    if(!tg0.lunas && tg0.sisa>0) items.push('lunas');
+    if(j.tanggalAcara && j.tanggalAcara<=iso0) items.push('terima'); }
   if(!adaNo){
     return `<div class="wa-quick-box"><div class="wa-quick-label">${ic('phone')} Kirim Pesan Template</div>
-      <div style="font-size:12.5px;color:var(--ink-soft);">Isi nomor WhatsApp klien lewat Edit Job untuk bisa mengirim pesan template (Konfirmasi Booking/DP, Pengingat H-1).</div></div>`;
+      <div style="font-size:12.5px;color:var(--ink-soft);">Isi nomor WhatsApp klien lewat Edit Job untuk bisa mengirim pesan template (Konfirmasi Booking/DP, Pengingat H-1, Pelunasan, Terima Kasih).</div></div>`;
   }
   const btns=items.map(key=>{
     const meta=WA_TPL_META[key];
@@ -6716,7 +6926,7 @@ function cetakSectionHtml(d){
 }
 
 function collectAllData(){
-  return { jobs, tasks, bonusAdjustments, bonusClaims, hargaCetak: HARGA_CETAK, ongkirAntar: ONGKIR_ANTAR, pesanSelesai: PESAN_SELESAI_TPL, pesanBooking: PESAN_BOOKING_TPL, pesanH1: PESAN_H1_TPL, formatSalinBulan: CPB_FORMAT, bonusRate: BONUS_PER_JAM, minKlaimTunai: MIN_KLAIM_TUNAI, minKlaimWdp: MIN_KLAIM_WDP, reports, thanksOverrides, thanksFontSize, posterThemeOverrides, layoutOverrides };
+  return { jobs, tasks, bonusAdjustments, bonusClaims, hargaCetak: HARGA_CETAK, ongkirAntar: ONGKIR_ANTAR, pesanSelesai: PESAN_SELESAI_TPL, pesanBooking: PESAN_BOOKING_TPL, pesanH1: PESAN_H1_TPL, pesanLunas: PESAN_LUNAS_TPL, pesanTerima: PESAN_TERIMA_TPL, targetBulanan: TARGET_BULAN, perlengkapan: PL_KUSTOM, formatSalinBulan: CPB_FORMAT, bonusRate: BONUS_PER_JAM, minKlaimTunai: MIN_KLAIM_TUNAI, minKlaimWdp: MIN_KLAIM_WDP, reports, thanksOverrides, thanksFontSize, posterThemeOverrides, layoutOverrides };
 }
 function applyAllData(data){
   if(!data) return;
@@ -6729,6 +6939,10 @@ function applyAllData(data){
   if(typeof data.pesanSelesai==='string' && data.pesanSelesai.trim()){ PESAN_SELESAI_TPL=normPesanSelesai(data.pesanSelesai); try{ localStorage.setItem(PESAN_SELESAI_KEY,PESAN_SELESAI_TPL); }catch(e){} }
   if(typeof data.pesanBooking==='string' && data.pesanBooking.trim()){ PESAN_BOOKING_TPL=data.pesanBooking; try{ localStorage.setItem(PESAN_BOOKING_KEY,PESAN_BOOKING_TPL); }catch(e){} }
   if(typeof data.pesanH1==='string' && data.pesanH1.trim()){ PESAN_H1_TPL=data.pesanH1; try{ localStorage.setItem(PESAN_H1_KEY,PESAN_H1_TPL); }catch(e){} }
+  if(typeof data.pesanLunas==='string' && data.pesanLunas.trim()){ PESAN_LUNAS_TPL=data.pesanLunas; try{ localStorage.setItem(PESAN_LUNAS_KEY,PESAN_LUNAS_TPL); }catch(e){} }
+  if(typeof data.pesanTerima==='string' && data.pesanTerima.trim()){ PESAN_TERIMA_TPL=data.pesanTerima; try{ localStorage.setItem(PESAN_TERIMA_KEY,PESAN_TERIMA_TPL); }catch(e){} }
+  if(data.targetBulanan && typeof data.targetBulanan==='object'){ const tv=Number(data.targetBulanan.omzet); TARGET_BULAN={omzet:tv>0?Math.round(tv):0}; try{ localStorage.setItem(TARGET_KEY,JSON.stringify(TARGET_BULAN)); }catch(e){} }
+  if(data.perlengkapan && typeof data.perlengkapan==='object' && !Array.isArray(data.perlengkapan)){ PL_KUSTOM=data.perlengkapan; try{ localStorage.setItem(PL_KEY,JSON.stringify(PL_KUSTOM)); }catch(e){} }
   if(data.formatSalinBulan && typeof data.formatSalinBulan==='object'){ CPB_FORMAT=normCpbFormat(data.formatSalinBulan); try{ localStorage.setItem(CPB_FORMAT_KEY,JSON.stringify(CPB_FORMAT)); }catch(e){} }
   if(typeof data.bonusRate==='number' && Number.isFinite(data.bonusRate) && data.bonusRate>=0) BONUS_PER_JAM = data.bonusRate;
   if(typeof data.minKlaimTunai==='number' && Number.isFinite(data.minKlaimTunai) && data.minKlaimTunai>=0) MIN_KLAIM_TUNAI = data.minKlaimTunai;
@@ -10844,6 +11058,10 @@ function viewBeranda(){
         ${nextCard}
 
         ${weekHtml}
+
+        ${bkBerandaHtml()}
+
+        ${tgBerandaHtml()}
       </div>
       <div class="dash-col dash-col-b">
         <h2 class="dash-sec">Perlu dikerjakan ${todos.length ? `<small>${totalTodo} item</small>` : ''}</h2>
@@ -11482,7 +11700,7 @@ function buildJobFormHtml(j){
         <div><label>Tanggal Acara (Mulai) * <span class="hari-tgl" id="hariMulaiLabel"></span></label><input type="date" name="tanggalAcara" id="tanggalAcaraInput" value="${d.tanggalAcara}" required oninput="onTanggalAcaraChange()"></div>
         <div><label>Tanggal Acara (Selesai) * <span class="hari-tgl" id="hariSelesaiLabel"></span></label><input type="date" name="tanggalSelesai" id="tanggalSelesaiInput" value="${escapeHtml(getJobFinishDate(d)||d.tanggalAcara||'')}" required oninput="updateDurasiHariHint()"></div>
         <div><label id="jamAcaraLabel">${jamAcaraLabelTeks(d.jenisAcara, d.jenisAcaraLain)}</label><div class="rp-input-wrap jam-acara-wrap"><span class="rp-prefix">${ic('clock')}</span><input type="time" name="jamAcara" id="jamAcaraInput" value="${escapeHtml(d.jamAcara||'')}"></div></div>
-        <div class="full" id="durasiHariHintWrap"><div class="field-hint" id="durasiHariHint">Job 1 hari, tugas tim otomatis ditandai selesai pukul 23.59 pada Tanggal Acara.</div></div>
+        <div class="full" id="durasiHariHintWrap"><div class="field-hint" id="durasiHariHint">Job 1 hari, tugas tim otomatis ditandai selesai pukul 23.59 pada Tanggal Acara.</div><div class="bk-hint" id="bkFormHint" role="status"></div></div>
         </div></div>
         <div class="bio-grp bio-detail"><div class="form-grid">
         <div id="detailAcaraWrap" style="display:contents;" data-kunci="${escapeHtml(detailAcaraKunci(d.jenisAcara, d.jenisAcaraLain))}">${detailAcaraFieldsHtml(d.jenisAcara, d.jenisAcaraLain, detailAcaraStash)}</div>
@@ -11908,6 +12126,15 @@ function bindJobFormEvents(scopeEl, onDone){
       toast('Tanggal Acara Selesai tidak boleh lebih awal dari Tanggal Acara Mulai');
       return;
     }
+    // Peringatan jadwal bentrok (hanya kalau tanggal/jam berubah atau job baru). Tidak memblokir: Admin boleh tetap menyimpan.
+    {
+      const awal = editingId ? jobs.find(x=>x.id===editingId) : null;
+      const berubah = !awal || awal.tanggalAcara!==data.tanggalAcara || (getJobFinishDate(awal)||'')!==data.tanggalSelesai || (awal.jamAcara||'')!==(data.jamAcara||'');
+      if(berubah){
+        const bk = bkCari(data, editingId).filter(c=>c.level==='bentrok');
+        if(bk.length && !confirm('Jadwal job ini bentrok dengan job lain:\n\n• '+bk.slice(0,4).map(bkBaris).join('\n• ')+'\n\nTetap simpan job ini?')) return;
+      }
+    }
     // Kolom uang: ubah dari teks berformat "3.000.000" menjadi angka murni sebelum disimpan.
     ['dp','penghasilan','biayaCetak','honorTim','diskon','sedekahNominal','setoranShia','ongkirAntar'].forEach(k=>{
       data[k] = parseRibuan(data[k]);
@@ -11992,6 +12219,7 @@ document.addEventListener('input', e=>{ if(e.target && (e.target.id==='tanggalAc
 document.addEventListener('change', e=>{ if(e.target && (e.target.id==='tanggalAcaraInput' || e.target.id==='tanggalSelesaiInput')) updateHariTanggalLabel(); });
 function updateDurasiHariHint(){
   updateHariTanggalLabel();
+  try{ bkFormHint(); }catch(_){}
   const hintEl = document.getElementById('durasiHariHint');
   if(!hintEl) return;
   const mulai = document.getElementById('tanggalAcaraInput')?.value || '';
@@ -14109,6 +14337,96 @@ function hhSalin(jobId){
   copyToClipboard(baris.join('\n'),'Briefing disalin');
 }
 
+/* ========== Peringatan jadwal bentrok (Admin) ==========
+   Dua job dianggap BENTROK kalau jam mulainya di hari yang sama berjarak kurang dari 3 jam, atau salah satunya
+   berlangsung lebih dari 1 hari dan tanggalnya tumpang tindih. Selain itu, tanggal yang sama saja ditandai "satu hari".
+   Hanya peringatan: tidak pernah memblokir penyimpanan. */
+const BK_JARAK_MENIT=180;
+function bkJamM(s){ return /^\d{2}:\d{2}$/.test(s||'') ? parseInt(s.slice(0,2),10)*60+parseInt(s.slice(3),10) : null; }
+function bkIso(v){ return /^\d{4}-\d{2}-\d{2}$/.test(v||''); }
+function bkHariIni(){ const n=new Date(); return n.getFullYear()+'-'+hhPad(n.getMonth()+1)+'-'+hhPad(n.getDate()); }
+function bkCari(d, excludeId){
+  if(!d||!bkIso(d.tanggalAcara)) return [];
+  const mulai=d.tanggalAcara, akhir=getJobFinishDate({tanggalAcara:mulai,tanggalSelesai:d.tanggalSelesai})||mulai;
+  const jm=bkJamM(d.jamAcara), multi=akhir>mulai, out=[];
+  (jobs||[]).forEach(o=>{
+    if(!o||String(o.id)===String(excludeId||'')||!bkIso(o.tanggalAcara)) return;
+    const oa=getJobFinishDate(o)||o.tanggalAcara;
+    if(!(mulai<=oa && o.tanggalAcara<=akhir)) return;
+    const om=bkJamM(o.jamAcara), omulti=oa>o.tanggalAcara;
+    const selisih=(jm!=null&&om!=null&&mulai===o.tanggalAcara)?Math.abs(jm-om):null;
+    const keras=(selisih!=null&&selisih<BK_JARAK_MENIT)||multi||omulti;
+    out.push({job:o,selisih,level:keras?'bentrok':'sehari'});
+  });
+  return out.sort((a,b)=>(a.level===b.level?0:(a.level==='bentrok'?-1:1))||((a.selisih==null?1e9:a.selisih)-(b.selisih==null?1e9:b.selisih)));
+}
+function bkJamTeks(o){ return o.jamAcara?' pukul '+String(o.jamAcara).replace(':','.'):''; }
+function bkBaris(c){
+  const o=c.job;
+  let ket;
+  if(c.level==='bentrok') ket=(c.selisih!=null&&c.selisih<BK_JARAK_MENIT)?(c.selisih===0?'jam mulai sama':'selisih jam mulai '+hhDurasi(c.selisih)):'tanggal acara tumpang tindih';
+  else ket=c.selisih!=null?'tanggal sama, selisih jam mulai '+hhDurasi(c.selisih):'tanggal sama, jam belum lengkap';
+  return hhJudul(o)+' ('+fmtTglJob(o)+bkJamTeks(o)+') - '+ket;
+}
+function bkTimKonflik(j){
+  const out=[], seen=new Set();
+  if(!Array.isArray(tasks)) return out;
+  tasks.filter(t=>String(t.jobId)===String(j.id)).forEach(t=>{
+    const tgl=t.tanggal||j.tanggalAcara; if(!tgl||tgl<bkHariIni()) return;
+    let cs=[]; try{ cs=findTaskConflicts(t.userId,tgl,getTaskSlots(t),t.id).filter(c=>String(c.jobId)!==String(j.id)); }catch(e){}
+    cs.forEach(c=>{ const k=t.userId+'|'+c.id; if(seen.has(k)) return; seen.add(k); out.push({nama:t.username||'Tim', label:(()=>{ const oj=jobs.find(x=>String(x.id)===String(c.jobId)); return oj?hhJudul(oj):getTaskJobLabel(c); })(), jam:fmtSlotsLabel(getTaskSlots(c)), tgl}); });
+  });
+  return out;
+}
+function bkBoxHtml(j){
+  if(!isAdmin()||!j||j.acaraSelesaiAt) return '';
+  const akhir=getJobFinishDate(j)||j.tanggalAcara; if(!akhir||akhir<bkHariIni()) return '';
+  const cs=bkCari(j,j.id), tm=bkTimKonflik(j);
+  if(!cs.length&&!tm.length) return '';
+  const rows=cs.map(c=>`<button type="button" class="bk-item" onclick="openJobDetailModal('${escapeHtml(String(c.job.id))}')"><span><b>${escapeHtml(hhJudul(c.job))}</b><small>${escapeHtml(fmtTglJob(c.job)+bkJamTeks(c.job)+' · '+(c.level==='bentrok'?((c.selisih!=null&&c.selisih<BK_JARAK_MENIT)?(c.selisih===0?'jam mulai sama':'selisih jam mulai '+hhDurasi(c.selisih)):'tanggal acara tumpang tindih'):(c.selisih!=null?'tanggal sama, selisih jam '+hhDurasi(c.selisih):'tanggal sama, jam belum lengkap')))}</small></span><span class="bk-tag${c.level==='bentrok'?'':' ringan'}">${c.level==='bentrok'?'Bentrok':'Satu hari'}</span></button>`).join('');
+  const rt=tm.map(x=>`<div class="bk-item" style="cursor:default;"><span><b>${escapeHtml(x.nama)}</b> bentrok jam<small>${escapeHtml(x.label+' · '+x.jam+' · '+formatTaskDate(x.tgl))}</small></span><span class="bk-tag">Tim</span></div>`).join('');
+  const nb=cs.filter(c=>c.level==='bentrok').length+tm.length;
+  return `<div class="bk-box" id="bkBox"><div class="bk-head">${ic('alert')} ${nb?'Jadwal bentrok':'Ada job lain di tanggal ini'}<small>${cs.length+tm.length} catatan</small></div>${rows}${rt}</div>`;
+}
+function bkFormHint(){
+  const el=document.getElementById('bkFormHint'); if(!el) return;
+  const d={tanggalAcara:document.getElementById('tanggalAcaraInput')?.value||'', tanggalSelesai:document.getElementById('tanggalSelesaiInput')?.value||'', jamAcara:document.getElementById('jamAcaraInput')?.value||''};
+  const cs=bkCari(d, (typeof editingId!=='undefined')?editingId:null);
+  if(!cs.length){ el.textContent=''; return; }
+  const nb=cs.filter(c=>c.level==='bentrok').length;
+  el.textContent=(nb?'⚠️ Jadwal bentrok dengan ':'Ada job lain di tanggal ini: ')+cs.slice(0,3).map(c=>hhJudul(c.job)+bkJamTeks(c.job)).join(', ')+(cs.length>3?' dan '+(cs.length-3)+' lainnya':'')+'.';
+}
+function bkBerandaHtml(){
+  if(!isAdmin()) return '';
+  const hari=bkHariIni(), pairs=[], seen=new Set();
+  const aktif=(jobs||[]).filter(j=>j&&bkIso(j.tanggalAcara)&&!j.acaraSelesaiAt&&(getJobFinishDate(j)||j.tanggalAcara)>=hari);
+  aktif.forEach(j=>{ bkCari(j,j.id).filter(c=>c.level==='bentrok'&&aktif.includes(c.job)).forEach(c=>{ const k=[String(j.id),String(c.job.id)].sort().join('|'); if(seen.has(k)) return; seen.add(k); pairs.push({a:j,b:c.job}); }); });
+  if(!pairs.length) return '';
+  pairs.sort((x,y)=>(x.a.tanggalAcara<y.a.tanggalAcara?-1:1));
+  const rows=pairs.slice(0,3).map(p=>`<button type="button" class="bk-item" onclick="openJobDetailModal('${escapeHtml(String(p.a.id))}')"><span><b>${escapeHtml(hhJudul(p.a))}</b> dan <b>${escapeHtml(hhJudul(p.b))}</b><small>${escapeHtml(fmtTglJob(p.a)+bkJamTeks(p.a)+' · '+fmtTglJob(p.b)+bkJamTeks(p.b))}</small></span><span class="bk-tag">Bentrok</span></button>`).join('');
+  return `<div class="bk-box bk-ber"><div class="bk-head">${ic('alert')} Jadwal bentrok<small>${pairs.length} pasang</small></div>${rows}${pairs.length>3?`<div class="tg-sub" style="margin-top:6px;">Dan ${pairs.length-3} pasang lainnya.</div>`:''}</div>`;
+}
+document.addEventListener('input',e=>{ const id=e.target&&e.target.id; if(id==='tanggalAcaraInput'||id==='tanggalSelesaiInput'||id==='jamAcaraInput') setTimeout(()=>{ try{ bkFormHint(); }catch(_){} },0); });
+document.addEventListener('change',e=>{
+  const c=e.target&&e.target.closest&&e.target.closest('[data-pl-cek]'); if(!c) return;
+  const j=jobs.find(x=>String(x.id)===c.dataset.plCek); if(!j) return;
+  const d=plDaftar(plGrup(j)), t=d[parseInt(c.dataset.plI,10)]; if(t==null) return;
+  const o=plCekBaca(), m=o[j.id]=o[j.id]||{};
+  if(c.checked) m[t]=1; else delete m[t];
+  plCekTulis(o);
+  const lab=c.closest('.pl-it'); if(lab) lab.classList.toggle('on',c.checked);
+  const el=document.getElementById('plCount'); if(el) el.textContent=d.filter(x=>m[x]).length+'/'+d.length+' siap';
+});
+document.addEventListener('click',e=>{
+  const t=e.target&&e.target.closest?e.target:null; if(!t) return;
+  const rs=t.closest('[data-pl-reset]');
+  if(rs){ const o=plCekBaca(); delete o[rs.dataset.plReset]; plCekTulis(o); const box=document.getElementById('plBox'); if(box){ box.querySelectorAll('.pl-it').forEach(l=>{ l.classList.remove('on'); const i=l.querySelector('input'); if(i) i.checked=false; }); const el=document.getElementById('plCount'); if(el) el.textContent='0/'+box.querySelectorAll('.pl-it').length+' siap'; } return; }
+  const ub=t.closest('[data-pl-ubah]');
+  if(ub){ if(isAdmin()) plUbahModal(ub.dataset.plUbah,ub.dataset.plJob||''); return; }
+  const tg=t.closest('[data-tgt-atur]');
+  if(tg){ if(isAdmin()) tgAturModal(); return; }
+});
+
 /* ----- Briefing Hari-H di Beranda + pengingat berangkat ----- */
 function hhJudul(j){ const jn=j.jenisAcara==='Lainnya'?(j.jenisAcaraLain||'Acara'):(j.jenisAcara||''); return [jn,j.namaKlien].filter(Boolean).join(' ')||'Tanpa Nama'; }
 function hhBerangkatInfo(j){
@@ -14328,7 +14646,9 @@ function openJobDetailModal(jobId){
       </div>
       <div class="jd-bottom-bar"></div>
     </div>
+    ${bkBoxHtml(j)}
     ${hhBoxHtml(j)}
+    ${plBoxHtml(j)}
     ${isAdmin() ? acaraSelesaiBoxHtml(j) : ''}
     ${kwitansiStatusHtml(j)}
     ${waSelesaiBoxHtml(j)}
@@ -19897,12 +20217,23 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.31.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.32.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.32.0',
+    tanggal: '11 November 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Peringatan jadwal bentrok. Saat mengisi atau mengubah job, aplikasi memberi tahu kalau tanggal dan jamnya berdekatan dengan job lain (jam mulai berselisih kurang dari 3 jam, atau job beberapa hari yang tanggalnya tumpang tindih) dan menanyakan dulu sebelum menyimpan. Detail Job dan Beranda juga menampilkan pasangan job yang bentrok, termasuk anggota tim yang jam tugasnya bertabrakan.' },
+      { kategori: 'Fitur', teks: 'Dua pesan WhatsApp baru untuk klien di Detail Job: "Pengingat Pelunasan" (muncul kalau masih ada sisa pembayaran, berisi total, DP, dan sisa) dan "Terima Kasih" (muncul mulai hari acara). Isinya bisa diubah di Pengaturan, Template Pesan WhatsApp.' },
+      { kategori: 'Fitur', teks: 'Daftar perlengkapan hari-H di Detail Job, menyesuaikan jenis acara (baterai, kartu memori, lensa, flash, dan lainnya). Bisa dicentang satu per satu dan daftarnya bisa diubah Admin lewat tombol "Ubah daftar".' },
+      { kategori: 'Fitur', teks: 'Beranda Admin punya kartu omzet bulan ini: total omzet dan laba bersih, progres menuju target bulanan yang bisa kamu atur sendiri, perbandingan dengan bulan lalu, dan grafik 6 bulan terakhir.' },
+      { kategori: 'Perbaikan', teks: 'Tampilan Briefing Hari-H dirapikan: tulisan dikecilkan, baris "Berangkat" sejajar dengan ikon dan cuaca, dan jam tiba di lokasi kini memakai pilihan jam (awalnya pukul 06.30) bukan menit.' },
+    ]
+  },
   {
     version: '1.31.0',
     tanggal: '8 November 2026',
@@ -23656,7 +23987,9 @@ async function cmStart(){
 }
 function cmOpen(){
  if(kk.st!='idle'){toast('Kamera tidak bisa dibuka saat panggilan');return}
- cmReset();cmFm='environment';$('kcm').classList.add('on');cmStart()}
+ try{var ae=document.activeElement;if(ae&&ae!==document.body&&ae.blur)ae.blur()}catch(e){}   // tutup keyboard dulu supaya ukuran layar kembali penuh
+ cmReset();cmFm='environment';$('kcm').classList.add('on');cmStart();
+ [0,150,400,900,1600].forEach(function(d){setTimeout(function(){if(window.kcFitNow)window.kcFitNow()},d)})}
 function cmShot(){
  var v=$('kcmv');if(cmBusy)return;
  if(cmCdT){cmCdStop();return}
@@ -24636,6 +24969,13 @@ html.kc-open{background:var(--kb)}
   window.addEventListener('orientationchange',function(){setTimeout(function(){lastH=lastT=-1;track(900)},250)});
   document.addEventListener('focusin',function(e){if(on()&&e.target&&e.target.id==='ki'){lastH=lastT=-1;track(1200)}});
   document.addEventListener('focusout',function(e){if(on()){setTimeout(function(){window.scrollTo(0,0);track(900)},50)}});
+  /* Pengaman iPhone: kadang event resize tidak datang saat keyboard menutup sendiri (mis. karena kamera dibuka),
+     sehingga tinggi & posisi lama (ukuran saat keyboard muncul) tertinggal dan layar chat/kamera terpotong di tengah.
+     Selama ruang chat terbuka, ukur ulang tiap 0,3 detik; fit() tidak berbuat apa-apa kalau ukurannya tidak berubah. */
+  setInterval(function(){ if(on()&&!document.hidden) fit(); },300);
+  window.kcFitNow=function(){ lastH=lastT=-1; track(1500); };
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden&&on()) window.kcFitNow(); });
+  window.addEventListener('pageshow',function(){ if(on()) window.kcFitNow(); });
   sync();
 })();
 </script>

@@ -980,7 +980,10 @@
   .jd-link .ic{width:14px; height:14px;}
   .jd-link:hover{background:#dbeaff; transform:translateY(-1px);}
   .jd-link:active{transform:scale(.96);}
-  .jd-link.ig{color:#a02a63; background:#fdeef6; border-color:#f6cfe3;}
+  .jd-link.ig{color:#a02a63; background:#fdeef6; border-color:#f6cfe3; max-width:100%; min-width:0; white-space:nowrap;}
+  .jd-link.ig .ic{flex:none;}
+  .jd-link.ig .jd-ig-t{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .jd-v:has(> .jd-link.ig){min-width:0;}
   .jd-link.ig:hover{background:#fbe0ee;}
   .jd-sec.money .jd-r{grid-template-columns:minmax(0,1fr) auto; align-items:baseline;}
   .jd-sec.money .jd-v{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;}
@@ -14130,7 +14133,7 @@ function jdValueHtml(label, raw, id){
   if(/^Link Maps/i.test(label) && /^https?:\/\//i.test(val.trim()))
     return `<div class="jd-v"><a class="jd-link" href="${escapeHtml(val.trim())}" target="_blank" rel="noopener">${ic('pin')} Buka di Maps</a></div>`;
   if(/^Instagram/i.test(label) && /^@[\w.]+$/.test(val.trim()))
-    return `<div class="jd-v"><a class="jd-link ig" href="https://instagram.com/${encodeURIComponent(val.trim().slice(1))}" target="_blank" rel="noopener">${ic('instagram')} ${escapeHtml(val.trim())}</a></div>`;
+    return `<div class="jd-v"><a class="jd-link ig" href="https://instagram.com/${encodeURIComponent(val.trim().slice(1))}" target="_blank" rel="noopener">${ic('instagram')}<span class="jd-ig-t">${escapeHtml(val.trim())}</span></a></div>`;
   if(JD_STATUS.has(label)) return `<div class="jd-v"><span class="jd-chip ${jdStatusTone(val)}">${escapeHtml(val)}</span></div>`;
   return `<div class="jd-v">${escapeHtml(val)}</div>`;
 }
@@ -20231,6 +20234,7 @@ const CHANGELOG = [
       { kategori: 'Fitur', teks: 'Dua pesan WhatsApp baru untuk klien di Detail Job: "Pengingat Pelunasan" (muncul kalau masih ada sisa pembayaran, berisi total, DP, dan sisa) dan "Terima Kasih" (muncul mulai hari acara). Isinya bisa diubah di Pengaturan, Template Pesan WhatsApp.' },
       { kategori: 'Fitur', teks: 'Daftar perlengkapan hari-H di Detail Job, menyesuaikan jenis acara (baterai, kartu memori, lensa, flash, dan lainnya). Bisa dicentang satu per satu dan daftarnya bisa diubah Admin lewat tombol "Ubah daftar".' },
       { kategori: 'Fitur', teks: 'Beranda Admin punya kartu omzet bulan ini: total omzet dan laba bersih, progres menuju target bulanan yang bisa kamu atur sendiri, perbandingan dengan bulan lalu, dan grafik 6 bulan terakhir.' },
+      { kategori: 'Perbaikan', teks: 'Username Instagram di Detail Job sekarang selalu tampil satu baris. Kalau terlalu panjang, ujungnya dipotong dengan titik-titik, dan tombolnya tetap membuka akun yang benar.' },
       { kategori: 'Perbaikan', teks: 'Tampilan Briefing Hari-H dirapikan: tulisan dikecilkan, baris "Berangkat" sejajar dengan ikon dan cuaca, dan jam tiba di lokasi kini memakai pilihan jam (awalnya pukul 06.30) bukan menit.' },
     ]
   },

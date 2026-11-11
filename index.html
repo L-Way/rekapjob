@@ -1043,30 +1043,31 @@
   .bk-tag.ringan{background:#fff0cf; color:#8a5a00;}
   .bk-hint{margin-top:6px; font-size:12px; line-height:1.5; color:#9a4a00; background:#fff7ef; border:1px solid #f3c9a6; border-radius:10px; padding:7px 10px;}
   .bk-hint:empty{display:none;}
-  .bk-ber{margin:0 0 16px;}
+  .bk-ber{margin:22px 0 16px;}
+  .bk-ber + .tgt-card{margin-top:0;}
   .pl-box{margin-top:14px; border:1.5px solid #e6d79a; background:linear-gradient(180deg,#fffdf3,#fff); border-radius:16px; padding:14px;}
   .pl-list{display:grid; gap:2px;}
   .pl-it{display:flex; align-items:center; gap:10px; min-height:33px; font-size:12.5px; line-height:1.35; color:var(--ink); cursor:pointer; padding:2px 0;}
   .pl-it input{flex:none; width:20px; height:20px; accent-color:#241c06; margin:0;}
   .pl-it.on span{color:var(--ink-soft); text-decoration:line-through;}
   .pl-act{display:flex; justify-content:space-between; gap:12px; margin-top:8px; font-size:12px;}
-  .tg-card{margin:0 0 16px; padding:16px; background:#fff; border:1px solid var(--dash-line); border-radius:24px;}
-  .tg-top{display:flex; align-items:baseline; justify-content:space-between; gap:10px;}
-  .tg-top b{font:700 15px 'Bricolage Grotesque',system-ui,sans-serif; color:var(--dash-ink);}
-  .tg-top small{font-size:12px; color:var(--dash-muted);}
-  .tg-val{margin-top:8px; font:700 22px/1.2 'Bricolage Grotesque',system-ui,sans-serif; color:var(--dash-ink);}
-  .tg-val small{font-size:12.5px; font-weight:500; color:var(--dash-muted);}
-  .tg-bar{height:10px; border-radius:99px; background:var(--dash-chip); overflow:hidden; margin-top:10px;}
-  .tg-bar u{display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#FFD42E,#f0a800); text-decoration:none;}
-  .tg-bar.done u{background:linear-gradient(90deg,#4cc36b,#2e9e4f);}
-  .tg-sub{margin-top:6px; font-size:12.5px; line-height:1.45; color:var(--dash-muted);}
-  .tg-sub .up{color:var(--ok); font-weight:700;} .tg-sub .dn{color:var(--danger); font-weight:700;}
-  .tg-chart{display:flex; align-items:flex-end; gap:6px; height:64px; margin-top:12px;}
-  .tg-col{flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:3px;}
-  .tg-col i{display:block; width:100%; border-radius:6px 6px 3px 3px; background:var(--dash-chip); min-height:3px;}
-  .tg-col.now i{background:#FFD42E;}
-  .tg-col span{font-size:10px; color:var(--dash-muted); line-height:1;}
-  .tg-act{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+  .tgt-card{margin:22px 0 16px; padding:16px; background:#fff; border:1px solid var(--dash-line); border-radius:24px;}
+  .tgt-top{display:flex; align-items:baseline; justify-content:space-between; gap:10px;}
+  .tgt-top b{font:700 15px 'Bricolage Grotesque',system-ui,sans-serif; color:var(--dash-ink);}
+  .tgt-top small{font-size:12px; color:var(--dash-muted);}
+  .tgt-val{margin-top:8px; font:700 22px/1.2 'Bricolage Grotesque',system-ui,sans-serif; color:var(--dash-ink);}
+  .tgt-val small{font-size:12.5px; font-weight:500; color:var(--dash-muted);}
+  .tgt-bar{height:10px; border-radius:99px; background:var(--dash-chip); overflow:hidden; margin-top:10px;}
+  .tgt-bar u{display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#FFD42E,#f0a800); text-decoration:none;}
+  .tgt-bar.done u{background:linear-gradient(90deg,#4cc36b,#2e9e4f);}
+  .tgt-sub{margin-top:6px; font-size:12.5px; line-height:1.45; color:var(--dash-muted);}
+  .tgt-sub .up{color:var(--ok); font-weight:700;} .tgt-sub .dn{color:var(--danger); font-weight:700;}
+  .tgt-chart{display:flex; align-items:flex-end; gap:6px; height:64px; margin-top:12px;}
+  .tgt-col{flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:3px;}
+  .tgt-col i{display:block; width:100%; border-radius:6px 6px 3px 3px; background:var(--dash-chip); min-height:3px;}
+  .tgt-col.now i{background:#FFD42E;}
+  .tgt-col span{font-size:10px; color:var(--dash-muted); line-height:1;}
+  .tgt-act{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
   /* Briefing Hari-H */
   .hh-box{margin-top:14px; border:1.5px solid #e6d79a; background:linear-gradient(180deg,#fffdf3,#fff); border-radius:16px; padding:14px; box-shadow:0 6px 18px -10px rgba(122,74,6,.35);}
   .hh-head{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px;}
@@ -6298,16 +6299,16 @@ function tgBerandaHtml(){
   if(prev.omzet>0){ const d=Math.round((cur.omzet-prev.omzet)/prev.omzet*100); banding=`<span class="${d>=0?'up':'dn'}">${d>=0?'▲':'▼'} ${Math.abs(d)}%</span> dibanding ${escapeHtml(prev.nama)} (${escapeHtml(tgRp(prev.omzet))})`; }
   else banding=`${escapeHtml(prev.nama)} belum ada omzet sebagai pembanding`;
   const mx=Math.max(1,...ms.map(m=>m.omzet));
-  const chart=ms.map((m,i)=>`<div class="tg-col${i===5?' now':''}" title="${escapeHtml(m.nama+': '+tgRp(m.omzet)+' · '+m.n+' job')}"><i style="height:${Math.max(3,Math.round(m.omzet/mx*48))}px"></i><span>${escapeHtml(m.nama.slice(0,3))}</span></div>`).join('');
-  return `<div class="tg-card" id="tgCard">
-    <div class="tg-top"><b>Omzet ${escapeHtml(cur.nama)} ${new Date().getFullYear()}</b><small>${cur.n} job</small></div>
-    <div class="tg-val">${escapeHtml(tgRp(cur.omzet))} <small>laba bersih ${escapeHtml(tgRp(cur.bersih))}</small></div>
-    ${T?`<div class="tg-bar${done?' done':''}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><u style="width:${pct}%"></u></div>`:''}
-    <div class="tg-sub">${sub}</div>
-    <div class="tg-sub">${banding}</div>
-    <div class="tg-chart" aria-label="Omzet 6 bulan terakhir">${chart}</div>
-    <div class="tg-sub" style="margin-top:8px;">Dihitung dari tanggal acara, termasuk job yang masih dijadwalkan bulan ini.</div>
-    <div class="tg-act"><button type="button" class="dash-btn line" data-tgt-atur="1">${T?'Ubah target':'Atur target'}</button><button type="button" class="dash-btn line" data-goto="statistik">Lihat statistik</button></div>
+  const chart=ms.map((m,i)=>`<div class="tgt-col${i===5?' now':''}" title="${escapeHtml(m.nama+': '+tgRp(m.omzet)+' · '+m.n+' job')}"><i style="height:${Math.max(3,Math.round(m.omzet/mx*48))}px"></i><span>${escapeHtml(m.nama.slice(0,3))}</span></div>`).join('');
+  return `<div class="tgt-card" id="tgCard">
+    <div class="tgt-top"><b>Omzet ${escapeHtml(cur.nama)} ${new Date().getFullYear()}</b><small>${cur.n} job</small></div>
+    <div class="tgt-val">${escapeHtml(tgRp(cur.omzet))} <small>laba bersih ${escapeHtml(tgRp(cur.bersih))}</small></div>
+    ${T?`<div class="tgt-bar${done?' done':''}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><u style="width:${pct}%"></u></div>`:''}
+    <div class="tgt-sub">${sub}</div>
+    <div class="tgt-sub">${banding}</div>
+    <div class="tgt-chart" aria-label="Omzet 6 bulan terakhir">${chart}</div>
+    <div class="tgt-sub" style="margin-top:8px;">Dihitung dari tanggal acara, termasuk job yang masih dijadwalkan bulan ini.</div>
+    <div class="tgt-act"><button type="button" class="dash-btn line" data-tgt-atur="1">${T?'Ubah target':'Atur target'}</button><button type="button" class="dash-btn line" data-goto="statistik">Lihat statistik</button></div>
   </div>`;
 }
 function tgAturModal(){
@@ -14407,7 +14408,7 @@ function bkBerandaHtml(){
   if(!pairs.length) return '';
   pairs.sort((x,y)=>(x.a.tanggalAcara<y.a.tanggalAcara?-1:1));
   const rows=pairs.slice(0,3).map(p=>`<button type="button" class="bk-item" onclick="openJobDetailModal('${escapeHtml(String(p.a.id))}')"><span><b>${escapeHtml(hhJudul(p.a))}</b> dan <b>${escapeHtml(hhJudul(p.b))}</b><small>${escapeHtml(fmtTglJob(p.a)+bkJamTeks(p.a)+' · '+fmtTglJob(p.b)+bkJamTeks(p.b))}</small></span><span class="bk-tag">Bentrok</span></button>`).join('');
-  return `<div class="bk-box bk-ber"><div class="bk-head">${ic('alert')} Jadwal bentrok<small>${pairs.length} pasang</small></div>${rows}${pairs.length>3?`<div class="tg-sub" style="margin-top:6px;">Dan ${pairs.length-3} pasang lainnya.</div>`:''}</div>`;
+  return `<div class="bk-box bk-ber"><div class="bk-head">${ic('alert')} Jadwal bentrok<small>${pairs.length} pasang</small></div>${rows}${pairs.length>3?`<div class="tgt-sub" style="margin-top:6px;">Dan ${pairs.length-3} pasang lainnya.</div>`:''}</div>`;
 }
 document.addEventListener('input',e=>{ const id=e.target&&e.target.id; if(id==='tanggalAcaraInput'||id==='tanggalSelesaiInput'||id==='jamAcaraInput') setTimeout(()=>{ try{ bkFormHint(); }catch(_){} },0); });
 document.addEventListener('change',e=>{
@@ -24948,7 +24949,8 @@ html.kc-open{background:var(--kb)}
     kc.style.height=h+'px';kc.style.top='0px';
     /* iOS menggeser (pan) layar saat keyboard muncul; ikuti dengan transform supaya chat selalu pas di area tampak */
     kc.style.transform=t?'translate3d(0,'+t+'px,0)':'';
-    if(window.scrollY||document.documentElement.scrollTop){window.scrollTo(0,0)}
+    /* Jangan memaksa scroll ke atas selagi keyboard aktif: iOS sedang menggeser layar sendiri, dan melawannya membuat layar bergetar. */
+    if(!kb&&(window.scrollY||document.documentElement.scrollTop)){window.scrollTo(0,0)}
     if(near&&m)m.scrollTop=m.scrollHeight;
   }
   /* Selama animasi keyboard iOS, ukur ulang tiap frame (event resize iOS sering terlambat/terputus) */
@@ -24972,7 +24974,7 @@ html.kc-open{background:var(--kb)}
   window.addEventListener('resize',function(){track(900)});
   window.addEventListener('orientationchange',function(){setTimeout(function(){lastH=lastT=-1;track(900)},250)});
   document.addEventListener('focusin',function(e){if(on()&&e.target&&e.target.id==='ki'){lastH=lastT=-1;track(1200)}});
-  document.addEventListener('focusout',function(e){if(on()){setTimeout(function(){window.scrollTo(0,0);track(900)},50)}});
+  document.addEventListener('focusout',function(e){if(on()){setTimeout(function(){track(900);setTimeout(function(){var h=vv?vv.height:window.innerHeight;if(h>=window.innerHeight-120)window.scrollTo(0,0)},400)},50)}});
   /* Pengaman iPhone: kadang event resize tidak datang saat keyboard menutup sendiri (mis. karena kamera dibuka),
      sehingga tinggi & posisi lama (ukuran saat keyboard muncul) tertinggal dan layar chat/kamera terpotong di tengah.
      Selama ruang chat terbuka, ukur ulang tiap 0,3 detik; fit() tidak berbuat apa-apa kalau ukurannya tidak berubah. */
@@ -27482,6 +27484,9 @@ header.topbar .sync-dot:focus-visible{outline-color:#241c06;}
 (function(){
   var kc=document.getElementById('kc'), vv=window.visualViewport;
   if(!kc) return;
+  /* iPhone/iPad diatur sendiri oleh skrip kcWaFixJs (mengikuti geseran layar). Pengaman Android ini justru ikut mengecilkan
+     tinggi saat keyboard masih beranimasi dan membuat layar bergetar, jadi di iOS tidak dijalankan. */
+  if(/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)) return;
   function on(){ return kc.classList.contains('on'); }
   function correct(){
     if(!on()) return;

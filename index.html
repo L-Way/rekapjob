@@ -1070,6 +1070,19 @@
   .tgt-col.now i{background:#FFD42E;}
   .tgt-col span{font-size:10px; color:var(--dash-muted); line-height:1;}
   .tgt-act{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+  /* Biaya operasional per job */
+  .ops-box{margin-top:14px; border:1.5px solid #e6d79a; background:#fffdf3; border-radius:16px; padding:14px;}
+  .ops-row{display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px dashed #eadfae; font-size:13px; color:var(--ink);}
+  .ops-row span{flex:1; min-width:0; overflow-wrap:anywhere;}
+  .ops-row b{flex:none; font-weight:800;}
+  .ops-del{flex:none; width:30px; height:30px; border-radius:50%; border:0; background:#f6efd0; color:var(--ink-soft); display:grid; place-items:center; cursor:pointer; padding:0;}
+  .ops-del .ic{width:14px; height:14px;}
+  .ops-empty{font-size:12.5px; line-height:1.5; color:var(--ink-soft); padding:4px 0 2px;}
+  .ops-chips{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 8px;}
+  .ops-chip{font:inherit; font-size:12px; font-weight:700; padding:6px 11px; border-radius:99px; border:1px solid #e6d79a; background:#fff; color:var(--ink); cursor:pointer;}
+  .ops-add{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px;}
+  .ops-add input[type=text]{width:100%; box-sizing:border-box;}
+  .ops-add .btn{grid-column:1 / -1;}
   /* Briefing Hari-H */
   .hh-box{margin-top:14px; border:1.5px solid #e6d79a; background:linear-gradient(180deg,#fffdf3,#fff); border-radius:16px; padding:14px; box-shadow:0 6px 18px -10px rgba(122,74,6,.35);}
   .hh-head{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px;}
@@ -5737,6 +5750,7 @@ function kmFakta(j,projectId){
 // job lama yang sudah selesai & lunas tidak otomatis dibuat di Meja Kaone (bisa manual dari Detail Job)
 function kmLayak(j){
   if(j.kmSkip||j.kmOff) return false;   // Lacak dimatikan -> dilewati diam-diam (bukan galat, tidak dihitung gagal)
+  if(j.kmPid) return true;   // sudah tersambung ke Meja Kaone: perubahan (mis. Sudah dijemput) selalu dikirim, walau tanggal acara sudah lewat
   // v-baru: hanya job HARI INI dan seterusnya yang dikirim otomatis ke Meja Kaone (termasuk yang sudah tersambung: job lewat tidak dikirim ulang).
   // Job lama tetap bisa dibuat manual lewat tombol "Buat di Meja Kaone" / "Sinkronkan" di Detail Job.
   const f=kmFakta(j), akhir=f.event_end||f.event_date||'';
@@ -9821,7 +9835,7 @@ function hitungBersih(j){
   const sedekah = j.sedekahStatus==='Sudah' ? (Number(j.sedekahNominal)||0) : 0;
   // Harga Paket Vendor hanya relevan (dan dikurangkan) kalau vendor job ini selain Kaone Motret.
   const setoranShia = (j.vendor && j.vendor!=='Kaone Motret') ? (Number(j.setoranShia)||0) : 0;
-  return penghasilan - biayaCetak - honorTim - diskon - sedekah - setoranShia;
+  return penghasilan - biayaCetak - honorTim - diskon - sedekah - setoranShia - hitungBiayaOps(j);
 }
 // Sisa pembayaran = (Penghasilan Dari Klien/Mitra - Diskon) dikurangi DP yang sudah diterima.
 // Diskon mengurangi harga paket yang sebenarnya harus dibayar klien, jadi harus ikut
@@ -9859,6 +9873,7 @@ function keuanganRowsUntukRole(j){
       ...((j.vendor && j.vendor!=='Kaone Motret') ? [['Harga Paket Vendor', fmtRp(j.setoranShia)]] : []),
       ['Biaya Cetak', fmtRp(j.biayaCetak)],
       ['Honor Tim', fmtRp(j.honorTim)],
+      ...(hitungBiayaOps(j)>0 ? [['Biaya Operasional', fmtRp(hitungBiayaOps(j))]] : []),
       // Sedekah baru mengurangi Penghasilan Bersih setelah ditunaikan (status Sudah).
       ['Sedekah', `${fmtRp(j.sedekahNominal)} (${j.sedekahStatus==='Sudah' ? 'Sudah ditunaikan' : 'Belum ditunaikan'})`],
       ['Penghasilan Bersih', fmtRp(hitungBersih(j))],
@@ -11830,6 +11845,7 @@ function buildJobFormHtml(j){
               <div class="jf-bd-row"><span>Penghasilan dari klien</span><b id="bd2Penghasilan">Rp 0</b></div>
               <div class="jf-bd-row is-minus"><span>Biaya cetak</span><b id="bd2Cetak">Rp 0</b></div>
               <div class="jf-bd-row is-minus"><span>Honor tim</span><b id="bd2Honor">Rp 0</b></div>
+              <div class="jf-bd-row is-minus"><span>Biaya operasional (isi di Detail Job)</span><b id="bd2Ops">Rp 0</b></div>
               <div class="jf-bd-row is-minus"><span>Diskon</span><b id="bd2Diskon">Rp 0</b></div>
               <div class="jf-bd-row is-minus"><span id="bd2SedekahLbl">Sedekah</span><b id="bd2Sedekah">Rp 0</b></div>
               <div class="jf-bd-row is-minus"><span id="bd2VendorLbl">Harga paket vendor</span><b id="bd2Vendor">Rp 0</b></div>
@@ -12253,6 +12269,7 @@ function updateCalc(){
     diskon: parseRibuan(fd.get('diskon')),
     sedekahStatus: fd.get('sedekahStatus'),
     setoranShia: parseRibuan(fd.get('setoranShia')),
+    biayaOps: editingId ? ((jobs.find(x=>x.id===editingId)||{}).biayaOps||[]) : [],   // diisi lewat Detail Job; hanya dibawa supaya angka bersih di sini sama dengan di tempat lain
   };
   const sedekah = hitungSedekah(tmp);
   const sedekahInput = document.getElementById('sedekahNominalInput');
@@ -12280,6 +12297,7 @@ function updateCalc(){
   put('bd2Penghasilan', tmp.penghasilan);
   put('bd2Cetak', tmp.biayaCetak);
   put('bd2Honor', tmp.honorTim);
+  put('bd2Ops', hitungBiayaOps(tmp));
   put('bd2Diskon', tmp.diskon);
   put('bd2Sedekah', sedekahEff);
   put('bd2Vendor', vendorEff);
@@ -14343,6 +14361,59 @@ function hhSalin(jobId){
   copyToClipboard(baris.join('\n'),'Briefing disalin');
 }
 
+/* ========== Biaya operasional per job (Admin) ==========
+   Daftar biaya {nama, nominal} per job (bensin, makan, parkir/tol, dan lainnya). Totalnya mengurangi Penghasilan Bersih.
+   Disimpan di job.biayaOps dan disembunyikan dari akun Tim oleh fungsi database kaone_job_tim. */
+const OPS_PRESET=['Bensin','Makan','Parkir/Tol','Sewa alat','Lainnya'];
+function opsDaftar(j){ return (j && Array.isArray(j.biayaOps)) ? j.biayaOps.filter(x=>x && Number(x.nominal)>0) : []; }
+function hitungBiayaOps(j){ return opsDaftar(j).reduce((a,x)=>a+(Number(x.nominal)||0),0); }
+function opsBoxHtml(j){
+  if(!isAdmin()||!j) return '';
+  const ds=opsDaftar(j), tot=hitungBiayaOps(j), id=escapeHtml(String(j.id));
+  const rows=ds.map((x,i)=>`<div class="ops-row"><span>${escapeHtml(x.nama||'Biaya')}</span><b>${escapeHtml(fmtRp(x.nominal))}</b><button type="button" class="ops-del" data-ops-del="${i}" data-ops-job="${id}" aria-label="Hapus ${escapeHtml(x.nama||'biaya')}">${ic('close')}</button></div>`).join('');
+  const chips=OPS_PRESET.map(n=>`<button type="button" class="ops-chip" data-ops-chip="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join('');
+  return `<div class="ops-box" id="opsBox"><div class="hh-head">${ic('money')} Biaya operasional<span class="hh-when">${tot?escapeHtml(fmtRp(tot)):'Belum ada'}</span></div>
+    ${rows||'<div class="ops-empty">Catat bensin, makan, parkir, dan biaya lain untuk job ini. Totalnya otomatis mengurangi Penghasilan Bersih.</div>'}
+    <div class="ops-chips">${chips}</div>
+    <div class="ops-add"><input type="text" id="opsNama" maxlength="40" placeholder="Nama biaya" autocomplete="off"><div class="rp-input-wrap"><span class="rp-prefix">Rp</span><input type="text" inputmode="numeric" class="money-input" id="opsNominal" placeholder="0" autocomplete="off" oninput="opsFmt(this)"></div><button type="button" class="btn btn-primary" data-ops-add="${id}">Tambah biaya</button></div></div>`;
+}
+function opsFmt(el){ const d=String(el.value||'').replace(/\D/g,'').slice(0,10); el.value=d?fmtRibuan(Number(d)):''; }
+function opsBuka(jobId){
+  const m=document.querySelector('.modal'), st=m?m.scrollTop:0;
+  openJobDetailModal(jobId);
+  [0,60].forEach(d=>setTimeout(()=>{ const m2=document.querySelector('.modal'); if(m2) m2.scrollTop=st; },d));
+}
+function opsTambah(jobId){
+  if(!isAdmin()) return;
+  const j=jobs.find(x=>String(x.id)===String(jobId)); if(!j) return;
+  const nama=(document.getElementById('opsNama')?.value||'').trim().slice(0,40)||'Biaya lain';
+  const nominal=Math.round(parseRibuan(document.getElementById('opsNominal')?.value));
+  if(!(nominal>0)){ toast('Isi nominal biayanya dulu'); document.getElementById('opsNominal')?.focus(); return; }
+  if(nominal>=1e9){ toast('Nominal terlalu besar'); return; }
+  if(!Array.isArray(j.biayaOps)) j.biayaOps=[];
+  if(j.biayaOps.length>=20){ toast('Maksimal 20 biaya per job'); return; }
+  j.biayaOps.push({nama,nominal});
+  saveJobs(); toast('Biaya dicatat'); opsBuka(j.id);
+}
+function opsHapus(jobId,i){
+  if(!isAdmin()) return;
+  const j=jobs.find(x=>String(x.id)===String(jobId)); if(!j||!Array.isArray(j.biayaOps)) return;
+  const d=opsDaftar(j), x=d[i]; if(!x) return;
+  j.biayaOps=j.biayaOps.filter(y=>y!==x);
+  saveJobs(); toast('Biaya dihapus'); opsBuka(j.id);
+}
+document.addEventListener('click',e=>{
+  const t=e.target&&e.target.closest?e.target:null; if(!t) return;
+  const ch=t.closest('[data-ops-chip]'); if(ch){ const n=document.getElementById('opsNama'); if(n){ n.value=ch.dataset.opsChip; document.getElementById('opsNominal')?.focus(); } return; }
+  const ad=t.closest('[data-ops-add]'); if(ad){ opsTambah(ad.dataset.opsAdd); return; }
+  const dl=t.closest('[data-ops-del]'); if(dl){ opsHapus(dl.dataset.opsJob, parseInt(dl.dataset.opsDel,10)); return; }
+});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter') return;
+  const id=e.target&&e.target.id; if(id!=='opsNama'&&id!=='opsNominal') return;
+  e.preventDefault(); const b=document.querySelector('[data-ops-add]'); if(b) opsTambah(b.dataset.opsAdd);
+});
+
 /* Username Instagram: selalu satu baris DAN terbaca penuh. Huruf dikecilkan seperlunya (minimal 8px);
    kalau masih belum muat, tulisannya bisa digeser ke samping. */
 function igMuat(root,ulang){
@@ -14670,6 +14741,7 @@ function openJobDetailModal(jobId){
     ${bkBoxHtml(j)}
     ${hhBoxHtml(j)}
     ${plBoxHtml(j)}
+    ${opsBoxHtml(j)}
     ${isAdmin() ? acaraSelesaiBoxHtml(j) : ''}
     ${kwitansiStatusHtml(j)}
     ${waSelesaiBoxHtml(j)}
@@ -20252,6 +20324,7 @@ const CHANGELOG = [
       { kategori: 'Fitur', teks: 'Dua pesan WhatsApp baru untuk klien di Detail Job: "Pengingat Pelunasan" (muncul kalau masih ada sisa pembayaran, berisi total, DP, dan sisa) dan "Terima Kasih" (muncul mulai hari acara). Isinya bisa diubah di Pengaturan, Template Pesan WhatsApp.' },
       { kategori: 'Fitur', teks: 'Daftar perlengkapan hari-H di Detail Job, menyesuaikan jenis acara (baterai, kartu memori, lensa, flash, dan lainnya). Bisa dicentang satu per satu dan daftarnya bisa diubah Admin lewat tombol "Ubah daftar".' },
       { kategori: 'Fitur', teks: 'Beranda Admin punya kartu omzet bulan ini: total omzet dan laba bersih, progres menuju target bulanan yang bisa kamu atur sendiri, perbandingan dengan bulan lalu, dan grafik 6 bulan terakhir.' },
+      { kategori: 'Fitur', teks: 'Biaya operasional per job (Admin): catat bensin, makan, parkir/tol, sewa alat, atau biaya lain langsung di Detail Job dengan tombol cepat. Totalnya otomatis mengurangi Penghasilan Bersih, ikut dihitung di kartu omzet Beranda dan Statistik, dan tidak terlihat oleh akun Tim.' },
       { kategori: 'Perbaikan', teks: 'Username Instagram di Detail Job sekarang selalu tampil satu baris dan terbaca penuh: username panjang dipindah ke baris sendiri selebar kartu dan hurufnya dikecilkan seperlunya.' },
       { kategori: 'Perbaikan', teks: 'Tampilan Briefing Hari-H dirapikan: tulisan dikecilkan, baris "Berangkat" sejajar dengan ikon dan cuaca, dan jam tiba di lokasi kini memakai pilihan jam (awalnya pukul 06.30) bukan menit.' },
     ]
@@ -27237,7 +27310,7 @@ function stBody(){
   <div class="rekap-period-info">${ic('calendar')} <b>${esc(periodTxt)}</b> · ${n} dari ${jobs.length} job</div></div></div>`;
   if(!n) return h+`<div class="card"><div class="empty-state"><div class="em">${ic('chart')}</div>Belum ada job pada periode ini.</div></div>`;
 
-  const hari=N(getJobDurasiHari), omzet=N(hitungOmzet), bersih=N(hitungBersih), cetak=N(j=>j.biayaCetak), honor=N(j=>j.honorTim), diskon=N(j=>j.diskon);
+  const hari=N(getJobDurasiHari), omzet=N(hitungOmzet), bersih=N(hitungBersih), cetak=N(j=>j.biayaCetak), honor=N(j=>j.honorTim), diskon=N(j=>j.diskon), opsT=N(hitungBiayaOps);
   const lunasN=L.filter(j=>j.statusPembayaran==='Lunas'||hitungSisaPembayaran(j)<=0).length;
   const piutang=L.reduce((s,j)=>s+((j.statusPembayaran==='Lunas')?0:Math.max(0,hitungSisaPembayaran(j))),0);
   const sedS=L.filter(j=>j.sedekahStatus==='Sudah'), sedB=L.filter(j=>j.sedekahStatus!=='Sudah');
@@ -27248,7 +27321,7 @@ function stBody(){
   // ---- ringkasan angka
   h+=`<div class="st-grid">`+(adm?
     k('Omzet',shortRp(omzet),fmtRp(omzet)+dl(omzet,pOm),'gold')+k('Laba Bersih',shortRp(bersih),`Margin ${pc(bersih,omzet)}%`+dl(bersih,pBr),'dark')+k('Total Job',n,`${hari} hari kerja`+dl(n,P?P.length:0))+k('Rata-rata / Job',shortRp(omzet/n),`Laba ${shortRp(bersih/n)}`)
-    +k('Belum Dibayar',shortRp(piutang),`${n-lunasN} job belum lunas`,piutang?'red':'grn')+k('Biaya Cetak',shortRp(cetak),`${pc(cetak,omzet)}% dari omzet`)+k('Honor Tim',shortRp(honor),`${pc(honor,omzet)}% dari omzet`)+k('Diskon',shortRp(diskon),`${L.filter(j=>Number(j.diskon)>0).length} job berdiskon`)
+    +k('Belum Dibayar',shortRp(piutang),`${n-lunasN} job belum lunas`,piutang?'red':'grn')+k('Biaya Cetak',shortRp(cetak),`${pc(cetak,omzet)}% dari omzet`)+k('Honor Tim',shortRp(honor),`${pc(honor,omzet)}% dari omzet`)+k('Diskon',shortRp(diskon),`${L.filter(j=>Number(j.diskon)>0).length} job berdiskon`)+k('Biaya Operasional',shortRp(opsT),`${pc(opsT,omzet)}% dari omzet`)+k('Biaya Ops / Job',shortRp(opsT/n),`${L.filter(j=>hitungBiayaOps(j)>0).length} dari ${n} job tercatat`)
     :k('Total Job',n,`${hari} hari kerja`+dl(n,P?P.length:0),'gold')+k('Edit Selesai',pc(editN,n)+'%',`${editN} dari ${n}`)+k('Cetak Selesai',pc(cetN,n)+'%',`${cetN} dari ${n}`)+k('Honor Saya',shortRp(N(mine)),fmtRp(N(mine)),'dark'))+`</div>`;
 
   // ---- tren bulanan

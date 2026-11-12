@@ -5793,6 +5793,7 @@ async function kmSinkron(opts){
     for(const j of jobs){
       if(n>=30||kmFatal) break;
       if(!kmLayak(j)) continue;
+      { const sg=JSON.stringify(kmFakta(j)); if(j.kmSig===sg||(j.kmErrSig===sg&&Date.now()-(j.kmErrAt||0)<600000)) continue; }   // tidak berubah / sedang jeda galat: lewati tanpa dihitung ke batas 30
       n++;
       try{ const h=await kmKirim(j,false); if(h===true) ubah++; else if(h==='off') lewat++; }catch(e){ gagal++; }
     }

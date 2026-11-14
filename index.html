@@ -3986,6 +3986,23 @@ body.chat-only .to-top-btn,body.chat-only .bottomnav,body.chat-only .more-layer,
   .dash .dash-col-b .dash-sec{margin-top:0;}
   .dash .dash-col-a > :first-child{margin-top:0;}
 }
+/* Beranda memenuhi layar lebar: lebih lebar di >=1400px, tiga kolom di >=1560px */
+@media(min-width:1400px){
+  main:has(.dash){max-width:1520px;}
+  .dash{max-width:1480px;}
+  .dash .dash-cols{column-gap:34px;}
+}
+@media(min-width:1560px){
+  main:has(.dash){max-width:1800px;}
+  .dash{max-width:1760px;}
+  .dash .dash-cols{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,.92fr); column-gap:30px;}
+  .dash .dash-col-a{display:contents;}
+  .dash .dash-sub-1{grid-column:1; min-width:0;}
+  .dash .dash-sub-2{grid-column:2; min-width:0;}
+  .dash .dash-col-b{grid-column:3; min-width:0;}
+  .dash .dash-sub > :first-child{margin-top:0;}
+  .dash .dash-sub-2 > :first-child{margin-top:0;}
+}
 @media(min-width:1280px){
   .cal-layout{display:grid; grid-template-columns:minmax(0,500px) minmax(0,1fr); column-gap:30px; align-items:start;}
   .cal-main{position:sticky; top:112px;}
@@ -11073,17 +11090,20 @@ function viewBeranda(){
 
     <div class="dash-cols">
       <div class="dash-col dash-col-a">
-        ${jepiCard}
+        <div class="dash-sub dash-sub-1">
+          ${jepiCard}
 
-        ${pesananBannerHtml()}
+          ${pesananBannerHtml()}
 
-        ${nextCard}
+          ${nextCard}
+        </div>
+        <div class="dash-sub dash-sub-2">
+          ${weekHtml}
 
-        ${weekHtml}
+          ${bkBerandaHtml()}
 
-        ${bkBerandaHtml()}
-
-        ${tgBerandaHtml()}
+          ${tgBerandaHtml()}
+        </div>
       </div>
       <div class="dash-col dash-col-b">
         <h2 class="dash-sec">Perlu dikerjakan ${todos.length ? `<small>${totalTodo} item</small>` : ''}</h2>
@@ -11288,6 +11308,12 @@ function plNormalizeCore(sourceKey, f){
         if(hari==='2') out.jenis = 'Margondang 2 Hari';
         else if(hari==='3'){ out.jenis = 'Lainnya'; out.jenisLain = 'Margondang 3 Hari'; }
         else out.jenis = 'Margondang 1 Hari';
+        // Acara 2-3 hari berurutan: tanggal selesai = tanggal mulai + (hari - 1), agar kalender dan "7 hari ke depan" benar.
+        { const nHari = parseInt(hari, 10);
+          if(out.tanggal && nHari>1 && out.tanggal.start && out.tanggal.end===out.tanggal.start){
+            const d = new Date(out.tanggal.start+'T00:00:00'); d.setDate(d.getDate()+nHari-1);
+            out.tanggal.end = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+          } }
         { const ws = plParseWaktu(f['Waktu Selesai Acara (Perkiraan)']) || plParseWaktu(f['Waktu Selesai Acara']);
           if(ws) det('waktuSelesai', ws); }
         det('konsepPakaian', g('Konsep Pakaian') || g('Adat/Konsep Pakaian'));
@@ -11645,6 +11671,7 @@ function plApplyToForm(form, data){
    ['Titik Koordinat','#koordinatInput'],['Paket','[name="paket"]'],['Penghasilan','[name="penghasilan"]']
   ].forEach(([l,sel])=>{ const v = val(sel); if(!v || v==='0') kosong.push(l); });
   if(kosong.length) info.push('Masih kosong (tidak ada di data pricelist): ' + kosong.join(', ') + '.');
+  setTimeout(function(){ try{ jobHitungDiskonVoucher(false); }catch(_){} }, 150);   // hitung diskon dari voucher (kalau ada kodenya)
   return { filled, review, info, failed, autoSel, kosong };
 }
 
@@ -11797,6 +11824,7 @@ function buildJobFormHtml(j){
           <div class="form-grid">
             ${rpField('Penghasilan Dari Klien/Mitra','penghasilan',d.penghasilan)}
             ${rpField('Diskon (sesuai voucher)','diskon',d.diskon)}
+      <div class="full" style="margin-top:-4px;"><div class="field-hint" id="diskonVoucherHint" style="margin:0 0 6px;"></div><button type="button" class="btn btn-outline" data-hitung-voucher>Hitung dari voucher</button></div>
             ${rpField('DP (uang muka)','dp',d.dp)}
             <div>
               <label>Status Pembayaran</label>
@@ -19453,6 +19481,62 @@ async function vcImpor(){
   }catch(e){ console.error(e); alert('Gagal mengimpor: '+(e.message||e)); }
 }
 
+
+/* ---------- Diskon otomatis dari voucher (Input/Edit Job) ----------
+   Memakai tabel voucher di database (satu database dengan pricelist). Diskon = persen x Penghasilan (harga sebelum diskon)
+   atau nominal tetap (tidak lebih dari Penghasilan). Hanya mengisi kolom Diskon kalau masih kosong atau sebelumnya
+   diisi otomatis; angka yang Anda ketik sendiri tidak ditimpa kecuali menekan "Hitung dari voucher". */
+async function vcHitungDiskon(kodeMentah, dasar){
+  const kode = String(kodeMentah||'').trim().toUpperCase().replace(/\s+/g,'');
+  if(!kode) return { ok:false, kosong:true };
+  if(!supabaseClient || !cloudSyncEnabled) return { ok:false, pesan:'Voucher tidak bisa dicek (offline).' };
+  let data;
+  try{
+    const r = await supabaseClient.from('kaone_motret_voucher').select('kode,tipe,nilai,aktif,berlaku_sampai,kuota,dipakai').eq('kode', kode).maybeSingle();
+    if(r.error) throw r.error; data = r.data;
+  }catch(e){ console.error('Cek voucher gagal', e); return { ok:false, pesan:'Gagal mengecek voucher. Cek koneksi.' }; }
+  if(!data) return { ok:false, pesan:'Kode "'+kode+'" tidak ada di daftar voucher (Pengaturan > Voucher Diskon).' };
+  const base = Number(dasar)||0, persen = data.tipe==='percent', nilai = Number(data.nilai)||0;
+  const peringatan = [];
+  if(!data.aktif) peringatan.push('Voucher ini sedang dimatikan.');
+  if(data.berlaku_sampai && new Date(data.berlaku_sampai).getTime() < Date.now()) peringatan.push('Voucher sudah lewat masa berlakunya.');
+  if(data.kuota!=null && Number(data.dipakai||0) > Number(data.kuota)) peringatan.push('Pemakaian voucher melebihi batas.');
+  if(persen && base<=0) return { ok:true, perluDasar:true, kode, tipe:data.tipe, nilai, peringatan };
+  let diskon = persen ? Math.round(base*nilai/100) : Math.round(nilai);
+  if(base>0) diskon = Math.min(diskon, base);
+  return { ok:true, kode, tipe:data.tipe, nilai, diskon, peringatan };
+}
+let JF_VC_SEQ = 0;
+async function jobHitungDiskonVoucher(paksa){
+  const f = document.getElementById('jobForm'); if(!f) return;
+  const kodeEl = f.querySelector('.da-input[data-da-key="kodeVoucher"]'), pengEl = f.querySelector('[name="penghasilan"]'), diskEl = f.querySelector('[name="diskon"]'), hint = document.getElementById('diskonVoucherHint');
+  if(!diskEl) return;
+  const setHint = t => { if(hint) hint.textContent = t || ''; };
+  const seq = ++JF_VC_SEQ, kode = kodeEl ? kodeEl.value : '';
+  const setDiskon = n => { diskEl.value = n ? fmtRibuan(n) : ''; if(n) diskEl.dataset.autoVoucher = '1'; else delete diskEl.dataset.autoVoucher; diskEl.dispatchEvent(new Event('input', {bubbles:true})); };
+  if(!String(kode).trim()){ setHint(''); if(diskEl.dataset.autoVoucher==='1') setDiskon(0); return; }
+  const dasar = parseRibuan(pengEl ? pengEl.value : '') || 0;
+  setHint('Memeriksa voucher...');
+  const r = await vcHitungDiskon(kode, dasar);
+  if(seq !== JF_VC_SEQ) return;
+  const kini = parseRibuan(diskEl.value) || 0;   // dibaca SETELAH menunggu database: nilai terbaru, bukan yang lama
+  if(!r.ok){ setHint(r.pesan || ''); return; }
+  const w = r.peringatan.length ? ' ⚠ ' + r.peringatan.join(' ') : '';
+  const nama = 'Voucher ' + r.kode + ' (' + (r.tipe==='percent' ? (r.nilai+'%') : fmtRp(r.nilai)) + ')';
+  if(r.perluDasar){ setHint(nama + ': isi Penghasilan dulu agar diskon persen bisa dihitung.' + w); return; }
+  if(paksa===true || kini===0 || diskEl.dataset.autoVoucher==='1'){ setDiskon(r.diskon); setHint(nama + ' → Diskon ' + fmtRp(r.diskon) + ' diisi otomatis.' + w); }
+  else if(kini !== r.diskon) setHint('⚠ ' + nama + ' menghasilkan ' + fmtRp(r.diskon) + ', tetapi Diskon terisi ' + fmtRp(kini) + '. Periksa, atau tekan "Hitung dari voucher".' + w);
+  else setHint(nama + ' cocok dengan Diskon: ' + fmtRp(kini) + '.' + w);
+}
+document.addEventListener('change', e=>{
+  const t = e.target; if(!e.isTrusted || !t || !t.matches) return;   // hanya perubahan yang diketik pengguna; pengisian otomatis ditangani setelah pesanan diterapkan
+  if(t.matches('#jobForm .da-input[data-da-key="kodeVoucher"], #jobForm [name="penghasilan"]')) jobHitungDiskonVoucher(false);
+});
+document.addEventListener('input', e=>{
+  const t = e.target; if(e.isTrusted && t && t.matches && t.matches('#jobForm [name="diskon"]')) delete t.dataset.autoVoucher;   // diketik sendiri: jangan ditimpa
+});
+document.addEventListener('click', e=>{ if(e.target.closest && e.target.closest('[data-hitung-voucher]')) jobHitungDiskonVoucher(true); });
+
 function viewPengaturan(){
   const tabs = (isAdmin() ? [['bisnis','money','Bisnis']] : []).concat([['akun','lock','Akun']], isAdmin() ? [['api','settings','Integrasi']] : [], [['data','folder','Data']]);
   if(!tabs.some(t=>t[0]===settingsTab)) settingsTab = tabs[0][0];
@@ -20311,12 +20395,29 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.32.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.34.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.34.0',
+    tanggal: '15 November 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Diskon di form Input/Edit Job kini dihitung otomatis dari voucher. Begitu Kode Voucher terisi (dari pesanan klien atau diketik sendiri), kolom Diskon terisi sesuai voucher di database (persen dari Penghasilan atau nominal tetap), lengkap dengan peringatan kalau voucher dimatikan, lewat masa berlaku, atau pemakaiannya melebihi batas. Ada tombol "Hitung dari voucher" untuk menghitung ulang, dan angka Diskon yang Anda ketik sendiri tidak ditimpa. Kalau Diskon dari klien berbeda dengan hitungan voucher, muncul tanda peringatan.' },
+      { kategori: 'Perbaikan', teks: 'Pesanan Margondang 2 atau 3 hari kini otomatis mengisi Tanggal Selesai (mis. mulai 30 Des, 2 hari menjadi selesai 31 Des), sehingga kalender dan "7 hari ke depan" langsung benar.' },
+    ]
+  },
+  {
+    version: '1.33.0',
+    tanggal: '12 November 2026',
+    items: [
+      { kategori: 'Peningkatan', teks: 'Beranda di layar PC lebih lebar dan padat. Isinya kini memenuhi layar, dan di layar lebar (sekitar 1560 piksel ke atas) terbagi menjadi tiga kolom: job berikutnya, jadwal dan omzet, serta daftar "Perlu dikerjakan". Tampilan HP tidak berubah.' },
+      { kategori: 'Perbaikan', teks: 'Job yang sudah tersambung ke Meja Kaone kini selalu ikut diperbarui, termasuk perubahan seperti "Sudah dijemput", walau tanggal acaranya sudah lewat.' },
+      { kategori: 'Perbaikan', teks: 'Sinkronisasi ke Meja Kaone tidak lagi tersendat oleh job lama. Job yang datanya tidak berubah dilewati begitu saja, sehingga job baru dan job yang berubah selalu mendapat giliran dikirim.' },
+    ]
+  },
   {
     version: '1.32.0',
     tanggal: '11 November 2026',

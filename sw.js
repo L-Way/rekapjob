@@ -6,7 +6,7 @@
    - Aset statis (ikon, manifest): cache-first */
 importScripts('push-handler.js');
 
-const CACHE = 'kaone-motret-v18';
+const CACHE = 'kaone-motret-v19';
 const CORE = [
   './',
   'index.html',
@@ -42,6 +42,8 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;   // Supabase, font, dll: langsung ke jaringan
+  // Halaman isian klien (isi.html) berdiri sendiri: jangan dialihkan ke aplikasi dan jangan dicache, selalu dari jaringan.
+  if (url.pathname.endsWith('/isi.html')) return;
 
   const isPage = req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('index.html');
   if (isPage) {

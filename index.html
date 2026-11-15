@@ -1083,6 +1083,23 @@
   .ops-add{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px;}
   .ops-add input[type=text]{width:100%; box-sizing:border-box;}
   .ops-add .btn{grid-column:1 / -1;}
+  /* Link isian klien */
+  .kl-box .kl-sub{font-size:12px; color:var(--ink-soft); margin:-2px 0 8px;}
+  .kl-link{font-size:12px; font-weight:700; background:#fff; border:1px dashed #e6d79a; border-radius:10px; padding:8px 10px; margin:6px 0 10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#4a4530;}
+  .kl-act{display:grid; gap:8px; margin-top:10px;}
+  .kl-act.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+  .kl-act .btn{display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap;}
+  .kl-act .btn .ic{width:15px; height:15px;}
+  .kl-more{display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:10px; justify-content:center;}
+  .kl-more button{font:inherit; font-size:12px; font-weight:700; color:var(--ink-soft); background:none; border:0; padding:4px 0; cursor:pointer; text-decoration:underline; text-underline-offset:3px;}
+  .kl-diff{display:grid; gap:6px; margin:4px 0 2px;}
+  .kl-d{background:#fff; border:1px solid #eadfae; border-radius:10px; padding:8px 10px;}
+  .kl-dl{font-size:11px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:3px;}
+  .kl-dv{font-size:13px; display:grid; gap:2px; overflow-wrap:anywhere;}
+  .kl-dv s{color:#9a937a;}
+  .kl-dv b{color:var(--ink);}
+  .kl-warn{display:flex; gap:8px; align-items:flex-start; font-size:12px; line-height:1.45; background:#fff4d6; border:1px solid #f0d98a; border-radius:10px; padding:8px 10px; margin-top:8px; color:#6b4a06;}
+  .kl-warn .ic{width:15px; height:15px; flex:none; margin-top:1px;}
   /* Briefing Hari-H */
   .hh-box{margin-top:14px; border:1.5px solid #e6d79a; background:linear-gradient(180deg,#fffdf3,#fff); border-radius:16px; padding:14px; box-shadow:0 6px 18px -10px rgba(122,74,6,.35);}
   .hh-head{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px;}
@@ -14443,6 +14460,248 @@ document.addEventListener('keydown',e=>{
   e.preventDefault(); const b=document.querySelector('[data-ops-add]'); if(b) opsTambah(b.dataset.opsAdd);
 });
 
+/* ========== Link isian klien (Detail Job, khusus Admin) ==========
+   Satu link per job (isi.html?k=TOKEN) yang dibagikan ke klien untuk melengkapi biodatanya sendiri.
+   - Data tetap (nama klien, jenis, tanggal, jam, paket, add-on) hanya DITAMPILKAN, terkunci.
+   - Klien hanya bisa mengisi kolom yang dibuka di klKolom(): kontak, lokasi, Instagram, Detail Acara.
+   - Isian klien TIDAK langsung mengubah job: masuk sebagai "menunggu persetujuan", Admin menekan Terapkan.
+   - Data link tinggal di tabel kaone_klien_link (lewat RPC khusus admin); halaman klien lewat edge function klien-form.
+   - Titik Koordinat tidak pernah diubah otomatis (dipakai jarak & pengingat berangkat); kalau lokasi berubah, Admin diingatkan. */
+const KL_HALAMAN = 'isi.html';
+let KL_DATA = {}, KL_OK = null;
+function klUrl(token){
+  let base = KL_HALAMAN;
+  try{ base = new URL(KL_HALAMAN, location.href).href.split('#')[0].split('?')[0]; }catch(e){}
+  return base + '?k=' + token;
+}
+function klKolom(j){
+  const jenis = j.jenisAcara || '', lain = j.jenisAcaraLain || '';
+  const grup = [];
+  const kontak = [];
+  if(isJenisMempelai(jenis)) kontak.push({k:'namaMempelai', l:'Nama Kedua Mempelai', t:'text', v:String(j.namaMempelai||'').trim(), p:'Nama pasangan'});
+  kontak.push({k:'noWhatsapp', l:'No. WhatsApp', t:'tel', v:String(j.noWhatsapp||'').trim(), p:'08xxxxxxxxxx'});
+  grup.push({g:'Kontak', f:kontak});
+  grup.push({g:'Lokasi acara', f:[
+    {k:'dusun', l:'Dusun (jika ada)', t:'text', v:String(j.dusun||'').trim(), p:'Contoh: Dusun II Sukamaju'},
+    {k:'desa', l:'Desa / Kelurahan', t:'text', v:String(j.desa||'').trim()},
+    {k:'kecamatan', l:'Kecamatan', t:'text', v:String(j.kecamatan||'').trim()},
+    {k:'kabupaten', l:'Kabupaten / Kota', t:'text', v:String(j.kabupaten||'').trim()},
+    {k:'provinsi', l:'Provinsi', t:'text', v:String(j.provinsi||'').trim()},
+    {k:'linkMaps', l:'Link Google Maps lokasi acara', t:'url', v:String(j.linkMaps||'').trim(), p:'https://maps.app.goo.gl/...'},
+  ]});
+  const igList = Array.isArray(j.instagramList) ? j.instagramList : [];
+  const roles = igList.length ? igList.map(x=>x.role) : getInstagramRoles(jenis);
+  if(roles.length){
+    const generic = roles.length===1 && roles[0]==='Instagram';
+    grup.push({g:'Instagram', f:roles.map(r=>{
+      const it = igList.find(x=>x.role===r);
+      return {k:'ig:'+r, l:generic?'Username Instagram':('Instagram '+igRoleLabel(r)), t:'text', v:it&&it.username?('@'+igUsername(it.username)):'', p:'@username'};
+    })});
+  }
+  if(jenis){
+    const vals = j.detailAcara || {};
+    const f = detailAcaraSkema(jenis, lain, vals).filter(x=>x.key!=='kodeVoucher').map(x=>({
+      k:'da:'+x.key, l:x.label, t:x.type==='textarea'?'textarea':(x.type==='time'?'time':'text'), v:String(vals[x.key]==null?'':vals[x.key]).trim(), p:x.placeholder||''
+    }));
+    Object.keys(vals).filter(k=>k.indexOf('x_')===0 && !detailEkstraKeuangan((j.detailAcaraEkstra&&j.detailAcaraEkstra[k])||k)).forEach(k=>{
+      f.push({k:'dx:'+k, l:(j.detailAcaraEkstra&&j.detailAcaraEkstra[k])||k, t:'textarea', v:String(vals[k]==null?'':vals[k]).trim()});
+    });
+    if(f.length) grup.push({g:'Detail acara'+(jenis==='Lainnya'?'':' · '+jenis), f});
+  }
+  return grup;
+}
+function klSnapshot(j){
+  const jam = String(j.jamAcara||'').trim();
+  const kunci = [
+    ['Nama Klien', j.namaKlien||''],
+    ['Jenis Acara', j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : (j.jenisAcara||'')],
+    ['Tanggal Acara', fmtTglJob(j)],
+    ['Waktu Acara', jam ? jam.replace(':','.')+' WIB' : ''],
+    ['Layanan', layananMediaLabel(j)],
+    ['Paket', j.paket||''],
+    ['Deskripsi Paket', cetakRapikan(j.deskripsiPaket)||''],
+    ['Add-On', j.addOn||''],
+  ].map(([l,v])=>({l, v:String(v==null?'':v).slice(0,1200)})).filter(x=>x.v && x.v!=='-' || x.l==='Nama Klien');
+  return { v:1, nama:String(j.namaKlien||'').slice(0,80), jenis:j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'') : (j.jenisAcara||''), kunci, isian:klKolom(j) };
+}
+function klNilai(j, key){
+  if(key.indexOf('ig:')===0){ const it=(Array.isArray(j.instagramList)?j.instagramList:[]).find(x=>x.role===key.slice(3)); return it&&it.username?('@'+igUsername(it.username)):''; }
+  if(key.indexOf('da:')===0||key.indexOf('dx:')===0) return String((j.detailAcara||{})[key.slice(3)]==null?'':(j.detailAcara||{})[key.slice(3)]).trim();
+  return String(j[key]==null?'':j[key]).trim();
+}
+function klSama(key, a, b){
+  a=String(a||'').trim(); b=String(b||'').trim();
+  if(key==='noWhatsapp') return waDigits(a)===waDigits(b);
+  if(key.indexOf('ig:')===0) return igUsername(a).toLowerCase()===igUsername(b).toLowerCase();
+  return a===b;
+}
+function klNormWa(v){
+  let d = String(v||'').replace(/\D/g,'');
+  if(!d) return '';
+  if(d.startsWith('62')) d = d.slice(2);
+  d = d.replace(/^0+/,'');
+  return '0'+d;
+}
+function klBeda(j, kir){
+  const peta = {}; klKolom(j).forEach(g=>g.f.forEach(f=>{ peta[f.k] = {l:f.l, g:g.g}; }));
+  const out = [];
+  Object.keys(kir||{}).forEach(k=>{
+    if(!peta[k]) return;
+    let baru = String(kir[k]==null?'':kir[k]).trim();
+    if(k.indexOf('ig:')===0 && baru) baru = '@'+igUsername(baru);
+    const lama = klNilai(j,k);
+    if(!klSama(k, lama, baru)) out.push({k, l:peta[k].l, g:peta[k].g, lama, baru});
+  });
+  return out;
+}
+function klStatusInfo(r){
+  if(!r) return {t:'Belum dibuat', c:'neutral'};
+  if(!r.aktif) return {t:'Dinonaktifkan', c:'neutral'};
+  if(r.kedaluwarsa_at && Date.parse(r.kedaluwarsa_at) < Date.now()) return {t:'Kedaluwarsa', c:'warn'};
+  if(r.status==='menunggu') return {t:'Menunggu persetujuan Anda', c:'info'};
+  if(r.status==='diterapkan') return {t:'Isian sudah diterapkan', c:'ok'};
+  if(r.status==='diabaikan') return {t:'Isian diabaikan', c:'neutral'};
+  return r.dibuka_at ? {t:'Dibuka klien, belum diisi', c:'warn'} : {t:'Belum dibuka klien', c:'warn'};
+}
+function klWaktu(iso){ try{ return new Date(iso).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+function klBoxHtml(j){
+  if(!isAdmin()||!j) return '';
+  const id = escapeHtml(String(j.id));
+  const r = KL_DATA[String(j.id)];
+  const head = (badge)=>`<div class="hh-head">${ic('clipboard')} Link isian klien${badge?`<span class="hh-when">${escapeHtml(badge)}</span>`:''}</div>`;
+  if(KL_OK===null && !r) return `<div class="ops-box kl-box" id="klBox" data-job="${id}">${head('Memuat…')}</div>`;
+  if(KL_OK===false && !r) return `<div class="ops-box kl-box" id="klBox" data-job="${id}">${head('')}<div class="ops-empty">Belum bisa terhubung ke server. Periksa koneksi internet lalu buka ulang Detail Job.</div></div>`;
+  if(!r) return `<div class="ops-box kl-box" id="klBox" data-job="${id}">${head('')}
+    <div class="ops-empty">Bagikan satu link ke klien supaya ia melengkapi biodata acaranya sendiri. Data tetap seperti jenis acara, tanggal, jam, dan paket hanya ditampilkan (terkunci). Isian klien menunggu persetujuan Anda dulu sebelum masuk ke job.</div>
+    <div class="kl-act"><button type="button" class="btn btn-primary" data-kl="buat" data-job="${id}">${ic('mail')} Buat link isian</button></div></div>`;
+  const st = klStatusInfo(r);
+  let h = `<div class="ops-box kl-box" id="klBox" data-job="${id}">${head(st.t)}`;
+  const mati = !r.aktif || (r.kedaluwarsa_at && Date.parse(r.kedaluwarsa_at) < Date.now());
+  if(r.status==='menunggu' && r.kiriman){
+    const beda = klBeda(j, r.kiriman);
+    h += `<div class="kl-sub">Dikirim klien ${escapeHtml(klWaktu(r.dikirim_at))}${r.jumlah_kirim>1?` · ${r.jumlah_kirim}x kirim`:''}</div>`;
+    if(beda.length){
+      h += `<div class="kl-diff">${beda.map(b=>`<div class="kl-d"><div class="kl-dl">${escapeHtml(b.l)}</div><div class="kl-dv"><s>${b.lama?escapeHtml(b.lama):'(kosong)'}</s><b>${b.baru?escapeHtml(b.baru):'(dikosongkan)'}</b></div></div>`).join('')}</div>`;
+      if(beda.some(b=>['desa','dusun','kecamatan','kabupaten','provinsi','linkMaps'].indexOf(b.k)>-1))
+        h += `<div class="kl-warn">${ic('pin')} Lokasi berubah. Titik Koordinat tidak ikut berubah otomatis, periksa lewat Edit Job supaya jarak dan pengingat berangkat tetap benar.</div>`;
+      h += `<div class="kl-act two"><button type="button" class="btn btn-primary" data-kl="terapkan" data-job="${id}">Terapkan ${beda.length} perubahan</button><button type="button" class="btn btn-outline" data-kl="abaikan" data-job="${id}">Abaikan</button></div>`;
+    } else {
+      h += `<div class="ops-empty">Klien mengirim isian yang sama dengan data di job. Tidak ada yang perlu diterapkan.</div><div class="kl-act"><button type="button" class="btn btn-outline" data-kl="abaikan" data-job="${id}">Tandai selesai</button></div>`;
+    }
+  } else if(r.status==='diterapkan' || r.status==='diabaikan'){
+    h += `<div class="kl-sub">${r.status==='diterapkan'?'Terakhir diterapkan':'Terakhir dikirim klien'} ${escapeHtml(klWaktu(r.dikirim_at))}</div>`;
+  }
+  if(mati){
+    h += `<div class="ops-empty">Link ini ${r.aktif?'sudah kedaluwarsa':'dinonaktifkan'}. Klien tidak bisa membukanya lagi.</div><div class="kl-act"><button type="button" class="btn btn-primary" data-kl="aktif" data-job="${id}">Aktifkan lagi</button></div>`;
+  } else {
+    h += `<div class="kl-link" title="${escapeHtml(klUrl(r.token))}">${escapeHtml(klUrl(r.token).replace(/^https?:\/\//,''))}</div>
+      <div class="kl-act two"><button type="button" class="btn btn-outline" data-kl="salin" data-job="${id}">${ic('clipboard')} Salin link</button>
+      ${waDigits(j.noWhatsapp)?`<button type="button" class="btn btn-wa" data-kl="wa" data-job="${id}">${ic('phone')} Kirim WhatsApp</button>`:`<button type="button" class="btn btn-outline" disabled title="Isi nomor WhatsApp di Edit Job">${ic('phone')} Tanpa nomor WA</button>`}</div>
+      <div class="kl-more"><button type="button" data-kl="perbarui" data-job="${id}">Perbarui data link</button><button type="button" data-kl="baru" data-job="${id}">Buat link baru</button><button type="button" data-kl="nonaktif" data-job="${id}">Nonaktifkan</button></div>`;
+  }
+  return h + '</div>';
+}
+function klRender(jobId){
+  const box = document.getElementById('klBox');
+  if(!box || box.dataset.job!==String(jobId)) return;
+  const j = jobs.find(x=>String(x.id)===String(jobId)); if(!j) return;
+  const t = document.createElement('div'); t.innerHTML = klBoxHtml(j);
+  if(t.firstElementChild) box.replaceWith(t.firstElementChild);
+}
+async function klMuat(jobId){
+  if(!isAdmin() || typeof supabaseClient==='undefined' || !supabaseClient) return;
+  try{
+    const {data, error} = await supabaseClient.rpc('kaone_klien_link_daftar');
+    if(error || !Array.isArray(data)) throw (error || new Error('data'));
+    KL_DATA = {}; data.forEach(r=>{ KL_DATA[String(r.job_id)] = r; });
+    KL_OK = true;
+  }catch(e){ KL_OK = false; }
+  klRender(jobId);
+  // Data link disegarkan diam-diam supaya halaman klien selalu memuat isi job terbaru.
+  const r = KL_DATA[String(jobId)], j = jobs.find(x=>String(x.id)===String(jobId));
+  if(KL_OK && r && r.aktif && j) klSimpan(j, false, true);
+}
+async function klSimpan(j, baru, diam){
+  try{
+    const {data, error} = await supabaseClient.rpc('kaone_klien_link_simpan', { p_job_id:String(j.id), p_snapshot:klSnapshot(j), p_baru:!!baru, p_hari:120 });
+    if(error) throw error;
+    const lama = KL_DATA[String(j.id)] || {};
+    KL_DATA[String(j.id)] = Object.assign({}, lama, { job_id:String(j.id), token:data.token, aktif:data.aktif, status:data.status, kedaluwarsa_at:data.kedaluwarsa_at },
+      baru ? { kiriman:null, dibuka_at:null, dikirim_at:null, jumlah_kirim:0 } : {});
+    return data;
+  }catch(e){
+    if(!diam) toast('Gagal menghubungi server. Coba lagi.');
+    return null;
+  }
+}
+async function klAksi(aksi, jobId){
+  const j = jobs.find(x=>String(x.id)===String(jobId)); if(!j || !isAdmin()) return;
+  const r = KL_DATA[String(j.id)];
+  if(aksi==='buat' || aksi==='aktif'){
+    const d = await klSimpan(j, false, false); if(!d) return;
+    toast(aksi==='buat' ? 'Link dibuat' : 'Link diaktifkan'); klRender(j.id); return;
+  }
+  if(!r) return;
+  if(aksi==='salin'){ klSimpan(j,false,true); copyToClipboard(klUrl(r.token), 'Link isian klien disalin'); return; }
+  if(aksi==='wa'){
+    klSimpan(j,false,true);
+    const nama = String(j.namaKlien||'').trim();
+    const jenis = j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'acara') : (j.jenisAcara||'acara');
+    const teks = `Halo Kak ${nama}, terima kasih sudah mempercayakan ${jenis} kakak kepada Kaone Motret 🙏\n\nAgar persiapan kami maksimal, mohon bantu lengkapi biodata acara lewat link berikut:\n${klUrl(r.token)}\n\nCukup isi bagian yang kosong ya Kak. Data yang terkunci (tanggal, jam, paket) tidak perlu diubah. Terima kasih 🙏`;
+    window.open(waLinkKlien(j.noWhatsapp, teks), '_blank', 'noopener'); return;
+  }
+  if(aksi==='perbarui'){ const d = await klSimpan(j,false,false); if(d){ toast('Data link diperbarui'); klRender(j.id); } return; }
+  if(aksi==='baru'){
+    if(!confirm('Buat link baru? Link lama langsung tidak berlaku dan isian klien yang belum diterapkan dihapus.')) return;
+    const d = await klSimpan(j,true,false); if(d){ toast('Link baru dibuat'); klRender(j.id); } return;
+  }
+  if(aksi==='nonaktif'){
+    if(!confirm('Nonaktifkan link ini? Klien tidak bisa membukanya lagi (bisa diaktifkan kembali).')) return;
+    try{ const {error} = await supabaseClient.rpc('kaone_klien_link_cabut', { p_job_id:String(j.id) }); if(error) throw error; r.aktif=false; toast('Link dinonaktifkan'); klRender(j.id); }
+    catch(e){ toast('Gagal menonaktifkan, coba lagi'); }
+    return;
+  }
+  if(aksi==='abaikan'){
+    try{ const {error} = await supabaseClient.rpc('kaone_klien_kiriman_tandai', { p_job_id:String(j.id), p_status:'diabaikan' }); if(error) throw error; r.status='diabaikan'; toast('Isian klien diabaikan'); klRender(j.id); }
+    catch(e){ toast('Gagal menyimpan, coba lagi'); }
+    return;
+  }
+  if(aksi==='terapkan'){
+    const beda = klBeda(j, r.kiriman||{});
+    if(!beda.length){ toast('Tidak ada perubahan'); return; }
+    // Tandai di server dulu: kalau gagal, job tidak disentuh dan Admin bisa mengulang.
+    try{ const {error} = await supabaseClient.rpc('kaone_klien_kiriman_tandai', { p_job_id:String(j.id), p_status:'diterapkan' }); if(error) throw error; }
+    catch(e){ toast('Gagal menerapkan, coba lagi'); return; }
+    beda.forEach(b=>klTerapkanKolom(j, b.k, b.baru));
+    saveJobs(); r.status='diterapkan';
+    toast(beda.length+' isian klien diterapkan');
+    opsBuka(j.id);
+  }
+}
+function klTerapkanKolom(j, k, v){
+  v = String(v==null?'':v).trim();
+  if(k==='noWhatsapp'){ j.noWhatsapp = klNormWa(v); return; }
+  if(k==='dusun'){ j.dusun = v; j.adaDusun = !!v; return; }
+  if(k.indexOf('ig:')===0){
+    const role = k.slice(3);
+    if(!Array.isArray(j.instagramList)) j.instagramList = [];
+    let it = j.instagramList.find(x=>x.role===role);
+    if(!it){ it = {role, username:''}; j.instagramList.push(it); }
+    it.username = igUsername(v); return;
+  }
+  if(k.indexOf('da:')===0 || k.indexOf('dx:')===0){
+    const kk = k.slice(3);
+    if(!j.detailAcara || typeof j.detailAcara!=='object') j.detailAcara = {};
+    if(v) j.detailAcara[kk] = v; else delete j.detailAcara[kk];
+    return;
+  }
+  if(['namaMempelai','desa','kecamatan','kabupaten','provinsi','linkMaps'].indexOf(k)>-1) j[k] = v;
+}
+document.addEventListener('click',e=>{
+  const t = e.target && e.target.closest ? e.target.closest('[data-kl]') : null; if(!t || t.disabled) return;
+  e.preventDefault(); klAksi(t.dataset.kl, t.dataset.job);
+});
+
 /* Username Instagram: selalu satu baris DAN terbaca penuh. Huruf dikecilkan seperlunya (minimal 8px);
    kalau masih belum muat, tulisannya bisa digeser ke samping. */
 function igMuat(root,ulang){
@@ -14771,6 +15030,7 @@ function openJobDetailModal(jobId){
     ${hhBoxHtml(j)}
     ${plBoxHtml(j)}
     ${opsBoxHtml(j)}
+    ${klBoxHtml(j)}
     ${isAdmin() ? acaraSelesaiBoxHtml(j) : ''}
     ${kwitansiStatusHtml(j)}
     ${waSelesaiBoxHtml(j)}
@@ -14804,6 +15064,7 @@ function openJobDetailModal(jobId){
   `);
 
   try{ hhIsi(j.id); }catch(e){}
+  try{ klMuat(j.id); }catch(e){}
   // Kalau jarak jalan belum ada di cache, hitung sekarang (async) lalu suntikkan
   // hasilnya ke baris yang sudah tampil di modal - kalau modalnya sudah ditutup
   // duluan sebelum fetch selesai, elemen dengan id ini otomatis sudah tidak ada
@@ -20395,12 +20656,19 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.34.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.35.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.35.0',
+    tanggal: '16 November 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Link isian klien. Di Detail Job, Admin bisa membuat satu link per job untuk dibagikan ke klien lewat WhatsApp. Klien melengkapi sendiri nomor WhatsApp, lokasi, Instagram, dan Detail Acara, sedangkan data tetap seperti jenis acara, tanggal, jam, dan paket hanya ditampilkan dan terkunci. Isian klien menunggu persetujuan Admin: lihat perubahannya satu per satu, lalu tekan Terapkan. Admin juga mendapat notifikasi saat klien mengirim isian.' },
+    ]
+  },
   {
     version: '1.34.0',
     tanggal: '15 November 2026',

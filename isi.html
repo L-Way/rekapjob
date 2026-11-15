@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#FFC400">
+<title>Lengkapi Biodata Acara - Kaone Motret</title>
+<style>
+  :root{
+    --gold:#FFC400; --gold-light:#FFD42E; --gold-pale:#FFF1B8; --ink:#241c06; --ink-soft:#5b5646;
+    --line:#f0e1a0; --paper:#FFFBEA; --card:#ffffff; --danger:#c0392b; --ok:#2e7d32; --lock:#f6f2e2;
+    --radius:14px; --shadow:0 6px 24px rgba(180,150,0,.10), 0 1px 3px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;min-height:100vh;min-height:100dvh}
+  .top{background:linear-gradient(135deg,var(--gold-light),var(--gold));padding:calc(18px + env(safe-area-inset-top,0px)) 16px 22px}
+  .top-in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px}
+  .logo{width:42px;height:42px;border-radius:50%;background:var(--ink);color:var(--gold);display:grid;place-items:center;flex:none}
+  .logo svg{width:26px;height:26px}
+  .brand b{display:block;font-size:17px;letter-spacing:.2px}
+  .brand span{font-size:12px;opacity:.75}
+  main{max-width:560px;margin:-12px auto 0;padding:0 16px calc(40px + env(safe-area-inset-bottom,0px))}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-top:14px;border:1px solid var(--line)}
+  .hello h1{font-size:19px;margin:0 0 4px;line-height:1.3}
+  .hello p{margin:0;color:var(--ink-soft);font-size:14px}
+  .tag{display:inline-block;background:var(--gold-pale);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;margin-top:10px}
+  h2{font-size:14px;margin:0 0 12px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft)}
+  h2 svg{width:16px;height:16px;flex:none}
+  .note{font-size:12.5px;color:var(--ink-soft);margin:-4px 0 12px}
+  label{display:block;font-size:13px;font-weight:600;margin:0 0 5px}
+  .fld{margin-bottom:14px}.fld:last-child{margin-bottom:0}
+  input,textarea{width:100%;font:inherit;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none;appearance:none}
+  input:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,196,0,.28)}
+  textarea{resize:vertical;min-height:72px}
+  .kunci .fld{margin-bottom:10px}
+  .kunci .val{display:flex;align-items:flex-start;gap:8px;background:var(--lock);border:1.5px dashed #e4d9a8;border-radius:10px;padding:10px 12px;color:#4a4430;white-space:pre-wrap;word-break:break-word}
+  .kunci .val svg{width:15px;height:15px;flex:none;margin-top:3px;opacity:.55}
+  .kunci .val span{flex:1}
+  .kunci .val.kosong span{opacity:.5}
+  .edited input,.edited textarea{border-color:var(--gold)}
+  .btn{display:block;width:100%;border:0;border-radius:12px;background:var(--ink);color:var(--gold-light);font:inherit;font-weight:700;font-size:16px;padding:14px;cursor:pointer}
+  .btn:disabled{opacity:.55;cursor:default}
+  .btn.alt{background:#fff;color:var(--ink);border:1.5px solid var(--line);margin-top:10px}
+  .err{background:#fdecea;border:1px solid #f5c6c0;color:#8a2a20;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:12px}
+  .ok{background:#e9f6ea;border:1px solid #bfe0c1;color:#1f5f24;border-radius:var(--radius);padding:18px;text-align:center}
+  .ok svg{width:42px;height:42px;color:var(--ok)}
+  .ok h2{justify-content:center;color:#1f5f24;margin:8px 0 6px;font-size:16px;text-transform:none;letter-spacing:0}
+  .ok p{margin:0;font-size:14px}
+  .center{text-align:center;padding:48px 8px;color:var(--ink-soft)}
+  .center svg{width:44px;height:44px;opacity:.5}
+  .spin{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:s .8s linear infinite;margin:0 auto 12px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .foot{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:22px}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <div class="logo" aria-hidden="true"><svg viewBox="-33 -33 66 66"><circle r="30.4" fill="none" stroke="currentColor" stroke-width="2.4"/><circle r="11" fill="currentColor"/></svg></div>
+  <div class="brand"><b>Kaone Motret</b><span>Lengkapi biodata acara</span></div>
+</div></header>
+<main id="app">
+  <div class="center" id="memuat"><div class="spin"></div>Memuat data…</div>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var API = 'https://gyleppavsgbtrlgbyztv.supabase.co/functions/v1/klien-form';
+  var app = document.getElementById('app');
+  var token = (new URLSearchParams(location.search).get('k') || '').trim();
+  var data = null;
+  var ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  var ICON_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  var ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.8 2.8L16.5 9"/></svg>';
+  var ICON_WARN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>';
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  function tampilPesan(judul, isi){
+    app.innerHTML = '<div class="center">' + ICON_WARN + '<h2 style="justify-content:center;margin-top:12px;text-transform:none;letter-spacing:0;font-size:17px;color:var(--ink)">' + esc(judul) + '</h2><p>' + esc(isi) + '</p></div>';
+  }
+
+  function render(){
+    var h = '<section class="card hello"><h1>Halo, ' + esc(data.nama || 'Kak') + '</h1>' +
+      '<p>Mohon lengkapi data acara di bawah ini supaya persiapan kami berjalan lancar. Isian akan kami periksa dulu sebelum dipakai.</p>' +
+      (data.jenis ? '<span class="tag">' + esc(data.jenis) + '</span>' : '') + '</section>';
+
+    if(data.sudahKirim){
+      h += '<div class="card ok" id="infoSudah">' + ICON_OK + '<h2>Isian sudah terkirim</h2><p>Anda masih bisa mengubah isian lalu mengirim ulang jika ada yang perlu dikoreksi.</p></div>';
+    }
+
+    var kunci = Array.isArray(data.kunci) ? data.kunci : [];
+    if(kunci.length){
+      h += '<section class="card kunci"><h2>' + ICON_LOCK + 'Data acara</h2><p class="note">Data ini sudah ditetapkan dan tidak bisa diubah dari halaman ini. Jika ada yang perlu diubah, hubungi Kaone Motret.</p>';
+      kunci.forEach(function(r){
+        var v = String(r.v == null ? '' : r.v).trim();
+        h += '<div class="fld"><label>' + esc(r.l) + '</label><div class="val' + (v ? '' : ' kosong') + '">' + ICON_LOCK + '<span>' + (v ? esc(v) : '-') + '</span></div></div>';
+      });
+      h += '</section>';
+    }
+
+    h += '<form id="frm" novalidate autocomplete="off">';
+    (data.isian || []).forEach(function(g, gi){
+      h += '<section class="card"><h2>' + ICON_EDIT + esc(g.g) + '</h2>';
+      (g.f || []).forEach(function(f, fi){
+        var id = 'f_' + gi + '_' + fi;
+        var ph = f.p ? ' placeholder="' + esc(f.p) + '"' : '';
+        var inp;
+        if(f.t === 'textarea') inp = '<textarea id="' + id + '" data-k="' + esc(f.k) + '" maxlength="1000" rows="3"' + ph + '>' + esc(f.v) + '</textarea>';
+        else {
+          var tp = f.t === 'tel' ? 'tel' : f.t === 'url' ? 'url' : f.t === 'time' ? 'time' : 'text';
+          var im = f.t === 'tel' ? ' inputmode="tel"' : f.t === 'url' ? ' inputmode="url" autocapitalize="off" spellcheck="false"' : '';
+          inp = '<input id="' + id + '" data-k="' + esc(f.k) + '" type="' + tp + '"' + im + ' maxlength="300" value="' + esc(f.v) + '"' + ph + '>';
+        }
+        h += '<div class="fld"><label for="' + id + '">' + esc(f.l) + '</label>' + inp + '</div>';
+      });
+      h += '</section>';
+    });
+    h += '<div id="pesanErr" class="err" hidden></div>';
+    h += '<div style="margin-top:16px"><button type="submit" class="btn" id="btnKirim">' + (data.sudahKirim ? 'Kirim ulang isian' : 'Kirim isian') + '</button></div></form>';
+    h += '<div class="foot">Kaone Motret · Buku Job Fotografer</div>';
+    app.innerHTML = h;
+
+    var frm = document.getElementById('frm');
+    frm.addEventListener('input', function(e){
+      var el = e.target; if(el && el.closest) { var w = el.closest('.fld'); if(w) w.classList.add('edited'); }
+    });
+    frm.addEventListener('submit', kirim);
+  }
+
+  function kirim(e){
+    e.preventDefault();
+    var btn = document.getElementById('btnKirim'), box = document.getElementById('pesanErr');
+    box.hidden = true;
+    var isi = {};
+    document.querySelectorAll('#frm [data-k]').forEach(function(el){ isi[el.getAttribute('data-k')] = el.value; });
+    btn.disabled = true; btn.textContent = 'Mengirim…';
+    fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ k: token, isi: isi }) })
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ return { ok:r.ok, j:j }; }); })
+      .then(function(res){
+        if(!res.ok){ throw new Error((res.j && res.j.error) || 'Gagal mengirim. Coba lagi.'); }
+        selesai();
+      })
+      .catch(function(err){
+        btn.disabled = false; btn.textContent = data.sudahKirim ? 'Kirim ulang isian' : 'Kirim isian';
+        box.textContent = (err && err.message && err.message !== 'Failed to fetch') ? err.message : 'Tidak bisa terhubung. Periksa koneksi internet lalu coba lagi.';
+        box.hidden = false; box.scrollIntoView({behavior:'smooth', block:'center'});
+      });
+  }
+
+  function selesai(){
+    // Simpan nilai terakhir supaya kalau klien memilih "Ubah lagi", isiannya tidak hilang.
+    (data.isian || []).forEach(function(g){ (g.f || []).forEach(function(f){
+      var el = document.querySelector('#frm [data-k="' + f.k + '"]'); if(el) f.v = el.value;
+    }); });
+    data.sudahKirim = true;
+    app.innerHTML = '<div class="card ok" style="margin-top:14px">' + ICON_OK + '<h2>Terima kasih!</h2><p>Isian Anda sudah kami terima. Tim Kaone Motret akan memeriksanya dan menghubungi Anda bila ada yang perlu dikonfirmasi.</p></div>' +
+      '<button type="button" class="btn alt" id="btnUbah">Ubah isian lagi</button><div class="foot">Kaone Motret · Buku Job Fotografer</div>';
+    document.getElementById('btnUbah').addEventListener('click', render);
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  if(!/^[a-f0-9]{40}$/.test(token)){ tampilPesan('Link tidak valid', 'Periksa kembali link yang Anda terima, atau minta link baru dari Kaone Motret.'); return; }
+  fetch(API + '?k=' + encodeURIComponent(token), { cache:'no-store' })
+    .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ return { ok:r.ok, s:r.status, j:j }; }); })
+    .then(function(res){
+      if(res.s === 404){ tampilPesan('Link tidak berlaku', 'Link ini sudah tidak aktif atau kedaluwarsa. Silakan minta link baru dari Kaone Motret.'); return; }
+      if(!res.ok){ tampilPesan('Gagal memuat', 'Terjadi gangguan. Silakan coba lagi beberapa saat lagi.'); return; }
+      data = res.j; render();
+    })
+    .catch(function(){ tampilPesan('Tidak bisa terhubung', 'Periksa koneksi internet Anda lalu muat ulang halaman ini.'); });
+})();
+</script>
+</body>
+</html>

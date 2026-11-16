@@ -54,6 +54,34 @@
   .spin{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:s .8s linear infinite;margin:0 auto 12px}
   @keyframes s{to{transform:rotate(360deg)}}
   .foot{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:22px}
+  select{width:100%;font:inherit;color:var(--ink);background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235b5646' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>") no-repeat right 12px center;border:1.5px solid var(--line);border-radius:10px;padding:11px 36px 11px 12px;outline:none;-webkit-appearance:none;appearance:none}
+  select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,196,0,.28)}
+  .hint{font-size:12px;color:var(--ink-soft);margin:-2px 0 6px}
+  .peta-info{font-size:12.5px;color:var(--ink-soft);margin:8px 0 0;word-break:break-word}
+  .peta-info a{color:#8a5a00;font-weight:600}
+  .peta-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .peta-btns.satu{grid-template-columns:1fr}
+  .btn-s{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font:inherit;font-weight:600;font-size:13.5px;border-radius:10px;padding:10px 8px;cursor:pointer}
+  .btn-s svg{width:16px;height:16px;flex:none}
+  .btn-s:active{background:var(--gold-pale)}
+  .btn-s:disabled{opacity:.6}
+  .ongkir{background:var(--gold-pale);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px}
+  .ongkir b.big{display:block;font-size:20px;margin:2px 0}
+  .ongkir.gratis b.big{color:var(--ok)}
+  .ongkir small{display:block;color:var(--ink-soft);font-size:12px;margin-top:2px}
+  .pm{position:fixed;inset:0;z-index:50;background:#fff;display:flex;flex-direction:column}
+  .pm-top{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;background:linear-gradient(135deg,var(--gold-light),var(--gold))}
+  .pm-top b{flex:1;text-align:center}
+  .pm-top button{border:0;background:rgba(0,0,0,.08);border-radius:999px;padding:7px 14px;font:inherit;font-weight:600;color:var(--ink);cursor:pointer}
+  .pm-top .gap{width:64px}
+  .pm-map{flex:1;position:relative;min-height:0}
+  #pmMap{position:absolute;inset:0}
+  .pm-pin{position:absolute;left:50%;top:50%;width:34px;height:44px;margin:-44px 0 0 -17px;z-index:600;pointer-events:none;filter:drop-shadow(0 3px 3px rgba(0,0,0,.35))}
+  .pm-bot{padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));background:#fff;border-top:1px solid var(--line)}
+  .pm-koor{font-size:13px;color:var(--ink-soft);margin-bottom:10px;text-align:center}
+  .pm-row{display:grid;grid-template-columns:1fr 1.4fr;gap:8px}
+  .pm-row .btn{padding:12px;font-size:15px}
+  .pm-msg{position:absolute;left:12px;right:12px;top:12px;z-index:700;background:#fff;border:1px solid #f5c6c0;color:#8a2a20;border-radius:10px;padding:10px 12px;font-size:13px;box-shadow:var(--shadow)}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -70,18 +98,76 @@
 (function(){
   'use strict';
   var API = 'https://gyleppavsgbtrlgbyztv.supabase.co/functions/v1/klien-form';
+  var LEAF_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+  var LEAF_JS = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
   var app = document.getElementById('app');
   var token = (new URLSearchParams(location.search).get('k') || '').trim();
   var data = null;
-  var ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
-  var ICON_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
-  var ICON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.8 2.8L16.5 9"/></svg>';
-  var ICON_WARN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>';
-
+  var I = {
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.8 2.8L16.5 9"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>',
+    gps: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>',
+    map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+    same: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>'
+  };
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function $k(k){ return document.querySelector('#frm [data-k="' + k.replace(/"/g, '\\"') + '"]'); }
+  function nilai(k){ var el = $k(k); return el ? String(el.value || '').trim() : ''; }
+  function rp(n){ return 'Rp' + Math.round(Number(n) || 0).toLocaleString('id-ID'); }
 
   function tampilPesan(judul, isi){
-    app.innerHTML = '<div class="center">' + ICON_WARN + '<h2 style="justify-content:center;margin-top:12px;text-transform:none;letter-spacing:0;font-size:17px;color:var(--ink)">' + esc(judul) + '</h2><p>' + esc(isi) + '</p></div>';
+    app.innerHTML = '<div class="center">' + I.warn + '<h2 style="justify-content:center;margin-top:12px;text-transform:none;letter-spacing:0;font-size:17px;color:var(--ink)">' + esc(judul) + '</h2><p>' + esc(isi) + '</p></div>';
+  }
+
+  /* ---------- Koordinat ---------- */
+  function parseKoord(s){
+    var m = String(s || '').trim().match(/^(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)$/);
+    if(!m) return null;
+    var la = parseFloat(m[1]), ln = parseFloat(m[2]);
+    if(!isFinite(la) || !isFinite(ln) || Math.abs(la) > 90 || Math.abs(ln) > 180) return null;
+    return { lat: la, lng: ln };
+  }
+  // Baca titik dari link Google Maps panjang (@lat,lng / !3d..!4d.. / ?q= / ll=). Link pendek tidak bisa dibaca dari browser.
+  function koordDariLink(u){
+    u = String(u || '');
+    var m = u.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/) || u.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/) || u.match(/[?&](?:q|ll|query|destination)=(-?\d+(?:\.\d+)?)(?:,|%2C)(-?\d+(?:\.\d+)?)/i);
+    if(!m) return null;
+    return parseKoord(m[1] + ',' + m[2]);
+  }
+  function fmtKoord(c){ return c.lat.toFixed(6) + ', ' + c.lng.toFixed(6); }
+  function linkMaps(c){ return 'https://www.google.com/maps?q=' + c.lat.toFixed(6) + ',' + c.lng.toFixed(6); }
+
+  /* ---------- Render ---------- */
+  function fieldHtml(f, id){
+    if(f.t === 'hidden' && f.k === '_ongkir') return '<div class="fld" data-fk="_ongkir"><div class="ongkir" id="ongkirBox" hidden></div></div>';
+    if(f.t === 'hidden') return '';
+    if(f.ui === 0) return '<input type="hidden" data-k="' + esc(f.k) + '" value="' + esc(f.v) + '">';
+    var ph = f.p ? ' placeholder="' + esc(f.p) + '"' : '';
+    var inp;
+    if(f.t === 'textarea') inp = '<textarea id="' + id + '" data-k="' + esc(f.k) + '" maxlength="1000" rows="3"' + ph + '>' + esc(f.v) + '</textarea>';
+    else if(f.t === 'select'){
+      var opsi = (f.o || []).slice(), v = String(f.v == null ? '' : f.v).trim();
+      var ada = opsi.some(function(o){ return String(o.v) === v; });
+      var h = '<option value="">Pilih…</option>';
+      if(v && !ada) h += '<option value="' + esc(v) + '" selected>' + esc(v) + '</option>';
+      opsi.forEach(function(o){ h += '<option value="' + esc(o.v) + '"' + (String(o.v) === v ? ' selected' : '') + '>' + esc(o.l) + '</option>'; });
+      inp = '<select id="' + id + '" data-k="' + esc(f.k) + '">' + h + '</select>';
+    } else {
+      var tp = f.t === 'tel' ? 'tel' : f.t === 'url' ? 'url' : f.t === 'time' ? 'time' : f.t === 'date' ? 'date' : 'text';
+      var im = f.t === 'tel' ? ' inputmode="tel"' : f.t === 'url' ? ' inputmode="url" autocapitalize="off" spellcheck="false"' : '';
+      inp = '<input id="' + id + '" data-k="' + esc(f.k) + '" type="' + tp + '"' + im + ' maxlength="300" value="' + esc(f.v) + '"' + ph + '>';
+    }
+    var extra = '';
+    if(f.pk){
+      extra = '<div class="peta-info" data-info="' + esc(f.k) + '"></div><div class="peta-btns' + (f.sama ? '' : '') + '">' +
+        '<button type="button" class="btn-s" data-gps="' + esc(f.k) + '">' + I.gps + 'Lokasi saya</button>' +
+        '<button type="button" class="btn-s" data-peta="' + esc(f.k) + '">' + I.map + 'Pilih di peta</button></div>';
+      if(f.sama) extra += '<div class="peta-btns satu"><button type="button" class="btn-s" data-sama="' + esc(f.k) + '">' + I.same + 'Sama dengan lokasi acara</button></div>';
+    }
+    var se = f.se ? ' data-se-k="' + esc(f.se.k) + '" data-se-v="' + esc(f.se.v) + '"' : '';
+    return '<div class="fld" data-fk="' + esc(f.k) + '"' + se + '><label for="' + id + '">' + esc(f.l) + '</label>' + (f.h ? '<div class="hint">' + esc(f.h) + '</div>' : '') + inp + extra + '</div>';
   }
 
   function render(){
@@ -90,35 +176,24 @@
       (data.jenis ? '<span class="tag">' + esc(data.jenis) + '</span>' : '') + '</section>';
 
     if(data.sudahKirim){
-      h += '<div class="card ok" id="infoSudah">' + ICON_OK + '<h2>Isian sudah terkirim</h2><p>Anda masih bisa mengubah isian lalu mengirim ulang jika ada yang perlu dikoreksi.</p></div>';
+      h += '<div class="card ok" id="infoSudah">' + I.ok + '<h2>Isian sudah terkirim</h2><p>Anda masih bisa mengubah isian lalu mengirim ulang jika ada yang perlu dikoreksi.</p></div>';
     }
 
     var kunci = Array.isArray(data.kunci) ? data.kunci : [];
     if(kunci.length){
-      h += '<section class="card kunci"><h2>' + ICON_LOCK + 'Data acara</h2><p class="note">Data ini sudah ditetapkan dan tidak bisa diubah dari halaman ini. Jika ada yang perlu diubah, hubungi Kaone Motret.</p>';
+      h += '<section class="card kunci"><h2>' + I.lock + 'Data acara</h2><p class="note">Data ini sudah ditetapkan dan tidak bisa diubah dari halaman ini. Jika ada yang perlu diubah, hubungi Kaone Motret.</p>';
       kunci.forEach(function(r){
         var v = String(r.v == null ? '' : r.v).trim();
-        h += '<div class="fld"><label>' + esc(r.l) + '</label><div class="val' + (v ? '' : ' kosong') + '">' + ICON_LOCK + '<span>' + (v ? esc(v) : '-') + '</span></div></div>';
+        h += '<div class="fld"><label>' + esc(r.l) + '</label><div class="val' + (v ? '' : ' kosong') + '">' + I.lock + '<span>' + (v ? esc(v) : '-') + '</span></div></div>';
       });
       h += '</section>';
     }
 
     h += '<form id="frm" novalidate autocomplete="off">';
     (data.isian || []).forEach(function(g, gi){
-      h += '<section class="card"><h2>' + ICON_EDIT + esc(g.g) + '</h2>';
-      (g.f || []).forEach(function(f, fi){
-        var id = 'f_' + gi + '_' + fi;
-        var ph = f.p ? ' placeholder="' + esc(f.p) + '"' : '';
-        var inp;
-        if(f.t === 'textarea') inp = '<textarea id="' + id + '" data-k="' + esc(f.k) + '" maxlength="1000" rows="3"' + ph + '>' + esc(f.v) + '</textarea>';
-        else {
-          var tp = f.t === 'tel' ? 'tel' : f.t === 'url' ? 'url' : f.t === 'time' ? 'time' : 'text';
-          var im = f.t === 'tel' ? ' inputmode="tel"' : f.t === 'url' ? ' inputmode="url" autocapitalize="off" spellcheck="false"' : '';
-          inp = '<input id="' + id + '" data-k="' + esc(f.k) + '" type="' + tp + '"' + im + ' maxlength="300" value="' + esc(f.v) + '"' + ph + '>';
-        }
-        h += '<div class="fld"><label for="' + id + '">' + esc(f.l) + '</label>' + inp + '</div>';
-      });
-      h += '</section>';
+      var isi = (g.f || []).map(function(f, fi){ return fieldHtml(f, 'f_' + gi + '_' + fi); }).join('');
+      if(!/\S/.test(isi.replace(/<input type="hidden"[^>]*>/g, ''))) { h += isi; return; }
+      h += '<section class="card"><h2>' + I.edit + esc(g.g) + '</h2>' + isi + '</section>';
     });
     h += '<div id="pesanErr" class="err" hidden></div>';
     h += '<div style="margin-top:16px"><button type="submit" class="btn" id="btnKirim">' + (data.sudahKirim ? 'Kirim ulang isian' : 'Kirim isian') + '</button></div></form>';
@@ -128,16 +203,167 @@
     var frm = document.getElementById('frm');
     frm.addEventListener('input', function(e){
       var el = e.target; if(el && el.closest) { var w = el.closest('.fld'); if(w) w.classList.add('edited'); }
+      if(el && el.matches && el.matches('input[type=url][data-k]')) linkDiubah(el);
     });
+    frm.addEventListener('change', function(e){
+      if(e.target && e.target.getAttribute && e.target.getAttribute('data-k') === 'metodePengiriman'){ terapkanSe(); updateOngkir(); }
+    });
+    frm.addEventListener('click', klikTombol);
     frm.addEventListener('submit', kirim);
+    terapkanSe();
+    document.querySelectorAll('[data-info]').forEach(function(el){ perbaruiInfo(el.getAttribute('data-info')); });
+    updateOngkir();
   }
 
+  // Kolom yang hanya tampil bila kolom lain bernilai tertentu (mis. lokasi antar hanya untuk "Diantar").
+  function terapkanSe(){
+    document.querySelectorAll('#frm [data-se-k]').forEach(function(w){
+      w.hidden = nilai(w.getAttribute('data-se-k')) !== w.getAttribute('data-se-v');
+    });
+  }
+
+  /* ---------- Lokasi: link, GPS, peta ---------- */
+  function kolomPeta(k){
+    var f = null;
+    (data.isian || []).forEach(function(g){ (g.f || []).forEach(function(x){ if(x.k === k) f = x; }); });
+    return f;
+  }
+  function perbaruiInfo(k){
+    var f = kolomPeta(k); if(!f || !f.pk) return;
+    var el = document.querySelector('[data-info="' + k + '"]'); if(!el) return;
+    var c = parseKoord(nilai(f.pk));
+    el.innerHTML = c ? 'Titik terpilih: ' + esc(fmtKoord(c)) + ' · <a href="' + esc(linkMaps(c)) + '" target="_blank" rel="noopener">Lihat di Google Maps</a>' : 'Belum ada titik yang dipilih. Tempel link Google Maps, atau pakai tombol di bawah.';
+  }
+  function setLokasi(k, c){
+    var f = kolomPeta(k); if(!f) return;
+    var u = $k(k), kk = $k(f.pk);
+    if(u){ u.value = linkMaps(c); var w = u.closest('.fld'); if(w) w.classList.add('edited'); }
+    if(kk) kk.value = fmtKoord(c);
+    perbaruiInfo(k);
+    if(k === 'linkMaps') updateOngkir();
+  }
+  function linkDiubah(el){
+    var k = el.getAttribute('data-k'), f = kolomPeta(k); if(!f || !f.pk) return;
+    var c = koordDariLink(el.value);
+    if(c){ var kk = $k(f.pk); if(kk) kk.value = fmtKoord(c); }
+    perbaruiInfo(k);
+    if(k === 'linkMaps') updateOngkir();
+  }
+  function ambilGps(sukses, gagal){
+    if(!navigator.geolocation){ gagal('Perangkat atau browser Anda tidak mendukung lokasi. Pakai "Pilih di peta".'); return; }
+    navigator.geolocation.getCurrentPosition(function(p){
+      sukses({ lat: p.coords.latitude, lng: p.coords.longitude });
+    }, function(e){
+      gagal(e && e.code === 1 ? 'Izin lokasi ditolak. Aktifkan izin lokasi untuk browser ini, atau pakai "Pilih di peta".' : 'Lokasi belum bisa didapat. Coba lagi atau pakai "Pilih di peta".');
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+  }
+  function klikTombol(e){
+    var t = e.target.closest ? e.target.closest('button') : null; if(!t) return;
+    var kg = t.getAttribute('data-gps'), kp = t.getAttribute('data-peta'), ks = t.getAttribute('data-sama');
+    if(kg){
+      var info = document.querySelector('[data-info="' + kg + '"]'), lama = t.innerHTML;
+      t.disabled = true; t.textContent = 'Mencari lokasi…';
+      ambilGps(function(c){ t.disabled = false; t.innerHTML = lama; setLokasi(kg, c); }, function(msg){ t.disabled = false; t.innerHTML = lama; if(info) info.innerHTML = '<span style="color:var(--danger)">' + esc(msg) + '</span>'; });
+    } else if(kp){
+      bukaPeta(kp);
+    } else if(ks){
+      var c = parseKoord(nilai('koordinat'));
+      if(!c){ var inf = document.querySelector('[data-info="' + ks + '"]'); if(inf) inf.innerHTML = '<span style="color:var(--danger)">Lokasi acara belum ada titiknya. Isi lokasi acara dulu di atas.</span>'; return; }
+      setLokasi(ks, c);
+    }
+  }
+
+  var leafSiap = null;
+  function muatLeaflet(){
+    if(window.L && window.L.map) return Promise.resolve();
+    if(leafSiap) return leafSiap;
+    leafSiap = new Promise(function(res, rej){
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = LEAF_CSS; document.head.appendChild(l);
+      var s = document.createElement('script'); s.src = LEAF_JS; s.onload = function(){ res(); }; s.onerror = function(){ leafSiap = null; rej(new Error('leaflet')); };
+      document.head.appendChild(s);
+    });
+    return leafSiap;
+  }
+  var peta = null;
+  function tutupPeta(){
+    var m = document.getElementById('petaModal'); if(m) m.remove();
+    if(peta){ try{ peta.remove(); }catch(e){} peta = null; }
+    document.body.style.overflow = '';
+  }
+  function bukaPeta(k){
+    var f = kolomPeta(k); if(!f) return;
+    tutupPeta();
+    var judul = k === 'linkMapsAntar' ? 'Lokasi pengantaran foto' : 'Lokasi acara';
+    var m = document.createElement('div'); m.className = 'pm'; m.id = 'petaModal';
+    m.innerHTML = '<div class="pm-top"><button type="button" id="pmBatal">Batal</button><b>' + esc(judul) + '</b><span class="gap"></span></div>' +
+      '<div class="pm-map"><div id="pmMap"></div><svg class="pm-pin" viewBox="0 0 34 44"><path d="M17 43C17 43 3 28 3 17a14 14 0 0 1 28 0c0 11-14 26-14 26Z" fill="#e53935" stroke="#fff" stroke-width="2.5"/><circle cx="17" cy="17" r="5.5" fill="#fff"/></svg><div class="pm-msg" id="pmMsg">Memuat peta…</div></div>' +
+      '<div class="pm-bot"><div class="pm-koor" id="pmKoor">Geser peta sampai pin berada di lokasi yang benar</div><div class="pm-row"><button type="button" class="btn-s" id="pmGps">' + I.gps + 'Lokasi saya</button><button type="button" class="btn" id="pmPakai">Pakai lokasi ini</button></div></div>';
+    document.body.appendChild(m); document.body.style.overflow = 'hidden';
+    document.getElementById('pmBatal').onclick = tutupPeta;
+    var msg = document.getElementById('pmMsg');
+    muatLeaflet().then(function(){
+      msg.hidden = true;
+      var awal = parseKoord(nilai(f.pk)), pusat = data.pusat && parseKoord(data.pusat.lat + ',' + data.pusat.lng);
+      var c0 = awal || pusat, z = awal ? 17 : pusat ? 14 : 5;
+      var mid = c0 ? [c0.lat, c0.lng] : [-2.5, 118];
+      peta = L.map('pmMap', { zoomControl: true }).setView(mid, z);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(peta);
+      var koor = document.getElementById('pmKoor');
+      function tampil(){ var c = peta.getCenter(); koor.textContent = c.lat.toFixed(6) + ', ' + c.lng.toFixed(6); }
+      peta.on('move', tampil); tampil();
+      document.getElementById('pmPakai').onclick = function(){
+        var c = peta.getCenter(); setLokasi(k, { lat: c.lat, lng: c.lng }); tutupPeta();
+      };
+      document.getElementById('pmGps').onclick = function(){
+        var b = this, lama = b.innerHTML; b.disabled = true; b.textContent = 'Mencari…';
+        ambilGps(function(c){ b.disabled = false; b.innerHTML = lama; peta.setView([c.lat, c.lng], 18); }, function(t){ b.disabled = false; b.innerHTML = lama; msg.textContent = t; msg.hidden = false; setTimeout(function(){ msg.hidden = true; }, 4000); });
+      };
+      setTimeout(function(){ if(peta) peta.invalidateSize(); }, 50);
+    }).catch(function(){
+      msg.textContent = 'Peta tidak bisa dimuat. Periksa koneksi internet, atau pakai "Lokasi saya saat ini" / tempel link Google Maps.';
+    });
+  }
+
+  /* ---------- Ongkos antar ---------- */
+  var ongkirTimer = null, ongkirReq = 0;
+  function updateOngkir(){
+    var box = document.getElementById('ongkirBox'); if(!box) return;
+    var metode = nilai('metodePengiriman');
+    clearTimeout(ongkirTimer); var req = ++ongkirReq;
+    box.className = 'ongkir';
+    if(metode === 'dijemput'){ box.hidden = false; box.innerHTML = '<b>Dijemput</b>Foto diambil sendiri di Kaone Motret, tanpa ongkos tambahan.'; return; }
+    if(metode !== 'diantar'){ box.hidden = true; return; }
+    box.hidden = false;
+    var c = parseKoord(nilai('koordinat'));
+    if(!c){ box.innerHTML = 'Isi dulu <b>lokasi acara</b> di atas (tempel link Google Maps, lokasi saat ini, atau pilih di peta). Foto diantar ke lokasi acara, ongkosnya dihitung dari sana.'; return; }
+    box.innerHTML = 'Menghitung ongkos antar…';
+    ongkirTimer = setTimeout(function(){
+      fetch(API + '?k=' + encodeURIComponent(token) + '&antar=' + encodeURIComponent(c.lat.toFixed(6) + ',' + c.lng.toFixed(6)), { cache: 'no-store' })
+        .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ return { ok: r.ok, j: j }; }); })
+        .then(function(res){
+          if(req !== ongkirReq) return;
+          if(!res.ok || typeof res.j.biaya !== 'number') throw new Error('x');
+          var j = res.j, km = Number(j.km).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+          if(j.biaya <= 0){ box.className = 'ongkir gratis'; box.innerHTML = 'Ongkos antar<b class="big">GRATIS</b><small>Jarak ± ' + km + ' km dari Kaone Motret.</small>'; }
+          else { box.innerHTML = 'Ongkos antar<b class="big">' + rp(j.biaya) + '</b><small>Jarak ± ' + km + ' km · tarif ' + rp(j.perKm) + ' per km. Dibayar saat foto diterima.</small>'; }
+        })
+        .catch(function(){
+          if(req !== ongkirReq) return;
+          box.innerHTML = 'Ongkos antar belum bisa dihitung sekarang. Anda tetap bisa mengirim isian, nanti Kaone Motret yang menginformasikan ongkosnya.';
+        });
+    }, 400);
+  }
+
+  /* ---------- Kirim ---------- */
   function kirim(e){
     e.preventDefault();
     var btn = document.getElementById('btnKirim'), box = document.getElementById('pesanErr');
     box.hidden = true;
     var isi = {};
     document.querySelectorAll('#frm [data-k]').forEach(function(el){ isi[el.getAttribute('data-k')] = el.value; });
+    if(isi.metodePengiriman === 'diantar' && !parseKoord(isi.koordinat || '')){
+      box.textContent = 'Foto diantar ke lokasi acara. Tentukan dulu lokasi acara di atas (link Maps, lokasi saat ini, atau pilih di peta).'; box.hidden = false; box.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+    }
     btn.disabled = true; btn.textContent = 'Mengirim…';
     fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ k: token, isi: isi }) })
       .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ return { ok:r.ok, j:j }; }); })
@@ -155,10 +381,10 @@
   function selesai(){
     // Simpan nilai terakhir supaya kalau klien memilih "Ubah lagi", isiannya tidak hilang.
     (data.isian || []).forEach(function(g){ (g.f || []).forEach(function(f){
-      var el = document.querySelector('#frm [data-k="' + f.k + '"]'); if(el) f.v = el.value;
+      var el = $k(f.k); if(el) f.v = el.value;
     }); });
     data.sudahKirim = true;
-    app.innerHTML = '<div class="card ok" style="margin-top:14px">' + ICON_OK + '<h2>Terima kasih!</h2><p>Isian Anda sudah kami terima. Tim Kaone Motret akan memeriksanya dan menghubungi Anda bila ada yang perlu dikonfirmasi.</p></div>' +
+    app.innerHTML = '<div class="card ok" style="margin-top:14px">' + I.ok + '<h2>Terima kasih!</h2><p>Isian Anda sudah kami terima. Tim Kaone Motret akan memeriksanya dan menghubungi Anda bila ada yang perlu dikonfirmasi.</p></div>' +
       '<button type="button" class="btn alt" id="btnUbah">Ubah isian lagi</button><div class="foot">Kaone Motret · Buku Job Fotografer</div>';
     document.getElementById('btnUbah').addEventListener('click', render);
     window.scrollTo({top:0, behavior:'smooth'});

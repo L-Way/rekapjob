@@ -14477,6 +14477,12 @@ function klUrl(token){
 function klKolom(j){
   const jenis = j.jenisAcara || '', lain = j.jenisAcaraLain || '';
   const grup = [];
+  // Data tetap dikunci kalau sudah terisi; kalau masih kosong, klien boleh mengisinya sendiri.
+  const kosong = [];
+  if(!String(j.namaKlien||'').trim()) kosong.push({k:'namaKlien', l:'Nama Klien', t:'text', v:'', p:'Nama lengkap'});
+  if(!String(j.tanggalAcara||'').trim()) kosong.push({k:'tanggalAcara', l:'Tanggal Acara', t:'date', v:''});
+  if(!String(j.jamAcara||'').trim()) kosong.push({k:'jamAcara', l:'Waktu Acara', t:'time', v:''});
+  if(kosong.length) grup.push({g:'Data acara yang belum terisi', f:kosong});
   const kontak = [];
   if(isJenisMempelai(jenis)) kontak.push({k:'namaMempelai', l:'Nama Kedua Mempelai', t:'text', v:String(j.namaMempelai||'').trim(), p:'Nama pasangan'});
   kontak.push({k:'noWhatsapp', l:'No. WhatsApp', t:'tel', v:String(j.noWhatsapp||'').trim(), p:'08xxxxxxxxxx'});
@@ -14487,7 +14493,8 @@ function klKolom(j){
     {k:'kecamatan', l:'Kecamatan', t:'text', v:String(j.kecamatan||'').trim()},
     {k:'kabupaten', l:'Kabupaten / Kota', t:'text', v:String(j.kabupaten||'').trim()},
     {k:'provinsi', l:'Provinsi', t:'text', v:String(j.provinsi||'').trim()},
-    {k:'linkMaps', l:'Link Google Maps lokasi acara', t:'url', v:String(j.linkMaps||'').trim(), p:'https://maps.app.goo.gl/...'},
+    {k:'linkMaps', l:'Titik lokasi acara di peta', h:'Pakai lokasi Anda saat ini, pilih di peta, atau tempel link Google Maps.', t:'url', pk:'koordinat', v:String(j.linkMaps||'').trim(), p:'https://maps.google.com/...'},
+    {k:'koordinat', l:'Titik koordinat lokasi acara', t:'coord', ui:0, v:String(j.koordinat||'').trim()},
   ]});
   const igList = Array.isArray(j.instagramList) ? j.instagramList : [];
   const roles = igList.length ? igList.map(x=>x.role) : getInstagramRoles(jenis);
@@ -14500,13 +14507,25 @@ function klKolom(j){
   }
   if(jenis){
     const vals = j.detailAcara || {};
-    const f = detailAcaraSkema(jenis, lain, vals).filter(x=>x.key!=='kodeVoucher').map(x=>({
-      k:'da:'+x.key, l:x.label, t:x.type==='textarea'?'textarea':(x.type==='time'?'time':'text'), v:String(vals[x.key]==null?'':vals[x.key]).trim(), p:x.placeholder||''
-    }));
+    const f = detailAcaraSkema(jenis, lain, vals).filter(x=>x.key!=='kodeVoucher').map(x=>{
+      if(x.key==='pemilihanFoto') return {k:'da:pemilihanFoto', l:x.label, h:'Siapa yang memilih foto untuk diedit dan dicetak?', t:'select', o:[{v:'Pengantin',l:'Pengantin'},{v:'Fotografer',l:'Fotografer'}], v:String(vals.pemilihanFoto==null?'':vals.pemilihanFoto).trim()};
+      return {k:'da:'+x.key, l:x.label, t:x.type==='textarea'?'textarea':(x.type==='time'?'time':'text'), v:String(vals[x.key]==null?'':vals[x.key]).trim(), p:x.placeholder||''};
+    });
     Object.keys(vals).filter(k=>k.indexOf('x_')===0 && !detailEkstraKeuangan((j.detailAcaraEkstra&&j.detailAcaraEkstra[k])||k)).forEach(k=>{
       f.push({k:'dx:'+k, l:(j.detailAcaraEkstra&&j.detailAcaraEkstra[k])||k, t:'textarea', v:String(vals[k]==null?'':vals[k]).trim()});
     });
     if(f.length) grup.push({g:'Detail acara'+(jenis==='Lainnya'?'':' · '+jenis), f});
+  }
+  // Pengiriman foto: hanya selama fotonya belum sampai ke klien.
+  if(!pengirimanSudah(j.pengiriman)){
+    grup.push({g:'Pengiriman foto', f:[
+      {k:'metodePengiriman', l:'Foto diantar atau dijemput?', t:'select', o:[{v:'dijemput',l:'Dijemput (diambil sendiri)'},{v:'diantar',l:'Diantar ke lokasi acara'}], v:j.pengiriman?pengirimanMetode(j.pengiriman):''},
+      {k:'linkMapsAntar', l:'Link Maps antar', t:'hidden', v:String(j.linkMapsAntar||'').trim()},
+      {k:'koordinatAntar', l:'Titik koordinat lokasi antar', t:'coord', ui:0, v:String(j.koordinatAntar||'').trim()},
+      {k:'_ongkir', l:'Ongkos antar', t:'hidden', v:''},
+      {k:'jarakAntarKm', l:'Jarak antar', t:'hidden', v:(j.jarakAntarKm===null||j.jarakAntarKm===undefined)?'':String(j.jarakAntarKm)},
+      {k:'ongkirAntar', l:'Ongkos antar', t:'hidden', v:(j.ongkirAntar===null||j.ongkirAntar===undefined||j.ongkirAntar==='')?'':String(j.ongkirAntar)},
+    ]});
   }
   return grup;
 }
@@ -14515,25 +14534,43 @@ function klSnapshot(j){
   const kunci = [
     ['Nama Klien', j.namaKlien||''],
     ['Jenis Acara', j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'Lainnya') : (j.jenisAcara||'')],
-    ['Tanggal Acara', fmtTglJob(j)],
+    ['Tanggal Acara', String(j.tanggalAcara||'').trim() ? fmtTglJob(j) : ''],
     ['Waktu Acara', jam ? jam.replace(':','.')+' WIB' : ''],
     ['Layanan', layananMediaLabel(j)],
     ['Paket', j.paket||''],
     ['Deskripsi Paket', cetakRapikan(j.deskripsiPaket)||''],
     ['Add-On', j.addOn||''],
-  ].map(([l,v])=>({l, v:String(v==null?'':v).slice(0,1200)})).filter(x=>x.v && x.v!=='-' || x.l==='Nama Klien');
-  return { v:1, nama:String(j.namaKlien||'').slice(0,80), jenis:j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'') : (j.jenisAcara||''), kunci, isian:klKolom(j) };
+    ['Pengiriman Foto', pengirimanSudah(j.pengiriman) ? j.pengiriman : ''],
+  ].map(([l,v])=>({l, v:String(v==null?'':v).slice(0,1200)})).filter(x=>x.v && x.v!=='-');
+  const c = parseCoordString(j.koordinat);
+  return { v:2, nama:String(j.namaKlien||'').slice(0,80), jenis:j.jenisAcara==='Lainnya' ? (j.jenisAcaraLain||'') : (j.jenisAcara||''), kunci, isian:klKolom(j),
+    ongkir:{ perKm:Number(ONGKIR_ANTAR.perKm)||0, batasGratis:Number(ONGKIR_ANTAR.batasGratis)||0 }, pusat:c?{lat:c.lat, lng:c.lng}:null };
 }
+const KL_KOORD = ['koordinat','koordinatAntar'], KL_ANGKA = ['jarakAntarKm','ongkirAntar'];
 function klNilai(j, key){
   if(key.indexOf('ig:')===0){ const it=(Array.isArray(j.instagramList)?j.instagramList:[]).find(x=>x.role===key.slice(3)); return it&&it.username?('@'+igUsername(it.username)):''; }
   if(key.indexOf('da:')===0||key.indexOf('dx:')===0) return String((j.detailAcara||{})[key.slice(3)]==null?'':(j.detailAcara||{})[key.slice(3)]).trim();
+  if(key==='metodePengiriman') return j.pengiriman ? pengirimanMetode(j.pengiriman) : '';
   return String(j[key]==null?'':j[key]).trim();
 }
 function klSama(key, a, b){
   a=String(a||'').trim(); b=String(b||'').trim();
   if(key==='noWhatsapp') return waDigits(a)===waDigits(b);
   if(key.indexOf('ig:')===0) return igUsername(a).toLowerCase()===igUsername(b).toLowerCase();
+  if(KL_KOORD.indexOf(key)>-1){
+    const x=parseCoordString(a), y=parseCoordString(b);
+    if(!x||!y) return !x && !y;
+    return Math.abs(x.lat-y.lat)<1e-5 && Math.abs(x.lng-y.lng)<1e-5;
+  }
+  if(KL_ANGKA.indexOf(key)>-1) return (Number(a)||0)===(Number(b)||0);
   return a===b;
+}
+function klFmt(k, v){
+  v = String(v==null?'':v).trim();
+  if(k==='metodePengiriman') return v==='diantar'?'Diantar':v==='dijemput'?'Dijemput':v;
+  if(k==='ongkirAntar') return v==='' ? '' : (Number(v)>0 ? fmtRp(Number(v)) : 'Gratis');
+  if(k==='jarakAntarKm') return v==='' ? '' : (Number(v).toLocaleString('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1})+' km');
+  return v;
 }
 function klNormWa(v){
   let d = String(v||'').replace(/\D/g,'');
@@ -14543,13 +14580,17 @@ function klNormWa(v){
   return '0'+d;
 }
 function klBeda(j, kir){
-  const peta = {}; klKolom(j).forEach(g=>g.f.forEach(f=>{ peta[f.k] = {l:f.l, g:g.g}; }));
+  const peta = {}; klKolom(j).forEach(g=>g.f.forEach(f=>{ if(f.t!=='hidden' || KL_ANGKA.indexOf(f.k)>-1) peta[f.k] = {l:f.l, g:g.g}; }));
+  const ISI_KOSONG = ['namaKlien','tanggalAcara','jamAcara']; // data tetap: hanya boleh diisi kalau di job masih kosong
+  const diantar = String(kir&&kir.metodePengiriman||'')==='diantar';
   const out = [];
   Object.keys(kir||{}).forEach(k=>{
     if(!peta[k]) return;
     let baru = String(kir[k]==null?'':kir[k]).trim();
     if(k.indexOf('ig:')===0 && baru) baru = '@'+igUsername(baru);
     const lama = klNilai(j,k);
+    if(ISI_KOSONG.indexOf(k)>-1 && lama) return;
+    if(KL_ANGKA.indexOf(k)>-1 && baru==='' && diantar) return; // jarak/ongkos belum terhitung: jangan menimpa
     if(!klSama(k, lama, baru)) out.push({k, l:peta[k].l, g:peta[k].g, lama, baru});
   });
   return out;
@@ -14581,9 +14622,13 @@ function klBoxHtml(j){
     const beda = klBeda(j, r.kiriman);
     h += `<div class="kl-sub">Dikirim klien ${escapeHtml(klWaktu(r.dikirim_at))}${r.jumlah_kirim>1?` · ${r.jumlah_kirim}x kirim`:''}</div>`;
     if(beda.length){
-      h += `<div class="kl-diff">${beda.map(b=>`<div class="kl-d"><div class="kl-dl">${escapeHtml(b.l)}</div><div class="kl-dv"><s>${b.lama?escapeHtml(b.lama):'(kosong)'}</s><b>${b.baru?escapeHtml(b.baru):'(dikosongkan)'}</b></div></div>`).join('')}</div>`;
-      if(beda.some(b=>['desa','dusun','kecamatan','kabupaten','provinsi','linkMaps'].indexOf(b.k)>-1))
-        h += `<div class="kl-warn">${ic('pin')} Lokasi berubah. Titik Koordinat tidak ikut berubah otomatis, periksa lewat Edit Job supaya jarak dan pengingat berangkat tetap benar.</div>`;
+      h += `<div class="kl-diff">${beda.map(b=>`<div class="kl-d"><div class="kl-dl">${escapeHtml(b.l)}</div><div class="kl-dv"><s>${klFmt(b.k,b.lama)?escapeHtml(klFmt(b.k,b.lama)):'(kosong)'}</s><b>${klFmt(b.k,b.baru)?escapeHtml(klFmt(b.k,b.baru)):'(dikosongkan)'}</b></div></div>`).join('')}</div>`;
+      if(beda.some(b=>['desa','dusun','kecamatan','kabupaten','provinsi','linkMaps'].indexOf(b.k)>-1) && !beda.some(b=>b.k==='koordinat'))
+        h += `<div class="kl-warn">${ic('pin')} Alamat atau link lokasi berubah, tetapi titik koordinatnya tidak. Periksa Titik Koordinat lewat Edit Job supaya jarak dan pengingat berangkat tetap benar.</div>`;
+      if(beda.some(b=>b.k==='koordinat'))
+        h += `<div class="kl-warn">${ic('pin')} Titik koordinat lokasi acara akan ikut berubah, sehingga jarak dan pengingat berangkat memakai titik baru.</div>`;
+      if(String(r.kiriman.metodePengiriman||'')==='diantar' && (r.kiriman.ongkirAntar===''||r.kiriman.ongkirAntar==null))
+        h += `<div class="kl-warn">${ic('pin')} Klien memilih Diantar, tetapi ongkos antar belum terhitung (lokasi antar belum ada titiknya atau jarak gagal dihitung). Lengkapi lewat Edit Job.</div>`;
       h += `<div class="kl-act two"><button type="button" class="btn btn-primary" data-kl="terapkan" data-job="${id}">Terapkan ${beda.length} perubahan</button><button type="button" class="btn btn-outline" data-kl="abaikan" data-job="${id}">Abaikan</button></div>`;
     } else {
       h += `<div class="ops-empty">Klien mengirim isian yang sama dengan data di job. Tidak ada yang perlu diterapkan.</div><div class="kl-act"><button type="button" class="btn btn-outline" data-kl="abaikan" data-job="${id}">Tandai selesai</button></div>`;
@@ -14695,7 +14740,17 @@ function klTerapkanKolom(j, k, v){
     if(v) j.detailAcara[kk] = v; else delete j.detailAcara[kk];
     return;
   }
-  if(['namaMempelai','desa','kecamatan','kabupaten','provinsi','linkMaps'].indexOf(k)>-1) j[k] = v;
+  if(k==='metodePengiriman'){
+    if(v==='diantar'||v==='dijemput'){
+      j.pengiriman = buildPengirimanValue(v, pengirimanSudah(j.pengiriman));
+      if(v==='dijemput'){ j.ongkirAntar = 0; j.linkMapsAntar = ''; j.koordinatAntar = ''; j.jarakAntarKm = null; }
+    }
+    return;
+  }
+  if(k==='jarakAntarKm'){ const n = parseFloat(v); j.jarakAntarKm = isFinite(n) ? Math.round(n*10)/10 : null; return; }
+  if(k==='ongkirAntar'){ j.ongkirAntar = Number(v)||0; return; }
+  if(KL_KOORD.indexOf(k)>-1){ const c = parseCoordString(v); j[k] = c ? (c.lat.toFixed(6)+', '+c.lng.toFixed(6)) : ''; return; }
+  if(['namaKlien','tanggalAcara','jamAcara','namaMempelai','desa','kecamatan','kabupaten','provinsi','linkMaps','linkMapsAntar'].indexOf(k)>-1) j[k] = v;
 }
 document.addEventListener('click',e=>{
   const t = e.target && e.target.closest ? e.target.closest('[data-kl]') : null; if(!t || t.disabled) return;
@@ -20666,7 +20721,7 @@ const CHANGELOG = [
     version: '1.35.0',
     tanggal: '16 November 2026',
     items: [
-      { kategori: 'Fitur', teks: 'Link isian klien. Di Detail Job, Admin bisa membuat satu link per job untuk dibagikan ke klien lewat WhatsApp. Klien melengkapi sendiri nomor WhatsApp, lokasi, Instagram, dan Detail Acara, sedangkan data tetap seperti jenis acara, tanggal, jam, dan paket hanya ditampilkan dan terkunci. Isian klien menunggu persetujuan Admin: lihat perubahannya satu per satu, lalu tekan Terapkan. Admin juga mendapat notifikasi saat klien mengirim isian.' },
+      { kategori: 'Fitur', teks: 'Link isian klien. Di Detail Job, Admin bisa membuat satu link per job untuk dibagikan ke klien lewat WhatsApp. Klien melengkapi sendiri biodata acaranya: nomor WhatsApp, lokasi (bisa pakai lokasi saat ini atau memilih titik di peta), Instagram, Detail Acara (Pemilihan Foto berupa pilihan Pengantin atau Fotografer), dan pilihan foto diantar atau dijemput. Kalau diantar, foto dikirim ke lokasi acara dan ongkos antar langsung ditampilkan dari lokasi acara itu sesuai tarif per km. Data tetap seperti jenis acara, tanggal, jam, dan paket terkunci kalau sudah terisi, dan terbuka untuk diisi klien kalau masih kosong. Isian klien menunggu persetujuan Admin: lihat perubahannya satu per satu, lalu tekan Terapkan. Admin juga mendapat notifikasi saat klien mengirim isian.' },
     ]
   },
   {

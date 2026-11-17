@@ -1100,7 +1100,17 @@
   .kl-dv b{color:var(--ink);}
   .kl-warn{display:flex; gap:8px; align-items:flex-start; font-size:12px; line-height:1.45; background:#fff4d6; border:1px solid #f0d98a; border-radius:10px; padding:8px 10px; margin-top:8px; color:#6b4a06;}
   .kl-warn .ic{width:15px; height:15px; flex:none; margin-top:1px;}
-  /* Briefing Hari-H */
+  /* Booking Cepat */
+.jf-cepat-info{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px;padding:10px 12px;border-radius:12px;background:var(--gold-soft,rgba(201,162,74,.14));border:1px solid var(--line,rgba(0,0,0,.1));font-size:13px}
+.jf-cepat-info span{flex:1 1 220px;color:var(--ink-soft)}
+.jf-cepat .cepat-sembunyi{display:none !important}
+.bm-row{display:flex;gap:8px;align-items:center;margin-top:6px}
+.bm-main{flex:1;min-width:0;text-align:left;background:none;border:0;padding:4px 0;cursor:pointer;color:inherit;font:inherit}
+.bm-main b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bm-main small{display:block;color:var(--ink-soft)}
+.bm-btn{flex:none;padding:6px 12px}
+.bm-tag{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(214,120,40,.16);color:#b8641a;vertical-align:middle;white-space:nowrap}
+/* Briefing Hari-H */
   .hh-box{margin-top:14px; border:1.5px solid #e6d79a; background:linear-gradient(180deg,#fffdf3,#fff); border-radius:16px; padding:14px; box-shadow:0 6px 18px -10px rgba(122,74,6,.35);}
   .hh-head{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px;}
   .hh-head .ic{width:15px; height:15px;}
@@ -7984,6 +7994,7 @@ function normalizeJobsWhitespace(list){
 let jobs = normalizeJobsWhitespace(loadJobs());
 let currentView = 'beranda';
 let editingId = null;
+let formCepat = false, formCepatAsal = false;   // form Input Job dibuka dalam mode Booking Cepat (kolom diringkas)
 let calMonth = new Date().getMonth();
 let calYear = new Date().getFullYear();
 let rekapTab = 'bulan';
@@ -10729,6 +10740,7 @@ function navigate(view, opts){
   if(view==='pesanan' && typeof psnRibbonTutup==='function') psnRibbonTutup();
   // Pesanan yang sedang dikonfirmasi hanya berlaku selama form yang dibuka dari tombol "Konfirmasi Booking"
   if(!(view==='form' && opts && opts.pesanan)) pendingPesanan = null;
+  if(view==='form') formCepat = formCepatAsal = !!(opts && opts.cepat);
   // Urutan ini dipakai untuk menentukan arah animasi "berjalan pindah" (lihat
   // playAppTransition): kalau tab tujuan ada di sebelah kanan tab sebelumnya
   // di menu bawah, halaman baru masuk dari kanan, begitu juga sebaliknya.
@@ -11012,6 +11024,7 @@ function viewBeranda(){
       <p class="dash-next-meta">Job yang akan datang akan muncul di sini.</p>
       <div class="dash-actions">
         <button type="button" class="dash-btn gold admin-only" id="btnInputJob">Tambah job</button>
+        <button type="button" class="dash-btn line admin-only" id="btnBookingCepat">Booking cepat</button>
       </div>
     </section>`;
     }
@@ -11048,6 +11061,7 @@ function viewBeranda(){
       <ul class="dash-det">${rows}</ul>
       <div class="dash-actions">
         <button type="button" class="dash-btn gold admin-only" id="btnInputJob">Tambah job</button>
+        <button type="button" class="dash-btn line admin-only" id="btnBookingCepat">Booking cepat</button>
         <button type="button" class="dash-btn line" data-view-job="${nextJob.id}">Lihat detail</button>
       </div>
     </section>`;
@@ -11118,6 +11132,8 @@ function viewBeranda(){
           ${weekHtml}
 
           ${bkBerandaHtml()}
+
+          ${bmBerandaHtml()}
 
           ${tgBerandaHtml()}
         </div>
@@ -11977,9 +11993,46 @@ function onHonorTimNominalInput(inp){
   updateCalc();
 }
 
+/* Booking Cepat: form yang sama, tapi hanya bagian yang perlu saat booking yang ditampilkan. Kolom lain tetap ada
+   (disembunyikan) supaya semua perhitungan form tetap jalan dan bisa dibuka lewat "Tampilkan semua kolom". */
+function jfCepatTerapkan(form){
+  const tampil = ['Hasil Cetak','Biodata Klien & Acara'];
+  form.querySelectorAll('.jf-sec').forEach(sec=>{
+    const t = (sec.querySelector('.jf-sec-htx h3')||{}).textContent||'';
+    if(tampil.indexOf(t.trim())<0){ sec.classList.add('cepat-sembunyi'); return; }
+    sec.classList.add('open');
+  });
+  form.querySelectorAll('.bio-grp').forEach(g=>{
+    const h = ((g.querySelector('.bio-h')||{}).textContent||'').trim();
+    if(h==='Nama & Instagram' || g.classList.contains('bio-detail')) g.classList.add('cepat-sembunyi');
+  });
+  const jam = form.querySelector('#jamAcaraInput'); const jw = jam && jam.closest('.form-grid > div');
+  if(jw) jw.classList.add('cepat-sembunyi');
+  const dur = form.querySelector('#durasiHariHintWrap'); if(dur) dur.classList.add('cepat-sembunyi');
+  const btn = document.getElementById('btnCepatSemua');
+  if(btn) btn.addEventListener('click', ()=>{
+    formCepat = false;
+    const card = form.closest('.card'); if(card) card.classList.remove('jf-cepat');
+    form.querySelectorAll('.cepat-sembunyi').forEach(e=>e.classList.remove('cepat-sembunyi'));
+    btn.closest('.jf-cepat-info')?.remove();
+  });
+}
+// Setelah Booking Cepat disimpan: buat link isian klien dan tawarkan langsung mengirimnya.
+async function jfCepatLink(jobId){
+  const j = jobs.find(x=>String(x.id)===String(jobId)); if(!j) return;
+  const d = await klSimpan(j, false, true);
+  if(!d){ toast('Job tersimpan, tapi link isian belum bisa dibuat. Buat dari Detail Job.'); return; }
+  if(String(j.noWhatsapp||'').trim()){
+    if(confirm('Booking tersimpan dan link isian sudah dibuat.\n\nBuka WhatsApp untuk mengirim link ke klien sekarang?')) klAksi('wa', j.id);
+  }else{
+    copyToClipboard(klUrl(d.token), 'Booking tersimpan. Link isian klien disalin, tinggal kirim.');
+  }
+}
 function viewForm(){
   const j = editingId ? jobs.find(x=>x.id===editingId) : null;
-  return `<div class="card">${buildJobFormHtml(j)}</div>`;
+  const cepat = formCepat && !j;
+  const info = cepat ? `<div class="jf-cepat-info"><b>Booking Cepat</b><span>Cukup tanggal, jenis acara, nama/WhatsApp, dan hasil cetak. Setelah disimpan, link isian dibuat otomatis untuk dikirim ke klien. Isian klien nanti digabung lewat tombol Terapkan.</span><button type="button" class="btn btn-outline" id="btnCepatSemua">Tampilkan semua kolom</button></div>` : '';
+  return `<div class="card${cepat?' jf-cepat':''}">${info}${buildJobFormHtml(j)}</div>`;
 }
 /* ---------- Draf otomatis form job ----------
    Isian disimpan di perangkat ini setiap kali berubah, lalu dipulihkan kalau form terbuka lagi
@@ -12223,6 +12276,8 @@ function bindJobFormEvents(scopeEl, onDone){
       data.asalPesananId = pendPesanan.id;
     }
     let jobIdTersimpan = editingId;
+    const cepatBaru = !editingId && formCepatAsal && isAdmin();
+    if(cepatBaru) data.biodataMenunggu = true;   // job dari Booking Cepat: tampil di "Menunggu biodata" sampai isian klien diterapkan
     if(editingId){
       const idx = jobs.findIndex(x=>x.id===editingId);
       jobs[idx] = {...jobs[idx], ...data};
@@ -12234,6 +12289,7 @@ function bindJobFormEvents(scopeEl, onDone){
     toast(editingId ? 'Job berhasil diperbarui' : 'Job baru berhasil disimpan');
     if(pendPesanan){ pendingPesanan = null; pesananSelesaiDenganJob(pendPesanan, jobIdTersimpan); }
     editingId = null;
+    if(cepatBaru){ formCepatAsal = false; formCepat = false; setTimeout(()=>{ try{ jfCepatLink(jobIdTersimpan); }catch(e){} }, 400); }
     onDone('saved');
   });
   scopeEl.querySelector('#btnCancelForm')?.addEventListener('click', ()=>{
@@ -12445,6 +12501,7 @@ function viewDaftar(){
           </select>
           <button class="btn btn-outline" id="btnCopyPerBulan">${ic('clipboard')} Salin per Bulan</button>
         </div>
+        <button class="btn btn-outline admin-only" id="btnBookingCepat2" aria-label="Booking cepat">Booking Cepat</button>
         <button class="btn btn-primary admin-only" id="btnInputJob2" aria-label="Tambah job baru">+ Job Baru</button>
       </div>
     </div>
@@ -12529,7 +12586,7 @@ function kmRowHtml(j, today){
   return `<div class="kmr${terbuka?' km-open':''}${soon?' soon':''}" data-job-row="${id}">
     <div class="kmr-d"><b>${d?d.getDate():'–'}</b><span>${d?MONTH_NAMES[d.getMonth()].slice(0,3).toUpperCase():''}</span></div>
     <div class="kmr-main">
-      <div class="kmr-t">${escapeHtml(title)}</div>
+      <div class="kmr-t">${escapeHtml(title)}${j.biodataMenunggu&&isAdmin()?'<span class="bm-tag">Menunggu biodata</span>':''}</div>
       <div class="kmr-s">${rel?'<b class="kmr-rel">'+rel+'</b> · ':''}${escapeHtml(sub)}</div>
       <div class="kmr-b">
         <button type="button" class="km-chip ${st.cls}" data-km-toggle="${id}" aria-expanded="${terbuka?'true':'false'}" title="Ketuk untuk melihat / mengubah status"><span class="km-lbl">${escapeHtml(lbl)}</span>${st.extra?`<span class="km-more">+${st.extra}</span>`:''}</button>
@@ -12692,7 +12749,7 @@ function djRenderDesktop(wrap, list, filterSig){
     rows += `
     <tr class="dj-row${st.cls==='ok'?' done':''}" data-job-row="${escapeHtml(j.id)}">
       <td class="dj-tgl"><div class="dj-t1">${fmtTglJob(j)}</div><div class="dj-t2">${escapeHtml(djHari(j.tanggalAcara))}${rel.t?` <span class="dj-rel ${rel.c}">${escapeHtml(rel.t)}</span>`:''}</div></td>
-      <td class="dj-klien"><div class="dj-t1">${escapeHtml(j.namaKlien||'-')}</div><div class="dj-t2">#${j.noUrut}${mem && mem!==(j.namaKlien||'').trim() ? ' · '+escapeHtml(mem) : ''}</div></td>
+      <td class="dj-klien"><div class="dj-t1">${escapeHtml(j.namaKlien||'-')}${j.biodataMenunggu&&isAdmin()?'<span class="bm-tag">Menunggu biodata</span>':''}</div><div class="dj-t2">#${j.noUrut}${mem && mem!==(j.namaKlien||'').trim() ? ' · '+escapeHtml(mem) : ''}</div></td>
       <td class="dj-acara"><span class="dj-chip" style="--c:${col.accent}; --cb:${kwRgba(col.accent,.14)}"><i></i>${escapeHtml(jenis)}</span>${layananChipHtml(j)}<div class="dj-t2">${escapeHtml(lok)}</div></td>
       <td>${badgeSelect(j.id, 'prosesEdit', ['Belum Selesai','Selesai'], j.prosesEdit)}</td>
       <td>${badgeSelect(j.id, 'prosesCetak', ['Belum Selesai','Selesai'], j.prosesCetak)}</td>
@@ -12762,7 +12819,7 @@ function renderDaftarTable(){
       <tr data-job-row="${escapeHtml(j.id)}"${terbuka ? ' class="km-open"' : ''}>
         <td data-label="No">#${j.noUrut}</td>
         <td data-label="Tanggal">${fmtTglJob(j)}</td>
-        <td data-label="Klien">${escapeHtml(j.namaKlien||'-')}</td>
+        <td data-label="Klien">${escapeHtml(j.namaKlien||'-')}${j.biodataMenunggu&&isAdmin()?'<span class="bm-tag">Menunggu biodata</span>':''}</td>
         <td class="km-m km-menu"><button type="button" class="km-menubtn" data-km-menu="${escapeHtml(j.id)}" aria-label="Menu job" aria-haspopup="menu">${ic('nav-more')}</button></td>
         <td class="km-m km-sum">${escapeHtml(jenisTxt)} · ${escapeHtml(lokasiTxt)}</td>
         <td class="km-m km-stat"><button type="button" class="km-chip ${st.cls}" data-km-toggle="${escapeHtml(j.id)}" aria-expanded="${terbuka?'true':'false'}" title="Ketuk untuk melihat / mengubah status"><span class="km-lbl">${escapeHtml(st.label)}</span>${st.extra ? `<span class="km-more">+${st.extra}</span>` : ''}</button></td>
@@ -14606,6 +14663,14 @@ function klStatusInfo(r){
 }
 function klWaktu(iso){ try{ return new Date(iso).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
 function klBoxHtml(j){
+  let h = klBoxHtml0(j);
+  if(h && j && j.biodataMenunggu){
+    const ekstra = `<div class="kl-sub"><span class="bm-tag">Menunggu biodata</span> Job ini ditandai belum lengkap. <button type="button" class="btn btn-outline" data-kl="lengkap" data-job="${escapeHtml(String(j.id))}">Tandai lengkap</button></div>`;
+    h = h.replace(/(<div class="hh-head">.*?<\/div>)/, '$1'+ekstra);
+  }
+  return h;
+}
+function klBoxHtml0(j){
   if(!isAdmin()||!j) return '';
   const id = escapeHtml(String(j.id));
   const r = KL_DATA[String(j.id)];
@@ -14686,6 +14751,7 @@ async function klAksi(aksi, jobId){
     const d = await klSimpan(j, false, false); if(!d) return;
     toast(aksi==='buat' ? 'Link dibuat' : 'Link diaktifkan'); klRender(j.id); return;
   }
+  if(aksi==='lengkap'){ delete j.biodataMenunggu; saveJobs(); toast('Ditandai lengkap'); opsBuka(j.id); return; }
   if(!r) return;
   if(aksi==='salin'){ klSimpan(j,false,true); copyToClipboard(klUrl(r.token), 'Link isian klien disalin'); return; }
   if(aksi==='wa'){
@@ -14713,11 +14779,16 @@ async function klAksi(aksi, jobId){
   }
   if(aksi==='terapkan'){
     const beda = klBeda(j, r.kiriman||{});
-    if(!beda.length){ toast('Tidak ada perubahan'); return; }
+    if(!beda.length){
+      if(j.biodataMenunggu){ delete j.biodataMenunggu; saveJobs(); toast('Isian klien sama dengan data job. Ditandai lengkap.'); opsBuka(j.id); }
+      else toast('Tidak ada perubahan');
+      return;
+    }
     // Tandai di server dulu: kalau gagal, job tidak disentuh dan Admin bisa mengulang.
     try{ const {error} = await supabaseClient.rpc('kaone_klien_kiriman_tandai', { p_job_id:String(j.id), p_status:'diterapkan' }); if(error) throw error; }
     catch(e){ toast('Gagal menerapkan, coba lagi'); return; }
     beda.forEach(b=>klTerapkanKolom(j, b.k, b.baru));
+    delete j.biodataMenunggu;   // isian klien sudah digabung: tidak lagi menunggu biodata
     saveJobs(); r.status='diterapkan';
     toast(beda.length+' isian klien diterapkan');
     opsBuka(j.id);
@@ -14831,6 +14902,34 @@ function bkFormHint(){
   const nb=cs.filter(c=>c.level==='bentrok').length;
   el.textContent=(nb?'⚠️ Jadwal bentrok dengan ':'Ada job lain di tanggal ini: ')+cs.slice(0,3).map(c=>hhJudul(c.job)+bkJamTeks(c.job)).join(', ')+(cs.length>3?' dan '+(cs.length-3)+' lainnya':'')+'.';
 }
+/* Menunggu biodata klien: job dari Booking Cepat yang isian kliennya belum diterapkan, urut dari acara terdekat. */
+function bmHariKe(j){
+  const t = new Date(); const a = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  const b = new Date(String(j.tanggalAcara||'')+'T00:00:00');
+  return Math.round((b-a)/86400000);
+}
+function bmBerandaHtml(){
+  if(!isAdmin()) return '';
+  const list = (jobs||[]).filter(j=>j && j.biodataMenunggu && j.tanggalAcara).sort((a,b)=>String(a.tanggalAcara).localeCompare(String(b.tanggalAcara)));
+  if(!list.length) return '';
+  const rows = list.slice(0,6).map(j=>{
+    const h = bmHariKe(j);
+    const ket = h<0 ? 'Acara sudah lewat' : h===0 ? 'Acara hari ini' : h+' hari lagi';
+    const warn = h>=0 && h<=14 ? ' style="color:#c0392b;font-weight:700"' : '';
+    return `<div class="bm-row"><button type="button" class="bm-main" data-view-job="${escapeHtml(String(j.id))}"><b>${escapeHtml(hhJudul(j))}</b><small>${escapeHtml(fmtTglJob(j))} · <span${warn}>${ket}</span></small></button><button type="button" class="btn btn-outline bm-btn" data-bm="ingat" data-job="${escapeHtml(String(j.id))}">Ingatkan</button></div>`;
+  }).join('');
+  return `<div class="bk-box bk-ber bm-box"><div class="bk-head">${ic('clipboard')} Menunggu biodata klien<small>${list.length} job</small></div>${rows}${list.length>6?`<div class="tgt-sub" style="margin-top:6px;">Dan ${list.length-6} job lainnya, lihat di Daftar Job.</div>`:''}</div>`;
+}
+document.addEventListener('click', async e=>{
+  const b = e.target && e.target.closest ? e.target.closest('[data-bm="ingat"]') : null; if(!b || !isAdmin()) return;
+  const j = jobs.find(x=>String(x.id)===String(b.dataset.job)); if(!j) return;
+  const d = await klSimpan(j, false, true);
+  if(!d){ toast('Belum bisa menghubungi server. Coba lagi.'); return; }
+  const nama = String(j.namaKlien||'').trim();
+  const teks = `Halo Kak${nama?' '+nama:''}, kami dari Kaone Motret 🙏\n\nMau mengingatkan, biodata acara kakak belum lengkap. Mohon dibantu lengkapi lewat link berikut ya, supaya persiapannya maksimal:\n${klUrl(d.token)}\n\nTerima kasih Kak 🙏`;
+  if(String(j.noWhatsapp||'').trim()) window.open(waLinkKlien(j.noWhatsapp, teks), '_blank', 'noopener');
+  else copyToClipboard(teks, 'Nomor WhatsApp belum ada. Pesan pengingat disalin.');
+});
 function bkBerandaHtml(){
   if(!isAdmin()) return '';
   const hari=bkHariIni(), pairs=[], seen=new Set();
@@ -20230,6 +20329,7 @@ function attachHandlers(){
   // BERANDA
   document.getElementById('btnInputJob')?.addEventListener('click', ()=>{ editingId=null; navigate('form'); });
   document.getElementById('btnInputJob2')?.addEventListener('click', ()=>{ editingId=null; navigate('form'); });
+  ['btnBookingCepat','btnBookingCepat2'].forEach(id=>document.getElementById(id)?.addEventListener('click', ()=>{ editingId=null; navigate('form',{cepat:true}); }));
   document.getElementById('btnCopyPerBulan')?.addEventListener('click', openCopyPerBulanModal);
   // (tombol "Cadangkan Sekarang" di banner beranda sudah dihapus - cadangkan data sekarang
   // dilakukan lewat menu Pengaturan, karena data utama sudah tersinkron otomatis ke cloud)
@@ -20259,6 +20359,7 @@ function attachHandlers(){
   // FORM
   const form = document.getElementById('jobForm');
   if(form){
+    if(formCepat && !editingId) jfCepatTerapkan(form);
     bindJobFormEvents(document, (action)=>{
       jdHapus();   // job sudah disimpan / dibatalkan / dihapus: draf tidak diperlukan lagi
       if(action==='cancelled'){ navigate(jobs.length?'daftar':'beranda'); }
@@ -20711,12 +20812,21 @@ function downloadRekapImage(){
    jadi mereka tidak akan tahu ada pembaruan. Jangan pernah melewatkan
    langkah ini walaupun perubahannya terasa sepele.
 ========================================================= */
-const APP_VERSION = '1.35.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
+const APP_VERSION = '1.36.0'; // ⚠️ naikkan tiap ada perubahan - lihat catatan wajib di atas
 // Setiap item changelog berbentuk { kategori, teks }. Kategori yang dipakai konsisten
 // di seluruh riwayat: 'Fitur' (hal baru), 'Perbaikan' (bugfix), 'Peningkatan' (penyempurnaan
 // dari yang sudah ada). Kategori lain boleh dipakai kalau memang perlu - tampilannya akan
 // otomatis jatuh ke gaya netral (lihat .cat-lainnya di CSS).
 const CHANGELOG = [
+  {
+    version: '1.36.0',
+    tanggal: '17 November 2026',
+    items: [
+      { kategori: 'Fitur', teks: 'Booking Cepat. Tombol baru di Beranda dan Daftar Job untuk mencatat booking hanya dengan tanggal, jenis acara, nama atau WhatsApp klien, dan detail Hasil Cetak. Setelah disimpan, link isian klien langsung dibuat dan bisa dikirim lewat WhatsApp. Kolom lain bisa dibuka lewat tombol "Tampilkan semua kolom".' },
+      { kategori: 'Fitur', teks: 'Penanda "Menunggu biodata". Job dari Booking Cepat diberi penanda di Daftar Job dan muncul di kartu Beranda, diurutkan dari acara terdekat, lengkap dengan tombol "Ingatkan" yang membuka WhatsApp dengan pesan pengingat. Penanda hilang saat isian klien diterapkan, atau lewat tombol "Tandai lengkap" di Detail Job.' },
+      { kategori: 'Fitur', teks: 'Pengingat otomatis ke Admin setiap pagi pukul 08.00 WIB: kalau link sudah 3 hari belum diisi klien, atau acara tinggal 30, 14, atau 7 hari lagi tapi biodata belum lengkap. Kalau klien sudah mengirim isian, pengingatnya meminta Anda menekan Terapkan.' },
+    ]
+  },
   {
     version: '1.35.0',
     tanggal: '16 November 2026',

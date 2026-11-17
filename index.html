@@ -11996,7 +11996,7 @@ function onHonorTimNominalInput(inp){
 /* Booking Cepat: form yang sama, tapi hanya bagian yang perlu saat booking yang ditampilkan. Kolom lain tetap ada
    (disembunyikan) supaya semua perhitungan form tetap jalan dan bisa dibuka lewat "Tampilkan semua kolom". */
 function jfCepatTerapkan(form){
-  const tampil = ['Hasil Cetak','Biodata Klien & Acara'];
+  const tampil = ['Hasil Cetak','Biodata Klien & Acara','Lokasi Acara'];
   form.querySelectorAll('.jf-sec').forEach(sec=>{
     const t = (sec.querySelector('.jf-sec-htx h3')||{}).textContent||'';
     if(tampil.indexOf(t.trim())<0){ sec.classList.add('cepat-sembunyi'); return; }
@@ -12031,7 +12031,7 @@ async function jfCepatLink(jobId){
 function viewForm(){
   const j = editingId ? jobs.find(x=>x.id===editingId) : null;
   const cepat = formCepat && !j;
-  const info = cepat ? `<div class="jf-cepat-info"><b>Booking Cepat</b><span>Cukup tanggal, jenis acara, nama/WhatsApp, dan hasil cetak. Setelah disimpan, link isian dibuat otomatis untuk dikirim ke klien. Isian klien nanti digabung lewat tombol Terapkan.</span><button type="button" class="btn btn-outline" id="btnCepatSemua">Tampilkan semua kolom</button></div>` : '';
+  const info = cepat ? `<div class="jf-cepat-info"><b>Booking Cepat</b><span>Cukup tanggal, jenis acara, nama/WhatsApp, alamat acara, dan hasil cetak. Setelah disimpan, link isian dibuat otomatis untuk dikirim ke klien. Isian klien nanti digabung lewat tombol Terapkan.</span><button type="button" class="btn btn-outline" id="btnCepatSemua">Tampilkan semua kolom</button></div>` : '';
   return `<div class="card${cepat?' jf-cepat':''}">${info}${buildJobFormHtml(j)}</div>`;
 }
 /* ---------- Draf otomatis form job ----------
@@ -20822,7 +20822,7 @@ const CHANGELOG = [
     version: '1.36.0',
     tanggal: '17 November 2026',
     items: [
-      { kategori: 'Fitur', teks: 'Booking Cepat. Tombol baru di Beranda dan Daftar Job untuk mencatat booking hanya dengan tanggal, jenis acara, nama atau WhatsApp klien, dan detail Hasil Cetak. Setelah disimpan, link isian klien langsung dibuat dan bisa dikirim lewat WhatsApp. Kolom lain bisa dibuka lewat tombol "Tampilkan semua kolom".' },
+      { kategori: 'Fitur', teks: 'Booking Cepat. Tombol baru di Beranda dan Daftar Job untuk mencatat booking hanya dengan tanggal, jenis acara, nama atau WhatsApp klien, dan alamat lokasi acara, dan detail Hasil Cetak. Setelah disimpan, link isian klien langsung dibuat dan bisa dikirim lewat WhatsApp. Kolom lain bisa dibuka lewat tombol "Tampilkan semua kolom".' },
       { kategori: 'Fitur', teks: 'Penanda "Menunggu biodata". Job dari Booking Cepat diberi penanda di Daftar Job dan muncul di kartu Beranda, diurutkan dari acara terdekat, lengkap dengan tombol "Ingatkan" yang membuka WhatsApp dengan pesan pengingat. Penanda hilang saat isian klien diterapkan, atau lewat tombol "Tandai lengkap" di Detail Job.' },
       { kategori: 'Fitur', teks: 'Pengingat otomatis ke Admin setiap pagi pukul 08.00 WIB: kalau link sudah 3 hari belum diisi klien, atau acara tinggal 30, 14, atau 7 hari lagi tapi biodata belum lengkap. Kalau klien sudah mengirim isian, pengingatnya meminta Anda menekan Terapkan.' },
     ]

@@ -5786,11 +5786,20 @@ function kmFakta(j,projectId){
   const f={ref:j.id, name:(jenis+' '+siapa).trim(), client_name:(j.namaKlien||'').trim(), client_wa:wa?'62'+wa:'',
     event_date:kmTgl(j.tanggalAcara), event_end:kmTgl(getJobFinishDate(j))||kmTgl(j.tanggalAcara), event_time:/^\d{2}:\d{2}$/.test(j.jamAcara||'')?j.jamAcara:'',
     dp_amount:dp, paid_full:lunas, delivered:kirim.startsWith('Sudah'), delivery_method:/Dijemput/.test(kirim)?'jemput':/Diantar/.test(kirim)?'antar':'',
-    print_done:j.prosesCetak==='Selesai', pay_manual:!!j.manualStatusPembayaranSet};
+    print_done:j.prosesCetak==='Selesai', edit_done:j.prosesEdit==='Selesai', pay_manual:!!j.manualStatusPembayaranSet};
+  // delivered / print_done / edit_done hanya NILAI AWAL saat proyek baru dibuat di Meja Kaone. Setelah itu Edit, Cetak, dan Antar/Jemput diatur dari Meja Kaone.
   if(lunas) f.paid_amount=Math.max(0,t.harga-dp);
   if(projectId) f.project_id=projectId;
   return f;
 }
+// Tanda tangan fakta untuk mendeteksi perubahan. Nilai awal (delivered/print_done/edit_done) tidak dihitung, karena setelah tersambung ketiganya ikut Meja Kaone.
+const KM_AWAL=['delivered','print_done','edit_done'];
+function kmSigFakta(f){ const o=Object.assign({},f); KM_AWAL.forEach(k=>{ delete o[k]; }); return JSON.stringify(o); }
+function kmSigNorm(x){ if(!x) return ''; try{ const o=JSON.parse(x); KM_AWAL.forEach(k=>{ delete o[k]; }); return JSON.stringify(o); }catch(e){ return String(x); } }
+// Edit, Cetak, dan Antar/Jemput diatur dari Meja Kaone untuk job yang sudah tersambung (dan Lacaknya menyala)
+const KM_FIELD_MK=['prosesEdit','prosesCetak','pengiriman'];
+function kmTerkunci(j,field){ return !!(j&&j.kmPid&&!j.kmOff&&isAdmin()&&kmGet(KM_ON)==='1'&&kmKey()&&(!field||KM_FIELD_MK.indexOf(field)>=0)); }
+const KM_KUNCI_TIP='Diatur dari Meja Kaone: ubah di sana, di sini akan ikut otomatis';
 // job lama yang sudah selesai & lunas tidak otomatis dibuat di Meja Kaone (bisa manual dari Detail Job)
 function kmLayak(j){
   if(j.kmSkip||j.kmOff) return false;   // Lacak dimatikan -> dilewati diam-diam (bukan galat, tidak dihitung gagal)
@@ -5806,18 +5815,36 @@ const kmLinkProgres=j=>j&&j.kmToken&&!j.kmOff?kmBase()+'#/t/'+j.kmToken:'';
 function kmSimpan(j,stages,qa){
   const s={}; (stages||[]).forEach(x=>{ s[x.key]=x.status; });
   j.kmStat={s:s,q:qa==null?null:qa};
-  if(s.edit==='selesai'&&j.prosesEdit!=='Selesai'){ j.prosesEdit='Selesai'; j.kmEditAuto=1; return true; }
-  return false;
+  // Meja Kaone adalah sumber untuk Edit, Cetak, dan Antar/Jemput: Rekap Job mengikuti (selesai atau dilewati = selesai)
+  const sudah=k=>s[k]==='selesai'||s[k]==='lewati';
+  let ubah=false;
+  if(s.edit!==undefined){
+    const v=sudah('edit')?'Selesai':'Belum Selesai';
+    if(j.prosesEdit!==v){ j.prosesEdit=v; ubah=true; }
+    if(v==='Selesai') j.kmEditAuto=1; else delete j.kmEditAuto;
+  }
+  if(s.cetak!==undefined){
+    const v=sudah('cetak')?'Selesai':'Belum Selesai';
+    if(j.prosesCetak!==v){ j.prosesCetak=v; ubah=true; }
+  }
+  if(s.antar!==undefined){
+    const done=sudah('antar');
+    if(done||j.pengiriman){   // metode (diantar/dijemput) tetap dari Rekap Job; hanya Sudah/Belum yang ikut Meja Kaone
+      const v=buildPengirimanValue(pengirimanMetode(j.pengiriman),done);
+      if(j.pengiriman!==v){ j.pengiriman=v; ubah=true; }
+    }
+  }
+  return ubah;
 }
 // kirim satu job; bila gagal, pesannya disimpan di job supaya terlihat di Detail Job
 // hasil: true = terkirim & berubah, false = tidak ada perubahan, 'off' = Lacak proyek mati (dilewati)
 async function kmKirim(j,paksa,projectId){
-  const f=kmFakta(j,projectId), sig=JSON.stringify(f);
-  if(!paksa&&j.kmSig===sig) return false;
-  if(!paksa&&j.kmErrSig===sig&&Date.now()-(j.kmErrAt||0)<600000) return false;
+  const f=kmFakta(j,projectId), sig=kmSigFakta(f);
+  if(!paksa&&kmSigNorm(j.kmSig)===sig) return false;
+  if(!paksa&&kmSigNorm(j.kmErrSig)===sig&&Date.now()-(j.kmErrAt||0)<600000) return false;
   try{
     const d=await kmCall('/jobs/sync',{method:'POST',body:f});
-    j.kmPid=d.project_id; j.kmToken=d.track_token; j.kmSig=JSON.stringify(kmFakta(j)); j.kmSkip=false;
+    j.kmPid=d.project_id; j.kmToken=d.track_token; j.kmSig=kmSigFakta(kmFakta(j)); j.kmSkip=false;
     delete j.kmErr; delete j.kmErrAt; delete j.kmErrSig; kmSimpan(j,d.stages,null);
     return true;
   }catch(e){
@@ -5837,7 +5864,7 @@ async function kmSinkron(opts){
     for(const j of jobs){
       if(n>=30||kmFatal) break;
       if(!kmLayak(j)) continue;
-      { const sg=JSON.stringify(kmFakta(j)); if(j.kmSig===sg||(j.kmErrSig===sg&&Date.now()-(j.kmErrAt||0)<600000)) continue; }   // tidak berubah / sedang jeda galat: lewati tanpa dihitung ke batas 30
+      { const sg=kmSigFakta(kmFakta(j)); if(kmSigNorm(j.kmSig)===sg||(kmSigNorm(j.kmErrSig)===sg&&Date.now()-(j.kmErrAt||0)<600000)) continue; }   // tidak berubah / sedang jeda galat: lewati tanpa dihitung ke batas 30
       n++;
       try{ const h=await kmKirim(j,false); if(h===true) ubah++; else if(h==='off') lewat++; }catch(e){ gagal++; }
     }
@@ -7334,8 +7361,8 @@ function pengirimanFieldHtml(d){
       </div>
     </div>
     <div>
-      <label>Status Pengiriman</label>
-      <select id="pengirimanStatusSelect" onchange="refreshJfBadges()">
+      <label>Status Pengiriman${kmTerkunci(d)?' <span class="lbl-note">(diatur dari Meja Kaone)</span>':''}</label>
+      <select id="pengirimanStatusSelect" onchange="refreshJfBadges()"${kmTerkunci(d)?` disabled title="${KM_KUNCI_TIP}"`:''}>
         <option value="Belum" ${!sudah?'selected':''}>Belum</option>
         <option value="Sudah" ${sudah?'selected':''}>Sudah</option>
       </select>
@@ -11833,8 +11860,8 @@ function buildJobFormHtml(j){
 
       </section>
       <section class="jf-sec"><div class="jf-sec-h" onclick="toggleJfSection(this.parentElement)"><span class="jf-ico">${ic('settings')}</span><div class="jf-sec-htx"><h3>Proses &amp; Vendor</h3><p>Progres edit dan cetak, vendor asal job, dan tim yang mengerjakan.</p></div><span class="jf-chevron">${ic('arrow-up')}</span></div><div class="form-grid jf-body jf-panel">
-        <div><label>Proses Edit</label><select name="prosesEdit">${opt(['Belum Selesai','Selesai'], d.prosesEdit)}</select></div>
-        <div><label>Proses Cetak</label><select name="prosesCetak">${opt(['Belum Selesai','Selesai'], d.prosesCetak)}</select></div>
+        <div><label>Proses Edit${kmTerkunci(d)?' <span class="lbl-note">(diatur dari Meja Kaone)</span>':''}</label>${kmTerkunci(d)?`<select disabled title="${KM_KUNCI_TIP}">${opt(['Belum Selesai','Selesai'], d.prosesEdit)}</select><input type="hidden" name="prosesEdit" value="${escapeHtml(d.prosesEdit||'Belum Selesai')}">`:`<select name="prosesEdit">${opt(['Belum Selesai','Selesai'], d.prosesEdit)}</select>`}</div>
+        <div><label>Proses Cetak${kmTerkunci(d)?' <span class="lbl-note">(diatur dari Meja Kaone)</span>':''}</label>${kmTerkunci(d)?`<select disabled title="${KM_KUNCI_TIP}">${opt(['Belum Selesai','Selesai'], d.prosesCetak)}</select><input type="hidden" name="prosesCetak" value="${escapeHtml(d.prosesCetak||'Belum Selesai')}">`:`<select name="prosesCetak">${opt(['Belum Selesai','Selesai'], d.prosesCetak)}</select>`}</div>
         <div>
           <label>Vendor Asal Job</label>
           <select name="vendor" onchange="onVendorChange(this)">
@@ -13151,8 +13178,9 @@ function badgeClassFor(field, value){
 }
 function badgeSelect(jobId, field, options, value){
   const cls = badgeClassFor(field, value);
-  return `<span class="badge-select-wrap ${cls}">
-    <select data-job-id="${jobId}" data-field="${field}" ${isAdmin()?'':'disabled'}>
+  const kunci = KM_FIELD_MK.indexOf(field)>=0 && kmTerkunci(jobs.find(x=>x.id===jobId));
+  return `<span class="badge-select-wrap ${cls}"${kunci?` title="${KM_KUNCI_TIP}"`:''}>
+    <select data-job-id="${jobId}" data-field="${field}" ${isAdmin()&&!kunci?'':'disabled'}>
       ${options.map(o=>`<option value="${o}" ${o===value?'selected':''}>${o}</option>`).join('')}
     </select>
   </span>`;
